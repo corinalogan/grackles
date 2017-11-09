@@ -10,4 +10,12 @@ I am planning many experiments for the next several years and I post the **repro
 
 The version is noted in the Commit comment, and the different versions can be seen in the history of the file of interest. Following the version history of ONE file allows one to track how this piece of work has changed through the entire investigation.
 
-One preregistration is at the Open Science Framework because it occurred before this repository was created: [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](https://osf.io/g5tnh/). I also posted the .Rmd file for the OSF preregistration in this repository for ease of use and so that future versions are tracked.
+# Table of Contents
+
+***Preregistrations***
+
+- Logan CJ. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.html)
+
+- Logan CJ. 2017. [Does manipulating behavioral flexibility affect exploration and neophilia?](./g_exploration.html)
+
+- Blaisdell A, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./g_causal.html). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking.
