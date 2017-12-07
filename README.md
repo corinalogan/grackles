@@ -1,6 +1,6 @@
 # The Grackle Project
 
-I am planning many experiments for the next several years and I post the **reproducible manuscripts** (.Rmd files with text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions:
+Many experiments will be conducted over the next several years and I post the **reproducible manuscripts** (.Rmd files including text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions:
 
 - PREREGISTRATION: I list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected
 
@@ -13,6 +13,8 @@ The version is noted in the Commit comment, and the different versions can be se
 # Table of Contents
 
 ***Preregistrations***
+
+- Logan CJ, Wascher C. 2017. [Are the more flexible individuals also better at inhibition?](.g_inhibition.Rmd)
 
 - Logan CJ. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.Rmd)
 
