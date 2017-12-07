@@ -14,7 +14,7 @@ The version is noted in the Commit comment, and the different versions can be se
 
 ***Preregistrations***
 
-- Logan CJ, Wascher C. 2017. [Are the more flexible individuals also better at inhibition?](.g_inhibition.Rmd)
+- Logan CJ, Wascher C. 2017. [Are the more flexible individuals also better at inhibition?](./g_inhibition.Rmd)
 
 - Logan CJ. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.Rmd)
 
