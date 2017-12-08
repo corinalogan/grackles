@@ -6,7 +6,7 @@ output:
   html_document: default
   pdf_document: default
   word_document: default
-bibliography: /Users/corina/R/MyLibrary.bib
+bibliography: /Users/corina/GTGR/MyLibrary.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -175,26 +175,26 @@ We do not plan to **exclude** any data. When **missing data** occur, the existin
 The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009].
 
 ```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** Part 1. The distribution of the actual data versus what a normal distribution would look like with simulated data. Part 2. Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]."}
-acc <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
+acc <- read.csv ("/Users/corina/GTGR/data/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
 
-go <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
+go <- read.csv ("/Users/corina/GTGR/data/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
 
-detour <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
+detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
 
 
 #Check the dependent variables for normality: Histograms
 op <- par(mfrow=c(2,3), mar=c(4,4,2,0.2))
 #This is what the distribution of actual data looks like
 hist(acc$NumberOfAccumulationsWaited, xlab="Delay: Number of accumulations waited", main="Actual Data")
-hist(go$CorrectResponse, xlab="Go/no-go: Number of correct responses", main="Actual Data")
+hist(go$TrialsToCriterion, xlab="Go/no-go: Trials to criterion", main="Actual Data")
 hist(detour$FirstApproach, xlab="Detour: First approach", main="Actual Data")
 
 #Given the actual data, this is what a normal distribution would look like
 X2 <- rnorm(1281, mean=mean(acc$NumberOfAccumulationsWaited), sd=sd(acc$NumberOfAccumulationsWaited))
 hist(X2, xlab="Delay: No. accumulations waited", main="Simulated Data")
 
-Y2 <- rnorm(1281, mean=mean(go$CorrectResponse), sd=sd(go$CorrectResponse))
-hist(Y2, xlab="Go/no-go: No. correct responses", main="Simulated Data")
+Y2 <- rnorm(1281, mean=mean(go$TrialsToCriterion), sd=sd(go$TrialsToCriterion))
+hist(Y2, xlab="Go/no-go: Trials to criterion", main="Simulated Data")
 
 Z2 <- rnorm(1281, mean=mean(detour$FirstApproach), sd=sd(detour$FirstApproach))
 hist(Z2, xlab="Detour: First approach", main="Simulated Data")
@@ -203,7 +203,7 @@ hist(Z2, xlab="Detour: First approach", main="Simulated Data")
 #Check the dependent variables for normality: Q-Q plots
 op <- par(mfrow=c(3,4), mar=c(4,4,2,0.2))
 plot(glm(acc$NumberOfAccumulationsWaited~acc$Delay)) 
-plot(glm(go$CorrectResponse~go$Trial)) 
+plot(glm(go$TrialsToCriterion~go$TrialsToReverseLast)) 
 plot(glm(detour$FirstApproach~detour$Trial)) 
 ```
 
@@ -211,17 +211,17 @@ If the data do not appear normally distributed, visually check the residuals. If
 
 ```{r dist_checkResid, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 4.** Visual check of the residuals."}
 #Check the dependent variables for normality: Residuals
-detour <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
+detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
 
-acc <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
+acc <- read.csv ("/Users/corina/GTGR/data/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
 
-go <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
+go <- read.csv ("/Users/corina/GTGR/data/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Figure 3. Visual check of the residuals
 op <- par(mfrow=c(1,3), mar=c(4,4,2,0.2))
 plot(residuals(glm(detour$FirstApproach~detour$Trial)), ylab="Detour residuals: First approach ~ Trial")
 plot(residuals(glm(acc$NumberOfAccumulationsWaited~acc$Delay)), ylab="Delay residuals: Number of accumulations waited ~ Delay")
-plot(residuals(glm(go$CorrectResponse~go$Trial)), ylab="Go/no-go: Residuals Correct response ~ Trial")
+plot(residuals(glm(go$TrialsToCriterion~go$TrialsToReverseLast)), ylab="Go/no-go: Residuals Correct response ~ Trial")
 ```
 
 ####*P1: delayed gratification*
@@ -231,7 +231,7 @@ plot(residuals(glm(go$CorrectResponse~go$Trial)), ylab="Go/no-go: Residuals Corr
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r better, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-acc <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
+acc <- read.csv ("/Users/corina/GTGR/data/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
 better <- glm(NumberOfAccumulationsWaited ~ Delay + FoodQualityQuantity + Trial + TrialsToReverseLast + FlexRatio, family="poisson", data=acc)
@@ -251,7 +251,7 @@ kable(better1.table, caption="Table U: Model selection output.", format="html", 
 **Model 2a:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and a log link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r go, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-go <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
+go <- read.csv ("/Users/corina/GTGR/data/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
 go1 <- glm(TrialsToCriterion ~ TrialsToReverseLast + FlexRatio, family="poisson", data=go)
@@ -265,7 +265,7 @@ kable(sgo1.table, caption="Table T: Model selection output.", format="html", dig
 **Model 2b:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r golatency, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-go <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_golatency.csv", header=T, sep=",", stringsAsFactors=F) 
+go <- read.csv ("/Users/corina/GTGR/data/data_golatency.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
 library(MCMCglmm)
@@ -282,7 +282,7 @@ autocorr(golat$VCV) #Did random effects converge?
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and a logit link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r detour, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-detour <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
+detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
 detour$ID <- factor(detour$ID)
@@ -299,7 +299,7 @@ kable(sde.table, caption="Table T: Model selection output.", format="html", digi
 The reliability of the inhibition tests will be calculated using Cronbach's Alpha (as in @friedman2004relations; R package: psych [@psych], function: alpha), which is indicated by std.alpha in the output.
 
 ```{r reliability, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-rel <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_inhibition.csv", header=T, sep=",", stringsAsFactors=F) 
+rel <- read.csv ("/Users/corina/GTGR/data/data_inhibition.csv", header=T, sep=",", stringsAsFactors=F) 
 
 library(psych)
 reliab <- alpha(rel, check.keys=TRUE) #Check.keys automatically reverses the coding for variables that are negatively correlated with the total scale. How to interpret: http://data.library.virginia.edu/using-and-interpreting-cronbachs-alpha/ "If all of the scale items are entirely independent from one another (i.e., are not correlated or share no covariance), then alpha = 0; and, if all of the items have high covariances, then alpha will approach 1 as the number of items in the scale approaches infinity. In other words, the higher the alpha coefficient, the more the items have shared covariance and probably measure the same underlying concept."
@@ -314,7 +314,7 @@ When comparing all three tests, alpha= .
 **See analysis description for P1 alternative 2.** 
 
 ```{r reliability2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-rel2 <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_inhibition2.csv", header=T, sep=",", stringsAsFactors=F) 
+rel2 <- read.csv ("/Users/corina/GTGR/data/data_inhibition2.csv", header=T, sep=",", stringsAsFactors=F) 
 
 library(psych)
 reliab2 <- alpha(rel2, check.keys=TRUE)
@@ -329,7 +329,7 @@ When analyzing only the delayed gratification and go no-go tasks, the reliabilit
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and a logit link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r detour2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-detour <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
+detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
 de <- glm(FirstApproach ~ Condition, family="binomial", data=detour)
