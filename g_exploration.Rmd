@@ -6,7 +6,7 @@ output:
   html_document: default
   pdf_document: default
   word_document: default
-bibliography: /Users/corina/R/MyLibrary.bib
+bibliography: /Users/corina/GTGR/MyLibrary.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -24,13 +24,13 @@ This preregistration was written prior to collecting any data.
 
 ###B. PARTITIONING THE RESULTS
 
-I may present the results from different hypotheses in separate papers.
+We may present the results from different hypotheses in separate papers.
 
 ###C. HYPOTHESES
 
 ####H1: [Behavioral flexibility](./g_flexmanip.html) is positively correlated with exploration and neophilia, but not other behaviors.
 
-**Predictions 1-5:** Individuals in the experimental group where flexibility (as measured by reversal learning and on a multi-access box) was manipulated (and increased) will be more exploratory (P1; methods as in @mettke2009spatial) and more neophilic (P2) than individuals in the control group where flexibility was not increased, and there will be no difference between the groups in persistence (P3), neophobia (P4, methods as in @logan2016behavioral), or motor diversity (P5) (as found in @logan2016behavioral). 
+**Predictions 1-5:** Individuals in the experimental group where flexibility (as measured by reversal learning and on a multi-access box) was manipulated (and increased) will be more exploratory (P1; methods as in @mettke2009spatial) and more neophilic (P2; methods as in @mettke2009spatial) than individuals in the control group where flexibility was not increased, and there will be no difference between the groups in persistence (P3), neophobia (P4; methods as in @logan2016behavioral), or motor diversity (P5) (as found in @logan2016behavioral). 
 
 **P1-P5 alternative:** If the flexibility manipulation does not work in that those individuals in the experimental condition are not more flexible than control individuals, then this experiment will elucidate whether general individual variation in flexibility relates to exploratory behaviors. The predictions are the same as above.
 
@@ -146,88 +146,65 @@ I do not plan to **exclude** any data. When **missing data** occur, the existing
 
 The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figures 2, 4, 6, 8), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figures 3, 5, 7, 9) [@zuur2009].
 
-```{r dist_check1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
-#Check dependent variable: number of trials to reverse last preference
-last <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
+#Check dependent variables for normality: Histograms
+#Reversal learning
+last <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
 
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-#Figure A-B. This is what the distribution of actual data looks like
+#Neophobia and persistence
+neophobia <- read.csv ("/Users/corina/GTGR/data/data_neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
+
+op <- par(mfrow=c(2,4), mar=c(4,4,2,0.2))
+#This is what the distribution of actual data looks like
 hist(last$TrialsToReverseLast, xlab="Number of trials to reverse the last preference", main="Actual Data")
-#Figure C-D. Given the actual data, this is what a normal distribution would look like
-Y2 <- rnorm(1281, mean=mean(last$TrialsToReverseLast), sd=sd(last$TrialsToReverseLast))
-hist(Y2, xlab="Number of trials to reverse the last preference", main="Simulated Data")
-```
-
-```{r dist_check2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 3.** Visual check of the Normal Q-Q plot to determine whether the residuals are normally distributed."}
-#Check dependent variable: number of trials to reverse last preference
-last <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Figure 2. Visual check of the Normal Q-Q plot
-op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
-plot(glm(last$TrialsToReverse~last$LatencyNovelEnvExploration)) 
-```
-
-```{r dist_check3, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 4.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
-#Check dependent variable: number of incorrect trials in the final reversal before making the correct choice
-incorrect <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
-
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-#Figure A-B. This is what the distribution of actual data looks like
-hist(incorrect$NumberIncorrectTrialsReversal, xlab="Number of 'no choice' trials in the first reversal", main="Actual Data")
-#Figure C-D. Given the actual data, this is what a normal distribution would look like
-Y2 <- rnorm(1281, mean=mean(incorrect$NumberIncorrectTrialsReversal), sd=sd(incorrect$NumberIncorrectTrialsReversal))
-hist(Y2, xlab="Number of 'no choice' trials in the first reversal", main="Simulated Data")
-```
-
-```{r dist_check4, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 5.** Visual check of the Normal Q-Q plot to determine whether the residuals are normally distributed."}
-#Check dependent variable: number of incorrect trials in the final reversal before making the correct choice
-incorrect <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Figure 2. Visual check of the Normal Q-Q plot
-op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
-plot(glm(incorrect$NumberIncorrectTrialsReversal~incorrect$LatencyNovelEnvExploration)) 
-```
-
-```{r dist_check5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 6.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
-#Check dependent variable: Neophobia - latency to land on the table
-neophobia <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
-
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-#Figure A-B. This is what the distribution of actual data looks like
+hist(last$NumberIncorrectTrialsReversal, xlab="Number of 'no choice' trials in the first reversal", main="Actual Data")
 hist(neophobia$LatencyToLandOnTable, xlab="Latency to land on table", main="Actual Data")
-#Figure C-D. Given the actual data, this is what a normal distribution would look like
-Y2 <- rnorm(1281, mean=mean(neophobia$LatencyToLandOnTable), sd=sd(neophobia$LatencyToLandOnTable))
-hist(Y2, xlab="Latency to land on table", main="Simulated Data")
-```
-
-```{r dist_check6, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 7.** Visual check of the Normal Q-Q plot to determine whether the residuals are normally distributed."}
-#Check dependent variable: Neophobia - latency to land on the table
-neophobia <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Figure 2. Visual check of the Normal Q-Q plot
-op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
-plot(glm(neophobia$LatencyToLandOnTable~neophobia$Day)) 
-```
-
-```{r dist_check7, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 8.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
-#Check dependent variable: Persistence - number of touches to an apparatus per time
-neophobia <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
-
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-#Figure A-B. This is what the distribution of actual data looks like
 hist(neophobia$NoObjectTouchesPerTime, xlab="Number of touches to an apparatus per time", main="Actual Data")
-#Figure C-D. Given the actual data, this is what a normal distribution would look like
-Y2 <- rnorm(1281, mean=mean(neophobia$NoObjectTouchesPerTime), sd=sd(neophobia$NoObjectTouchesPerTime))
-hist(Y2, xlab="Number of touches to an apparatus per time", main="Simulated Data")
+
+#Given the actual data, this is what a normal distribution would look like
+W2 <- rnorm(1281, mean=mean(last$TrialsToReverseLast), sd=sd(last$TrialsToReverseLast))
+hist(W2, xlab="No. trials reverse last preference", main="Simulated Data")
+
+X2 <- rnorm(1281, mean=mean(last$NumberIncorrectTrialsReversal), sd=sd(last$NumberIncorrectTrialsReversal))
+hist(X2, xlab="No. 'no choice' trials 1st reversal", main="Simulated Data")
+
+Y2 <- rnorm(1281, mean=mean(neophobia$LatencyToLandOnTable), sd=sd(neophobia$LatencyToLandOnTable))
+hist(Y2, xlab="Latency table", main="Simulated Data")
+
+Z2 <- rnorm(1281, mean=mean(neophobia$NoObjectTouchesPerTime), sd=sd(neophobia$NoObjectTouchesPerTime))
+hist(Z2, xlab="No. touches apparatus/time", main="Simulated Data")
 ```
 
-```{r dist_check8, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 9.** Visual check of the Normal Q-Q plot to determine whether the residuals are normally distributed."}
-#Check dependent variable: Persistence - number of touches to an apparatus per time
-neophobia <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
+```{r dist_checkQQ, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 3.** Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]."}
+#Check dependent variables for normality: Q-Q plots
+#Reversal learning
+last <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#Figure 2. Visual check of the Normal Q-Q plot
-op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
+#Neophobia and persistence
+neophobia <- read.csv ("/Users/corina/GTGR/data/data_neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
+
+op <- par(mfrow=c(4,4), mar=c(4,4,2,0.2))
+plot(glm(last$TrialsToReverse~last$LatencyNovelEnvExploration)) 
+plot(glm(last$NumberIncorrectTrialsReversal~last$LatencyNovelEnvExploration)) 
+plot(glm(neophobia$LatencyToLandOnTable~neophobia$Day)) 
 plot(glm(neophobia$NoObjectTouchesPerTime~neophobia$Day)) 
+```
+
+If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) [@zuur2009].
+
+```{r dist_checkResid, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 4.** Visual check of the residuals."}
+#Check the dependent variables for normality: Residuals
+#Reversal learning
+last <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#Neophobia and persistence
+neophobia <- read.csv ("/Users/corina/GTGR/data/data_neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
+
+op <- par(mfrow=c(2,2), mar=c(4,4,2,0.2))
+plot(residuals(glm(last$TrialsToReverse~last$LatencyNovelEnvExploration)), ylab="Reverse: Trials to reverse ~ Latency novel env.") 
+plot(residuals(glm(last$NumberIncorrectTrialsReversal~last$LatencyNovelEnvExploration)), ylab="Reverse: No. incorrect ~ Latency novel env.") 
+plot(residuals(glm(neophobia$LatencyToLandOnTable~neophobia$Day)), ylab="Neophobia: Latency table ~ Day")
+plot(residuals(glm(neophobia$NoObjectTouchesPerTime~neophobia$Day)), ylab="Neophobia: No. object touches/time ~ Day")
 ```
 
 ####*P1-P5: flexibility correlates with exploration and neophilia?*
@@ -235,7 +212,7 @@ plot(glm(neophobia$NoObjectTouchesPerTime~neophobia$Day))
 **Analysis:** Because the independent variables could influence each other, I will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model. 
 
 ```{r explore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-explore <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/explore.csv", header=T, sep=",", stringsAsFactors=F) 
+explore <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLMM - dependent variable = number of trials to reverse in the last reversal
 library(MCMCglmm)
@@ -260,7 +237,7 @@ autocorr(expl2$VCV) #Did random effects converge?
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link.
 
 ```{r persist2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-persist2 <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+persist2 <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
 p2 <- glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2)
@@ -288,7 +265,7 @@ kable(base1, caption="Table 3: Model selection output.")
 
 ```{r repeatableNeo, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Neophobia
-neo <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
+neo <- read.csv ("/Users/corina/GTGR/data/data_neophobia.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
 #GLMM
@@ -309,7 +286,7 @@ detach(package:lmerTest)
 
 ```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Persistence
-per <- read.csv ("/Users/corina/R/GrackleTestsYear1/Exploration/persist.csv", header=T, sep=",", stringsAsFactors=F) 
+per <- read.csv ("/Users/corina/GTGR/data/data_persist.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
 #GLMM
@@ -350,12 +327,20 @@ This research is carried out in accordance with permits from the:
 
 1) US Fish and Wildlife Service (scientific collecting permit number MB76700A-0,1,2)
 2) US Geological Survey Bird Banding Laboratory (federal bird banding permit number 23872)
-3) Arizona Game and Fish Department (scientific collecting license number SP594338)
+3) Arizona Game and Fish Department (scientific collecting license number SP594338 [2017] and SP606267 [2018])
 4) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
 5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
+
+###F. AUTHOR CONTRIBUTIONS
+
+**Logan:** Hypothesis development, data collection, data analysis and interpretation, write up, materials/funding.
 
 ###H. FUNDING
 
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan.
 
-###I. REFERENCES
+###I. ACKNOWLEDGEMENTS
+
+We thank Dieter Lukas for help polishing the hypotheses; Jay Taylor for grackle scouting, hosting the grackle project at Arizona State University, providing office and lab space, and co-supervising students; and Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities.
+
+###J. REFERENCES
