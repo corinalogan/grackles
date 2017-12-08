@@ -7,7 +7,7 @@ output:
   html_document: default
   pdf_document: default
   word_document: default
-bibliography: /Users/corina/R/MyLibrary.bib
+bibliography: /Users/corina/GTGR/MyLibrary.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -19,17 +19,17 @@ library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
-###State of the data
+###STATE OF THE DATA
 
 This preregistration was written prior to collecting any data.
 
-###Partitioning the results
+###PARTITIONING THE RESULTS
 
 We will present these results separately: 1) determining whether grackles have causal inference abilities, and 2) linking variation in performance on causal inference tasks to measures of flexibility.
 
-###A. Hypothesis
+###A. HYPOTHESIS
 
-####Individuals that are more [behaviorally flexible](./g_flexmanip.html), as measured by reversal learning and successfully switching between tasks on a multiaccess box, are better able to derive accurate causal inferences. This is because causal cognition may facilitate flexibility: an individual could be faster at solving new problems if it makes causal inferences about how the problem works, rather than relying solely on trial and error learning.
+####Individuals that are more [behaviorally flexible](./g_flexmanip.html), as measured by reversal learning and switching between options on a multi-access box, are better able to derive accurate causal inferences. This is because causal cognition may facilitate flexibility: an individual could be faster at solving new problems if it makes causal inferences about how the problem works, rather than relying solely on trial and error learning.
 
 **Predictions:** Individuals that are faster to reverse preferences on a serial reversal learning task and who also have lower latencies to successfully solve new tasks after previously solved tasks become unavailable, perform better in two causal inference experiments. Specifically, the more flexible individuals are predicted to 
 
@@ -48,7 +48,7 @@ Alternative 2: If there is a negative correlation between flexibility and perfor
 **Objective:** The aim is to determine whether grackles, like rats, derive predictions about the outcomes of interventions (actions) after passive observational learning of different kinds of causal models. This experiment adapts the procedure used by @blaisdell2006causal to study causal inference in rats for the study of causal inference in birds (e.g., pigeons and grackles) using a touchscreen. @blaisdell2006causal (see also @leising2008special) found that rats made different predictions about the presence of food based on a cue (a tone) depending on the causal relationship between them (direct cause or two effects of a common cause) and whether the tone was merely observed at test or had been caused by the subject’s own intervention (a lever press).
 We wish to determine whether grackles can also form causal models from contingency learning, and if so, whether their intervention can influence the type of causal inference made at test, depending on which causal model is being tested.
 
-###B. Methods
+###B. METHODS
 
 **Experiment 1**
 
@@ -84,7 +84,7 @@ A computer screen that the bird can interact with (peck) at will. There will be 
 
 2) Average number of trials to reverse a preference ([reversal learning](./g_flexmanip.html))
 
-3) Average latency to attempt to solve a new loci after solving a different loci ([multiaccess](./g_flexmanip.html))
+3) Average latency to attempt to solve a new loci after solving a different loci ([multi-access](./g_flexmanip.html))
 
 4) ID (random effect because multiple measures per individual)
 
@@ -96,11 +96,11 @@ A computer screen that the bird can interact with (peck) at will. There will be 
 
 3) Average number of trials to reverse a preference ([reversal learning](./g_flexmanip.html))
 
-4) Average latency to attempt to solve a new loci after solving a different loci ([multiaccess](./g_flexmanip.html))
+4) Average latency to attempt to solve a new loci after solving a different loci ([multi-access](./g_flexmanip.html))
 
 5) ID (random effect because multiple measures per individual)
 
-###C. Analysis Plan
+###C. ANALYSIS PLAN
 
 Analyses will be conducted in R (current version `r getRversion()`; [@rcoreteam]). 
 
@@ -108,22 +108,37 @@ Analyses will be conducted in R (current version `r getRversion()`; [@rcoreteam]
 
 The data will be visually checked to determine whether they are normally distributed. Normality is indicated when the histograms of actual data match those with simulated data (Figure 2) [@zuur2009].
 
-```{r dist_check1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
-cause <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
+```{r dist_check1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** Part 1. The distribution of the actual data versus what a normal distribution would look like with simulated data. Part 2. Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]. Top row: pecks to the food key, bottom row: pecks to the stimulus key."}
+cause <- read.csv ("/Users/corina/GTGR/data/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
 
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-#Figure A-B. This is what the distribution of actual data looks like
+##Check the dependent variables for normality: Histograms
+op <- par(mfrow=c(2,2), mar=c(4,4,2,0.2))
+#This is what the distribution of actual data looks like
 hist(cause$KeyPecksFood, xlab="Number of food key pecks", main="Actual Data")
-#Figure C-D. Given the actual data, this is what a normal distribution would look like
+hist(cause$KeyPecksNovel, xlab="Number of stimulus key pecks", main="Actual Data")
+
+#Given the actual data, this is what a normal distribution would look like
 Y2 <- rnorm(1281, mean=mean(cause$KeyPecksFood), sd=sd(cause$KeyPecksFood))
 hist(Y2, xlab="Number of food key pecks", main="Simulated Data")
 
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-#Figure E-F. This is what the distribution of actual data looks like
-hist(cause$KeyPecksNovel, xlab="Number of stimulus key pecks", main="Actual Data")
-#Figure G-H. Given the actual data, this is what a normal distribution would look like
-Y2 <- rnorm(1281, mean=mean(cause$KeyPecksNovel), sd=sd(cause$KeyPecksNovel))
-hist(Y2, xlab="Number of stimulus key pecks", main="Simulated Data")
+Z2 <- rnorm(1281, mean=mean(cause$KeyPecksNovel), sd=sd(cause$KeyPecksNovel))
+hist(Z2, xlab="Number of stimulus key pecks", main="Simulated Data")
+
+
+##Check the dependent variables for normality: Q-Q plot
+op <- par(mfrow=c(2,4), mar=c(4,4,2,0.2))
+plot(glm(cause$KeyPecksFood~cause$Condition)) 
+plot(glm(cause$KeyPecksNovel~cause$Condition)) 
+```
+
+If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) [@zuur2009].
+
+```{r dist_check2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 4.** Visual check of the residuals."}
+#Check the dependent variables for normality: Residuals
+cause <- read.csv ("/Users/corina/GTGR/data/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
+
+op <- par(mfrow=c(1,1), mar=c(4,4,2,0.2))
+plot(residuals(glm(cause$KeyPecksFood~cause$KeyPecksNovel)), ylab="Pecks to food key ~ Pecks to novel key") 
 ```
 
 ####*Prediction 1: causal map*
@@ -131,7 +146,7 @@ hist(Y2, xlab="Number of stimulus key pecks", main="Simulated Data")
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r cause1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-cause <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
+cause <- read.csv ("/Users/corina/GTGR/data/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Select only data from Experiment 1
 cause <- cause[cause$Experiment==1,]
@@ -158,7 +173,7 @@ summary(cause1a)
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
 ```{r cause2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-cause <- read.csv ("/Users/corina/R/GrackleTestsYear1/Cognition/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
+cause <- read.csv ("/Users/corina/GTGR/data/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Select only data from Experiment 2
 cause <- cause[cause$Experiment=="2a" | cause$Experiment=="2b",]
@@ -184,7 +199,7 @@ summary(cause2a)
 
 Logan anticipates that she will want to run additional/different analyses after reading [@statrethinkingbook]. She will revise this preregistration to include these new analyses before conducting the analyses above.
 
-###D. Planned Sample
+###D. PLANNED SAMPLE
 
 Great-tailed grackles will be caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (16-40) will be brought temporarily into aviaries for testing, and then they will be released back to the wild. 
 
@@ -196,14 +211,28 @@ We will test as many birds as we can in the two years we have at this field site
 
 We will stop testing birds in March 2019.
 
-###E. Ethics
+###E. ETHICS
 
 This research is carried out in accordance with permits from the:
 
 1) US Fish and Wildlife Service (scientific collecting permit number MB76700A-0,1,2)
 2) US Geological Survey Bird Banding Laboratory (federal bird banding permit number 23872)
-3) Arizona Game and Fish Department (scientific collecting license number SP594338)
+3) Arizona Game and Fish Department (scientific collecting license number SP594338 [2017] and SP606267 [2018])
 4) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
 5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
 
-###F. References
+###F. AUTHOR CONTRIBUTIONS
+
+**Logan:** Hypothesis development, data collection, data analysis and interpretation, write up, materials/funding.
+
+**Blaisdell:** Hypothesis development, experimental design, data analysis and interpretation, write up.
+
+###G. FUNDING
+
+This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan.
+
+###H. ACKNOWLEDGEMENTS
+
+We thank Dieter Lukas for help polishing the hypotheses; Jay Taylor for grackle scouting, hosting the grackle project at Arizona State University, providing office and lab space, and co-supervising students; and Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities.
+
+###I. REFERENCES
