@@ -1,0 +1,210 @@
+---
+title: Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?
+author: '[Dr. Corina Logan](http://CorinaLogan.com) (University of Cambridge, cl417@cam.ac.uk)'
+date: '`r Sys.Date()`'
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+bibliography: /Users/corina/GTGR/MyLibrary.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+###A. STATE OF THE DATA
+
+This preregistration was written prior to collecting any data.
+
+###B. HYPOTHESIS
+
+#### H1: Individuals that are more [behaviorally flexible](./g_flexmanip.Rmd) (measured by reversal learning and switching between options on a multi-access box) eat a larger number of different foods and use more foraging techniques, validating the cross-species correlational finding that technique breadth (@overington2009technical) and diet breadth (@ducatez2015ecological) indicate flexibility.
+
+**Prediction 1:** Individuals that are faster to reverse preferences on a reversal learning task and who also have lower latencies to switch to solving new loci after previously solved loci become unavailable (multi-access box) will eat a larger number of different foods and use a wider variety of foraging techniques in the wild.
+
+**P1 alternative 1:** If there is no correlation, this suggests that flexibility is an independent trait from the number of foods eaten and foraging techniques used. Flexibility is not necessarily associated with diet and foraging technique breadth because flexibility could be constrained in a foraging context due to social competition (e.g., subordinates are outcompeted while foraging and thus try new foods and techniques) or ecological limitations (e.g, constrained by what is available).
+
+**P1 alternative 2:** If there is a negative correlation between flexibility and the number of different foods eaten, this might indicate that the more flexible individuals target particular food items.
+
+**P1 alternative 3:** If there is a negative correlation between flexibility and the number of foraging techniques, this could indicate that the more flexible individuals use particular (potentially more effective) techniques.
+
+**P2:** Individuals whose [flexibility](./g_flexmanip.Rmd) has been increased experimentally will consume a larger number of foods and use more foraging techniques than individuals whose flexibility has not been manipulated. This would further validate that flexibility is related to diet breadth and foraging techniques. 
+
+**P2 alternative 1:** If the flexibility manipulation does not work in that those individuals in the experimental condition do not decrease their reversal learning speeds more than control individuals, then we will rely on the general individual variation in flexibility and how it relates to foraging in the wild (as in P1).
+
+###C. METHODS
+
+####**Randomization and counterbalancing** 
+
+No randomization or counterbalancing is involved in this study.
+
+####**Blinding of conditions during analysis**
+
+No blinding is involved in this study.
+
+####**Dependent variables**
+
+1) Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+
+2) Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
+
+3) Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+
+One model will be run per dependent variable.
+
+####**Independent variables**
+
+1) Number of different foods eaten in the first X minutes (X=the sum of the total observation time per individual, using the individual who had the lowest sum to equalize observation time across individuals)
+
+2) Number of foraging techniques used (based on Table 1 in @overington2009technical) in the first X minutes (X=the sum of the total observation time per individual, using the individual who had the lowest sum to equalize observation time across individuals)
+
+3) Flexibility manipulation: control, manipulated
+
+4) Dominance rank
+
+5) ID
+
+6) Population: center (Honduras), middle (Arizona), edge (Nebraska)
+
+###D. ANALYSIS PLAN
+
+We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). 
+
+We will analyze data for females and males separately because each sex has a distinct natural history.
+
+####*Data checking*
+
+The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009].
+
+```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** Part 1. The distribution of the actual data versus what a normal distribution would look like with simulated data. Part 2. Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]."}
+ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#Check the dependent variables for normality: Histograms
+op <- par(mfrow=c(2,3), mar=c(4,4,2,0.2))
+#This is what the distribution of actual data looks like
+hist(ff$TrialsToReverseLast, xlab="Trials to reverse (last)", main="Actual Data")
+hist(ff$FlexRatio, xlab="Correct/incorrect trials", main="Actual Data")
+
+#Given the actual data, this is what a normal distribution would look like
+X2 <- rnorm(1281, mean=mean(ff$TrialsToReverseLast), sd=sd(ff$TrialsToReverseLast))
+hist(X2, xlab="Trials to reverse (last)", main="Simulated Data")
+
+Y2 <- rnorm(1281, mean=mean(ff$FlexRatio), sd=sd(ff$FlexRatio))
+hist(Y2, xlab="Correct/incorrect trials", main="Simulated Data")
+
+
+#Check the dependent variables against independent variables for normality: Q-Q plots
+op <- par(mfrow=c(3,4), mar=c(4,4,2,0.2))
+plot(glm(ff$TrialsToReverseLast~ff$NumberFoodsEaten)) 
+plot(glm(ff$FlexRatio~ff$NumberFoodsEaten)) 
+plot(glm(ff$TrialsToReverseLast~ff$NumberForagingTechniques)) 
+plot(glm(ff$FlexRatio~ff$NumberForagingTechniques)) 
+```
+
+If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) [@zuur2009].
+
+```{r dist_checkResid, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 4.** Visual check of the residuals."}
+#Check the dependent variables for normality: Residuals
+ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#Figure 3. Visual check of the residuals
+op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
+plot(residuals(glm(ff$TrialsToReverseLast~ff$NumberFoodsEaten)), ylab="Residuals: Trials to reverse ~ No. foods")
+plot(residuals(glm(ff$FlexRatio~ff$NumberFoodsEaten)), ylab="Residuals: Correct/incorrect trials ~ No. foods")
+plot(residuals(glm(ff$TrialsToReverseLast~ff$NumberForagingTechniques)), ylab="Residuals: Trials to reverse ~ No. techniques")
+plot(residuals(glm(ff$FlexRatio~ff$NumberForagingTechniques)), ylab="Residuals: Correct/incorrect trials ~ No. techniques")
+```
+
+####*P1-P2*
+
+**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. The contribution of each independent variable will be evaluated using the Estimate in the full model.
+
+```{r p1p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
+#Separate the sexes
+fem <- ff[ff$Sex=="f",]
+mal <- ff[ff$Sex=="m",]
+
+#Factor the random effect variables
+ID <- as.factor(fem$ID)
+Population <- as.factor(fem$Population)
+ID <- as.factor(mal$ID)
+Population <- as.factor(mal$Population)
+
+#GLMM with response variable = trials to reverse the last preference
+#females
+f1 <- MCMCglmm(TrialsToReverseLast ~ NumberFoodsEaten + NumberForagingTechniques + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f1)
+#autocorr(f1$Sol) #Did fixed effects converge?
+#autocorr(f1$VCV) #Did random effects converge?
+
+#males
+f2 <- MCMCglmm(TrialsToReverseLast ~ NumberFoodsEaten + NumberForagingTechniques + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f2)
+#autocorr(f2$Sol) #Did fixed effects converge?
+#autocorr(f2$VCV) #Did random effects converge?
+
+#GLMM with response variable = flexibility ratio
+#female
+f3 <- MCMCglmm(TrialsToReverseLast ~ NumberFoodsEaten + NumberForagingTechniques + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f3)
+#autocorr(f3$Sol) #Did fixed effects converge?
+#autocorr(f3$VCV) #Did random effects converge?
+
+#male
+f4 <- MCMCglmm(TrialsToReverseLast ~ NumberFoodsEaten + NumberForagingTechniques + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f4)
+#autocorr(f4$Sol) #Did fixed effects converge?
+#autocorr(f4$VCV) #Did random effects converge?
+```
+
+####*Alternative Analyses*
+
+We anticipate that we will want to run additional/different analyses after reading @statrethinkingbook. We will revise this preregistration to include these new analyses before conducting the analyses above.
+
+###E. PLANNED SAMPLE
+
+Great-tailed grackles (n > 200) will be caught in the wild at three field sites across their geographic range: the center of their original range (Utila, Honduras), the middle of the northward expanding edge (Tempe, Arizona USA), and on the northern expanding edge (to be determined). Individuals will be identified using colored leg bands in unique combinations, their data collected (blood, feathers, and biometrics), and then they will be released back to the wild. Some individuals (40-100) will be brought temporarily into aviaries for behavioral testing, and then they will be released back to the wild. 
+
+**Sample size rationale**
+
+We will band as many birds as possible throughout the year, and conduct behavioral tests in aviaries (during the non-breeding seasons: September through February) and in the wild (year-round) on as many birds as we can at each field site. The minimum sample size will be 200 banded birds and 40 behavior-tested birds in total, however we expect to be able to sample many more.
+
+**Data collection stopping rule**
+
+We will stop collecting data in April 2023 when the current funding ends, or after data have been collected at all three field sites, whichever date comes first.
+
+###F. ETHICS
+
+This research is carried out in accordance with permits from the:
+
+1) US Fish and Wildlife Service (scientific collecting permit number MB76700A-0,1,2)
+2) US Geological Survey Bird Banding Laboratory (federal bird banding permit number 23872)
+3) Arizona Game and Fish Department (scientific collecting license number SP594338 [2017] and SP606267 [2018])
+4) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
+5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
+
+###G. AUTHOR CONTRIBUTIONS
+
+**Logan:** Hypothesis development, study design, materials, data collection, data analysis and interpretation, write up, funding.
+
+###H. FUNDING
+
+This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan.
+
+###I. ACKNOWLEDGEMENTS
+
+We thank Dieter Lukas for help polishing the hypotheses; Jay Taylor for grackle scouting, hosting the grackle project at Arizona State University, providing office and lab space, and co-supervising students; and Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities.
+
+###J. REFERENCES
