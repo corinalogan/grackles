@@ -24,6 +24,8 @@ The version is noted in the Commit comment, and the different versions can be se
 
 - Logan CJ. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](./g_flexforaging.Rmd)
 
+- Logan CJ, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](./g_withinpop.Rmd)
+
 - Taylor JE, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](./g_feathermites.Rmd)
 
 *Note: full references are listed in [MyLibrary.bib](./MyLibrary.bib)*
