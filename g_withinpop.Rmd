@@ -1,6 +1,6 @@
 ---
 title: What are the costs and constraints of behavioral flexibility in great-tailed grackles?
-author: '[Dr. Corina Logan](http://CorinaLogan.com) (University of Cambridge, cl417@cam.ac.uk), [Dr. Benjamin Trumble](https://sols.asu.edu/people/benjamin-trumble) (Arizona State University), [Dr. Aaron Blackwell](http://www.anth.ucsb.edu/faculty/blackwell/) (University of California, Santa Barbara), [Dr. Ananias Escalante](http://igem.temple.edu/people/person/c0ca56d9e60be58ca9380514ed8ac51d) (Temple University), [Dr. Maria Pacheco](http://igem.temple.edu/people/person/6417596d4976b9cbfa2a5ba8062ed7b9) (Temple University)'
+author: '[Dr. Corina Logan](http://CorinaLogan.com) (University of Cambridge, cl417@cam.ac.uk), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Benjamin Trumble](https://sols.asu.edu/people/benjamin-trumble) (Arizona State University), [Dr. Aaron Blackwell](http://www.anth.ucsb.edu/faculty/blackwell/) (University of California, Santa Barbara), [Dr. Ananias Escalante](http://igem.temple.edu/people/person/c0ca56d9e60be58ca9380514ed8ac51d) (Temple University), [Dr. Maria Pacheco](http://igem.temple.edu/people/person/6417596d4976b9cbfa2a5ba8062ed7b9) (Temple University)'
 date: '`r Sys.Date()`'
 output:
   html_document: default
@@ -92,7 +92,7 @@ The way we define flexibility (individuals change behavior according to changing
 
 **P8:** The more flexible individuals (on the multi-access box and in reversal learning) will have fewer haemosporidian parasite counts and lower parasite species diversity.
 
-**P8 alternative 1:** If there is a positive relationship between flexibility and parasite loads, this could be because the more flexible individuals eat a wider range of foods and are thus exposed to more parasites.
+**P8 alternative 1:** If there is a positive relationship between flexibility and parasite loads, this could be because the more flexible individuals 1) eat a wider range of foods and are thus exposed to more parasites, and/or 2) might be in poorer energetic condition and more suceptible to hosting more species.
 
 **P8 alternative 2:** If there is no correlation between flexibility and parasite loads, this could indicate that these variables are independent from each other or that they are related to another variable that was not measured.
 
@@ -100,7 +100,9 @@ The way we define flexibility (individuals change behavior according to changing
 
 **P9:** The more flexible individuals will have a larger number of species in their microbiome, which could facilitate the digestion of novel foods and the adaptation to new parasites/bacteria.
 
-**P9 alternative 1:** There is no difference in the number of species in the grackle microbiome in relation to flexibility, potentially because there is little between individual variation in the number of microbiome species each grackle hosts.
+**P9 alternative 1:** There is no difference in the number of species in the grackle microbiome in relation to flexibility, potentially because 1) there is little between individual variation in the number of microbiome species each grackle hosts which could be due to their exploiting similar food sources, and/or 2) these variables are independent from each other or are related to another variable that was not measured.
+
+**P9 alternative 2** The more flexible individuals will host fewer microbiome species, potentially because they exploit different food sources than the less flexible individuals.
 
 ###D. METHODS
 
@@ -170,15 +172,13 @@ Number of different food items eaten
 
 13) P7 condition: wing length (average left and right wing chords)
 
-14) P8 parasites: number of parasites per sample
+14) P8 parasites: number of parasites per grackle
 
-15) P8 parasites: number of parasites species per sample
+15) P8 parasites: number of parasites species per grackle
 
-16) P8 parasites: parasite species diversity per sample (***how to caclculate?***)
+16) P9 microbiome: number of microbiome species per grackle
 
-17) P9 microbiome: microbiome species diversity per sample (***how to caclculate?***)
-
-18) Population (as a random effect to examine within population variation)
+17) Population (as a random effect to examine within population variation)
 
 ####*P1 alternative 1: stress and dominance*
 
@@ -218,13 +218,11 @@ Number of different food items eaten
 
 2) Parasites: number of parasites species per sample
 
-3) Parasites: parasite species diversity per sample
+3) Flexibility 1: Number of trials to reverse last preference (see above)
 
-4) Flexibility 1: Number of trials to reverse last preference (see above)
+4) Flexibility 2: Flexibility ratio (see above)
 
-5) Flexibility 2: Flexibility ratio (see above)
-
-6) Population (as a random effect to examine within population variation)
+5) Population (as a random effect to examine within population variation)
 
 ###E. ANALYSIS PLAN
 
@@ -346,7 +344,7 @@ main <- read.csv ("/Users/corina/GTGR/data/data_pop.csv", header=T, sep=",", str
 
 #GLMM
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0),R6=list(V=1,nu=0),R7=list(V=1,nu=0),R8=list(V=1,nu=0),R9=list(V=1,nu=0),R10=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0),R6=list(V=1,nu=0),R7=list(V=1,nu=0),R8=list(V=1,nu=0),R9=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #Separate the sexes
 fem <- main[main$Sex=="f",]
@@ -354,13 +352,13 @@ mal <- main[main$Sex=="m",]
 
 #GLMM with response variable = trials to reverse the last preference
 #females
-f1 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + ParasiteSpecies + ParasiteDiversity, random=~Population+AvgTarsusLength, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + NumberParasiteSpecies, random=~Population+AvgTarsusLength, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-m1 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + ParasiteSpecies + ParasiteDiversity, random=~Population+AvgTarsusLength, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m1 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + NumberParasiteSpecies, random=~Population+AvgTarsusLength, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m1)
 #autocorr(m1$Sol) #Did fixed effects converge?
 #autocorr(m1$VCV) #Did random effects converge?
@@ -368,13 +366,13 @@ summary(m1)
 
 #GLMM with response variable = flexibility ratio
 #females
-f2 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + ParasiteSpecies + ParasiteDiversity, random=~Population+AvgTarsusLength, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + NumberParasiteSpecies, random=~Population+AvgTarsusLength, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
 #males
-m2 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + ParasiteSpecies + ParasiteDiversity, random=~Population+AvgTarsusLength, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m2 <- MCMCglmm(TrialsToReverseLast ~ Cort + NumberHeterophil + NumberLymphocytes + InflammatoryGene + NumberLeucocytes + AntiInflammatoryGene + Th2Gene + NumberParasites + NumberParasiteSpecies, random=~Population+AvgTarsusLength, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m2)
 #autocorr(m2$Sol) #Did fixed effects converge?
 #autocorr(m2$VCV) #Did random effects converge?
@@ -428,13 +426,13 @@ mal <- main[main$Sex=="m",]
 
 #GLMM with response variable = trials to reverse the last preference
 #females
-f1 <- MCMCglmm(TrialsToReverseLast ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + MicrobiomeDiversity, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(TrialsToReverseLast ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + NumberMicrobiomeSpecies, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-m1 <- MCMCglmm(TrialsToReverseLast ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + MicrobiomeDiversity, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m1 <- MCMCglmm(TrialsToReverseLast ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + NumberMicrobiomeSpecies, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m1)
 #autocorr(m1$Sol) #Did fixed effects converge?
 #autocorr(m1$VCV) #Did random effects converge?
@@ -442,13 +440,13 @@ summary(m1)
 
 #GLMM with response variable = flexibility ratio
 #females
-f2 <- MCMCglmm(FlexRatio ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + MicrobiomeDiversity, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(FlexRatio ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + NumberMicrobiomeSpecies, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
 #males
-m2 <- MCMCglmm(FlexRatio ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + MicrobiomeDiversity, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m2 <- MCMCglmm(FlexRatio ~ Testosterone + Hematocrit + NumberRedBloodCells + Weight + AvgTarsusLength + AvgTailLength + AvgWingLength + NumberMicrobiomeSpecies, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m2)
 #autocorr(m2$Sol) #Did fixed effects converge?
 #autocorr(m2$VCV) #Did random effects converge?
@@ -521,7 +519,7 @@ main <- read.csv ("/Users/corina/GTGR/data/data_pop.csv", header=T, sep=",", str
 
 #GLMM
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 #Separate the sexes
 fem <- main[main$Sex=="f",]
@@ -529,13 +527,13 @@ mal <- main[main$Sex=="m",]
 
 #GLMM
 #females
-f1 <- MCMCglmm(NumberFoodsEaten ~ NumberParasites + ParasiteSpecies + ParasiteDiversity + TrialsToReverseLast + FlexRatio, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(NumberFoodsEaten ~ NumberParasites + NumberParasiteSpecies + TrialsToReverseLast + FlexRatio, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-m1 <- MCMCglmm(NumberFoodsEaten ~ NumberParasites + ParasiteSpecies + ParasiteDiversity + TrialsToReverseLast + FlexRatio, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m1 <- MCMCglmm(NumberFoodsEaten ~ NumberParasites + NumberParasiteSpecies + TrialsToReverseLast + FlexRatio, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m1)
 #autocorr(m1$Sol) #Did fixed effects converge?
 #autocorr(m1$VCV) #Did random effects converge?
@@ -554,8 +552,8 @@ mal <- main[main$Sex=="m",]
 
 #Plot
 op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-plot(fem$ID,fem$MicrobiomeDiversity, xlab="Grackle ID (females)", ylab="Number of species in the microbiome") 
-plot(mal$ID,mal$MicrobiomeDiversity, xlab="Grackle ID (males)", ylab="Number of species in the microbiome")
+plot(fem$ID,fem$NumberMicrobiomeSpecies, xlab="Grackle ID (females)", ylab="Number of species in the microbiome") 
+plot(mal$ID,mal$NumberMicrobiomeSpecies, xlab="Grackle ID (males)", ylab="Number of species in the microbiome")
 ```
 
 ####*Alternative Analyses*
@@ -591,6 +589,10 @@ This research is carried out in accordance with permits from the:
 ###H. AUTHOR CONTRIBUTIONS
 
 **Logan:** Hypothesis development, study design, materials, data collection, data analysis and interpretation, write up, revising/editing, funding.
+
+**Johnson-Ulrich:** Data collection, data interpretation, revising/editing.
+
+**Bergeron:** Data collection, data interpretation, revising/editing.
 
 **Trumble (testosterone and glucocortocoids):** Hypothesis development, materials/lab space, sample processing, data analysis and interpretation, write up, revising/editing.
 
