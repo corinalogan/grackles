@@ -31,3 +31,7 @@ The version is noted in the Commit comment, and the different versions can be se
 8. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](./g_feathermites.Rmd)
 
 *Note: full references are listed in [MyLibrary.bib](./MyLibrary.bib)*
+
+***Design files***
+
+- [Multiaccess box](./Multiaccess_box_design_files) (3D printer and laser cutter) for [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.Rmd)
