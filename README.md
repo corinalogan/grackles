@@ -2,11 +2,13 @@
 
 Many experiments will be conducted over the next several years and I post the **reproducible manuscripts** (.Rmd files including text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions:
 
-- PREREGISTRATION: I list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected
+- **PREREGISTRATION:** I list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected. 
+<br>*Note: the preregistration might already undergo peer review by submitting it to PCI Ecology or as a Registered Report to a journal*
 
-- PREPRINT: the version I submit to a journal
+- **PREPRINT:** the version I submit for peer review. 
+<br>*Note: if the preregistration has already been peer reviewed, then the preprint is resubmitted to the original peer reviewers for the final review*
 
-- PUBLISHED: the version that is published in a peer-reviewed journal
+- **PUBLISHED:** the final version that is peer-reviewed.
 
 The version is noted in the Commit comment, and the different versions can be seen in the history of the file of interest. Following the version history of ONE file allows one to track how this piece of work has changed through the entire investigation.
 
@@ -36,6 +38,6 @@ The version is noted in the Commit comment, and the different versions can be se
 
 - [Multiaccess box](./Multiaccess_box_design_files) (3D printer and laser cutter) for [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.Rmd)
 
-**License**
+### License
 
 [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/legalcode): share alike and attribute the original source using the citations above
