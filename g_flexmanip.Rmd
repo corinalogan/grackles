@@ -73,7 +73,7 @@ Individual consistency of behavioral flexibility is defined as the number of tri
 
 **P4:** Individuals will prefer a mixture of learning strategies in the first serial reversals (an *epsilon-decreasing* strategy where individuals explore both options extensively before learning to prefer the rewarded option, and an *epsilon-first* strategy where the correct choice is consistently made after the first trial), and then move toward the epsilon-first learning strategy. The epsilon-first strategy works better later in the serial reversals where the reward is all or nothing because individuals will have learned the environment is changing in predictable ways [@bergstrom2004shannon]: only one option is consistently rewarded, and if the reward isn't in the previously rewarded option, it must be in the other option.
 
-**P4 alternative 1:** Individuals will continue to prefer a mixture of learning strategies, and/or they do not converge on the more functional epsilon-first learning strategy, regardless of how many reversals they participate in. This pattern could suggest that the grackles do not attend to functional meta-strategies, that is, they do not learn the overarching rule (once food is found in the non-preferred tube, one must switch to preferring that tube color), but rather they learn each preference change as if it was new. Alternatively, individuals may use specific learning strategies that are masked by the broad epsilon-decreasing category that could encompass a variety of exploration-based trial and error learning strategies (e.g., always choose the left side, alternate sides for each choice, etc.). We will determine to what degree individuals rely on "always choose one side" (defined as choosing one side in at least 4 consecutive trials) and "alternate sides" (defined as choosing alternating sides for at least 5 consecutive trials). If individuals heavily rely on either of these strategies during reversals, this would more specifically identify which learning strategies they used within the broader epsilon-decreasing strategy.
+**P4 alternative 1:** Individuals will continue to prefer a mixture of learning strategies, and/or they do not converge on the more functional epsilon-first learning strategy, regardless of how many reversals they participate in. This pattern could suggest that the grackles do not attend to functional meta-strategies, that is, they do not learn the overarching rule (once food is found in the non-preferred tube, one must switch to preferring that tube color), but rather they learn each preference change as if it was new. 
 
 ###D. METHODS
 
@@ -139,6 +139,16 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 1) Reversal number
 
 2) ID
+
+####*P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
+
+1) Trial number
+
+2) Latency from the beginning of the trial to when they make a choice
+
+3) Minutes since maintenance diet was removed from the aviary
+
+4) Cumulative number of rewards from previous trials on that day
 
 ####*P3b: repeatable across contexts*
 
@@ -320,8 +330,7 @@ kable(base1, caption="Table 7: Model selection output.")
 
 ####*P3a: repeatable within individuals within a context (reversal learning)*
 
-**Analysis:** Is reversal learning (color and 
-) repeatable within individuals within a context (reversal learning)? To calculate repeatability, a GLMM was run (R package: lme4, function: lmer, @lme4) where each individual had a random intercept (i.e., ID was a random effect). To obtain the repeatability estimate, which indicates how much of the total variance, after accounting for fixed effects, is explained by individual differences (ID), the estimate for ID is divided by the sum of the estimates of all random effects and residual variance (as in @houslay2016). The model was then run in lmerTest (@lmerTest) to determine whether the random effect (ID) was statistically significant (p<0.05).
+**Analysis:** Is reversal learning (colored tubes) repeatable within individuals within a context (reversal learning)? To calculate repeatability, a GLMM was run (R package: lme4, function: lmer, @lme4) where each individual had a random intercept (i.e., ID was a random effect). To obtain the repeatability estimate, which indicates how much of the total variance, after accounting for fixed effects, is explained by individual differences (ID), the estimate for ID is divided by the sum of the estimates of all random effects and residual variance (as in @houslay2016). The model was then run in lmerTest (@lmerTest) to determine whether the random effect (ID) was statistically significant (p<0.05).
 
 ```{r repeatableR, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 serial2 <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -348,6 +357,26 @@ trep[trep$group=="ID",]$estimate/(sum(trep$estimate)) #this gives a number calle
 library(lmerTest)
 rand(rep)
 detach(package:lmerTest)
+
+##Determine whether 
+ + AvgLatencyToChoose + MinSinceFoodRemoved + NumberRewardsFromPrevTrials
+```
+
+####*P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
+
+**Analysis:** Because the independent variables could influence each other or measure the same variable, I will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model. 
+
+```{r motivation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+rr <- read.csv ("/Users/corina/GTGR/data/data_reverseraw.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#GLMM - Is trial the main independent variable associated with learning performance (CorrectChoice) or are other variables associated with performance, including motivation and hunger?
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0))) 
+
+rr1 <- MCMCglmm(CorrectChoice ~ Trial * LatencyToChoose * MinSinceFoodRemoved * NumberRewardsFromPrevTrials, random=~ID+Batch, family="poisson", data=rr, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(rr1)
+autocorr(rr1$Sol) #Did fixed effects converge?
+autocorr(rr1$VCV) #Did random effects converge?
 ```
 
 ####*P3b: individual consistency across contexts*
