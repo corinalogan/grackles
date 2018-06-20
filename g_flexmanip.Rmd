@@ -81,6 +81,8 @@ Individual consistency of behavioral flexibility is defined as the number of tri
 
 [Design files](./Multiaccess_box_design_files) for the multi-access box: 3D printer files and laser cutter files
 
+[Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all three experiments: color tube reversal learning, multi-access box, and touch screen reversal learning
+
 ####**Randomization and counterbalancing** 
 
 H1: Subjects will be randomly assigned to the manipulated or control group. In the reversal learning trials, the rewarded option is pseudorandomized for side (and the option on the left is always placed first). Pseudorandomization consisted of alternating location for the first two trials of a session and then keeping the same color on the same side for at most two consecutive trials thereafter. A list of all 88 unique trial sequences for a 10-trial session, following the pseudorandomization rules, will be generated in advance for experimenters to use during testing (e.g., a randomized trial sequence might look like: LRLLRRLRLR, where L and R refer to the location, left or right, of the rewarded tube). Randomized trial sequences will be assigned randomly to any given 10-trial session using a random number generator (random.org) to generate a number from 1-88.
@@ -149,6 +151,10 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 3) Minutes since maintenance diet was removed from the aviary
 
 4) Cumulative number of rewards from previous trials on that day
+
+5) ID (random effect)
+
+6) Batch (random effect)
 
 ####*P3b: repeatable across contexts*
 
@@ -364,7 +370,7 @@ detach(package:lmerTest)
 
 ####*P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
 
-**Analysis:** Because the independent variables could influence each other or measure the same variable, I will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model. 
+**Analysis:** Because the independent variables could influence each other or measure the same variable, I will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) with a binomial distribution (called categorical in MCMCglmm) and logit link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model. 
 
 ```{r motivation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 rr <- read.csv ("/Users/corina/GTGR/data/data_reverseraw.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -373,7 +379,7 @@ rr <- read.csv ("/Users/corina/GTGR/data/data_reverseraw.csv", header=T, sep=","
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0))) 
 
-rr1 <- MCMCglmm(CorrectChoice ~ Trial * LatencyToChoose * MinSinceFoodRemoved * NumberRewardsFromPrevTrials, random=~ID+Batch, family="poisson", data=rr, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+rr1 <- MCMCglmm(CorrectChoice ~ Trial * LatencyToChoose * MinSinceFoodRemoved * NumberRewardsFromPrevTrials, random=~ID+Batch, family="categorical", data=rr, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(rr1)
 autocorr(rr1$Sol) #Did fixed effects converge?
 autocorr(rr1$VCV) #Did random effects converge?
@@ -447,11 +453,11 @@ This research is carried out in accordance with permits from the:
 
 **Bergeron:** Data collection, data interpretation, revising/editing.
 
-**Seitz:** Programmed the reversal learning touch screen experiment, data interpretation, revising/editing.
+**Seitz:** Prediction revision, programmed the reversal learning touch screen experiment, data interpretation, revising/editing.
 
-**Blaisdell:** Assisted with programming the reversal learning touch screen experiment, data interpretation, revising/editing.
+**Blaisdell:** Prediction revision, assisted with programming the reversal learning touch screen experiment, data interpretation, revising/editing.
 
-**Johnson-Ulrich:** Data collection, data interpretation, revising/editing.
+**Johnson-Ulrich:** Prediction revision, programming, data collection, data interpretation, revising/editing.
 
 ###I. FUNDING
 
@@ -461,4 +467,4 @@ This research is funded by the Department of Human Behavior, Ecology and Culture
 
 We thank Dieter Lukas for help polishing the hypotheses and for developing an additional dependent variable (flexibility ratio); Ben Trumble for hosting the grackle project via office and lab space; Angela Bond for daily logistical support in the lab; Jay Taylor for grackle scouting and connecting us with facilities at Arizona State University; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; and Richard McElreath for project support.
 
-###K. REFERENCES
+###K. [REFERENCES](MyLibrary.bib)
