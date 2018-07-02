@@ -44,6 +44,4 @@ The version is noted in the Commit comment, and the different versions can be se
 
 [CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/legalcode): share alike and attribute the original source using the citations above
 
-### DOI for this repository
-
 [![DOI](https://zenodo.org/badge/109032304.svg)](https://zenodo.org/badge/latestdoi/109032304)
