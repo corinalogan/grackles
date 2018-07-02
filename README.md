@@ -26,11 +26,13 @@ The version is noted in the Commit comment, and the different versions can be se
 
 5. Logan CJ, Bergeron L, Rowney C, Johnson-Ulrich Z. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](./g_flexforaging.Rmd). GitHub.
 
-6. Logan CJ, Johnson-Ulrich Z, Rowney C, Bergeron, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](./g_withinpop.Rmd). GitHub.
+6. Logan CJ, Johnson-Ulrich Z, Rowney C, Bergeron L, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](./g_withinpop.Rmd). GitHub.
 
-7. Logan CJ, Johnson-Ulrich Z, Rowney C, Bergeron, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](./g_expansion.Rmd). GitHub.
+7. Logan CJ, Johnson-Ulrich Z, Rowney C, Bergeron L, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](./g_expansion.Rmd). GitHub.
 
 8. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](./g_feathermites.Rmd). GitHub.
+
+9. Logan CJ, Rowney C, Johnson-Ulrich Z, Bergeron L, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/g_flexgenes.Rmd). GitHub.
 
 *Note: full references are listed in [MyLibrary.bib](./MyLibrary.bib)*
 
