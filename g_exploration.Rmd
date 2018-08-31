@@ -174,6 +174,10 @@ All models will be run once per dependent variable.
 
 We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version `r getRversion()`; [@rcoreteam]). When there was more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. 
 
+####*Ability to detect actual effects*
+
+To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we used G&ast;Power (v.3.1, @faul2007g, @faul2009statistical) to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMs (though the chosen test in G&ast;Power appears to align with GLMs) or GLMMs or for the inclusion of the number of trials per bird (which are generally large in our investigation), thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these experiments. 
+
 ####*Data checking*
 
 The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figures 2, 4, 6, 8), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figures 3, 5, 7, 9) [@zuur2009].
@@ -243,6 +247,34 @@ plot(residuals(glm(neophobia$NoObjectTouchesPerTime~neophobia$Day)), ylab="Neoph
 
 **Analysis:** Because the independent variables could influence each other, I will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model. 
 
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0,62
+
+α err prob                    	=	0,05
+
+Power (1-β err prob)          	=	0,7
+
+Number of predictors          	=	10
+
+*Output:*
+
+Noncentrality parameter λ     	=	19,8400000
+
+Critical F                    	=	2,3209534
+
+Numerator df                  	=	10
+
+Denominator df                	=	21
+
+Total sample size             	=	32
+
+Actual power                  	=	0,7027626
+
+This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
+
 ```{r explore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 explore <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -267,6 +299,34 @@ autocorr(expl2$VCV) #Did random effects converge?
 ####*P3: does persistence correlate with reversal persistence?*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link.
+
+To determine our ability to detect actual effects, we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0,27
+
+α err prob                    	=	0,05
+
+Power (1-β err prob)          	=	0,7
+
+Number of predictors          	=	2
+
+*Output:*
+
+Noncentrality parameter λ     	=	8,6400000
+
+Critical F                    	=	3,3276545
+
+Numerator df                  	=	2
+
+Denominator df                	=	29
+
+Total sample size             	=	32
+
+Actual power                  	=	0,7047420
+
+This means that, with our sample size of 32, we have a 70% chance of detecting a medium (approximated at f^2^=0.15 by @cohen1988statistical) to large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
 
 ```{r persist2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 persist2 <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -294,6 +354,8 @@ kable(base1, caption="Table 3: Model selection output.")
 ####*P6: repeatability of neophobia and persistence*
 
 **Analysis:** To calculate repeatability, I will run a GLMM (R package: lme4, function: lmer, @lme4) where each individual has a random intercept (i.e., ID is a random effect). To obtain the repeatability estimate, which indicates how much of the total variance after accounting for fixed effects is explained by individual differences (ID), the estimate for ID is divided by the sum of the estimates of all random effects and residual variance (as in @houslay2016). The model is then run in lmerTest (@lmerTest) to determine whether the random effect (ID) is statistically significant (p<0.05). 
+
+Note: The power analysis is the same as for P3 because there are the same number of explanatory variables (fixed effects).
 
 ```{r repeatableNeo, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Neophobia
