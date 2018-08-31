@@ -18,7 +18,7 @@ The version is noted in the Commit comment, and the different versions can be se
 
 1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.Rmd). GitHub.
 
-2. Logan CJ, Johnson-Ulrich Z, Rowney C, Bergeron L, McCune K. 2017. [Does manipulating behavioral flexibility affect exploration and neophilia?](./g_exploration.Rmd). GitHub.
+2. Logan CJ, Johnson-Ulrich Z, Rowney C, Bergeron L, McCune K. 2017. [Does manipulating behavioral flexibility affect exploration and neophilia?](./g_exploration.Rmd) GitHub.
 
 3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](./g_inhibition.Rmd). GitHub.
 
