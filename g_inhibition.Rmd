@@ -181,6 +181,10 @@ Model 2b: latency to respond
 
 We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity.
 
+####*Ability to detect actual effects*
+
+To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we used G&ast;Power (v.3.1, @faul2007g, @faul2009statistical) to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMs (though the chosen test in G&ast;Power appears to align with GLMs) or GLMMs or for the inclusion of the number of trials per bird (which are generally large in our investigation), thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these experiments. 
+
 ####*Data checking*
 
 The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009].
@@ -241,6 +245,34 @@ plot(residuals(glm(go$TrialsToCriterion~go$TrialsToReverseLast)), ylab="Go/no-go
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
+To determine our ability to detect actual effects, we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0,41
+			
+α err prob                    	=	0,05
+
+Power (1-β err prob)          	=	0,7
+
+Number of predictors          	=	5
+
+*Output:*
+
+Noncentrality parameter λ     	=	13,1200000
+
+Critical F                    	=	2,5867901
+
+Numerator df                  	=	5
+
+Denominator df                	=	26
+
+Total sample size             	=	32
+
+Actual power                  	=	0,7103096
+
+This means that, with our sample size of 32, we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
+
 ```{r better, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 acc <- read.csv ("/Users/corina/GTGR/data/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -261,6 +293,34 @@ kable(better1.table, caption="Table U: Model selection output.", format="html", 
 
 **Model 2a:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and a log link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
 
+To determine our ability to detect actual effects, we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0,27
+
+α err prob                    	=	0,05
+
+Power (1-β err prob)          	=	0,7
+
+Number of predictors          	=	2
+
+*Output:*
+
+Noncentrality parameter λ     	=	8,6400000
+
+Critical F                    	=	3,3276545
+
+Numerator df                  	=	2
+
+Denominator df                	=	29
+
+Total sample size             	=	32
+
+Actual power                  	=	0,7047420
+
+This means that, with our sample size of 32, we have a 70% chance of detecting a medium (approximated at f^2^=0.15 by @cohen1988statistical) to large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
+
 ```{r go, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 go <- read.csv ("/Users/corina/GTGR/data/data_go.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -274,6 +334,34 @@ kable(sgo1.table, caption="Table T: Model selection output.", format="html", dig
 ```
 
 **Model 2b:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model.
+
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0,32
+
+α err prob                    	=	0,05
+
+Power (1-β err prob)          	=	0,7
+
+Number of predictors          	=	3
+
+*Output:*
+
+Noncentrality parameter λ     	=	10,2400000
+
+Critical F                    	=	2,9466853
+
+Numerator df                  	=	3
+
+Denominator df                	=	28
+
+Total sample size             	=	32
+
+Actual power                  	=	0,7061592
+
+This means that, with our sample size of 32, we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
 
 ```{r golatency, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 go <- read.csv ("/Users/corina/GTGR/data/data_golatency.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -291,6 +379,8 @@ autocorr(golat$VCV) #Did random effects converge?
 ####*P1: detour*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and a logit link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
+
+See the protocol for the power analyses for Model 2b above for the rough estimation our ability to detect actual effects with this model.
 
 ```{r detour, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -333,11 +423,39 @@ summary(reliab2)
 #Insert into text: `r reliab2$std.alpha`
 ```
 
-When analyzing only the delayed gratification and go no-go tasks, the reliability is alpha= .
+When analyzing only the delayed gratification and go no-go tasks, the reliability is alpha= *fill in result when data are available*.
 
 #####*P3: does training improve detour performance?*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and a logit link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
+
+To determine our ability to detect actual effects, we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0,21
+
+α err prob                    	=	0,05
+
+Power (1-β err prob)          	=	0,7
+
+Number of predictors          	=	1
+
+*Output:*
+
+Noncentrality parameter λ     	=	6,7200000
+
+Critical F                    	=	4,1708768
+
+Numerator df                  	=	1
+
+Denominator df                	=	30
+
+Total sample size             	=	32
+
+Actual power                  	=	0,7083763
+
+This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect (approximated at f^2^=0.15 by @cohen1988statistical).
 
 ```{r detour2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -357,15 +475,15 @@ We anticipate that we will want to run additional/different analyses after readi
 
 ###F. PLANNED SAMPLE
 
-Great-tailed grackles will be caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (16-40) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
+Great-tailed grackles will be caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (~32) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
 
 **Sample size rationale**
 
-We will test as many birds as we can in the two years we have at this field site given that the birds only participate in tests in aviaries during the non-breeding season (September through February). The minimum sample size will be 16, however we expect to be able to test many more.
+We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size will be 16, however we expect to be able to test many more.
 
 **Data collection stopping rule**
 
-We will stop testing birds in March 2019.
+We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
 
 ###G. ETHICS
 
@@ -401,6 +519,6 @@ This research is funded by the Department of Human Behavior, Ecology and Culture
 
 ###J. ACKNOWLEDGEMENTS
 
-We thank Dieter Lukas for help polishing the predictions; Ben Trumble for hosting the grackle project at Arizona State University (providing office and lab space); Melissa Wilson Sayres for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Jay Taylor for grackle scouting; and Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities.
+We thank Dieter Lukas for help polishing the predictions; Ben Trumble for hosting our wet lab at Arizona State University (providing office and lab space); Melissa Wilson Sayres for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Jay Taylor for grackle scouting; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; and Richard McElreath for project support.
 
 ###J. REFERENCES
