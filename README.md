@@ -14,7 +14,7 @@ The version is noted in the Commit comment, and the different versions can be se
 
 # 5-year Project Overview
 
-![Timeline](.GrackleProjectTimeline.png)
+![Timeline](GrackleProjectTimeline.png)
 
 # Table of Contents
 
