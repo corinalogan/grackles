@@ -12,6 +12,10 @@ Many experiments will be conducted over the next several years and I post the **
 
 The version is noted in the Commit comment, and the different versions can be seen in the history of the file of interest. Following the version history of ONE file allows one to track how this piece of work has changed through the entire investigation.
 
+# 5-year Project Overview
+
+[![Timeline](.GrackleProjectTimeline.png)](.GrackleProjectTimeline.png)
+
 # Table of Contents
 
 ***Preregistrations***
