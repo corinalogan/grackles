@@ -54,13 +54,13 @@ Figure 1. An overview of the study design.
 
 ####H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait. 
 
-Repeatability is indicated if the variance in latency is smaller within individuals compared to variance in latency among individuals (or something that mentions variance partitioning instead of correlations). 
+Individuals show consistent individual differences if the variance in latency to approach the task is smaller within individuals compared to variance in latency among individuals.
 
 **P6:** There is no repeatibility of persistence and boldness within individuals, which could indicate that performance is state dependent (e.g., it depends on their fluctuating motivation, hunger levels, etc.) and/or reliant on the current context of the task at hand. 
 
-**P6 alternative 1:** There is limited repeatability of persistence and boldness within individuals, which could indicate that prior experience influences performance on tasks and facilitates the manipulation of these traits (e.g., individuals can change their behavior).  
+**P6 alternative 1:** There is limited repeatability of persistence and boldness within individuals (Repeatability = 0.3-0.4 @bell2009repeatability), which could indicate that prior experience influences performance on tasks and facilitates the manipulation of these traits (e.g., individuals can change their behavior).  
 
-**P6 alternative 2:** There is repeatibility of persistence and boldness within individuals, which could indicate that it is a property of the individual (e.g., due to heritability or developmental effects).
+**P6 alternative 2:** There is significant repeatibility of persistence and boldness within individuals, which could indicate that it is a property of the individual (e.g., due to heritability or developmental effects).
 
 ####H3: Individuals assayed while in captivity are less exploratory and bold than individuals assayed in the wild (different individuals, matched for season) potentially because captivity is an unfamiliar situation.
 
@@ -124,25 +124,25 @@ All models will be run once per dependent variable.
 
 *P6: repeatability of boldness and persistence*
 
-1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a novel object that is next to food (we will choose the variable with the most data)
+1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data)
 
 2) Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel sub-environment in P1, objects in P2 and P4)
 
 3) Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment
 
-4) Exploration of novel objevt: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+4) Exploration of novel object: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
 
 *P7: captive vs wild*
 
-1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a novel object that is next to food (we will choose the variable with the most data)
+1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data)
 
 2) Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel sub-environment in P1, objects in P2 and P4)
 
 3) Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment
 
-4) Exploration of novel objevt: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+4) Exploration of novel object: Latency to land next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
 
-*Note: if 3 and 4 are consistent within individuals, we will combine these variables into one.*
+*Note: if 3 and 4 are consistent within individuals, and correlate, we will combine these variables into one exploration propensity score.*
 
 ####**Independent variables**
 
@@ -166,7 +166,7 @@ All models will be run once per dependent variable.
 
 *P4: boldness*
 
-7) Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a novel object that is next to food (choose the variable with the most data)
+7) Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (choose the variable with the most data)
 
 *P5: motor diversity*
 
@@ -188,11 +188,9 @@ All models will be run once per dependent variable.
 
 *P6: repeatability of boldness, exploration, and persistence*
 
-1) Time: 1 or 2 (boldness, exploration environment, exploration object) or test (persistence)
+1) Condition: control, flexibility manipulation
 
-2) Condition: control, flexibility manipulation
-
-3) ID (random effect because multiple measures per individual)
+2) ID (random effect because multiple measures per individual)
 
 *P7: captive vs wild*
 
@@ -430,7 +428,7 @@ bol <- read.csv ("/Users/corina/GTGR/data/data_boldness.csv", header=T, sep=",",
 #How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
 #GLMM
 library(lme4)
-bold <- lmer(LatencyToFeed ~ Time * Condition + (1|ID), data=bol)
+bold <- lmer(LatencyToFeed ~ Condition + (1|ID), data=bol)
 
 #"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
 library(tidyr)
@@ -466,13 +464,13 @@ detach(package:lmerTest)
 ```
 
 ```{r repeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#Persistence
+#Exploration
 ee <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
 #GLMM
 library(lme4)
-eem <- lmer(LatencyExpEnv ~ Time * Condition + (1|ID), data=ee)
+eem <- lmer(LatencyExpEnv ~ Condition + (1|ID), data=ee)
 
 #"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
 library(tidyr)
