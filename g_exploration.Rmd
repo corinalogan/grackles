@@ -52,15 +52,21 @@ We may present the results from different hypotheses in separate papers.
 
 Figure 1. An overview of the study design.
 
-####H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait.
+####H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait. 
 
-Repeatability is indicated if the variance in latency is smaller within individuals compared to variance in latency among individuals (or something that mentions variance partitioning instead of correlations). The same definition is used for the boldness test which is measured by the latency to land on a table next to a novel object. 
+Repeatability is indicated if the variance in latency is smaller within individuals compared to variance in latency among individuals (or something that mentions variance partitioning instead of correlations). 
 
 **P6:** There is no repeatibility of persistence and boldness within individuals, which could indicate that performance is state dependent (e.g., it depends on their fluctuating motivation, hunger levels, etc.) and/or reliant on the current context of the task at hand. 
 
 **P6 alternative 1:** There is limited repeatability of persistence and boldness within individuals, which could indicate that prior experience influences performance on tasks and facilitates the manipulation of these traits (e.g., individuals can change their behavior).  
 
 **P6 alternative 2:** There is repeatibility of persistence and boldness within individuals, which could indicate that it is a property of the individual (e.g., due to heritability or developmental effects).
+
+####H3: Individuals assayed while in captivity are less exploratory and bold than individuals assayed in the wild (different individuals, matched for season) potentially because captivity is an unfamiliar situation.
+
+**P7 alternative 1:** Individuals in captivity are more exploratory and bold potentially because these are the types of individuals that are more likely to get caught in traps. 
+
+**P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and the wild potentially because these are the types of individuals that are more likely to get caught in traps and end up in captivity, and these are the types of individuals that participate in assays in the wild. 
 
 ###D. METHODS
 
@@ -118,9 +124,25 @@ All models will be run once per dependent variable.
 
 *P6: repeatability of boldness and persistence*
 
-1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a novel object that is next to food (I will choose the variable with the most data)
+1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a novel object that is next to food (we will choose the variable with the most data)
 
-2) Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel sub-environment in P1, novel objects in P2 and P4)
+2) Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel sub-environment in P1, objects in P2 and P4)
+
+3) Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment
+
+4) Exploration of novel objevt: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+
+*P7: captive vs wild*
+
+1) Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a novel object that is next to food (we will choose the variable with the most data)
+
+2) Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel sub-environment in P1, objects in P2 and P4)
+
+3) Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment
+
+4) Exploration of novel objevt: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+
+*Note: if 3 and 4 are consistent within individuals, we will combine these variables into one.*
 
 ####**Independent variables**
 
@@ -164,13 +186,20 @@ All models will be run once per dependent variable.
 
 2) Condition: control, flexibility manipulation
 
-*P6: repeatability of boldness and persistence*
+*P6: repeatability of boldness, exploration, and persistence*
 
-1) Day (boldness) or test (persistence)
+1) Time: 1 or 2 (boldness, exploration environment, exploration object) or test (persistence)
 
 2) Condition: control, flexibility manipulation
 
 3) ID (random effect because multiple measures per individual)
+
+*P7: captive vs wild*
+
+1) Context: captive or wild
+
+2) ID (random effect because multiple measures per individual)
+
 
 ###E. ANALYSIS PLAN
 
@@ -283,13 +312,36 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 explore <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, exploration object, boldness, motor diversity, persistence)
+TimeOutsideNovelEnvT1 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time==1,] 
+TimeOutsideNovelEnvT2 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time==2,] 
 TimeOutsideNovelEnv <- (TimeOutsideNovelEnvT1 + TimeOutsideNovelEnvT2)/2
+
+LatencyExpEnvT1 <- LatencyExpEnv[LatencyExpEnv$Time==1,] 
+LatencyExpEnvT2 <- LatencyExpEnv[LatencyExpEnv$Time==2,] 
 LatencyExpEnv <- (LatencyExpEnvT1 + LatencyExpEnvT2)/2
+
+AverageTimePerSectionNovelEnvT1 <- AverageTimePerSectionNovelEnv[AverageTimePerSectionNovelEnv$Time==1,] 
+AverageTimePerSectionNovelEnvT2 <- AverageTimePerSectionNovelEnv[AverageTimePerSectionNovelEnv$Time==2,] 
 AverageTimePerSectionNovelEnv <- (AverageTimePerSectionNovelEnvT1 + AverageTimePerSectionNovelEnvT2)/2
+
+TotalNumberSectionsNovelEnvT1 <- TotalNumberSectionsNovelEnv[TotalNumberSectionsNovelEnv$Time==1,] 
+TotalNumberSectionsNovelEnvT2 <- TotalNumberSectionsNovelEnv[TotalNumberSectionsNovelEnv$Time==2,] 
 TotalNumberSectionsNovelEnv <- (TotalNumberSectionsNovelEnvT1 + TotalNumberSectionsNovelEnvT2)/2
+
+LatencyTableExpObjectT1 <- LatencyTableExpObject[LatencyTableExpObject$Time==1,] 
+LatencyTableExpObjectT2 <- LatencyTableExpObject[LatencyTableExpObject$Time==2,] 
 LatencyTableExpObject <- (LatencyTableExpObjectT1 + LatencyTableExpObjectT2)/2
+
+MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==1,] 
+MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==2,] 
 MultiaccessTouchesPerTime <- (MultiaccessTouchesPerTimeT1 + MultiaccessTouchesPerTimeT2)/2
+
+LatencyBoldnessT1 <- LatencyBoldness[LatencyBoldness$Time==1,] 
+LatencyBoldnessT2 <- LatencyBoldness[LatencyBoldness$Time==2,] 
 LatencyBoldness <- (LatencyBoldnessT1 + LatencyBoldnessT2)/2
+
+NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time==1,] 
+NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time==1,] 
 NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 
 #GLMM - dependent variable = number of trials to reverse in the last reversal
@@ -367,28 +419,28 @@ kable(base1, caption="Table 3: Model selection output.")
 
 ####*P6: repeatability of boldness and persistence*
 
-**Analysis:** To calculate repeatability, I will run a GLMM (R package: lme4, function: lmer, @lme4) where each individual has a random intercept (i.e., ID is a random effect). To obtain the repeatability estimate, which indicates how much of the total variance after accounting for fixed effects is explained by individual differences (ID), the estimate for ID is divided by the sum of the estimates of all random effects and residual variance (as in @houslay2016). The model is then run in lmerTest (@lmerTest) to determine whether the random effect (ID) is statistically significant (p<0.05). 
+**Analysis:** To calculate repeatability, we will run a GLMM (R package: lme4, function: lmer, @lme4) where each individual has a random intercept (i.e., ID is a random effect). To obtain the repeatability estimate, which indicates how much of the total variance after accounting for fixed effects is explained by individual differences (ID), the estimate for ID is divided by the sum of the estimates of all random effects and residual variance (as in @houslay2016). The model is then run in lmerTest (@lmerTest) to determine whether the random effect (ID) is statistically significant (p<0.05). 
 
 Note: The power analysis is the same as for P3 because there are the same number of explanatory variables (fixed effects).
 
-```{r repeatableNeo, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r repeatableBold, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Boldness
-neo <- read.csv ("/Users/corina/GTGR/data/data_boldness.csv", header=T, sep=",", stringsAsFactors=F) 
+bol <- read.csv ("/Users/corina/GTGR/data/data_boldness.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
 #GLMM
 library(lme4)
-neop <- lmer(LatencyToFeed ~ Day * Condition + (1|ID), data=neo)
+bold <- lmer(LatencyToFeed ~ Time * Condition + (1|ID), data=bol)
 
 #"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
 library(tidyr)
 library(broom)
-tneop <- tidy(neop,effects="ran_pars",scales="vcov")
-tneop[tneop$group=="ID",]$estimate/(sum(tneop$estimate)) #this gives a number called Repeatability
+tbold <- tidy(bold,effects="ran_pars",scales="vcov")
+tbold[tbold$group=="ID",]$estimate/(sum(tbold$estimate)) #this gives a number called Repeatability
 
 #To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
 library(lmerTest)
-rand(neop)
+rand(bold)
 detach(package:lmerTest)
 ```
 
@@ -410,6 +462,48 @@ tpers[tpers$group=="ID",]$estimate/(sum(tpers$estimate)) #this gives a number ca
 #To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
 library(lmerTest)
 rand(pers)
+detach(package:lmerTest)
+```
+
+```{r repeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Persistence
+ee <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
+#GLMM
+library(lme4)
+eem <- lmer(LatencyExpEnv ~ Time * Condition + (1|ID), data=ee)
+
+#"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
+library(tidyr)
+library(broom)
+teem <- tidy(eem,effects="ran_pars",scales="vcov")
+teem[teem$group=="ID",]$estimate/(sum(teem$estimate)) #this gives a number called Repeatability
+
+#To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
+library(lmerTest)
+rand(eem)
+detach(package:lmerTest)
+```
+
+```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Persistence
+eo <- read.csv ("/Users/corina/GTGR/data/data_persist.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
+#GLMM
+library(lme4)
+eom <- lmer(LatencyTableExpObject ~ Time * Condition + (1|ID), data=eo)
+
+#"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
+library(tidyr)
+library(broom)
+teom <- tidy(eom,effects="ran_pars",scales="vcov")
+teom[teom$group=="ID",]$estimate/(sum(teom$estimate)) #this gives a number called Repeatability
+
+#To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
+library(lmerTest)
+rand(eom)
 detach(package:lmerTest)
 ```
 
