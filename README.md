@@ -16,7 +16,7 @@ The version is noted in the Commit comment, and the different versions can be se
 
 <img src="GrackleProjectTimeline.png" width=500>
 
-Individuals will experience the experiments listed in each column (i.e., individuals in the left column (Years 1 and 2) will experience numbers 1-9, and individuals in the right column (Years 3-5) will experience A-D, plus numbers 5-9).
+The same individuals will experience the experiments listed in each column (i.e., the same ~32 individuals in the left column (Years 1 and 2) will experience numbers 1-9, and the same ~32 individuals in the right column (Years 3-5) will experience A-D, plus numbers 5-9).
 
 # Table of Contents
 
