@@ -106,21 +106,21 @@ One model will be run per dependent variable.
 
 5) ID
 
-6) Population: center (Honduras), middle (Arizona), edge (Nebraska)
+6) Population: center (Central America), middle (Arizona), edge (northern US)
 
 ***P3: flexible = more human foods***
 
 1) Proportion of diet per individual that is human food
 
-2) Flexibility manipulation: control, manipulated
+2) Flexibility manipulation: control, flexibility manipulation
 
 3) Dominance rank
 
 4) ID
 
-5) Population: center (Honduras), middle (Arizona), edge (Nebraska)
+5) Population: center (Central America), middle (Arizona), edge (northern US)
 
-***P4: flexible = philopatric***
+***P4: flexible = disperse***
 
 1) An individual's average relatedness to everyone within a certain geographic range
 
@@ -260,6 +260,170 @@ summary(f3)
 
 #male
 f4 <- MCMCglmm(TrialsToReverseLast ~ NumberFoodsEaten + NumberForagingTechniques + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f4)
+#autocorr(f4$Sol) #Did fixed effects converge?
+#autocorr(f4$VCV) #Did random effects converge?
+```
+
+####*P3: flexible = more human foods*
+
+**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected minimum sample size for the flexibility tests (n=64). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+
+```{r p3, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
+#Separate the sexes
+fem <- ff[ff$Sex=="f",]
+mal <- ff[ff$Sex=="m",]
+
+#Factor the random effect variables
+ID <- as.factor(fem$ID)
+Population <- as.factor(fem$Population)
+ID <- as.factor(mal$ID)
+Population <- as.factor(mal$Population)
+
+#GLMM with response variable = trials to reverse the last preference
+#females
+f1 <- MCMCglmm(TrialsToReverseLast ~ ProportionFoodsEatenHumanFood + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f1)
+#autocorr(f1$Sol) #Did fixed effects converge?
+#autocorr(f1$VCV) #Did random effects converge?
+
+#males
+f2 <- MCMCglmm(TrialsToReverseLast ~ ProportionFoodsEatenHumanFood + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f2)
+#autocorr(f2$Sol) #Did fixed effects converge?
+#autocorr(f2$VCV) #Did random effects converge?
+
+#GLMM with response variable = flexibility ratio
+#female
+f3 <- MCMCglmm(TrialsToReverseLast ~ ProportionFoodsEatenHumanFood + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f3)
+#autocorr(f3$Sol) #Did fixed effects converge?
+#autocorr(f3$VCV) #Did random effects converge?
+
+#male
+f4 <- MCMCglmm(TrialsToReverseLast ~ ProportionFoodsEatenHumanFood + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f4)
+#autocorr(f4$Sol) #Did fixed effects converge?
+#autocorr(f4$VCV) #Did random effects converge?
+```
+
+####*P4: flexible = disperse*
+
+An individual's average relatedness to everyone within a certain geographic range
+
+####*P5: flexible = immigrants*
+
+**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected minimum sample size for the flexibility tests (n=64). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+
+
+```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
+#Separate the sexes
+fem <- ff[ff$Sex=="f",]
+mal <- ff[ff$Sex=="m",]
+
+#Factor the random effect variables
+ID <- as.factor(fem$ID)
+Population <- as.factor(fem$Population)
+ID <- as.factor(mal$ID)
+Population <- as.factor(mal$Population)
+
+#GLMM with response variable = trials to reverse the last preference
+#females
+f1 <- MCMCglmm(TrialsToReverseLast ~ Immigrant, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f1)
+#autocorr(f1$Sol) #Did fixed effects converge?
+#autocorr(f1$VCV) #Did random effects converge?
+
+#males
+f2 <- MCMCglmm(TrialsToReverseLast ~ Immigrant, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f2)
+#autocorr(f2$Sol) #Did fixed effects converge?
+#autocorr(f2$VCV) #Did random effects converge?
+
+#GLMM with response variable = flexibility ratio
+#female
+f3 <- MCMCglmm(TrialsToReverseLast ~ Immigrant, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f3)
+#autocorr(f3$Sol) #Did fixed effects converge?
+#autocorr(f3$VCV) #Did random effects converge?
+
+#male
+f4 <- MCMCglmm(TrialsToReverseLast ~ Immigrant, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f4)
+#autocorr(f4$Sol) #Did fixed effects converge?
+#autocorr(f4$VCV) #Did random effects converge?
+```
+
+####*P6: flexible = stronger bonds*
+
+**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected minimum sample size for the flexibility tests (n=64). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+
+```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
+#Separate the sexes
+fem <- ff[ff$Sex=="f",]
+mal <- ff[ff$Sex=="m",]
+
+#Factor the random effect variables
+ID <- as.factor(fem$ID)
+Population <- as.factor(fem$Population)
+ID <- as.factor(mal$ID)
+Population <- as.factor(mal$Population)
+
+#GLMM with response variable = trials to reverse the last preference
+#females
+f1 <- MCMCglmm(TrialsToReverseLast ~ MaxBondStrength + AvgBondStrength, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f1)
+#autocorr(f1$Sol) #Did fixed effects converge?
+#autocorr(f1$VCV) #Did random effects converge?
+
+#males
+f2 <- MCMCglmm(TrialsToReverseLast ~ MaxBondStrength + AvgBondStrength + MaleSharesTerritory, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f2)
+#autocorr(f2$Sol) #Did fixed effects converge?
+#autocorr(f2$VCV) #Did random effects converge?
+
+#GLMM with response variable = flexibility ratio
+#female
+f3 <- MCMCglmm(TrialsToReverseLast ~ MaxBondStrength + AvgBondStrength, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(f3)
+#autocorr(f3$Sol) #Did fixed effects converge?
+#autocorr(f3$VCV) #Did random effects converge?
+
+#male
+f4 <- MCMCglmm(TrialsToReverseLast ~ MaxBondStrength + AvgBondStrength + MaleSharesTerritory, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
 #autocorr(f4$VCV) #Did random effects converge?
