@@ -7,3 +7,7 @@
  - The **.xlsx files** contain information that the .psyexp files draw on to run a session (e.g., the position and color of the stimuli on the screen, the inter trial intervals)
 
 Note: we use PsychoPy2 v1.85.2
+
+### License
+
+[CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/legalcode): share alike and attribute the original source using the citations at https://github.com/corinalogan/grackles.
