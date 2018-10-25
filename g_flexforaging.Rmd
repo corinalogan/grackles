@@ -6,7 +6,8 @@ output:
   html_document: default
   pdf_document: default
   word_document: default
-bibliography: /Users/corina/GTGR/MyLibrary.bib
+bibliography: /Users/corina/GitHub/grackles/MyLibrary.bib
+latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -14,13 +15,16 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#Make code wrap text so it doesn't go off the page when Knitting to PDF
 library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
 ###ABSTRACT
 
-This is one of the first studies planned for our long-term research on the role of behavioral flexibility in rapid geographic range expansions. **Project background:** Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience (@mikhalevich_is_2017), is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range (e.g., [@lefebvre1997feeding], [@griffin2014innovation], [@chow2016practice], [@sol2000behavioural], [@sol2002behavioural], [@sol2005big]). However, behavioral flexibility is rarely directly tested at the individual level, thus limiting our ability to determine how it relates to other traits, which limits the power of predictions about a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years ([@wehtje2003range], [@peer2011invasion]) (see an overview of the [5-year project timeline](./README.md)). Results will allow us to determine whether, as predicted by hypotheses and cross-species correlational data, in this expanding species, individual-level variation in flexibility is linked with diet breadth, foraging proficiency, social interactions, habitat use, and movement into new geographic areas. **This investigation**: In this piece of the long-term project, we will assess whether performance in experiments that assess behavioral flexibility relates to variation in ecological and social behavior in the natural environment. In particular, we aim to determine whether the more behaviorally flexible (measured by reversal learning and solution switching on a multi-access box in a separate preregistration [preregistration](./g_flexmanip.Rmd)) grackles have more flexible foraging behavior (eat a larger number of different foods, use a wider variety of foraging techniques), are more flexible in their habitat use (are found in more diverse habitat types, disperse farther from their natal area), and are more flexible in their social relationships (have stronger social bonds particularly with less related individuals). We will be able to compare the grackle's ability to adapt behavior according to social context with data from other species, as well as determine whether it is linked with measures of flexibility in asocial contexts.  
+This is one of the first studies planned for our long-term research on the role of behavioral flexibility in rapid geographic range expansions. **Project background:** Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience (@mikhalevich_is_2017), is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range (e.g., [@lefebvre1997feeding], [@griffin2014innovation], [@chow2016practice], [@sol2000behavioural], [@sol2002behavioural], [@sol2005big]). However, behavioral flexibility is rarely directly tested at the individual level, thus limiting our ability to determine how it relates to other traits, which limits the power of predictions about a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years ([@wehtje2003range], [@peer2011invasion]) (Fig. 1). Results will allow us to determine whether, as predicted by hypotheses and cross-species correlational data, in this expanding species, individual-level variation in flexibility is linked with diet breadth, foraging proficiency, social interactions, habitat use, and movement into new geographic areas. **This investigation**: In this piece of the long-term project, we will assess whether performance in experiments that assess behavioral flexibility relates to variation in ecological and social behavior in the natural environment. In particular, we aim to determine whether the more behaviorally flexible (measured by reversal learning and solution switching on a multi-access box in a separate [preregistration](./g_flexmanip.Rmd)) grackles have more flexible foraging behavior (eat a larger number of different foods, use a wider variety of foraging techniques), are more flexible in their habitat use (are found in more diverse habitat types, disperse farther from their natal area), and are more flexible in their social relationships (have stronger social bonds particularly with less related individuals). We will be able to compare the grackle's ability to adapt behavior according to social context with data from other species, as well as determine whether it is linked with measures of flexibility in asocial contexts.  
+
+![Figure 1. Five-year project overview.](GrackleProjectTimeline.png)
 
 ###A. STATE OF THE DATA
 
@@ -104,9 +108,9 @@ One model will be run per dependent variable.
 
 ***P4: flexible = stronger bonds***
 
-1) Strength of the maximum bond (maximum number of affiliative interactions initiated with another)
+1) Strength of the maximum bond (maximum number of affiliative interactions initiated with another). If we are unable to sample each individual at least four times (@mccune_2018), we will instead use an individual's degree (maximum number of other individuals that the focal subject associated with; @wey2008social).
 
-2) Average bond strength across all relationships (number of affiliative interactions initiated and received per dyad, averaged across dyads per individual)
+2) Individual strength (the sum of all bonds an individual has; @wey2008social)
 
 3) Male shares territory with another male: yes, no
 
@@ -326,6 +330,10 @@ To roughly estimate our ability to detect actual effects (because these power an
 
 The power analysis is the same as in P1-P2.
 
+To quantify social relationships, we will conduct at least four 10-minute focal follows on each subject. During focal follows we will record when another grackle comes within 6ft of the focal subject (and does not engage in aggressive interactions), as well as when another grackle comes within one body length of the focal bird (and does not engage in aggressive interactions). We will use the Half-Weight association index to value dyadic relationships to account for bias arising from subjects that are more likely to be observed separately rather than together in the same group (@cairns1987comparison). Our dependent variables will be calculated from these association indices using social network analysis (@croft2008exploring).
+
+Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly (i.e., association indices are larger than would be expected by random chance), we will conduct network permutations by rearranging edges in our network to create 10,000 random networks. We will then compare our observed effect sizes in the models below to the distribution of effect sizes that result when we calculate our dependent variables and run the same models on our randomized networks (as in @croft2011hypothsis and @whitehead2005testing).  We will conclude that social bonds are significantly related to the covariate of interest if our observed effect sizes are more extreme than at least 95% of the coefficients resulting from the random networks.
+
 ```{r p4, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -358,13 +366,13 @@ summary(f2)
 
 #GLMM with response variable = AvgBondStrength
 #female
-f3 <- MCMCglmm(AvgBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f3 <- MCMCglmm(SumBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
 #autocorr(f3$Sol) #Did fixed effects converge?
 #autocorr(f3$VCV) #Did random effects converge?
 
 #male
-f4 <- MCMCglmm(AvgBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f4 <- MCMCglmm(SumBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
 #autocorr(f4$VCV) #Did random effects converge?
