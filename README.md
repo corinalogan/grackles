@@ -22,23 +22,23 @@ The same individuals will experience the experiments listed in each column (i.e.
 
 ***Preregistrations***
 
-1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./g_flexmanip.Rmd). GitHub.
+1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./EasyToReadFiles/g_flexmanip.md). GitHub.
 
-2. Logan CJ, Rowney C, Bergeron L, McCune K. 2017. [Does manipulating behavioral flexibility affect exploration?](./g_exploration.Rmd) GitHub.
+2. Logan CJ, Rowney C, Bergeron L, McCune K. 2017. [Does manipulating behavioral flexibility affect exploration?](./EasyToReadFiles/g_exploration.md) GitHub.
 
-3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](./g_inhibition.Rmd) GitHub.
+3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](./EasyToReadFiles/g_inhibition.md) GitHub.
 
-4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./g_causal.Rmd). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub.
+4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./EasyToReadFiles/g_causal.md). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub.
 
-5. Logan CJ, Bergeron L, Rowney C, McCune K. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](./g_flexforaging.Rmd) GitHub.
+5. Logan CJ, Bergeron L, Rowney C, McCune K. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](./EasyToReadFiles/g_flexforaging.md) GitHub.
 
-6. Logan CJ, Rowney C, Bergeron L, McCune K, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](./g_withinpop.Rmd) GitHub.
+6. Logan CJ, Rowney C, Bergeron L, McCune K, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](./EasyToReadFiles/g_withinpop.md) GitHub.
 
-7. Logan CJ, Rowney C, Bergeron L, McCune K, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](./g_expansion.Rmd) GitHub.
+7. Logan CJ, Rowney C, Bergeron L, McCune K, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](./EasyToReadFiles/g_expansion.md) GitHub.
 
-8. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](./g_feathermites.Rmd). GitHub.
+8. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](./EasyToReadFiles/g_feathermites.md). GitHub.
 
-9. Logan CJ, Rowney C, Bergeron L, McCune K, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/g_flexgenes.Rmd). GitHub.
+9. Logan CJ, Rowney C, Bergeron L, McCune K, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](./EasyToReadFiles/g_flexgenes.md). GitHub.
 
 *Note: full references are listed in [MyLibrary.bib](./MyLibrary.bib)*
 
