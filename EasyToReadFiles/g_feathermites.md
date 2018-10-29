@@ -1,43 +1,30 @@
----
-title: Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle
-author: '[Dr. Jay Taylor](https://math.la.asu.edu/~jtaylor/) (Arizona State University), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Corina Logan](http://CorinaLogan.com) (University of Cambridge, cl417@cam.ac.uk)'
-date: '`r Sys.Date()`'
-output:
-  github_document: default
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
-  html_document: default
-  word_document: default
-bibliography: /Users/corina/GitHub/grackles/MyLibrary.bib
----
+Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle
+================
+[Dr. Jay Taylor](https://math.la.asu.edu/~jtaylor/) (Arizona State University), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Corina Logan](http://CorinaLogan.com) (University of Cambridge, <cl417@cam.ac.uk>)
+2018-10-29
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r}
+``` r
 library(knitr)
 opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 ```
 
-###A. STATE OF THE DATA
+### A. STATE OF THE DATA
 
 This preregistration was written before collecting any feather mite data, after collecting feathers from the Santa Barbara, CA population (but prior to data analysis), and prior to collecting any feathers from the Tempe, AZ population.
 
-###B. HYPOTHESIS
+### B. HYPOTHESIS
 
 #### H1: Younger great-tailed grackle populations that are nearer the range edge will harbor a lower diversity of feather mite species than older grackle populations in the center of the species’ historical range. Furthermore, the mite assemblages nearer the range edge will be a subset of those found in more established populations.
 
 **Prediction 1:** The more recently established grackle populations will have fewer mite individuals and fewer mite species in their feathers, potentially because 1) the younger grackle populations have lower population densities which could be associated with fewer associates, 2) local mites will not have had a chance to adapt to a new bird species, and/or 3) the mite species from the grackles' original range (Central America) were either unable to survive in more northerly environments or were stochastically lost when new host populations were founded.
 
-**P1 alternative 1:** If there is no difference between populations, this suggests that feather mite diversity has not been reduced during range expansion. 
+**P1 alternative 1:** If there is no difference between populations, this suggests that feather mite diversity has not been reduced during range expansion.
 
 **P1 alternative 2:** If the older grackle populations harbor fewer feather mite species, this might indicate that younger grackle populations encounter more mites as they move into new environments that host a larger number and/or different mite species.
 
 #### H2: Feather mite species richness (per individual host) is independent of individual [behavioral flexibility](./g_flexmanip.Rmd) within grackle populations.
 
-**P2:**  Feather mites are believed to be transmitted primarily through direct contact between host individuals, especially in the nest. Unless behavioral flexibility alters the frequency or duration of contact between individuals, we expect the number of feather mites harbored by individual birds to be independent of their behavioral flexibility within each population.
+**P2:** Feather mites are believed to be transmitted primarily through direct contact between host individuals, especially in the nest. Unless behavioral flexibility alters the frequency or duration of contact between individuals, we expect the number of feather mites harbored by individual birds to be independent of their behavioral flexibility within each population.
 
 **P2 alternative 1:** If the more behaviorally flexible grackles harbor greater numbers of feather mite species, this may indicate that either 1) behavioral flexibility is positively correlated with the frequency or duration of physical contact among birds, or 2) some feather mite species are acquired indirectly from non-avian sources that more behaviorally flexible individuals contact more frequently.
 
@@ -49,57 +36,58 @@ This preregistration was written before collecting any feather mite data, after 
 
 **P3 alternative:** If feather mite loads are not overdispersed among host individuals, this may indicate that hosts frequently acquire new feather mite populations and frequently lose existing feather mite populations.
 
-###C. METHODS
+### C. METHODS
 
-####**Randomization and counterbalancing** 
+#### **Randomization and counterbalancing**
 
 No randomization or counterbalancing is involved in this study.
 
-####**Blinding of conditions during analysis**
+#### **Blinding of conditions during analysis**
 
 No blinding is involved in this study.
 
-####**Dependent variables**
+#### **Dependent variables**
 
-1) Number of feather mite individuals per species per bird
+1.  Number of feather mite individuals per species per bird
 
-2) Number of feather mite species per bird
+2.  Number of feather mite species per bird
 
 One model will be run per dependent variable.
 
-####**Independent variables**
+#### **Independent variables**
 
-1) Population: center (Honduras), middle (Arizona), edge (Nebraska)
+1.  Population: center (Honduras), middle (Arizona), edge (Nebraska)
 
-2)	Class: F (adult female), M (adult male), J (juvenile, either sex)
+2.  Class: F (adult female), M (adult male), J (juvenile, either sex)
 
-3) Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+3.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
 
-4) Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
+4.  Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
 
-5) Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+5.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
 
-6)	Month: code numerically from November (e.g., 1=Nov, 2=Dec, 3=Jan, etc.) (to control for molt effects)
+6.  Month: code numerically from November (e.g., 1=Nov, 2=Dec, 3=Jan, etc.) (to control for molt effects)
 
-###D. ANALYSIS PLAN
+### D. ANALYSIS PLAN
 
-We do not plan to **exclude** any data. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam).
+We do not plan to **exclude** any data. Analyses will be conducted in R (current version 3.3.3; R Core Team (2017)).
 
-####*P1*
+#### *P1*
 
 **Analysis:** Observed species richness and composition will be determined for each population and then extrapolated to total species richness (per population) by applying the Chao2 and second-order jackknife estimators (specpool function, vegan package) to the species incidence data for each sampled bird. Significance will be assessed using the standard errors reported for each estimator.
 
-####*P2-P3*
+#### *P2-P3*
 
 **Analysis:** Generalized Linear Model (GLM; glm.nb function, MASS package) with a Negative Bionomial distribution. The contributions of the independent variables will be evaluated using the estimates from the full model.
 
-```{r mite, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-mite <- read.csv ("/Users/corina/GTGR/data/data_feathermites.csv", header=T, sep=",", stringsAsFactors=F) 
+``` r
+mite <- read.csv("/Users/corina/GTGR/data/data_feathermites.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
 
 library(MASS)
 
-# GLM: dependent variable = Number of mites of species i
-# Here i ranges from 1 to through S = total number of mite species 
+# GLM: dependent variable = Number of mites of species i Here
+# i ranges from 1 to through S = total number of mite species
 m1 <- glm.nb(NumberMites_i ~ Population + Class + Month, data = mite)
 # summary(m1)
 
@@ -110,8 +98,10 @@ library(knitr)
 kable(m1a.table, caption = "Table 1: Model selection output.", 
     format = "html", digits = 2)
 
-# GLM: dependent variable = Number of mite species per individual
-m2 <- glm.nb(NumberMiteSpecies ~ Population + Class + TrialsToReverseLast + FlexRatio + Month, data = mite)
+# GLM: dependent variable = Number of mite species per
+# individual
+m2 <- glm.nb(NumberMiteSpecies ~ Population + Class + TrialsToReverseLast + 
+    FlexRatio + Month, data = mite)
 # summary(m2)
 
 m2a <- summary(m2)
@@ -122,13 +112,16 @@ kable(m2a.table, caption = "Table 2: Model selection output.",
     format = "html", digits = 2)
 
 
-# If the preceding analysis indicates that Population is a significant associated variable, then we will rerun this analysis separately for each population.
-ho <- mite[mite$Population=="HO",]
-az <- mite[mite$Population=="AZ",]
-ne <- mite[mite$Population=="NE",]
+# If the preceding analysis indicates that Population is a
+# significant associated variable, then we will rerun this
+# analysis separately for each population.
+ho <- mite[mite$Population == "HO", ]
+az <- mite[mite$Population == "AZ", ]
+ne <- mite[mite$Population == "NE", ]
 
-#Honduras population
-m3 <- glm.nb(NumberMiteSpecies ~ Class + TrialsToReverseLast + FlexRatio + Month, data = ho)
+# Honduras population
+m3 <- glm.nb(NumberMiteSpecies ~ Class + TrialsToReverseLast + 
+    FlexRatio + Month, data = ho)
 # summary(m3)
 
 m3a <- summary(m3)
@@ -138,8 +131,9 @@ library(knitr)
 kable(m3a.table, caption = "Table 3: Model selection output.", 
     format = "html", digits = 2)
 
-#Arizona population
-m4 <- glm.nb(NumberMiteSpecies ~ Class + TrialsToReverseLast + FlexRatio + Month, data = az)
+# Arizona population
+m4 <- glm.nb(NumberMiteSpecies ~ Class + TrialsToReverseLast + 
+    FlexRatio + Month, data = az)
 # summary(m4)
 
 m4a <- summary(m4)
@@ -149,8 +143,9 @@ library(knitr)
 kable(m4a.table, caption = "Table 3: Model selection output.", 
     format = "html", digits = 2)
 
-#Nebraska population
-m5 <- glm.nb(NumberMiteSpecies ~ Class + TrialsToReverseLast + FlexRatio + Month, data = ho)
+# Nebraska population
+m5 <- glm.nb(NumberMiteSpecies ~ Class + TrialsToReverseLast + 
+    FlexRatio + Month, data = ho)
 # summary(m5)
 
 m5a <- summary(m5)
@@ -161,13 +156,13 @@ kable(m5a.table, caption = "Table 3: Model selection output.",
     format = "html", digits = 2)
 ```
 
-####*Alternative Analyses*
+#### *Alternative Analyses*
 
-We anticipate that we will want to run additional/different analyses after reading @statrethinkingbook. We will revise this preregistration to include these new analyses before conducting the analyses above.
+We anticipate that we will want to run additional/different analyses after reading McElreath (2016). We will revise this preregistration to include these new analyses before conducting the analyses above.
 
-###E. PLANNED SAMPLE
+### E. PLANNED SAMPLE
 
-Great-tailed grackles (n > 200) will be caught in the wild at three field sites across their geographic range: the center of their original range (Utila, Honduras), the middle of the northward expanding edge (Tempe, Arizona USA), and on the northern expanding edge (to be determined). Individuals will be identified using colored leg bands in unique combinations, their data collected (blood, feathers, and biometrics), and then they will be released back to the wild. Some individuals (40-100) will be brought temporarily into aviaries for behavioral testing, and then they will be released back to the wild. 
+Great-tailed grackles (n &gt; 200) will be caught in the wild at three field sites across their geographic range: the center of their original range (Utila, Honduras), the middle of the northward expanding edge (Tempe, Arizona USA), and on the northern expanding edge (to be determined). Individuals will be identified using colored leg bands in unique combinations, their data collected (blood, feathers, and biometrics), and then they will be released back to the wild. Some individuals (40-100) will be brought temporarily into aviaries for behavioral testing, and then they will be released back to the wild.
 
 Feather mites will be detected by examining the sampled feathers (2 rectrices and 2-3 contour (breast) feathers per bird) under a dissecting microscope. Any mites found will be removed from the feathers and examined under a compound microscope for identification to genus and morphospecies. Where numbers permit, COI (cytochrome oxidase I, a mitochondrial gene) barcodes will be generated for a subsample of these mites.
 
@@ -179,17 +174,17 @@ We will trap, band, and collect feathers from as many birds as possible througho
 
 We will stop collecting data in April 2023 when the current funding ends, or after data have been collected at all three field sites, whichever date comes first.
 
-###F. ETHICS
+### F. ETHICS
 
 This research is carried out in accordance with permits from the:
 
-1) US Fish and Wildlife Service (scientific collecting permit number MB76700A-0,1,2)
-2) US Geological Survey Bird Banding Laboratory (federal bird banding permit number 23872)
-3) Arizona Game and Fish Department (scientific collecting license number SP594338 [2017] and SP606267 [2018])
-4) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
-5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
+1.  US Fish and Wildlife Service (scientific collecting permit number MB76700A-0,1,2)
+2.  US Geological Survey Bird Banding Laboratory (federal bird banding permit number 23872)
+3.  Arizona Game and Fish Department (scientific collecting license number SP594338 \[2017\] and SP606267 \[2018\])
+4.  Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
+5.  University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
 
-###G. AUTHOR CONTRIBUTIONS
+### G. AUTHOR CONTRIBUTIONS
 
 **Taylor:** Hypothesis development, materials, data collection, data analysis and interpretation, write up, revising/editing.
 
@@ -201,8 +196,12 @@ This research is carried out in accordance with permits from the:
 
 **Logan:** Hypothesis development, data analysis and interpretation, revising/editing, funding.
 
-###H. FUNDING
+### H. FUNDING
 
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan.
 
-###I. REFERENCES
+### I. REFERENCES
+
+McElreath, Richard. 2016. *Statistical Rethinking: A Bayesian Course with Examples in R and Stan*. CRC Press. <http://xcelab.net/rm/statistical-rethinking/>.
+
+R Core Team. 2017. *R: A Language and Environment for Statistical Computing*. Vienna, Austria: R Foundation for Statistical Computing. <https://www.R-project.org>.
