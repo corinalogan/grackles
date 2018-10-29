@@ -28,7 +28,7 @@ The same individuals will experience the experiments listed in each column (i.e.
 
 3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](./g_inhibition.Rmd) GitHub.
 
-4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./g_causal.Rmd). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub.
+4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./EasyToReadFiles/g_causal.md). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub.
 
 5. Logan CJ, Bergeron L, Rowney C, McCune K. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](./g_flexforaging.Rmd) GitHub.
 
