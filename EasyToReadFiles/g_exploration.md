@@ -52,11 +52,15 @@ We will first verify that boldness, exploration and persistence are repeatable, 
 
 **P6 alternative 2:** There is significant, high repeatibility of persistence and boldness within individuals, which could indicate that it is a property of the individual (e.g., due to heritability or developmental effects).
 
-#### H3: Individuals assayed while in captivity are less exploratory and bold than individuals assayed in the wild (different individuals in captivity than those in the wild; data collection matched for season) potentially because captivity is an unfamiliar situation.
+#### H3: Individuals assayed while in captivity are less exploratory and bold than when they are again assayed in the wild, and as compared to separate individuals assayed in the wild, potentially because captivity is an unfamiliar situation.
 
-**P7 alternative 1:** Individuals in captivity are more exploratory and bold potentially because these are the types of individuals that are more likely to get caught in traps.
+**P7 alternative 1:** Individuals in captivity are more exploratory and bold than wild individuals (testing sessions matched for season) potentially because these are the types of individuals that are more likely to get caught in traps.
 
-**P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and the wild potentially because in both contexts we sampled the types of individuals that were most likely to participate in assays in the wild or get caught in traps.
+**P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and individuals in the wild (matched for season) potentially because in both contexts we sampled the types of individuals that were most likely to participate in assays in the wild or get caught in traps.
+
+**P8 alternative 1:** Captive individuals, once released, show no difference in exploratory and bold behaviors because our methods assess inherent personality traits that are consistent across the captive and wild contexts in this taxa.
+
+**P8 alternative 2:** Captive individuals show more exploratory and bold behaviors than when they are subsequently tested in the wild because the captive environment decreases the influence of social interactions and competition.
 
 ### D. METHODS
 
