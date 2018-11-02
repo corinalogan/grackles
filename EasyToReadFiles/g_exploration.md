@@ -54,9 +54,9 @@ We will first verify that boldness, exploration and persistence are repeatable, 
 
 #### H3: Individuals assayed while in captivity are less exploratory and bold than when they are again assayed in the wild, and as compared to separate individuals assayed in the wild, potentially because captivity is an unfamiliar situation.
 
-**P7 alternative 1:** Individuals in captivity are more exploratory and bold than wild individuals (testing sessions matched for season) potentially because these are the types of individuals that are more likely to get caught in traps.
+**P7 alternative 1:** Individuals in captivity are more exploratory and bold than wild individuals (testing sessions matched for season), potentially because these are the types of individuals that are more likely to get caught in traps.
 
-**P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and individuals in the wild (matched for season) potentially because in both contexts we sampled the types of individuals that were most likely to participate in assays in the wild or get caught in traps.
+**P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and individuals in the wild (matched for season), potentially because in both contexts we sampled the types of individuals that were most likely to participate in assays in the wild or get caught in traps.
 
 **P8 alternative 1:** Captive individuals, once released, show no difference in exploratory and bold behaviors because our methods assess inherent personality traits that are consistent across the captive and wild contexts in this taxa.
 
@@ -132,7 +132,7 @@ All models will be run once per dependent variable.
 
 4.  Exploration of novel object: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
 
-*P7: captive vs wild*
+*P7-P8: captive vs wild*
 
 1.  Boldness: In captivity it will be the latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data); In the wild the dependent variable will be the latency to come within 2m - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data)
 
@@ -192,7 +192,7 @@ All models will be run once per dependent variable.
 
 2.  ID (random effect because multiple measures per individual)
 
-*P7: captive vs wild*
+*P7-P8: captive vs wild*
 
 1.  Context: captive or wild
 
@@ -577,11 +577,11 @@ We anticipate that we will want to run additional/different analyses after readi
 
 ### F. PLANNED SAMPLE
 
-Great-tailed grackles are caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 per experiment) are brought temporarily into aviaries for testing, and then they will be released back to the wild. Grackles are individually housed in an aviary (each 244cm long by 122cm wide by 213cm tall) at Arizona State University for a maximum of three months where they have ad lib access to water at all times and are fed Mazuri Small Bird maintenance diet ad lib during non-testing hours (minimum 20h per day), and various other food items (e.g., peanuts, grapes, bread) during testing (up to 3h per day per bird). Individuals are given three to four days to habituate to the aviaries and then their test battery begins on the fourth or fifth day (birds are usually tested six days per week, therefore if their fourth day in the aviaries occurs on a day off, then they are tested on the fifth day instead).
+Great-tailed grackles are caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 per experiment) are brought temporarily into aviaries for testing, and then they will be released back to the wild. Grackles are individually housed in an aviary (each 244cm long by 122cm wide by 213cm tall) at Arizona State University for a maximum of three months where they have ad lib access to water at all times and are fed Mazuri Small Bird maintenance diet ad lib during non-testing hours (minimum 20h per day), and various other food items (e.g., peanuts, grapes, bread) during testing (up to 3h per day per bird). Individuals are given three to four days to habituate to the aviaries and then their test battery begins on the fourth or fifth day (birds are usually tested six days per week, therefore if their fourth day in the aviaries occurs on a day off, then they are tested on the fifth day instead). For hypothesis 3 we will attempt to test all grackles in the wild that are color-banded.  
 
 **Sample size rationale**
 
-We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size will be 16, however we expect to be able to test up to 32 grackles.
+We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size for captive subjects will be 16, however we expect to be able to test up to 32 grackles in captivity.  We catch grackles with a variety of methods, some of which decrease the likelihood of a selection bias for exploratory and bold individuals because grackles cannot see the traps (i.e. mist nets).  In samplng all banded birds in the wild, we will therefore have a better idea of the variation in exploration and boldness behaviors in this population.
 
 **Data collection stopping rule**
 
