@@ -594,9 +594,9 @@ This research is carried out in accordance with permits from the:
 
 **Rowney:** Data collection, data interpretation, revising/editing.
 
-**McCune:** Data collection, data interpretation, revising/editing.
+**McCune:** Hypothesis development, study design, data collection, data interpretation, revising/editing.
 
-**Lukas:** Hypothesis development, data analysis and interpretation, write up, revising/editing.
+**Lukas:** Hypothesis development, study design, data analysis and interpretation, write up, revising/editing.
 
 ### I. FUNDING
 
