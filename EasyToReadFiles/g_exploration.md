@@ -10,7 +10,7 @@ opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
 ### ABSTRACT
 
-This is one of the first studies planned for our long-term research on the role of behavioral flexibility in rapid geographic range expansions. **Project background:** Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience (Mikhalevich, Powell, and Logan (2017)), is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range (e.g., (Lefebvre et al. 1997), (Griffin and Guez 2014), (Chow, Lea, and Leaver 2016), (Sol and Lefebvre 2000), (Sol, Timmermans, and Lefebvre 2002), (Sol et al. 2005)). However, behavioral flexibility is rarely directly tested at the individual level, thus limiting our ability to determine how it relates to other traits, which limits the power of predictions about a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years ((Wehtje 2003), (Peer 2011)) (see an overview of the [5-year project timeline](./README.md)). **This investigation**: In this piece of the long-term project, we aim to understand whether manipulating grackle behavioral flexibility (color tube reversal learning - described in a separate [preregistration](./g_flexmanip.Rmd)) correlates (or not) with individual differences in the exploration of new environments and novel objects, boldness, persistence, and motor diversity. Results will indicate whether consistent individual differences in these traits might interact with measures of flexibility (reversal learning and solution switching). This will improve our understanding of which variables are involved in flexibility and how they are related, thus putting us in an excellent position to further investigate the mechanisms behind these links in future research.
+This is one of the first studies planned for our long-term research on the role of behavioral flexibility in rapid geographic range expansions. **Project background:** Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience (Mikhalevich, Powell, and Logan (2017)), is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range (e.g., (Lefebvre et al. 1997), (Griffin and Guez 2014), (Chow, Lea, and Leaver 2016), (Sol and Lefebvre 2000), (Sol, Timmermans, and Lefebvre 2002), (Sol et al. 2005)). However, behavioral flexibility is rarely directly tested at the individual level, thus limiting our ability to determine how it relates to other traits, which limits the power of predictions about a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years ((Wehtje 2003), (Peer 2011)) (see an overview of the [5-year project timeline](./README.md)). **This investigation**: In this piece of the long-term project, we aim to understand whether manipulating grackle behavioral flexibility (color tube reversal learning - described in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) correlates (or not) with individual differences in the exploration of new environments and novel objects, boldness, persistence, and motor diversity. Results will indicate whether consistent individual differences in these traits might interact with measures of flexibility (reversal learning and solution switching). This will improve our understanding of which variables are involved in flexibility and how they are related, thus putting us in an excellent position to further investigate the mechanisms behind these links in future research.
 
 ### A. STATE OF THE DATA
 
@@ -22,7 +22,7 @@ We may decide to present the results from different hypotheses in separate paper
 
 ### C. HYPOTHESES
 
-#### H1: [Behavioral flexibility](./g_flexmanip.html) (indicated by individuals that are faster at functionally changing their behavior when circumstances change; measured by reversal learning and switching between options on a multi-access box) is positively correlated with the exploration of new environments and novel objects, but not with other behaviors (i.e., boldness, persistence, or motor diversity) (see Mikhalevich, Powell, and Logan (2017) for theoretical background about our flexibility definition).
+#### H1: [Behavioral flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) (indicated by individuals that are faster at functionally changing their behavior when circumstances change; measured by reversal learning and switching between options on a multi-access box) is positively correlated with the exploration of new environments and novel objects, but not with other behaviors (i.e., boldness, persistence, or motor diversity) (see Mikhalevich, Powell, and Logan (2017) for theoretical background about our flexibility definition).
 
 **Predictions 1-5:** Individuals in the experimental group where flexibility (as measured by reversal learning and on a multi-access box) was manipulated (such that individuals in the manipulated group became faster at switching) will be more exploratory of new environments (P1; methods as in Mettke-Hofmann et al. (2009)) and novel objects (P2; methods as in Mettke-Hofmann et al. (2009)) than individuals in the control group where flexibility was not increased, and there will be no difference between the groups in persistence (P3), boldness (P4; methods as in C. J. Logan (2016)), or motor diversity (P5) (as found in C. J. Logan (2016)).
 
@@ -40,7 +40,7 @@ We may decide to present the results from different hypotheses in separate paper
 
 ![A visual illustration of Hypotheses 1 and 2.](g_exploreFig1.png)
 
-***Figure 1.*** An overview of the study design. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (familiar, novel oject, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](./g_flexmanip.Rmd). Motor diversity will be measured using the multi-access box in a separate [preregistration](./g_flexmanip.Rmd). Assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](./g_flexmanip.Rmd) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
+***Figure 1.*** An overview of the study design. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (familiar, novel oject, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
 
 #### H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait.
 
@@ -108,11 +108,11 @@ No blinding is involved in this study.
 
 *P1-P5: flexibility correlates with exploration of new environments and objects*
 
-1.  The **number of trials to reverse** a preference in the last reversal that individual participated in (an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials (with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials)). See behavioral flexibility [preregistration](./g_flexmanip.html) for details.
+1.  The **number of trials to reverse** a preference in the last reversal that individual participated in (an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials (with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials)). See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) for details.
 
 2.  The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
 
-3.  If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](./g_flexmanip.html).
+3.  If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
 4.  **Flexibility comprehensive**: This measure is currently being developed and is intended be a more accurate representation of all of the choices an individual made, as well as accounting for the degree of uncertainty exhibited by individuals as preferences change. If this measure more effectively represents flexibility (determined using a modeled dataset and not the actual data), we may decide to solely rely on this measure and not use independent variables 1-3. If this ends up being the case, we will modify the code in the analysis plan below to reflect this change before conducting analyses of the data in this preregistration.
 
@@ -126,7 +126,7 @@ All models will be run once per dependent variable.
 
 1.  Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (we will choose the variable with the most data)
 
-2.  Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel environment in P1, and objects in P2 and P4)
+2.  Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), novel environment in P1, and objects in P2 and P4)
 
 3.  Exploration of novel environment: Latency to enter a novel environment set inside a familiar environment
 
@@ -136,7 +136,7 @@ All models will be run once per dependent variable.
 
 1.  Boldness: In captivity it will be the latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data); In the wild the dependent variable will be the latency to come within 2m - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data)
 
-2.  Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](./g_flexmanip.html), novel environment in P1, objects in P2 and P4)
+2.  Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), novel environment in P1, objects in P2 and P4)
 
 3.  Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment
 
@@ -162,7 +162,7 @@ All models will be run once per dependent variable.
 
 1.  Number of touches to the functional part of an apparatus per time (multi-access box, novel environment in P1, novel objects in P2 and P4)
 
-2.  Number of touches to the non-functional part of an apparatus per time ([multi-access box](./g_flexmanip.html))
+2.  Number of touches to the non-functional part of an apparatus per time ([multi-access box](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md))
 
 *P4: boldness*
 
@@ -170,7 +170,7 @@ All models will be run once per dependent variable.
 
 *P5: motor diversity*
 
-1.  Number of different motor actions used when attempting to solve the [multi-access box](./g_flexmanip.html)
+1.  Number of different motor actions used when attempting to solve the [multi-access box](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)
 
 *Additional*
 
@@ -178,17 +178,17 @@ All models will be run once per dependent variable.
 
 2.  ID
 
-3.  [Condition](./g_flexmanip.html): control, flexibility manipulation
+3.  [Condition](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md): control, flexibility manipulation
 
 *P3: does persistence correlate with reversal persistence?*
 
-1.  Average number of touches to the functional part of an apparatus per time ([multi-access box](./g_flexmanip.html), novel environment in P1, novel objects in P2 and P4)
+1.  Average number of touches to the functional part of an apparatus per time ([multi-access box](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), novel environment in P1, novel objects in P2 and P4)
 
 2.  Condition: control, flexibility manipulation
 
 *P6: repeatability of boldness, exploration, and persistence*
 
-1.  [Condition](./g_flexmanip.html): control, flexibility manipulation
+1.  [Condition](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md): control, flexibility manipulation
 
 2.  ID (random effect because multiple measures per individual)
 
