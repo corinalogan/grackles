@@ -22,7 +22,7 @@ This preregistration was written before collecting any feather mite data, after 
 
 **P1 alternative 2:** If the older grackle populations harbor fewer feather mite species, this might indicate that younger grackle populations encounter more mites as they move into new environments that host a larger number and/or different mite species.
 
-#### H2: Feather mite species richness (per individual host) is independent of individual [behavioral flexibility](./g_flexmanip.Rmd) within grackle populations.
+#### H2: Feather mite species richness (per individual host) is independent of individual [behavioral flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) within grackle populations.
 
 **P2:** Feather mites are believed to be transmitted primarily through direct contact between host individuals, especially in the nest. Unless behavioral flexibility alters the frequency or duration of contact between individuals, we expect the number of feather mites harbored by individual birds to be independent of their behavioral flexibility within each population.
 
@@ -60,11 +60,11 @@ One model will be run per dependent variable.
 
 2.  Class: F (adult female), M (adult male), J (juvenile, either sex)
 
-3.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+3.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
 4.  Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
 
-5.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+5.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
 6.  Month: code numerically from November (e.g., 1=Nov, 2=Dec, 3=Jan, etc.) (to control for molt effects)
 
