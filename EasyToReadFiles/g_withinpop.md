@@ -11,7 +11,7 @@ opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
 ### A. STATE OF THE DATA
 
-This preregistration was written prior to collecting any data (note the behavioral data are covered by separate preregistrations: [flexibility](./g_flexmanip.Rmd), [causal cognition](./g_inhibition.Rmd), and [foraging](./g_flexforaging.Rmd)). Hypotheses H7 and H8 were added along with a new collaborator (Dieter Lukas) and intestinal parasites were added to H5 along with a new collaborator (Claudia Wascher) after 18 blood samples had been collected.
+This preregistration was written prior to collecting any data (note the behavioral data are covered by separate preregistrations: [flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), [causal cognition](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md), and [foraging](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md)). Hypotheses H7 and H8 were added along with a new collaborator (Dieter Lukas) and intestinal parasites were added to H5 along with a new collaborator (Claudia Wascher) after 18 blood samples had been collected.
 
 ### B. PARTITIONING THE RESULTS
 
@@ -19,11 +19,11 @@ We may publish the results from each hypothesis separately.
 
 ### C. HYPOTHESES
 
-The way we define flexibility (individuals change behavior according to changing circumstances using learning from previous experiences) assumes that being flexible will always be associated with the higher fitness payoff (e.g., higher quality food rewards). Therefore, the reasons individuals might not be flexible are 1) there are indirect costs to flexibility (e.g., exploration, risks involved in uncertain choices), 2) individuals live in environments that rarely change or change randomly, or 3) individuals have internal constraints (e.g., not enough energy). Points [1](./g_exploration.Rmd) and [2](./g_expansion.Rmd) are being tested in different preregistrations. Here we test point 3.
+The way we define flexibility (individuals change behavior according to changing circumstances using learning from previous experiences) assumes that being flexible will always be associated with the higher fitness payoff (e.g., higher quality food rewards). Therefore, the reasons individuals might not be flexible are 1) there are indirect costs to flexibility (e.g., exploration, risks involved in uncertain choices), 2) individuals live in environments that rarely change or change randomly, or 3) individuals have internal constraints (e.g., not enough energy). Points [1](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) and [2](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md) are being tested in different preregistrations. Here we test point 3.
 
 #### H1: Behavioral flexibility and cognitive performance on other tests negatively correlates with mounting a stress response (in response to being captured) because all three variables are energetically costly.
 
-**Prediction 1:** Individuals with higher serum glucocorticoid concentrations at the time of capture will perform more poorly in causal inference experiments (see [causal cognition preregistration](./g_inhibition.Rmd)), solve fewer loci and switch between loci slower on the multi-access box, and require more trials to reverse preferences (see [flexibility preregistration](./g_flexmanip.Rmd)).
+**Prediction 1:** Individuals with higher serum glucocorticoid concentrations at the time of capture will perform more poorly in causal inference experiments (see [causal cognition preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md)), solve fewer loci and switch between loci slower on the multi-access box, and require more trials to reverse preferences (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)).
 
 **P1 alternative 1:** If flexibility positively correlates with serum glucocorticoid concentrations at the time of capture, this could be due to 1) the more dominant individuals incurring higher stress levels to maintain dominance, if the more dominant individuals are also more flexible; or 2) the more flexible individuals access higher quality resources and thus have more energy to mount a stress response.
 
@@ -31,7 +31,7 @@ The way we define flexibility (individuals change behavior according to changing
 
 #### H2: Behavioral flexibility and cognitive performance on other tests positively correlates with testosterone levels, as is found in other species (humans: Janowsky, Oviatt, and Orwoll (1994), Trumble et al. (2015); birds: C. K. Thompson and Brenowitz (2010)).
 
-**P2:** Individuals with higher circulating testosterone will perform better in causal inference experiments (see [causal cognition preregistration](./g_inhibition.Rmd)), solve more loci and switch between loci faster on the multi-access box, and require fewer trials to reverse preferences (see [flexibility preregistration](./g_flexmanip.Rmd)) because testosterone might have a neuroprotective effect (e.g., C. K. Thompson and Brenowitz (2010)), and higher levels of testosterone indicate better energetic condition.
+**P2:** Individuals with higher circulating testosterone will perform better in causal inference experiments (see [causal cognition preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md)), solve more loci and switch between loci faster on the multi-access box, and require fewer trials to reverse preferences (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) because testosterone might have a neuroprotective effect (e.g., C. K. Thompson and Brenowitz (2010)), and higher levels of testosterone indicate better energetic condition.
 
 **P2 alternative 1a:** If flexibility and cognitive performance are negatively correlated with testosterone, this might indicate a potential indirect link with immune function, which negatively correlates with testosterone levels (Janowsky, Oviatt, and Orwoll (1994), C. K. Thompson and Brenowitz (2010), Trumble et al. (2015)). If testosterone negatively correlates with immune function and immune function positively correlates with flexibility/cognition, then testosterone will negatively correlate with flexibility/cognition.
 
@@ -41,13 +41,13 @@ The way we define flexibility (individuals change behavior according to changing
 
 #### H3.1: There will be a negative correlation between behavioral flexibility and immune activation as a marker of poor condition.
 
-**P3:** Individuals that are faster to reverse preferences (reversal learning) and switch to solving new options (multi-access box) (see [flexibility preregistration](./g_flexmanip.Rmd)) will have lower total heterophil counts and lower levels of gene expression for inflammatory cytokines, due to their lower investment in actively fighting infections, leaving greater energy for cognitive resources such as flexibility.
+**P3:** Individuals that are faster to reverse preferences (reversal learning) and switch to solving new options (multi-access box) (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) will have lower total heterophil counts and lower levels of gene expression for inflammatory cytokines, due to their lower investment in actively fighting infections, leaving greater energy for cognitive resources such as flexibility.
 
 **P3 alternative 1:** If no correlation is found, it is possible that this trade off is masked by a positive correlation between flexibility and testosterone (see H2; as in Janowsky, Oviatt, and Orwoll (1994), C. K. Thompson and Brenowitz (2010), Trumble et al. (2015)).
 
 **P3 alternative 2:** If a positive correlation is found, this indicates that 1) there could be a threshold level of health (immune function) above which flexibility is promoted, or 2) flexibility is positively correlated with encountering more parasites, which increase the immune response.
 
-#### H3.2: Individuals that are less [neophilic](./g_exploration.Rmd) will have higher immune activation and more immunosuppression.
+#### H3.2: Individuals that are less [neophilic](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) will have higher immune activation and more immunosuppression.
 
 **P4:** Individuals with elevated heterophils and inflammatory gene expression (immune activation) will avoid novel stimuli, due to the potential cost of exposure to novel parasites/pathogens. Similarly, individuals with low lymphocytes and low total leukocytes (which may indicate immunosuppression) may avoid novel pathogens.
 
@@ -83,7 +83,7 @@ The way we define flexibility (individuals change behavior according to changing
 
 **P8:** The more flexible individuals (on the multi-access box and in reversal learning) will have fewer haemosporidian parasite counts, lower haemosporidian parasite species diversity, and fewer fecal egg counts (an estimate of intestinal parasite load). We expect an individual’s physiological stress response (H1), immune system (H3), and condition (H3 and H4) to influence each other. Given that we do not yet know how these systems interact in great-tailed grackles, we expect that the flexible individuals will be less stressed and therefore ultimately in better condition. Regarding intestinal parasites, we expect individuals to be infected with a variety of nematode, coccidian and cestode species, most of which are directly transmitted via the fecal-oral route or via an intermediate host (e.g., earthworms, slugs). All individuals in a population are expected to be exposed to parasites in a similar way, but the more flexible individuals are expected be better able to cope with sources of stress (e.g., social stress) and therefore have a stronger immune system.
 
-**P8 alternative 1:** If there is a positive relationship between flexibility and parasite loads (haemosporidian and/or intestinal), this could be because the more flexible individuals 1) eat a wider range of foods (see [foraging preregistration](./g_flexforaging.Rmd)) and roam a larger geographic area and are thus exposed to more parasites, and/or 2) might be in poorer energetic condition and more susceptible to hosting more species.
+**P8 alternative 1:** If there is a positive relationship between flexibility and parasite loads (haemosporidian and/or intestinal), this could be because the more flexible individuals 1) eat a wider range of foods (see [foraging preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md)) and roam a larger geographic area and are thus exposed to more parasites, and/or 2) might be in poorer energetic condition and more susceptible to hosting more species.
 
 **P8 alternative 2:** If there is no correlation between flexibility and parasite loads, this could indicate that these variables are independent from each other or that they are related to another variable that was not measured.
 
@@ -97,13 +97,13 @@ The way we define flexibility (individuals change behavior according to changing
 
 #### H7: Individuals that are more behaviorally flexible mate with individuals that are more flexible.
 
-**P10:** The more flexible individuals will mate with individuals that are also more flexible, potentially because flexible individuals use different parts of the habitat and are therefore more likely to encounter each other. Flexibility will be measured in a separate [preregistration](./g_flexmanip.Rmd) and mate choice will be determined by genetically identifying the parents of offspring using ddRADseq.
+**P10:** The more flexible individuals will mate with individuals that are also more flexible, potentially because flexible individuals use different parts of the habitat and are therefore more likely to encounter each other. Flexibility will be measured in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) and mate choice will be determined by genetically identifying the parents of offspring using ddRADseq.
 
 **P10 alternative:** Traits other than flexibility determine who individuals mate with, for example, all females (not only the flexible ones) might choose males with longer tail feathers (Johnson et al. 2000), larger body sizes (Johnson et al. 2000), and/or specific territories.
 
 #### H8: Individuals that are more behaviorally flexible have different fitness outcomes than the less flexible individuals. The following predictions are independent of each other and could indicate trade offs (i.e., there might be a positive association between flexibility and one fitness component, and a negative association with a different fitness component).
 
-Flexibility will be measured in a separate [preregistration](./g_flexmanip.Rmd), maternity and paternity will be identified using ddRADseq, maternity will also be inferred using behavioral observations during the breeding season.
+Flexibility will be measured in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), maternity and paternity will be identified using ddRADseq, maternity will also be inferred using behavioral observations during the breeding season.
 
 The fitness components we will measure are: - Females: number of eggs in the nest, number of nestlings, number of fledglings surviving to independence, number of offspring that survive to adulthood (1 year of age), adult survival between years, breeding probability in a given year. - Males: number of juveniles sired, number of offspring that survive to adulthood (1 year of age), adult survival between years, territory holder (yes, no) in a given year, number of females in their territory.
 
@@ -125,13 +125,13 @@ The fitness components we will measure are: - Females: number of eggs in the nes
 
 **P13 alternative 1:** The more flexible individuals have lower survival between years potentially because they encounter more risks.
 
-**P13 alternative 2:** The more flexible individuals are not different in survival between years potentially because other variables are more strongly related to survival (e.g., immunity, parasite loads, etc.). The link between survival and flexibility is under investigation in other preregistrations: [within population](./g_withinpop.Rmd), [between population](./g_expansion.Rmd).
+**P13 alternative 2:** The more flexible individuals are not different in survival between years potentially because other variables are more strongly related to survival (e.g., immunity, parasite loads, etc.). The link between survival and flexibility is under investigation in other preregistrations: [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md), [between population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md).
 
-**P14** The more flexible females will have a larger number of eggs and nestlings per breeding attempt, and have a higher breeding probability in a given year, potentially because they are in better condition (see [within population](./g_withinpop.Rmd) preregistration for condition analyses).
+**P14** The more flexible females will have a larger number of eggs and nestlings per breeding attempt, and have a higher breeding probability in a given year, potentially because they are in better condition (see [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) preregistration for condition analyses).
 
-**P14 alternative 1** The more flexible females will have a smaller number of eggs and nestlings per breeding attempt, and have a lower breeding probability in a given year, potentially because they are in worse condition (see [within population](./g_withinpop.Rmd) preregistration for condition analyses).
+**P14 alternative 1** The more flexible females will have a smaller number of eggs and nestlings per breeding attempt, and have a lower breeding probability in a given year, potentially because they are in worse condition (see [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) preregistration for condition analyses).
 
-**P14 alternative 2** There is no correlation between female flexibility and the number of eggs and nestlings per breeding attempt, and breeding probability in a given year, potentially because flexibility is not associated with condition (see [within population](./g_withinpop.Rmd) preregistration for condition analyses).
+**P14 alternative 2** There is no correlation between female flexibility and the number of eggs and nestlings per breeding attempt, and breeding probability in a given year, potentially because flexibility is not associated with condition (see [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) preregistration for condition analyses).
 
 ### D. METHODS
 
@@ -147,11 +147,11 @@ No blinding is involved in this study.
 
 #### *P1-P15*
 
-1.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+1.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
 2.  Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
 
-3.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](./g_flexmanip.Rmd).
+3.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
 One model will be run per dependent variable.
 
