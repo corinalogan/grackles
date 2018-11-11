@@ -125,13 +125,13 @@ The fitness components we will measure are: - Females: number of eggs in the nes
 
 **P13 alternative 1:** The more flexible individuals have lower survival between years potentially because they encounter more risks.
 
-**P13 alternative 2:** The more flexible individuals are not different in survival between years potentially because other variables are more strongly related to survival (e.g., immunity, parasite loads, etc.). The link between survival and flexibility is under investigation in other preregistrations: [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md), [between population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md).
+**P13 alternative 2:** The more flexible individuals are not different in survival between years potentially because other variables are more strongly related to survival (e.g., immunity, parasite loads, etc.). The link between survival and flexibility is under investigation in H8 P12 above and in the [between population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md) preregistration.
 
-**P14** The more flexible females will have a larger number of eggs and nestlings per breeding attempt, and have a higher breeding probability in a given year, potentially because they are in better condition (see [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) preregistration for condition analyses).
+**P14** The more flexible females will have a larger number of eggs and nestlings per breeding attempt, and have a higher breeding probability in a given year, potentially because they are in better condition (see H2, H3, and H5 above condition analyses).
 
-**P14 alternative 1** The more flexible females will have a smaller number of eggs and nestlings per breeding attempt, and have a lower breeding probability in a given year, potentially because they are in worse condition (see [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) preregistration for condition analyses).
+**P14 alternative 1** The more flexible females will have a smaller number of eggs and nestlings per breeding attempt, and have a lower breeding probability in a given year, potentially because they are in worse condition (see H2, H3, and H5 above condition analyses).
 
-**P14 alternative 2** There is no correlation between female flexibility and the number of eggs and nestlings per breeding attempt, and breeding probability in a given year, potentially because flexibility is not associated with condition (see [within population](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) preregistration for condition analyses).
+**P14 alternative 2** There is no correlation between female flexibility and the number of eggs and nestlings per breeding attempt, and breeding probability in a given year, potentially because flexibility is not associated with condition (see H2, H3, and H5 above condition analyses).
 
 ### D. METHODS
 
