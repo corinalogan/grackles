@@ -44,7 +44,7 @@ We may decide to present the results from different hypotheses in separate paper
 
 #### H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait.
 
-We will first verify that boldness, exploration and persistence are repeatable, inherent individual differences in behavior (i.e. personality). Individuals show consistent individual differences in behavior if the variance in latency to approach the task is smaller within individuals compared to variance in latency among individuals (for exploration and boldness assays). The same definition applies to persistence with the number of touches as the dependent variable.
+We will first verify that boldness, exploration and persistence are repeatable, inherent individual differences in behavior. Individuals show consistent individual differences in behavior if the variance in latency to approach the task is smaller within individuals compared to variance in latency among individuals (for exploration and boldness assays). The same definition applies to persistence with the number of touches as the dependent variable.
 
 **P6:** There is no repeatibility of persistence and boldness within individuals, which could indicate that performance is state dependent (e.g., it depends on their fluctuating motivation, hunger levels, etc.) and/or reliant on the current context of the task at hand.
 
@@ -58,7 +58,7 @@ We will first verify that boldness, exploration and persistence are repeatable, 
 
 **P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and individuals in the wild (matched for season), potentially because in both contexts we sampled the types of individuals that were most likely to participate in assays in the wild or get caught in traps.
 
-**P8 alternative 1:** Captive individuals, once released, show no difference in exploratory and bold behaviors because our methods assess inherent personality traits that are consistent across the captive and wild contexts in this taxa.
+**P8 alternative 1:** Captive individuals, once released, show no difference in exploratory and bold behaviors because our methods assess inherent traits due to individual differences that are consistent across the captive and wild contexts in this taxa.
 
 **P8 alternative 2:** Captive individuals show more exploratory and bold behaviors than when they are subsequently tested in the wild because the captive environment decreases the influence of social interactions and competition.
 
