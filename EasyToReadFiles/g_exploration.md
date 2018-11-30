@@ -40,11 +40,11 @@ We may decide to present the results from different hypotheses in separate paper
 
 ![A visual illustration of Hypotheses 1 and 2.](g_exploreFig1.png)
 
-***Figure 1.*** An overview of the study design. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (familiar, novel oject, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
+***Figure 1.*** An overview of the study design. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (novel oject, taxidermic known non-predator, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
 
 #### H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait.
 
-We will first verify that boldness, exploration and persistence are repeatable, inherent individual differences in behavior. Individuals show consistent individual differences in behavior if the variance in latency to approach the task is smaller within individuals compared to variance in latency among individuals (for exploration and boldness assays). The same definition applies to persistence with the number of touches as the dependent variable.
+We will first verify that our measures of boldness, exploration and persistence represent repeatable, inherent individual differences in behavior. Individuals show consistent individual differences in behavior if, across time, the variance in latency to approach, or closest approach to the task is smaller within individuals compared to the variance in latency to approach, or closest approach distance among individuals (for exploration and boldness assays). The same definition applies to persistence with the number of touches across tasks as the dependent variable.
 
 **P6:** There is no repeatibility of persistence and boldness within individuals, which could indicate that performance is state dependent (e.g., it depends on their fluctuating motivation, hunger levels, etc.) and/or reliant on the current context of the task at hand.
 
@@ -54,13 +54,12 @@ We will first verify that boldness, exploration and persistence are repeatable, 
 
 #### H3: Individuals assayed while in captivity are less exploratory and bold than when they are again assayed in the wild, and as compared to separate individuals assayed in the wild, potentially because captivity is an unfamiliar situation.
 
-**P7 alternative 1:** Individuals in captivity are more exploratory and bold than wild individuals (testing sessions matched for season), potentially because these are the types of individuals that are more likely to get caught in traps.
+**P7 alternative 1:** Individuals in captivity are more exploratory and bold than wild individuals (testing sessions matched for season), and captive individuals show more exploratory and bold behaviors than when they are subsequently tested in the wild, potentially because the captive environment decreases the influence of social interactions and competition.
 
 **P7 alternative 2:** There is no difference in exploration and boldness between individuals in captivity and individuals in the wild (matched for season), potentially because in both contexts we sampled the types of individuals that were most likely to participate in assays in the wild or get caught in traps.
 
 **P8 alternative 1:** Captive individuals, once released, show no difference in exploratory and bold behaviors because our methods assess inherent traits due to individual differences that are consistent across the captive and wild contexts in this taxa.
 
-**P8 alternative 2:** Captive individuals show more exploratory and bold behaviors than when they are subsequently tested in the wild because the captive environment decreases the influence of social interactions and competition.
 
 ### D. METHODS
 
@@ -124,23 +123,24 @@ All models will be run once per dependent variable.
 
 *P6: repeatability of boldness, exploration and persistence*
 
-1.  Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (we will choose the variable with the most data)
+1.  Boldness: Latency to land on the ground - OR - Latency to eat the food next to the threatening object - OR - Latency to touch a threatening object - OR - Closest approach distance (we will choose the variable with the most data)
 
 2.  Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), novel environment in P1, and objects in P2 and P4)
 
-3.  Exploration of novel environment: Latency to enter a novel environment set inside a familiar environment
+3.  Exploration of novel environment: Latency to enter a novel environment set inside a familiar environment - OR - Closest approach distance (choose the variable with the most data)
 
-4.  Exploration of novel object: Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+4.  Exploration of novel object: Latency to land on the ground next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) - OR - Closest approach distance (choose the variable with the most data)
 
 *P7-P8: captive vs wild*
 
-1.  Boldness: In captivity it will be the latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data); In the wild the dependent variable will be the latency to come within 2m - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food (we will choose the variable with the most data)
+1a.  Boldness in captivity: Latency to land on the ground - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food - OR - Closest approach distance (we will choose the variable with the most data) 
+1b.  Boldness in the wild: Latency to come within 2m - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food - OR - Closest approach distance (we will choose the variable with the most data)
 
 2.  Persistence: Number of touches to an apparatus per time (multi-access box in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md), novel environment in P1, objects in P2 and P4)
 
-3.  Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment
+3.  Exploration of novel environment: Latency to enter a novel sub-environment inside a familiar environment - OR - Closest approach distance (choose the variable with the most data)
 
-4.  Exploration of novel object: Latency to land next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+4.  Exploration of novel object: Latency to land next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) - OR - Closest approach distance (choose the variable with the most data)
 
 *Note: if 3 and 4 are consistent within individuals, and correlate, we will combine these variables into one exploration propensity score.*
 
@@ -156,7 +156,7 @@ All models will be run once per dependent variable.
 
 *P2: exploration of objects*
 
-1.  Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+1.  Latency to land on the ground next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) - OR - Closest approach distance (choose the variable with the most data)
 
 *P3: persistence*
 
@@ -166,7 +166,7 @@ All models will be run once per dependent variable.
 
 *P4: boldness*
 
-1.  Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (choose the variable with the most data)
+1.  Latency to land on the ground - OR - Latency to eat the food - OR - Latency to touch a threatening object that is next to food - OR - Closest approach distance (we will choose the variable with the most data)
 
 *P5: motor diversity*
 
