@@ -40,7 +40,7 @@ We may decide to present the results from different hypotheses in separate paper
 
 ![A visual illustration of Hypotheses 1 and 2.](g_exploreFig1.png)
 
-***Figure 1.*** An overview of the study design. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (novel oject, taxidermic known non-predator, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
+***Figure 1.*** An overview of the study design. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (novel oject, taxidermic known non-predator, or a taxidermic known predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
 
 #### H2: Individuals whose flexibility was increased through the manipulation do not differ from controls in their boldness and persistence, potentially because flexibility is an independent trait.
 
@@ -229,6 +229,8 @@ hist(last$NumberIncorrectTrialsReversal, xlab = "Number of 'no choice' trials in
 hist(boldness$LatencyToLandOnTable, xlab = "Latency to land on table", 
     main = "Actual Data")
 hist(boldness$NoObjectTouchesPerTime, xlab = "Number of touches to an apparatus per time", 
+    main = "Actual Data")    
+hist(boldness$ClosestApproach, xlab = "Closest Approach distance", 
     main = "Actual Data")
 
 # Given the actual data, this is what a normal distribution
@@ -247,6 +249,10 @@ hist(Y2, xlab = "Latency table", main = "Simulated Data")
 Z2 <- rnorm(1281, mean = mean(boldness$NoObjectTouchesPerTime), 
     sd = sd(boldness$NoObjectTouchesPerTime))
 hist(Z2, xlab = "No. touches apparatus/time", main = "Simulated Data")
+
+Z3 <- rnorm(1281, mean = mean(boldness$ClosestApproach), 
+    sd = sd(boldness$ClosestApproach))
+hist(Z2, xlab = "Closest Approach distance", main = "Simulated Data")
 ```
 
 ``` r
@@ -264,6 +270,7 @@ plot(glm(last$TrialsToReverse ~ last$LatencyExpEnv))
 plot(glm(last$NumberIncorrectTrialsReversal ~ last$LatencyExpEnv))
 plot(glm(boldness$LatencyToLandOnTable ~ boldness$Day))
 plot(glm(boldness$NoObjectTouchesPerTime ~ boldness$Day))
+plot(glm(boldness$ClosestApproach ~ boldness$Day))
 ```
 
 If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) (Zuur, Ieno, and Saveliev 2009).
@@ -287,6 +294,8 @@ plot(residuals(glm(boldness$LatencyToLandOnTable ~ boldness$Day)),
     ylab = "Boldness: Latency table ~ Day")
 plot(residuals(glm(boldness$NoObjectTouchesPerTime ~ boldness$Day)), 
     ylab = "Boldness: No. object touches/time ~ Day")
+plot(residuals(glm(boldness$ClosestApproach ~ boldness$Day)), 
+    ylab = "Boldness: Closest Approach Distance ~ Day")
 ```
 
 #### *P1-P5: flexibility correlates with exploration of new environments and objects, boldness, persistence, and motor diversity?*
