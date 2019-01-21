@@ -151,6 +151,8 @@ One model will be run per dependent variable.
 
 7.  Flexibility 4: This measure is currently being developed and is intended be a more accurate representation of all of the choices an individual made, as well as accounting for the degree of uncertainty exhibited by individuals as preferences change. If this measure more effectively represents flexibility (determined using a modeled dataset and not the actual data), we may decide to solely rely on this measure and not use flexibility measures 1 through 3. If this ends up being the case, we will modify the code in the analysis plan below to reflect this change.
 
+8. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
+
 ##### *P1: go no-go*
 
 Model 2a: number of trials to reach criterion
@@ -173,6 +175,8 @@ Model 2b: latency to respond
 
 4.  ID (random effect because multiple measures per bird)
 
+5. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
+
 ##### *P1: detour*
 
 1.  Trial
@@ -184,6 +188,8 @@ Model 2b: latency to respond
 4.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box, then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional independent variables (as above).
 
 5.  Flexibility 4: This measure is currently being developed and is intended be a more accurate representation of all of the choices an individual made, as well as accounting for the degree of uncertainty exhibited by individuals as preferences change. If this measure more effectively represents flexibility (determined using a modeled dataset and not the actual data), we may decide to solely rely on this measure and not use flexibility measures 1 through 3. If this ends up being the case, we will modify the code in the analysis plan below to reflect this change.
+
+6. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
 
 ##### *P3: does training improve detour performance?*
 
@@ -267,9 +273,9 @@ plot(residuals(glm(go$TrialsToCriterion ~ go$TrialsToReverseLast)),
 
 **Assess food preferences:** Conduct preference tests between pairs of different foods. Rank food preferences into three categories (High, Medium, Low) in the order of the percentage of times a food was chosen.
 
-**Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link, unless the only choices made were 0 (they didn't wait for food) and 1 (they waited for 1 piece of food but not for 2 or 3), in which case we will use a binomial distribution with a logit link. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+**Analysis:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link (unless the only choices made were 0 (they didn't wait for food) and 1 (they waited for 1 piece of food but not for 2 or 3), in which case we will use a binomial distribution with a logit link) using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -301,27 +307,27 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 acc <- read.csv("/Users/corina/GTGR/data/data_accumulation.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-better <- glm(NumberOfAccumulationsWaited ~ Delay + FoodQualityQuantity + 
-    Trial + TrialsToReverseLast + FlexRatio, family = "poisson", 
-    data = acc)
-# summary(better)
+#GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
+    nu = 0), R3 = list(V = 1, nu = 0), R4 = list(V = 1, nu = 0), R5 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0), G2 = list(V = 1, nu = 0)))
 
-better1 <- summary(better)
-library(xtable)
-better1.table <- xtable(better1)
-library(knitr)
-kable(better1.table, caption = "Table U: Model selection output.", 
-    format = "html", digits = 2)
+dog <- MCMCglmm(NumberOfAccumulationsWaited ~ Delay * FoodQualityQuantity * 
+    Trial * TrialsToReverseLast * FlexRatio, random = ~ID+Break, family = "poisson", data = acc, 
+    verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
+summary(dog)
+autocorr(dog$Sol)  #Did fixed effects converge?
+autocorr(dog$VCV)  #Did random effects converge?
 ```
 
 #### *P1: go no-go*
 
 **Analysis:**
 
-**Model 2a:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and a log link. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+**Model 2a:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -352,6 +358,18 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 ``` r
 go <- read.csv("/Users/corina/GTGR/data/data_go.csv", header = T, 
     sep = ",", stringsAsFactors = F)
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
+    nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
+
+go1 <- MCMCglmm(TrialsToCriterion ~ TrialsToReverseLast * FlexRatio, random = ~ID+Break, family = "poisson", data = go, 
+    verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
+summary(go1)
+autocorr(go1$Sol)  #Did fixed effects converge?
+autocorr(go1$VCV)  #Did random effects converge?
+
 
 # GLM
 go1 <- glm(TrialsToCriterion ~ TrialsToReverseLast + FlexRatio, 
@@ -398,14 +416,13 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 go <- read.csv("/Users/corina/GTGR/data/data_golatency.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
+# GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
-    nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-    nu = 0)))
+    nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
 
 golat <- MCMCglmm(LatencyToRespond ~ CorrectResponse * Trial * 
-    FlexibilityCondition, random = ~ID, family = "poisson", data = go, 
+    FlexibilityCondition, random = ~ID+Break, family = "poisson", data = go, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(golat)
 autocorr(golat$Sol)  #Did fixed effects converge?
@@ -414,7 +431,7 @@ autocorr(golat$VCV)  #Did random effects converge?
 
 #### *P1: detour*
 
-**Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and a logit link. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+**Analysis:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a binomial distribution (called categoricalin MCMCglmm) and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 See the protocol for the power analyses for Model 2b above for the rough estimation our ability to detect actual effects with this model.
 
@@ -422,16 +439,17 @@ See the protocol for the power analyses for Model 2b above for the rough estimat
 detour <- read.csv("/Users/corina/GTGR/data/data_detour.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-detour$ID <- factor(detour$ID)
-de <- glm(FirstApproach ~ Trial + TrialsToReverseLast + FlexRatio, 
-    family = "binomial", data = detour)
-sde <- summary(de)
-library(xtable)
-sde.table <- xtable(sde)
-library(knitr)
-kable(sde.table, caption = "Table T: Model selection output.", 
-    format = "html", digits = 2)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
+    nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
+
+de <- MCMCglmm(FirstApproach ~ Trial * TrialsToReverseLast * 
+    FlexRatio, random = ~ID+Break, family = "categorical", data = detour, 
+    verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
+summary(de)
+autocorr(de$Sol)  #Did fixed effects converge?
+autocorr(de$VCV)  #Did random effects converge?
 ```
 
 ##### *P1 alternative 2: are inhibition results reliable?*
@@ -468,9 +486,9 @@ When analyzing only the delayed gratification and go no-go tasks, the reliabilit
 
 ##### *P3: does training improve detour performance?*
 
-**Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and a logit link. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+**Analysis:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a binomial distribution (called categoricalin MCMCglmm) and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -502,14 +520,15 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 detour <- read.csv("/Users/corina/GTGR/data/data_detour.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-de <- glm(FirstApproach ~ Condition, family = "binomial", data = detour)
-sde <- summary(de)
-library(xtable)
-sde.table <- xtable(sde)
-library(knitr)
-kable(sde.table, caption = "Table T: Model selection output.", 
-    format = "html", digits = 2)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
+
+de <- MCMCglmm(FirstApproach ~ Condition, random = ~ID+Break, family = "categorical", data = detour, 
+    verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
+summary(de)
+autocorr(de$Sol)  #Did fixed effects converge?
+autocorr(de$VCV)  #Did random effects converge?
 ```
 
 #### *Alternative Analyses*
