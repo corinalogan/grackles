@@ -139,7 +139,7 @@ No blinding is involved in this study.
 
 <!-- -->
 
-1.  The number of trials to reach criterion (85% correct) where correct responses involve pecking when the rewarded stimulus is displayed and not pecking when the unrewarded stimulus is displayed, and incorrect responses involve pecking when the unrewarded stimulus is displayed, and not pecking when the rewarded stimulus is displayed
+1.  The number of trials to reach criterion (100% accuracy or 85% accuracy if it takes more than 150 trials) where correct responses involve pecking when the rewarded stimulus is displayed and not pecking when the unrewarded stimulus is displayed, and incorrect responses involve pecking when the unrewarded stimulus is displayed, and not pecking when the rewarded stimulus is displayed
 
 2.  The latency to respond (peck the target key)
 
