@@ -1,6 +1,6 @@
 Are the more flexible great-tailed grackles also better at inhibition?
 ================
-[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Benjamin Seitz (University of California Los Angeles), [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (University of California Los Angeles), [Dr. Claudia Wascher](https://www.claudiawascher.com) (Anglia Ruskin University)
+[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Benjamin Seitz (University of California Los Angeles), [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (University of California Los Angeles), [Dr. Claudia Wascher](https://www.claudiawascher.com) (Anglia Ruskin University)
 2018-10-28
 
 ``` r
@@ -31,7 +31,7 @@ We may decide to present the results from different tests in separate papers.
 
 **If flexibility requires inhibition, then individuals that are more [behaviorally flexible](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) (indicated by individuals that are faster at functionally changing their behavior when circumstances change), as measured by reversal learning and switching between options on a multi-access box, will also be better at inhibiting their responses in three tasks: delayed gratification, go no-go, and detour.**
 
-**P1:** Individuals that are faster to reverse preferences on a reversal learning task and who also have lower latencies to successfully solve new loci after previously solved loci become unavailable (multi-access box) (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) will perform better in the go no-go task (methods similar to Harding, Paul, and Mendl (2004)), in the detour task (methods as in MacLean et al. (2014) who call it the "cylinder task"), and they will wait longer for higher quality (more preferred) food, but not for higher quantities (methods as in Hillemann et al. (2014)). Waiting for higher quality food has been validated as a test of inhibition in birds, while waiting for a higher quantity of food does not appear to measure inhibition (Hillemann et al. (2014)). *[jump to dependent variables](#P1-the-more-flexible-individuals-are-better-at-inhibition)*
+**P1:** Individuals that are faster to reverse preferences on a reversal learning task and who also have lower latencies to successfully solve new loci after previously solved loci become unavailable (multi-access box) (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) will perform better in the go no-go task (methods similar to Harding, Paul, and Mendl (2004)), in the detour task (methods as in MacLean et al. (2014) who call it the "cylinder task"), and they will wait longer for higher quality (more preferred) food, but not for higher quantities (methods as in Hillemann et al. (2014)). Waiting for higher quality food has been validated as a test of inhibition in birds, while waiting for a higher quantity of food does not appear to measure inhibition (Hillemann et al. (2014)). *[Jump to P1 dependent variables](#P1-the-more-flexible-individuals-are-better-at-inhibition)*
 
 **P1 alternative 1:** If there is no correlation between flexibility measures and performance on the inhibition tasks, this may indicate that the flexibility tasks may not require much inhibition (particularly if the inhibition results are reliable - see *P1 alternative 2*).
 
@@ -125,6 +125,8 @@ No blinding is involved in this study.
 
 <!-- -->
 
+*[Jump to P1 independent variables](#independent-variables)*
+
 1.  **Detour:** First approach (physical contact): Correct (to the tube's side opening) or Incorrect (to the front unopen area of the tube) (methods as in MacLean et al. (2014)).
 
 One model will be run per dependent variable.
@@ -190,6 +192,8 @@ Model 2b: latency to respond
 5.  Flexibility 4: This measure is currently being developed and is intended be a more accurate representation of all of the choices an individual made, as well as accounting for the degree of uncertainty exhibited by individuals as preferences change. If this measure more effectively represents flexibility (determined using a modeled dataset and not the actual data), we may decide to solely rely on this measure and not use flexibility measures 1 through 3. If this ends up being the case, we will modify the code in the analysis plan below to reflect this change.
 
 6. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
+
+*[Jump to P1 analyses](#P1-delayed-gratification)*
 
 ##### *P3: does training improve detour performance?*
 
@@ -566,8 +570,6 @@ This research is carried out in accordance with permits from the:
 **Johnson-Ulrich:** Touchscreen programming for go no-go task, data interpretation, revising/editing.
 
 **Bergeron:** Data collection, data interpretation, revising/editing.
-
-**Rowney:** Data collection, data interpretation, revising/editing.
 
 **Seitz:** Experimental design (go no-go task), touchscreen programming (go no-go task), data interpretation, revising/editing.
 
