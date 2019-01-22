@@ -141,7 +141,7 @@ One model will be run per dependent variable.
 
 1.  First approach (physical contact): Correct (to the tube's side opening) or Incorrect (to the front unopen area of the tube) (methods as in MacLean et al. (2014)).
 
-*[Jump to P3 independent variables](#P3-does-training-improve-detour-performance)*
+*[Jump to P3 independent variables](#P3-training-improve-detour-performance)*
 
 #### **Independent variables**
 
@@ -203,11 +203,11 @@ Model 2b: latency to respond
 
 *[Jump to P1 analyses](#P1-delayed-gratification)*
 
-##### *P3: does training improve detour performance?*
+##### *P3: training improve detour performance?*
 
 1.  Condition: pre- or post-reversal learning tests
 
-*[Jump to P3 analyses](#P3-does-training-improve-detour-performance)*
+*[Jump to P3 analyses](#P3-detour-performance-improves-with-training)*
 
 ### E. ANALYSIS PLAN
 
@@ -498,7 +498,7 @@ summary(reliab2)
 
 When analyzing only the delayed gratification and go no-go tasks, the reliability is alpha= *fill in result when data are available*.
 
-##### *P3: does training improve detour performance?*
+##### *P3: detour performance improves with training?*
 
 **Analysis:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a binomial distribution (called categoricalin MCMCglmm) and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
