@@ -79,11 +79,11 @@ When the study is complete, the data will be published in the Knowledge Network 
 
 #### **Randomization and counterbalancing**
 
-**P3**
+##### **P3**
 
 Two individuals from each batch will experience the detour task before participating in the flexibility manipulation. These individuals will be randomly selected using the random number generator at <https://www.random.org>.
 
-**P1-P2**
+##### **P1-P2**
 
 For the rest of the individuals (n=6 per batch), the order of the three inhibition tasks will be counterbalanced across birds (using <https://www.random.org> to randomly assign individuals to one of three experimental orders). 1/3 of the individuals will experience:
 
@@ -109,7 +109,7 @@ For the rest of the individuals (n=6 per batch), the order of the three inhibiti
 
 3.  Go no-go task
 
-**Delayed gratification**
+##### **Delayed gratification**
 
 -   Food preference test: food will be presented in random combinations over six sessions of 12-15 trials.
 
@@ -117,11 +117,11 @@ For the rest of the individuals (n=6 per batch), the order of the three inhibiti
 
 -   Test: we will test each food quality (low, mid, high) twice in randomized order in each session.
 
-**Go no-go**
+##### **Go no-go**
 
 Go and no-go trials will be presented randomly with the restriction that no more than four of the same type will occur in a row. The rewarded color will be counterbalanced across birds.
 
-**Detour**
+##### **Detour**
 
 The side from which the apparatus is baited will be consistent within subjects, but counterbalanced across subjects.
 
