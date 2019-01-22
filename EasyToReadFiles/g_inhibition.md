@@ -177,6 +177,8 @@ One model will be run per dependent variable.
 
 8. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
 
+9. Experimenter (random effect: when there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests)
+
 ##### *P1: go no-go*
 
 Model 2a: number of trials to reach criterion
@@ -189,6 +191,10 @@ Model 2a: number of trials to reach criterion
 
 4.  Flexibility 4: This measure is currently being developed and is intended be a more accurate representation of all of the choices an individual made, as well as accounting for the degree of uncertainty exhibited by individuals as preferences change. If this measure more effectively represents flexibility (determined using a modeled dataset and not the actual data), we may decide to solely rely on this measure and not use flexibility measures 1 through 3. If this ends up being the case, we will modify the code in the analysis plan below to reflect this change.
 
+5. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
+
+6. Experimenter (random effect: when there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests)
+
 Model 2b: latency to respond
 
 1.  Correct or incorrect response
@@ -200,6 +206,8 @@ Model 2b: latency to respond
 4.  ID (random effect because multiple measures per bird)
 
 5. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
+
+6. Experimenter (random effect: when there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests)
 
 ##### *P1: detour*
 
@@ -215,17 +223,23 @@ Model 2b: latency to respond
 
 6. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
 
+7. Experimenter (random effect: when there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests)
+
 *[Jump to P1 analyses](#P1-delayed-gratification)*
 
 ##### *P3: training improve detour performance?*
 
 1.  Condition: pre- or post-reversal learning tests
 
+2. Break (random effect: 1=the bird experienced at least one day off over the course of the experiment, 0=the bird experienced no days off)
+
+3. Experimenter (random effect: when there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests)
+
 *[Jump to P3 analyses](#P3-detour-performance-improves-with-training)*
 
 ### E. ANALYSIS PLAN
 
-We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version 3.3.3; R Core Team (2017)). When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity.
+We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version 3.3.3; R Core Team (2017)). 
 
 #### *Ability to detect actual effects*
 
@@ -342,7 +356,7 @@ prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
     nu = 0), G2 = list(V = 1, nu = 0)))
 
 dog <- MCMCglmm(NumberOfAccumulationsWaited ~ Delay * FoodQualityQuantity * 
-    Trial * TrialsToReverseLast * FlexRatio, random = ~ID+Break, family = "poisson", data = acc, 
+    Trial * TrialsToReverseLast * FlexRatio, random = ~Break+Experimenter, family = "poisson", data = acc, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(dog)
 autocorr(dog$Sol)  #Did fixed effects converge?
@@ -392,22 +406,11 @@ library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
     nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
 
-go1 <- MCMCglmm(TrialsToCriterion ~ TrialsToReverseLast * FlexRatio, random = ~ID+Break, family = "poisson", data = go, 
+go1 <- MCMCglmm(TrialsToCriterion ~ TrialsToReverseLast * FlexRatio, random = ~Break+Experimenter, family = "poisson", data = go, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(go1)
 autocorr(go1$Sol)  #Did fixed effects converge?
 autocorr(go1$VCV)  #Did random effects converge?
-
-
-# GLM
-go1 <- glm(TrialsToCriterion ~ TrialsToReverseLast + FlexRatio, 
-    family = "poisson", data = go)
-sgo1 <- summary(go1)
-library(xtable)
-sgo1.table <- xtable(sgo1)
-library(knitr)
-kable(sgo1.table, caption = "Table T: Model selection output.", 
-    format = "html", digits = 2)
 ```
 
 **Model 2b:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). I will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
@@ -447,10 +450,10 @@ go <- read.csv("/Users/corina/GTGR/data/data_golatency.csv",
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
-    nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
+    nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0), G3 = list(V = 1, nu = 0)))
 
 golat <- MCMCglmm(LatencyToRespond ~ CorrectResponse * Trial * 
-    FlexibilityCondition, random = ~ID+Break, family = "poisson", data = go, 
+    FlexibilityCondition, random = ~ID+Break+Experimenter, family = "poisson", data = go, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(golat)
 autocorr(golat$Sol)  #Did fixed effects converge?
@@ -473,7 +476,7 @@ prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
     nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
 
 de <- MCMCglmm(FirstApproach ~ Trial * TrialsToReverseLast * 
-    FlexRatio, random = ~ID+Break, family = "categorical", data = detour, 
+    FlexRatio, random = ~Break+Experimenter, family = "categorical", data = detour, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(de)
 autocorr(de$Sol)  #Did fixed effects converge?
@@ -552,7 +555,7 @@ detour <- read.csv("/Users/corina/GTGR/data/data_detour.csv",
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
 
-de <- MCMCglmm(FirstApproach ~ Condition, random = ~ID+Break, family = "categorical", data = detour, 
+de <- MCMCglmm(FirstApproach ~ Condition, random = ~Break+Experimenter, family = "categorical", data = detour, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(de)
 autocorr(de$Sol)  #Did fixed effects converge?
