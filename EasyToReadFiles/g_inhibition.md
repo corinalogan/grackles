@@ -79,11 +79,11 @@ When the study is complete, the data will be published in the Knowledge Network 
 
 #### **Randomization and counterbalancing**
 
-##### **P3**
+*P3*
 
 Two individuals from each batch will experience the detour task before participating in the flexibility manipulation. These individuals will be randomly selected using the random number generator at <https://www.random.org>.
 
-##### **P1-P2**
+*P1-P2* 
 
 For the rest of the individuals (n=6 per batch), the order of the three inhibition tasks will be counterbalanced across birds (using <https://www.random.org> to randomly assign individuals to one of three experimental orders). 1/3 of the individuals will experience:
 
@@ -109,15 +109,15 @@ For the rest of the individuals (n=6 per batch), the order of the three inhibiti
 
 3.  Go no-go task
 
-##### **Delayed gratification**
+*Delayed gratification*
 
--   Food preference test: food will be presented in random combinations over six sessions of 12-15 trials.
+ -   Food preference test: food will be presented in random combinations over six sessions of 12-15 trials.
 
--   Training trials: The type of demonstration and training trials varied randomly (with more demo trials near the beginning of training), incorporating trials in which food of the same sort accumulated (quantity), food of ascending quality accumulated (quality), and trials in which we added increasingly larger food pieces throughout the trial (size)
+ -   Training trials: The type of demonstration and training trials varied randomly (with more demo trials near the beginning of training), incorporating trials in which food of the same sort accumulated (quantity), food of ascending quality accumulated (quality), and trials in which we added increasingly larger food pieces throughout the trial (size)
 
--   Test: we will test each food quality (low, mid, high) twice in randomized order in each session.
+ -   Test: we will test each food quality (low, mid, high) twice in randomized order in each session.
 
-##### **Go no-go**
+*Go no-go*
 
 Go and no-go trials will be presented randomly with the restriction that no more than four of the same type will occur in a row. The rewarded color will be counterbalanced across birds.
 
@@ -167,9 +167,9 @@ One model will be run per dependent variable.
 
 3.  Delay (2, 5, 10, 20, 40, 60, or 80 seconds)
 
-4.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal an individual experienced (reversal learning; an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
+4.  Flexibility 1: **Number of trials to reverse** a preference in the last reversal (in the reversal learning experiment) an individual experienced (individuals in the flexibility control group only experience 1 reversal so this data will come from their first and only reversal; individuals in the flexibility manipulation group experience serial reversals until they pass a certain criterion, therefore we will only use data from their most recent reversal) (an individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials, with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). See H1 and H2 in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
-5.  Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their final reversal after the individual has seen the newly rewarded option once. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
+5.  Flexibility 2: The **ratio of correct divided by incorrect trials** for the first 40 trials in their most recent reversal after the individual has seen the newly rewarded option once (i.e., they have explored the two color options enough to have discovered which color the food is now associated with). We use the first 40 trials because this should make it so that all subjects the same amount of data to compare. So far, all grackles require them more than 40 trials to pass the criterion to indicate they have reversed a preference. These 40 trials include trials where individuals were offered the test and chose not to participate (i.e., make a choice). This accounts for flexibility that can occur when some individuals inhibit their previously rewarded preference (thus exhibiting flexibility because they changed their behavior when circumstances changed), but are not as exploratory as those who have fewer 'no choice' trials. 'No choice' data is data that is otherwise excluded from standard reversal learning analyses. Including 'no choice' trials, controls for individual differences in exploration because those that refuse to choose are not exploring new options, which would allow them to learn the new food location.
 
 6.  Flexibility 3: If the number of trials to reverse a preference does not positively correlate with the latency to attempt or solve new loci on the multi-access box (an additional measure of behavioral flexibility), then the **average latency to solve** and the **average latency to attempt** a new option on the multi-access box will be additional dependent variables. See behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md).
 
