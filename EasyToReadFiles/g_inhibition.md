@@ -57,6 +57,18 @@ We may decide to present the results from different tests in separate papers.
 
 ### D. METHODS
 
+#### **Planned sample**
+
+Great-tailed grackles are caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (~32) are brought temporarily into aviaries for testing, and then they will be released back to the wild. Grackles are individually housed in an aviary (each 244cm long by 122cm wide by 213cm tall) at Arizona State University for a maximum of three months where they have ad lib access to water at all times and are fed Mazuri Small Bird maintenance diet ad lib during non-testing hours (minimum 20h per day), and various other food items (e.g., peanuts, grapes, bread) during testing (up to 3h per day per bird). Individuals are given three to four days to habituate to the aviaries and then their test battery begins on the fourth or fifth day (birds are usually tested six days per week, therefore if their fourth day in the aviaries occurs on a day off, then they are tested on the fifth day instead).
+
+**Sample size rationale**
+
+We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size will be 16, however we expect to be able to test up to 32 grackles.
+
+**Data collection stopping rule**
+
+We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
+
 #### **Open materials**
 
 [Testing protocols](https://docs.google.com/document/d/1oEQ66yLrkMFr4UJTXfPBRAEXqoUuOgRwcKOB_KcT7HE/edit?usp=sharing) for all three experiments: color tube reversal learning, multi-access box, and touch screen reversal learning
@@ -551,19 +563,7 @@ autocorr(de$VCV)  #Did random effects converge?
 
 We anticipate that we will want to run additional/different analyses after reading McElreath (2016). We will revise this preregistration to include these new analyses before conducting the analyses above.
 
-### F. PLANNED SAMPLE
-
-Great-tailed grackles are caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations). Some individuals (~32) are brought temporarily into aviaries for testing, and then they will be released back to the wild. Grackles are individually housed in an aviary (each 244cm long by 122cm wide by 213cm tall) at Arizona State University for a maximum of three months where they have ad lib access to water at all times and are fed Mazuri Small Bird maintenance diet ad lib during non-testing hours (minimum 20h per day), and various other food items (e.g., peanuts, grapes, bread) during testing (up to 3h per day per bird). Individuals are given three to four days to habituate to the aviaries and then their test battery begins on the fourth or fifth day (birds are usually tested six days per week, therefore if their fourth day in the aviaries occurs on a day off, then they are tested on the fifth day instead).
-
-**Sample size rationale**
-
-We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size will be 16, however we expect to be able to test up to 32 grackles.
-
-**Data collection stopping rule**
-
-We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
-
-### G. ETHICS
+### F. ETHICS
 
 This research is carried out in accordance with permits from the:
 
@@ -573,7 +573,7 @@ This research is carried out in accordance with permits from the:
 4.  Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
 5.  University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
 
-### H. AUTHOR CONTRIBUTIONS
+### G. AUTHOR CONTRIBUTIONS
 
 **Logan:** Hypothesis development, experimental design (go no-go task), data collection, data analysis and interpretation, write up, revising/editing, materials/funding.
 
@@ -589,11 +589,11 @@ This research is carried out in accordance with permits from the:
 
 **Wascher:** Hypothesis development, experimental design (delayed gratification and detour tasks), data analysis and interpretation, write up, revising/editing.
 
-### I. FUNDING
+### H. FUNDING
 
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan in 2017-2018.
 
-### J. ACKNOWLEDGEMENTS
+### I. ACKNOWLEDGEMENTS
 
 We thank Dieter Lukas for help polishing the predictions; Ben Trumble for providing us with a wet lab at Arizona State University; Melissa Wilson Sayres for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Jay Taylor for grackle scouting at Arizona State University; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; and Richard McElreath for project support.
 
