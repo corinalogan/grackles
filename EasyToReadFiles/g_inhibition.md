@@ -39,13 +39,15 @@ We may decide to present the results from different tests in separate papers.
 
 *[Jump to P1 dependent variables](#P1-the-more-flexible-individuals-are-better-at-inhibition)*
 
-**P2:** If there is no correlation in performance across inhibition tasks, it may indicate that that one or more of these tasks does not measure inhibition, or that they measure different types of inhibition (see Friedman and Miyake (2004)).
+**P2:** If go no-go task performance strongly correlates with performance on the delayed gratification task, this indicates these two tasks measure the same trait, which therefore validates an inhibition task using a touch screen (the go no-go task). Note that we consider these two tasks as valid measures of inhibition, whereas it is questionable whether the detour task actually measures inhibition (e.g., Van Horik et al. 2018). If the detour results correlate with performances on the other two inhibition tasks, this would provide some evidence that the detour task is a measure of inhibition.
 
-**P2 alternative:** If go no-go task performance strongly correlates with performance on the delayed gratification task, this indicates these two tasks measure the same trait, which therefore validates an inhibition task using a touch screen (the go no-go task). Note that we consider these two tasks as valid measures of inhibition, whereas it is questionable whether the detour task actually measures inhibition (e.g., Van Horik et al. 2018). If the detour results correlate with performances on the other two inhibition tasks, this would provide some evidence that the detour task is a measure of inhibition.
+**P2 alternative:** If there is no correlation in performance across inhibition tasks, it may indicate that that one or more of these tasks does not measure inhibition, or that they measure different types of inhibition (see Friedman and Miyake (2004)).
 
 *[Jump to P2 analyses](#P2-correlation-across-inhibition-tasks)*
 
-**P3:** If individuals perform well on the detour task and with little individual variation, this is potentially because they will have had extensive experience looking into the sides of opaque tubes during reversal learning. To determine whether prior experience with opaque tubes in reversal learning contributed to their detour performance, a subset of individuals will experience the detour task before any reversal learning tests. If this subset performs the same as the others, then previous experience with tubes does not influence detour task performance. If the subset performs worse than the others, this indicates that detour task performance depends on the previous experiences of the indviduals tested.
+**P3:** If individuals perform well on the detour task and with little individual variation, this is potentially because they will have had extensive experience looking into the sides of opaque tubes during reversal learning. To determine whether prior experience with opaque tubes in reversal learning contributed to their detour performance, a subset of individuals will experience the detour task before any reversal learning tests. If this subset performs the same as the others, then previous experience with tubes does not influence detour task performance. 
+
+**P3 alternative:** If the subset performs worse than the others, this indicates that detour task performance depends on the previous experiences of the indviduals tested.
 
 *[Jump to P3 dependent variables](#P3-does-training-improve-detour-performance)*
 
