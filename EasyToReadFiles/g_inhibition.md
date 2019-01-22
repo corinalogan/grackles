@@ -31,17 +31,23 @@ We may decide to present the results from different tests in separate papers.
 
 **If flexibility requires inhibition, then individuals that are more [behaviorally flexible](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) (indicated by individuals that are faster at functionally changing their behavior when circumstances change), as measured by reversal learning and switching between options on a multi-access box, will also be better at inhibiting their responses in three tasks: delayed gratification, go no-go, and detour.**
 
-**P1:** Individuals that are faster to reverse preferences on a reversal learning task and who also have lower latencies to successfully solve new loci after previously solved loci become unavailable (multi-access box) (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) will perform better in the go no-go task (methods similar to Harding, Paul, and Mendl (2004)), in the detour task (methods as in MacLean et al. (2014) who call it the "cylinder task"), and they will wait longer for higher quality (more preferred) food, but not for higher quantities (methods as in Hillemann et al. (2014)). Waiting for higher quality food has been validated as a test of inhibition in birds, while waiting for a higher quantity of food does not appear to measure inhibition (Hillemann et al. (2014)). *[Jump to P1 dependent variables](#P1-the-more-flexible-individuals-are-better-at-inhibition)*
+**P1:** Individuals that are faster to reverse preferences on a reversal learning task and who also have lower latencies to successfully solve new loci after previously solved loci become unavailable (multi-access box) (see [flexibility preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) will perform better in the go no-go task (methods similar to Harding, Paul, and Mendl (2004)), in the detour task (methods as in MacLean et al. (2014) who call it the "cylinder task"), and they will wait longer for higher quality (more preferred) food, but not for higher quantities (methods as in Hillemann et al. (2014)). Waiting for higher quality food has been validated as a test of inhibition in birds, while waiting for a higher quantity of food does not appear to measure inhibition (Hillemann et al. (2014)). 
 
 **P1 alternative 1:** If there is no correlation between flexibility measures and performance on the inhibition tasks, this may indicate that the flexibility tasks may not require much inhibition (particularly if the inhibition results are reliable - see *P1 alternative 2*).
 
 **P1 alternative 2:** If there is no correlation between flexibility measures and performance on the inhibition tasks, this may indicate that the inhibition tasks had low reliability and were therefore too noisy to correlate with flexibility.
 
+*[Jump to P1 dependent variables](#P1-the-more-flexible-individuals-are-better-at-inhibition)*
+
 **P2:** If there is no correlation in performance across inhibition tasks, it may indicate that that one or more of these tasks does not measure inhibition, or that they measure different types of inhibition (see Friedman and Miyake (2004)).
 
 **P2 alternative:** If go no-go task performance strongly correlates with performance on the delayed gratification task, this indicates these two tasks measure the same trait, which therefore validates an inhibition task using a touch screen (the go no-go task). Note that we consider these two tasks as valid measures of inhibition, whereas it is questionable whether the detour task actually measures inhibition (e.g., Van Horik et al. 2018). If the detour results correlate with performances on the other two inhibition tasks, this would provide some evidence that the detour task is a measure of inhibition.
 
+*[Jump to P2 analyses](#P2-correlation-across-inhibition-tasks)*
+
 **P3:** If individuals perform well on the detour task and with little individual variation, this is potentially because they will have had extensive experience looking into the sides of opaque tubes during reversal learning. To determine whether prior experience with opaque tubes in reversal learning contributed to their detour performance, a subset of individuals will experience the detour task before any reversal learning tests. If this subset performs the same as the others, then previous experience with tubes does not influence detour task performance. If the subset performs worse than the others, this indicates that detour task performance depends on the previous experiences of the indviduals tested.
+
+*[Jump to P3 dependent variables](#P3-does-training-improve-detour-performance)*
 
 ![Figure 2. Experimental design.](g_inhibitionFig1.png)
 
@@ -125,15 +131,17 @@ No blinding is involved in this study.
 
 <!-- -->
 
-*[Jump to P1 independent variables](#independent-variables)*
-
 1.  **Detour:** First approach (physical contact): Correct (to the tube's side opening) or Incorrect (to the front unopen area of the tube) (methods as in MacLean et al. (2014)).
 
 One model will be run per dependent variable.
 
+*[Jump to P1 independent variables](#independent-variables)*
+
 ##### *P3: does training improve detour performance?*
 
 1.  First approach (physical contact): Correct (to the tube's side opening) or Incorrect (to the front unopen area of the tube) (methods as in MacLean et al. (2014)).
+
+*[Jump to P3 independent variables](#P3-does-training-improve-detour-performance)*
 
 #### **Independent variables**
 
@@ -198,6 +206,8 @@ Model 2b: latency to respond
 ##### *P3: does training improve detour performance?*
 
 1.  Condition: pre- or post-reversal learning tests
+
+*[Jump to P3 analyses](#P3-does-training-improve-detour-performance)*
 
 ### E. ANALYSIS PLAN
 
