@@ -505,6 +505,8 @@ When comparing all three tests, alpha= .
 
 **See analysis description for P1 alternative 2.**
 
+**Correlation between go no-go and delay of gratification**
+
 ``` r
 rel2 <- read.csv("/Users/corina/GTGR/data/data_inhibition2.csv", 
     header = T, sep = ",", stringsAsFactors = F)
@@ -516,6 +518,21 @@ summary(reliab2)
 ```
 
 When analyzing only the delayed gratification and go no-go tasks, the reliability is alpha= *fill in result when data are available*.
+
+**Correlation between go no-go and detour**
+
+``` r
+rel3 <- read.csv("/Users/corina/GTGR/data/data_inhibition3.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
+
+library(psych)
+reliab3 <- alpha(rel3, check.keys = TRUE)
+summary(reliab3)
+# Insert into text: `r reliab3$std.alpha`
+```
+
+When analyzing only the detour and go no-go tasks, the reliability is alpha= *fill in result when data are available*.
+
 
 ##### *P3: detour performance improves with training?*
 
