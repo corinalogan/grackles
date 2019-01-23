@@ -21,7 +21,7 @@ This is one of the first studies planned for our long-term research on the role 
 
 **Prior to collecting any data:** This preregistration was written.
 
-**After data collection had begun:** This preregistration was submitted to PCI Ecology for peer review after starting data collection on the detour task for the pre-reversal subcategory of subjects (for which there was data from one bird).
+**After data collection had begun:** This preregistration was submitted to PCI Ecology (Oct 2018) for peer review after starting data collection on the detour task for the pre-reversal subcategory of subjects (for which there was data from one bird). Reviews were received, the preregistration was revised and resubmitted to PCI Ecology (Jan 2019) at which point there was detour data for six birds, data on a few training trials for delay of gratification for one bird, and no data from the go no-go experiment.
 
 ### B. PARTITIONING THE RESULTS
 
@@ -108,6 +108,8 @@ For the rest of the individuals (n=6 per batch), the order of the three inhibiti
 2.  Delayed gratification task
 
 3.  Go no-go task
+
+Note: there were exceptions to following the counterbalancing order for the first batch of birds because we were still trying to get the touchscreen training worked out and the modified delay of gratification apparatus to work. Please see the [protocol](https://docs.google.com/document/d/1oEQ66yLrkMFr4UJTXfPBRAEXqoUuOgRwcKOB_KcT7HE/edit?usp=sharing) for details on the counterbalancing exceptions.
 
 *Delayed gratification*
 
