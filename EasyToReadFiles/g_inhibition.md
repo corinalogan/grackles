@@ -533,6 +533,20 @@ summary(reliab3)
 
 When analyzing only the detour and go no-go tasks, the reliability is alpha= *fill in result when data are available*.
 
+**Correlation between delay of gratification and detour**
+
+``` r
+rel4 <- read.csv("/Users/corina/GTGR/data/data_inhibition3.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
+
+library(psych)
+reliab4 <- alpha(rel4, check.keys = TRUE)
+summary(reliab4)
+# Insert into text: `r reliab4$std.alpha`
+```
+
+When analyzing only the delay of gratification and detour-go tasks, the reliability is alpha= *fill in result when data are available*.
+
 
 ##### *P3: detour performance improves with training?*
 
