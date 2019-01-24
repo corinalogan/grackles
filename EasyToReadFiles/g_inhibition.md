@@ -109,7 +109,7 @@ For the rest of the individuals (n=6 per batch), the order of the three inhibiti
 
 3.  Go no-go task
 
-Note: there were exceptions to following the counterbalancing order for the first batch of birds because we were still trying to get the touchscreen training worked out and the modified delay of gratification apparatus to work. Please see the [protocol](https://docs.google.com/document/d/1oEQ66yLrkMFr4UJTXfPBRAEXqoUuOgRwcKOB_KcT7HE/edit?usp=sharing) for details on the counterbalancing exceptions.
+Note: there were exceptions to following the counterbalancing order for the first batch of birds because we were still trying to get the touchscreen training worked out and the modified delay of gratification apparatus to work. Please see Table 1 in the [protocol](https://docs.google.com/document/d/1oEQ66yLrkMFr4UJTXfPBRAEXqoUuOgRwcKOB_KcT7HE/edit?usp=sharing) for details on the counterbalancing exceptions.
 
 *Delayed gratification*
 
