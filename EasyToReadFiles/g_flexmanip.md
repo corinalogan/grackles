@@ -559,7 +559,7 @@ prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
     nu = 0), R3 = list(V = 1, nu = 0), R4 = list(V = 1, nu = 0)), 
     G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
 
-rr1 <- MCMCglmm(CorrectChoice ~ Trial * LatencyToChoose * MinSinceFoodRemoved * 
+rr1 <- MCMCglmm(CorrectChoice ~ Trial + LatencyToChoose + MinSinceFoodRemoved + 
     NumberRewardsFromPrevTrials, random = ~ID + Batch, family = "categorical", 
     data = rr, verbose = F, prior = prior, nitt = 13000, thin = 10, 
     burnin = 3000)
