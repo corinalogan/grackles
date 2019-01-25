@@ -357,8 +357,8 @@ prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
     nu = 0), R3 = list(V = 1, nu = 0), R4 = list(V = 1, nu = 0), R5 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0), G2 = list(V = 1, nu = 0)))
 
-dog <- MCMCglmm(NumberOfAccumulationsWaited ~ Delay * FoodQualityQuantity * 
-    Trial * TrialsToReverseLast * FlexRatio, random = ~Break+Experimenter, family = "poisson", data = acc, 
+dog <- MCMCglmm(NumberOfAccumulationsWaited ~ Delay + FoodQualityQuantity + 
+    Trial + TrialsToReverseLast + FlexRatio, random = ~Break+Experimenter, family = "poisson", data = acc, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(dog)
 autocorr(dog$Sol)  #Did fixed effects converge?
@@ -454,7 +454,7 @@ library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
     nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0), G3 = list(V = 1, nu = 0)))
 
-golat <- MCMCglmm(LatencyToRespond ~ CorrectResponse * Trial * 
+golat <- MCMCglmm(LatencyToRespond ~ CorrectResponse + Trial + 
     FlexibilityCondition, random = ~ID+Break+Experimenter, family = "poisson", data = go, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(golat)
@@ -477,7 +477,7 @@ library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, 
     nu = 0), R3 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
 
-de <- MCMCglmm(FirstApproach ~ Trial * TrialsToReverseLast * 
+de <- MCMCglmm(FirstApproach ~ Trial + TrialsToReverseLast + 
     FlexRatio, random = ~Break+Experimenter, family = "categorical", data = detour, 
     verbose = F, prior = prior, nitt = 13000, thin = 10, burnin = 3000)
 summary(de)
