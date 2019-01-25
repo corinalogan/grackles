@@ -176,7 +176,7 @@ All models will be run once per dependent variable.
 
 1.  Age (adult: after hatch year, juvenile: hatch year). NOTE: this variable will be removed if only adults are tested (and we are planning to test only adults).
 
-2.  ID
+2.  ID (random effect because multiple measures per individual)
 
 3.  [Condition](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md): control, flexibility manipulation
 
@@ -400,7 +400,7 @@ prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
 expl1 <- MCMCglmm(AvgTrialsToReverse ~ Condition * TimeOutsideNovelEnv * 
     LatencyExpEnv * AverageTimePerSectionNovelEnv * TotalNumberSectionsNovelEnv * 
     LatencyTableExpObject * MultiaccessTouchesPerTime * LatencyBoldness * 
-    NoMotorActions * ID, random = ~ID + Batch, family = "poisson", 
+    NoMotorActions * ID, random = ~ID(1+Condition) + Batch, family = "poisson", 
     data = explore, verbose = F, prior = prior, nitt = 13000, 
     thin = 10, burnin = 3000)
 summary(expl1)
@@ -414,7 +414,7 @@ autocorr(expl1$VCV)  #Did random effects converge?
 expl2 <- MCMCglmm(Ratio40 ~ Condition * TimeOutsideNovelEnv * 
     LatencyExpEnv * AverageTimePerSectionNovelEnv * TotalNumberSectionsNovelEnv * 
     LatencyTableExpObject * MultiaccessTouchesPerTime * LatencyBoldness * 
-    NoMotorActions * ID, random = ~ID + Batch, family = "poisson", 
+    NoMotorActions * ID(1+Condition), random = ~ID + Batch, family = "poisson", 
     data = explore, verbose = F, prior = prior, nitt = 13000, 
     thin = 10, burnin = 3000)
 
