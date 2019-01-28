@@ -397,10 +397,10 @@ prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
     R10 = list(V = 1, nu = 0), R11 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0), G2 = list(V = 1, nu = 0)))
 
-expl1 <- MCMCglmm(AvgTrialsToReverse ~ Condition + TimeOutsideNovelEnv + 
+expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + 
     LatencyExpEnv + AverageTimePerSectionNovelEnv + TotalNumberSectionsNovelEnv + 
     LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + 
-    NoMotorActions + ID, random = ~ID(1+Condition) + Batch, family = "poisson", 
+    NoMotorActions, random = ~Batch+Population, family = "poisson", 
     data = explore, verbose = F, prior = prior, nitt = 13000, 
     thin = 10, burnin = 3000)
 summary(expl1)
@@ -414,7 +414,7 @@ autocorr(expl1$VCV)  #Did random effects converge?
 expl2 <- MCMCglmm(Ratio40 ~ Condition * TimeOutsideNovelEnv + 
     LatencyExpEnv + AverageTimePerSectionNovelEnv + TotalNumberSectionsNovelEnv + 
     LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + 
-    NoMotorActions + ID, random = ~ID(1+Condition) + Batch, family = "poisson", 
+    NoMotorActions, random = ~Batch+Population, family = "poisson", 
     data = explore, verbose = F, prior = prior, nitt = 13000, 
     thin = 10, burnin = 3000)
 
