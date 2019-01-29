@@ -1,6 +1,6 @@
 The genetics of behavioral flexibility across the range of a rapidly expanding species
 ================
-[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Aaron Blackwell](http://www.anth.ucsb.edu/faculty/blackwell/) (University of California, Santa Barbara), [Dr. Dieter Lukas](http://dieterlukas.strikingly.com) (Max Planck Institute for Evolutionary Anthropology)
+[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Angela Bond (Arizona State University), [Dr. Aaron Blackwell](http://www.anth.ucsb.edu/faculty/blackwell/) (University of California, Santa Barbara), [Dr. Dieter Lukas](http://dieterlukas.strikingly.com) (Max Planck Institute for Evolutionary Anthropology)
 2018-10-29
 
 ``` r
