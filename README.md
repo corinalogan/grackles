@@ -2,7 +2,8 @@
 
 ***Preregistrations: Peer Reviewed at PCI Ecology***
 
-4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./EasyToReadFiles/g_causal.md). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub. Peer review history at [PCI Ecology](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)
+4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./EasyToReadFiles/g_causal.md). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub. 
+   - Peer review history at [PCI Ecology](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)
 
 ***Preregistrations***
 
