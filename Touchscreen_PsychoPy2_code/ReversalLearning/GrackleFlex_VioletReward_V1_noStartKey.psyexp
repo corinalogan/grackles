@@ -10,7 +10,7 @@
     <Param name="Save excel file" updates="None" val="False" valType="bool"/>
     <Param name="Enable Escape" updates="None" val="True" valType="bool"/>
     <Param name="Save psydat file" updates="None" val="True" valType="bool"/>
-    <Param name="Window size (pixels)" updates="None" val="[1680, 1050]" valType="code"/>
+    <Param name="Window size (pixels)" updates="None" val="[1366, 768]" valType="code"/>
     <Param name="Full-screen window" updates="None" val="True" valType="bool"/>
     <Param name="blendMode" updates="None" val="avg" valType="str"/>
     <Param name="Use version" updates="None" val="" valType="str"/>
@@ -28,12 +28,30 @@
   </Settings>
   <Routines>
     <Routine name="ITI">
-      <PolygonComponent name="iti">
+      <KeyboardComponent name="key_resp_2">
+        <Param name="correctAns" updates="constant" val="" valType="str"/>
+        <Param name="storeCorrect" updates="constant" val="False" valType="bool"/>
+        <Param name="name" updates="None" val="key_resp_2" valType="code"/>
+        <Param name="stopVal" updates="constant" val="1000" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="forceEndRoutine" updates="constant" val="True" valType="bool"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="discard previous" updates="constant" val="True" valType="bool"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="allowedKeys" updates="constant" val="'space'" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="store" updates="constant" val="last key" valType="str"/>
+        <Param name="syncScreenRefresh" updates="constant" val="True" valType="bool"/>
+      </KeyboardComponent>
+    </Routine>
+    <Routine name="Colortest">
+      <PolygonComponent name="background2">
         <Param name="opacity" updates="constant" val="0" valType="code"/>
         <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
-        <Param name="name" updates="None" val="iti" valType="code"/>
-        <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
-        <Param name="stopVal" updates="constant" val="2" valType="code"/>
+        <Param name="name" updates="None" val="background2" valType="code"/>
+        <Param name="fillColor" updates="constant" val="darkgrey" valType="str"/>
+        <Param name="stopVal" updates="constant" val="300" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
         <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
@@ -47,64 +65,20 @@
         <Param name="startVal" updates="None" val="0.0" valType="code"/>
         <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
         <Param name="nVertices" updates="constant" val="4" valType="int"/>
-        <Param name="size" updates="constant" val="(0.5, 0.5)" valType="code"/>
+        <Param name="size" updates="constant" val="(50, 50)" valType="code"/>
       </PolygonComponent>
-    </Routine>
-    <Routine name="Colortest">
       <CodeComponent name="codeforesponse">
         <Param name="Begin Experiment" updates="constant" val="" valType="extendedCode"/>
         <Param name="name" updates="None" val="codeforesponse" valType="code"/>
-        <Param name="Begin Routine" updates="constant" val="skipfoodreward = True&amp;#10;# setup some python lists for storing info about the mouse&amp;#10;mouse.x = []&amp;#10;mouse.y = []&amp;#10;mouse.leftButton = []&amp;#10;mouse.midButton = []&amp;#10;mouse.rightButton = []&amp;#10;mouse.time = []&amp;#10;&amp;#10;timer.reset()&amp;#10;" valType="extendedCode"/>
-        <Param name="End Routine" updates="constant" val="trials.addData('ColorTestTime', timer.getTime())&amp;#10;trials.addData('SkipFoodReward', skipfoodreward)&amp;#10;# store data for trials (TrialHandler)&amp;#10;#trials.addData('mouse.x', mouse.x)&amp;#10;#trials.addData('mouse.y', mouse.y)&amp;#10;trials.addData('ColorTestNumPecks', mouse.leftButton)&amp;#10;#trials.addData('mouse.midButton', mouse.midButton)&amp;#10;#trials.addData('mouse.rightButton', mouse.rightButton)&amp;#10;trials.addData('ColorTestPeckTimes', mouse.time)&amp;#10;timer.reset()" valType="extendedCode"/>
+        <Param name="Begin Routine" updates="constant" val="skipfoodreward = True&amp;#10;win.mouseVisible = False" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
-        <Param name="Each Frame" updates="constant" val="if LEFTrewarded == 'yes':&amp;#10;    if mouse.isPressedIn(ColorStimLEFT):&amp;#10;        skipfoodreward = False&amp;#10;        continueRoutine = False&amp;#10;    if mouse.isPressedIn(ColorStimRIGHT):&amp;#10;        skipfoodreward = True&amp;#10;        continueRoutine = False&amp;#10;if RIGHTrewarded == 'yes':&amp;#10;    if mouse.isPressedIn(ColorStimLEFT):&amp;#10;        skipfoodreward = True&amp;#10;        continueRoutine = False&amp;#10;    if mouse.isPressedIn(ColorStimRIGHT):&amp;#10;        skipfoodreward = False&amp;#10;        continueRoutine = False&amp;#10;&amp;#10; # *mouse* updates&amp;#10;if t &gt;= 0 and mouse.status == NOT_STARTED:&amp;#10;    # keep track of start time/frame for later&amp;#10;    mouse.tStart = t&amp;#10;    mouse.frameNStart = frameN  # exact frame index&amp;#10;    mouse.status = STARTED&amp;#10;    event.mouseButtons = [0, 0, 0]  # reset mouse buttons to be 'up'&amp;#10;frameRemains = 15 - win.monitorFramePeriod * 0.75  # most of one frame period left&amp;#10;if mouse.status == STARTED and t &gt;= frameRemains:&amp;#10;    mouse.status = STOPPED&amp;#10;if mouse.status == STARTED:  # only update if started and not stopped!&amp;#10;    buttons = mouse.getPressed()&amp;#10;    if any(mouse.getPressed()):&amp;#10;        x, y = mouse.getPos()&amp;#10;        mouse.x.append(x)&amp;#10;        mouse.y.append(y)&amp;#10;        mouse.leftButton.append(buttons[0])&amp;#10;        mouse.midButton.append(buttons[1])&amp;#10;        mouse.rightButton.append(buttons[2])&amp;#10;        mouse.time.append(ColortestClock.getTime())&amp;#10;    while any(mouse.getPressed()):&amp;#10;        pass" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if t &gt; 300:&amp;#10;    skipfoodreward = True&amp;#10;    continueRoutine = False&amp;#10;&amp;#10;if LEFTrewarded == 'yes':&amp;#10;    if mouse.isPressedIn(ColorStimLEFT_area):&amp;#10;        thisExp.addData('mouseArTime',t)&amp;#10;        thisExp.addData('mouseArposition', mouse.getPos())&amp;#10;        thisExp.addData('In_Left_Stimulus', 1)&amp;#10;        thisExp.nextEntry()&amp;#10;        skipfoodreward = False&amp;#10;        continueRoutine = False&amp;#10;    if mouse.isPressedIn(ColorStimRIGHT_area):&amp;#10;        thisExp.addData('mouseArTime',t)&amp;#10;        thisExp.addData('mouseArposition', mouse.getPos())&amp;#10;        thisExp.addData('In_Right_Stimulus', 1)&amp;#10;        thisExp.nextEntry()&amp;#10;        skipfoodreward = True&amp;#10;        continueRoutine = False&amp;#10;    if mouse.isPressedIn(background2):&amp;#10;        thisExp.addData('mouseArTime',t)&amp;#10;        thisExp.addData('mouseArposition', mouse.getPos())&amp;#10;        thisExp.addData('Neither_Stimulus', 1)&amp;#10;        thisExp.nextEntry()&amp;#10;if RIGHTrewarded == 'yes':&amp;#10;    if mouse.isPressedIn(ColorStimLEFT_area):&amp;#10;        thisExp.addData('mouseArTime',t)&amp;#10;        thisExp.addData('mouseArposition', mouse.getPos())&amp;#10;        thisExp.addData('In_Left_Stimulus', 1)&amp;#10;        thisExp.nextEntry()&amp;#10;        skipfoodreward = True&amp;#10;        continueRoutine = False&amp;#10;    if mouse.isPressedIn(ColorStimRIGHT_area):&amp;#10;        thisExp.addData('mouseArTime',t)&amp;#10;        thisExp.addData('mouseArposition', mouse.getPos())&amp;#10;        thisExp.addData('In_Right_Stimulus', 1)&amp;#10;        thisExp.nextEntry()&amp;#10;        skipfoodreward = False&amp;#10;        continueRoutine = False&amp;#10;    if mouse.isPressedIn(background2):&amp;#10;        thisExp.addData('mouseArTime',t)&amp;#10;        thisExp.addData('mouseArposition', mouse.getPos())&amp;#10;        thisExp.addData('Neither_Stimulus', 1)&amp;#10;        thisExp.nextEntry()&amp;#10;&amp;#10;" valType="extendedCode"/>
       </CodeComponent>
-      <PolygonComponent name="ColorStimLEFT">
-        <Param name="opacity" updates="constant" val="1" valType="code"/>
-        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
-        <Param name="name" updates="None" val="ColorStimLEFT" valType="code"/>
-        <Param name="fillColor" updates="set every repeat" val="$colorLEFT" valType="str"/>
-        <Param name="stopVal" updates="constant" val="15" valType="code"/>
-        <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(-9,-9)" valType="code"/>
-        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
-        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
-        <Param name="startEstim" updates="None" val="" valType="code"/>
-        <Param name="units" updates="None" val="from exp settings" valType="str"/>
-        <Param name="startType" updates="None" val="time (s)" valType="str"/>
-        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
-        <Param name="ori" updates="constant" val="0" valType="code"/>
-        <Param name="stopType" updates="None" val="time (s)" valType="str"/>
-        <Param name="startVal" updates="None" val="0" valType="code"/>
-        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
-        <Param name="nVertices" updates="constant" val="50" valType="int"/>
-        <Param name="size" updates="constant" val="(6,6)" valType="code"/>
-      </PolygonComponent>
-      <PolygonComponent name="ColorStimRIGHT">
-        <Param name="opacity" updates="constant" val="1" valType="code"/>
-        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
-        <Param name="name" updates="None" val="ColorStimRIGHT" valType="code"/>
-        <Param name="fillColor" updates="set every repeat" val="$colorRIGHT" valType="str"/>
-        <Param name="stopVal" updates="constant" val="15" valType="code"/>
-        <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(9, -9)" valType="code"/>
-        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
-        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
-        <Param name="startEstim" updates="None" val="" valType="code"/>
-        <Param name="units" updates="None" val="from exp settings" valType="str"/>
-        <Param name="startType" updates="None" val="time (s)" valType="str"/>
-        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
-        <Param name="ori" updates="constant" val="0" valType="code"/>
-        <Param name="stopType" updates="None" val="time (s)" valType="str"/>
-        <Param name="startVal" updates="None" val="0" valType="code"/>
-        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
-        <Param name="nVertices" updates="constant" val="50" valType="int"/>
-        <Param name="size" updates="constant" val="(6,6)" valType="code"/>
-      </PolygonComponent>
       <MouseComponent name="mouse">
         <Param name="name" updates="None" val="mouse" valType="code"/>
         <Param name="timeRelativeTo" updates="constant" val="routine" valType="str"/>
-        <Param name="stopVal" updates="constant" val="15" valType="code"/>
+        <Param name="stopVal" updates="constant" val="300" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
         <Param name="forceEndRoutineOnPress" updates="constant" val="False" valType="bool"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -113,6 +87,177 @@
         <Param name="startVal" updates="None" val="0" valType="code"/>
         <Param name="saveMouseState" updates="None" val="never" valType="str"/>
       </MouseComponent>
+      <PolygonComponent name="ColorStimLEFT_area">
+        <Param name="opacity" updates="constant" val="0" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="ColorStimLEFT_area" valType="code"/>
+        <Param name="fillColor" updates="constant" val="red" valType="str"/>
+        <Param name="stopVal" updates="constant" val="300" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(-7,-5.5)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="4" valType="int"/>
+        <Param name="size" updates="constant" val="(8, 8)" valType="code"/>
+      </PolygonComponent>
+      <PolygonComponent name="ColorStimRIGHT_area">
+        <Param name="opacity" updates="constant" val="0" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="ColorStimRIGHT_area" valType="code"/>
+        <Param name="fillColor" updates="constant" val="red" valType="str"/>
+        <Param name="stopVal" updates="constant" val="300" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(7, -5.5)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="4" valType="int"/>
+        <Param name="size" updates="constant" val="(8, 8)" valType="code"/>
+      </PolygonComponent>
+      <ImageComponent name="Left_stim">
+        <Param name="opacity" updates="constant" val="1" valType="code"/>
+        <Param name="flipVert" updates="constant" val="False" valType="bool"/>
+        <Param name="colorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="Left_stim" valType="code"/>
+        <Param name="color" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="stopVal" updates="constant" val="300" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="mask" updates="constant" val="None" valType="str"/>
+        <Param name="pos" updates="constant" val="(-7, -5.5)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="texture resolution" updates="constant" val="128" valType="code"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="flipHoriz" updates="constant" val="False" valType="bool"/>
+        <Param name="image" updates="set every repeat" val="$left_stim" valType="str"/>
+        <Param name="size" updates="constant" val="(6,6)" valType="code"/>
+      </ImageComponent>
+      <ImageComponent name="Right_stim">
+        <Param name="opacity" updates="constant" val="1" valType="code"/>
+        <Param name="flipVert" updates="constant" val="False" valType="bool"/>
+        <Param name="colorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="Right_stim" valType="code"/>
+        <Param name="color" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="stopVal" updates="constant" val="300" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="mask" updates="constant" val="None" valType="str"/>
+        <Param name="pos" updates="constant" val="(7, -5.5)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="texture resolution" updates="constant" val="128" valType="code"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="flipHoriz" updates="constant" val="False" valType="bool"/>
+        <Param name="image" updates="set every repeat" val="$right_stim" valType="str"/>
+        <Param name="size" updates="constant" val="(6, 6)" valType="code"/>
+      </ImageComponent>
+    </Routine>
+    <Routine name="Square_Presented">
+      <CodeComponent name="Code4Data">
+        <Param name="Begin Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="name" updates="None" val="Code4Data" valType="code"/>
+        <Param name="Begin Routine" updates="constant" val="win.mouseVisible = False&amp;#10;skipblankscreen2 = False&amp;#10;skipfoodreward2 = True" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
+        <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if mouseA_2.isPressedIn(background) and not (mouseA_2.isPressedIn(SurroundingArea_2)):&amp;#10;    continueRoutine = False&amp;#10;    thisExp.addData('mouseArTime',t)&amp;#10;    thisExp.addData('mouseArposition', mouseA_2.getPos())&amp;#10;    thisExp.addData('InstimulusAr', 0)&amp;#10;    thisExp.nextEntry()&amp;#10;    while mouseA_2.isPressedIn(background) and not (mouseA_2.isPressedIn(SurroundingArea_2)):&amp;#10;        continue&amp;#10;&amp;#10;elif (mouseA_2.isPressedIn(SurroundingArea_2)):&amp;#10;    skipblankscreen2 = True&amp;#10;    skipfoodreward2= False&amp;#10;    continueRoutine = False&amp;#10;    thisExp.addData('mouseArTime', t)&amp;#10;    thisExp.addData('mouseArposition', mouseA_2.getPos())&amp;#10;    thisExp.addData('InstimulusAr', 1)&amp;#10;    thisExp.nextEntry()&amp;#10;    while (mouseA_2.isPressedIn(SurroundingArea_2)):&amp;#10;        continue&amp;#10;&amp;#10;" valType="extendedCode"/>
+      </CodeComponent>
+      <MouseComponent name="mouseA_2">
+        <Param name="name" updates="None" val="mouseA_2" valType="code"/>
+        <Param name="timeRelativeTo" updates="constant" val="experiment" valType="str"/>
+        <Param name="stopVal" updates="constant" val="20" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="forceEndRoutineOnPress" updates="constant" val="False" valType="bool"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="saveMouseState" updates="None" val="never" valType="str"/>
+      </MouseComponent>
+      <PolygonComponent name="SurroundingArea_2">
+        <Param name="opacity" updates="constant" val="0" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="SurroundingArea_2" valType="code"/>
+        <Param name="fillColor" updates="constant" val="red" valType="str"/>
+        <Param name="stopVal" updates="constant" val="20" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="set every repeat" val="[-4, -7]" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="4" valType="int"/>
+        <Param name="size" updates="set every repeat" val="(4, 4)" valType="code"/>
+      </PolygonComponent>
+      <PolygonComponent name="TargetStimulusA_2">
+        <Param name="opacity" updates="set every repeat" val="1" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="TargetStimulusA_2" valType="code"/>
+        <Param name="fillColor" updates="constant" val="white" valType="str"/>
+        <Param name="stopVal" updates="constant" val="20" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="set every repeat" val="[-4, -7]" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="4" valType="int"/>
+        <Param name="size" updates="set every repeat" val="(2, 2)" valType="code"/>
+      </PolygonComponent>
+      <PolygonComponent name="background">
+        <Param name="opacity" updates="constant" val="0" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="background" valType="code"/>
+        <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="stopVal" updates="constant" val="20" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="4" valType="int"/>
+        <Param name="size" updates="constant" val="(50, 50)" valType="code"/>
+      </PolygonComponent>
     </Routine>
     <Routine name="Buffer">
       <PolygonComponent name="buffer">
@@ -168,20 +313,28 @@
       </TextComponent>
     </Routine>
     <Routine name="Nopeckblankscreen">
+      <CodeComponent name="code_4">
+        <Param name="Begin Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="name" updates="None" val="code_4" valType="code"/>
+        <Param name="Begin Routine" updates="constant" val="" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
+        <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if blankscreen.status == STARTED and t &gt;= frameRemains:&amp;#10;    continueRoutine = False" valType="extendedCode"/>
+      </CodeComponent>
       <CodeComponent name="Skiproutineifpresshasbeenmade">
         <Param name="Begin Experiment" updates="constant" val="" valType="extendedCode"/>
         <Param name="name" updates="None" val="Skiproutineifpresshasbeenmade" valType="code"/>
         <Param name="Begin Routine" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
-        <Param name="Each Frame" updates="constant" val="if skipblankscreen:&amp;#10;    trials_2.finished=True&amp;#10;    continueRoutine = False" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if skipblankscreen:&amp;#10;    trials_2.finished=True&amp;#10;    continueRoutine = False&amp;#10;" valType="extendedCode"/>
       </CodeComponent>
       <PolygonComponent name="blankscreen">
         <Param name="opacity" updates="constant" val="0" valType="code"/>
         <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
         <Param name="name" updates="None" val="blankscreen" valType="code"/>
-        <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
-        <Param name="stopVal" updates="constant" val="10" valType="code"/>
+        <Param name="fillColor" updates="constant" val="green" valType="str"/>
+        <Param name="stopVal" updates="constant" val="5" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
         <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
@@ -191,21 +344,21 @@
         <Param name="startType" updates="None" val="time (s)" valType="str"/>
         <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="ori" updates="constant" val="0" valType="code"/>
-        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="stopType" updates="None" val="time (s)" valType="str"/>
         <Param name="startVal" updates="None" val="0.0" valType="code"/>
         <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
         <Param name="nVertices" updates="constant" val="4" valType="int"/>
-        <Param name="size" updates="constant" val="(0.5, 0.5)" valType="code"/>
+        <Param name="size" updates="constant" val="(5, 5)" valType="code"/>
       </PolygonComponent>
     </Routine>
     <Routine name="Trialstart">
       <CodeComponent name="code_2">
-        <Param name="Begin Experiment" updates="constant" val="from psychopy import core, event&amp;#10;" valType="extendedCode"/>
+        <Param name="Begin Experiment" updates="constant" val="&amp;#10;win.mouseVisible = False" valType="extendedCode"/>
         <Param name="name" updates="None" val="code_2" valType="code"/>
-        <Param name="Begin Routine" updates="constant" val="skipblankscreen = False&amp;#10;timer = core.Clock()&amp;#10;event.Mouse(visible = True)&amp;#10;&amp;#10;&amp;#10;# setup some python lists for storing info about the mouseA&amp;#10;mouseA.x = []&amp;#10;mouseA.y = []&amp;#10;mouseA.leftButton = []&amp;#10;mouseA.midButton = []&amp;#10;mouseA.rightButton = []&amp;#10;mouseA.time = []&amp;#10;" valType="extendedCode"/>
-        <Param name="End Routine" updates="constant" val="trials_2.addData('StartKeyTime', timer.getTime())&amp;#10;# store data for trials_2 (TrialHandler)&amp;#10;#trials_2.addData('mouseA.x', mouseA.x)&amp;#10;#trials_2.addData('mouseA.y', mouseA.y)&amp;#10;trials_2.addData('StartKeyNumPecks', mouseA.leftButton)&amp;#10;#trials_2.addData('mouseA.midButton', mouseA.midButton)&amp;#10;#trials_2.addData('mouseA.rightButton', mouseA.rightButton)&amp;#10;trials_2.addData('StartKeyPeckTimes', mouseA.time)&amp;#10;timer.reset()" valType="extendedCode"/>
+        <Param name="Begin Routine" updates="constant" val="skipblankscreen = False&amp;#10;win.mouseVisible = False&amp;#10;" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
-        <Param name="Each Frame" updates="constant" val="if mouseA.isPressedIn(startingkey1on):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey1off):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey2on):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey2off):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey3on):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey3off):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey4on):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey4off):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey5on):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;if mouseA.isPressedIn(startingkey5off):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;&amp;#10;# *mouseA* updates&amp;#10;if t &gt;= 0.0 and mouseA.status == NOT_STARTED:&amp;#10;    # keep track of start time/frame for later&amp;#10;    mouseA.tStart = t&amp;#10;    mouseA.frameNStart = frameN  # exact frame index&amp;#10;    mouseA.status = STARTED&amp;#10;    event.mouseButtons = [0, 0, 0]  # reset mouse buttons to be 'up'&amp;#10;frameRemains = 0.0 + 5- win.monitorFramePeriod * 0.75  # most of one frame period left&amp;#10;if mouseA.status == STARTED and t &gt;= frameRemains:&amp;#10;    mouseA.status = STOPPED&amp;#10;if mouseA.status == STARTED:  # only update if started and not stopped!&amp;#10;    buttons = mouseA.getPressed()&amp;#10;    #if sum(buttons) &gt; 0:  # ie if any button is pressed&amp;#10;    # Record mouse position if a key is pressed&amp;#10;    if any(mouseA.getPressed()):&amp;#10;        x, y = mouseA.getPos()&amp;#10;        mouseA.x.append(x)&amp;#10;        mouseA.y.append(y)&amp;#10;        mouseA.leftButton.append(buttons[0])&amp;#10;        mouseA.midButton.append(buttons[1])&amp;#10;        mouseA.rightButton.append(buttons[2])&amp;#10;        mouseA.time.append(TrialstartClock.getTime())&amp;#10;&amp;#10;        # Wait until all buttons are released&amp;#10;    while any(mouseA.getPressed()):&amp;#10;        pass" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if mouseA.isPressedIn(background_2) and not (mouseA.isPressedIn(surroundingarea)):&amp;#10;    thisExp.addData('mouseArTime',t)&amp;#10;    thisExp.addData('mouseArposition', mouseA.getPos())&amp;#10;    thisExp.addData('In_Trial_Start', 0)&amp;#10;    thisExp.nextEntry()&amp;#10;    while mouseA.isPressedIn(background_2) and not (mouseA.isPressedIn(surroundingarea)):&amp;#10;        continue&amp;#10;&amp;#10;if (mouseA.isPressedIn(surroundingarea)):&amp;#10;    skipblankscreen = True&amp;#10;    continueRoutine = False&amp;#10;    thisExp.addData('mouseArTime', t)&amp;#10;    thisExp.addData('mouseArposition', mouseA.getPos())&amp;#10;    thisExp.addData('In_Trial_Start', 1)&amp;#10;    thisExp.nextEntry()&amp;#10;    while (mouseA.isPressedIn(surroundingarea)):&amp;#10;        continue&amp;#10;&amp;#10;if t &gt; 5:&amp;#10;    continueRoutine = False&amp;#10;&amp;#10;" valType="extendedCode"/>
       </CodeComponent>
       <MouseComponent name="mouseA">
         <Param name="name" updates="None" val="mouseA" valType="code"/>
@@ -219,6 +372,27 @@
         <Param name="startVal" updates="None" val="0.0" valType="code"/>
         <Param name="saveMouseState" updates="None" val="never" valType="str"/>
       </MouseComponent>
+      <PolygonComponent name="surroundingarea">
+        <Param name="opacity" updates="constant" val="0" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="surroundingarea" valType="code"/>
+        <Param name="fillColor" updates="constant" val="red" valType="str"/>
+        <Param name="stopVal" updates="constant" val="5" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(0, -6)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="3" valType="int"/>
+        <Param name="size" updates="constant" val="(8.5, 6.5)" valType="code"/>
+      </PolygonComponent>
       <PolygonComponent name="startingkey1on">
         <Param name="opacity" updates="constant" val="1" valType="code"/>
         <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
@@ -226,7 +400,7 @@
         <Param name="fillColor" updates="constant" val="white" valType="str"/>
         <Param name="stopVal" updates="constant" val="0.7" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -247,7 +421,7 @@
         <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="stopVal" updates="constant" val="1.0" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -268,7 +442,7 @@
         <Param name="fillColor" updates="constant" val="white" valType="str"/>
         <Param name="stopVal" updates="constant" val="1.7" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -289,7 +463,7 @@
         <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="stopVal" updates="constant" val="2.0" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -310,7 +484,7 @@
         <Param name="fillColor" updates="constant" val="white" valType="str"/>
         <Param name="stopVal" updates="constant" val="2.7" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -331,7 +505,7 @@
         <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="stopVal" updates="constant" val="3" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -352,7 +526,7 @@
         <Param name="fillColor" updates="constant" val="white" valType="str"/>
         <Param name="stopVal" updates="constant" val="3.7" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -373,7 +547,7 @@
         <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="stopVal" updates="constant" val="4.0" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -394,7 +568,7 @@
         <Param name="fillColor" updates="constant" val="white" valType="str"/>
         <Param name="stopVal" updates="constant" val="4.7" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -415,7 +589,7 @@
         <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
         <Param name="stopVal" updates="constant" val="5.0" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
-        <Param name="pos" updates="constant" val="(0,-9)" valType="code"/>
+        <Param name="pos" updates="constant" val="(0,-6)" valType="code"/>
         <Param name="interpolate" updates="constant" val="linear" valType="str"/>
         <Param name="lineWidth" updates="constant" val="1" valType="code"/>
         <Param name="startEstim" updates="None" val="" valType="code"/>
@@ -428,6 +602,27 @@
         <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
         <Param name="nVertices" updates="constant" val="3" valType="int"/>
         <Param name="size" updates="constant" val="(6,4)" valType="code"/>
+      </PolygonComponent>
+      <PolygonComponent name="background_2">
+        <Param name="opacity" updates="constant" val="0" valType="code"/>
+        <Param name="fillColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="background_2" valType="code"/>
+        <Param name="fillColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="stopVal" updates="constant" val="5" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
+        <Param name="interpolate" updates="constant" val="linear" valType="str"/>
+        <Param name="lineWidth" updates="constant" val="1" valType="code"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="lineColor" updates="constant" val="$[1,1,1]" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="lineColorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="nVertices" updates="constant" val="4" valType="int"/>
+        <Param name="size" updates="constant" val="(50, 50)" valType="code"/>
       </PolygonComponent>
     </Routine>
     <Routine name="FoodReward">
@@ -445,7 +640,7 @@
         <Param name="Begin Routine" updates="constant" val="feeder_open = False&amp;#10;&amp;#10;&amp;#10;&amp;#10;" valType="extendedCode"/>
         <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
-        <Param name="Each Frame" updates="constant" val="#if FeederOpening.status == STARTED:&amp;#10;    #if not feeder_open:&amp;#10;        #feeder_open = True&amp;#10;        #fe$eder_start = t # current time&amp;#10;        #servo.setAccel(0,-2)      #set servo 0 acceleration to -2&amp;#10;        #servo.setTarget(0,3250)  #move servo to feed&amp;#10;        #servo.setAccel(10,-2) #for light&amp;#10;        #servo.setTarget(10,6000) #turn the light on&amp;#10;#servo settings are touchy, these will probably need altering to your specifics &amp;#10;&amp;#10;#if FeederClosing.status == STARTED:&amp;#10;    #servo.setAccel(0,-2)      #set servo 0 acceleration to -2&amp;#10;    #servo.setTarget(0,6000)  #move servo to resting position&amp;#10;    #servo.setAccel(10,-2)  #for the light&amp;#10;    #servo.setTarget(10,4500) #turn the light off&amp;#10;    #servo.close &amp;#10;    #feeder_open = False" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if FeederOpening.status == STARTED:&amp;#10;    if not feeder_open:&amp;#10;        feeder_open = True&amp;#10;        feeder_start = t # current time&amp;#10;        servo.setAccel(0,-2)      #set servo 0 acceleration to -2&amp;#10;        servo.setTarget(0,4600)  #move servo to feed &amp;#10;#servo settings are touchy, these will probably need altering to your specifics &amp;#10;&amp;#10;if FeederClosing.status == STARTED:&amp;#10;    servo.setAccel(0,-2)      #set servo 0 acceleration to -2&amp;#10;    servo.setTarget(0,6000)  #move servo to resting position&amp;#10;    servo.close &amp;#10;    feeder_open = False" valType="extendedCode"/>
       </CodeComponent>
       <TextComponent name="FeederOpening">
         <Param name="opacity" updates="constant" val="1" valType="code"/>
@@ -454,7 +649,7 @@
         <Param name="wrapWidth" updates="constant" val="" valType="code"/>
         <Param name="color" updates="constant" val="white" valType="str"/>
         <Param name="text" updates="constant" val="Feeder Opening" valType="str"/>
-        <Param name="stopVal" updates="constant" val="1.5" valType="code"/>
+        <Param name="stopVal" updates="constant" val="3" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
         <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
         <Param name="flip" updates="constant" val="" valType="str"/>
@@ -465,7 +660,7 @@
         <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
         <Param name="startVal" updates="None" val="0.0" valType="code"/>
         <Param name="font" updates="constant" val="Arial" valType="str"/>
-        <Param name="letterHeight" updates="constant" val="2" valType="code"/>
+        <Param name="letterHeight" updates="constant" val="0" valType="code"/>
       </TextComponent>
       <TextComponent name="FeederClosing">
         <Param name="opacity" updates="constant" val="1" valType="code"/>
@@ -474,7 +669,7 @@
         <Param name="wrapWidth" updates="constant" val="" valType="code"/>
         <Param name="color" updates="constant" val="white" valType="str"/>
         <Param name="text" updates="constant" val="Feeder Closing&amp;#10;" valType="str"/>
-        <Param name="stopVal" updates="constant" val="1.5" valType="code"/>
+        <Param name="stopVal" updates="constant" val=".2" valType="code"/>
         <Param name="durationEstim" updates="None" val="" valType="code"/>
         <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
         <Param name="flip" updates="constant" val="" valType="str"/>
@@ -483,14 +678,72 @@
         <Param name="startType" updates="None" val="time (s)" valType="str"/>
         <Param name="ori" updates="constant" val="0" valType="code"/>
         <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
-        <Param name="startVal" updates="None" val="1.5" valType="code"/>
+        <Param name="startVal" updates="None" val="3" valType="code"/>
         <Param name="font" updates="constant" val="Arial" valType="str"/>
-        <Param name="letterHeight" updates="constant" val="2" valType="code"/>
+        <Param name="letterHeight" updates="constant" val="0" valType="code"/>
+      </TextComponent>
+    </Routine>
+    <Routine name="FoodReward_2">
+      <CodeComponent name="Skipfoodreward_2">
+        <Param name="Begin Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="name" updates="None" val="Skipfoodreward_2" valType="code"/>
+        <Param name="Begin Routine" updates="constant" val="" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
+        <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if skipfoodreward2:&amp;#10;    continueRoutine = False" valType="extendedCode"/>
+      </CodeComponent>
+      <CodeComponent name="codeforfood_2">
+        <Param name="Begin Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="name" updates="None" val="codeforfood_2" valType="code"/>
+        <Param name="Begin Routine" updates="constant" val="feeder_open = False&amp;#10;&amp;#10;&amp;#10;&amp;#10;" valType="extendedCode"/>
+        <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
+        <Param name="End Experiment" updates="constant" val="" valType="extendedCode"/>
+        <Param name="Each Frame" updates="constant" val="if FeederOpening.status == STARTED:&amp;#10;    if not feeder_open:&amp;#10;        feeder_open = True&amp;#10;        feeder_start = t # current time&amp;#10;        servo.setAccel(0,-2)      #set servo 0 acceleration to -2&amp;#10;        servo.setTarget(0,4600)  #move servo to feed &amp;#10;#servo settings are touchy, these will probably need altering to your specifics &amp;#10;&amp;#10;if FeederClosing.status == STARTED:&amp;#10;    servo.setAccel(0,-2)      #set servo 0 acceleration to -2&amp;#10;    servo.setTarget(0,6000)  #move servo to resting position&amp;#10;    servo.close &amp;#10;    feeder_open = False" valType="extendedCode"/>
+      </CodeComponent>
+      <TextComponent name="FeederOpening_2">
+        <Param name="opacity" updates="constant" val="1" valType="code"/>
+        <Param name="colorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="FeederOpening_2" valType="code"/>
+        <Param name="wrapWidth" updates="constant" val="" valType="code"/>
+        <Param name="color" updates="constant" val="white" valType="str"/>
+        <Param name="text" updates="constant" val="Feeder Opening" valType="str"/>
+        <Param name="stopVal" updates="constant" val="3" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
+        <Param name="flip" updates="constant" val="" valType="str"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="0.0" valType="code"/>
+        <Param name="font" updates="constant" val="Arial" valType="str"/>
+        <Param name="letterHeight" updates="constant" val="0" valType="code"/>
+      </TextComponent>
+      <TextComponent name="FeederClosing_2">
+        <Param name="opacity" updates="constant" val="1" valType="code"/>
+        <Param name="colorSpace" updates="constant" val="rgb" valType="str"/>
+        <Param name="name" updates="None" val="FeederClosing_2" valType="code"/>
+        <Param name="wrapWidth" updates="constant" val="" valType="code"/>
+        <Param name="color" updates="constant" val="white" valType="str"/>
+        <Param name="text" updates="constant" val="Feeder Closing&amp;#10;" valType="str"/>
+        <Param name="stopVal" updates="constant" val=".2" valType="code"/>
+        <Param name="durationEstim" updates="None" val="" valType="code"/>
+        <Param name="pos" updates="constant" val="(0, 0)" valType="code"/>
+        <Param name="flip" updates="constant" val="" valType="str"/>
+        <Param name="startEstim" updates="None" val="" valType="code"/>
+        <Param name="units" updates="None" val="from exp settings" valType="str"/>
+        <Param name="startType" updates="None" val="time (s)" valType="str"/>
+        <Param name="ori" updates="constant" val="0" valType="code"/>
+        <Param name="stopType" updates="None" val="duration (s)" valType="str"/>
+        <Param name="startVal" updates="None" val="3" valType="code"/>
+        <Param name="font" updates="constant" val="Arial" valType="str"/>
+        <Param name="letterHeight" updates="constant" val="0" valType="code"/>
       </TextComponent>
     </Routine>
     <Routine name="Slide_Two_Move_Servo_to_Rest">
       <CodeComponent name="importmaestro">
-        <Param name="Begin Experiment" updates="constant" val="import maestro&amp;#10;servo = maestro.Controller('COM4')&amp;#10;servo.setAccel(0,-2)      #set servo 0 acceleration to -4&amp;#10;servo.setTarget(0,6000)&amp;#10;servo.setAccel(10,-2) #for the light&amp;#10;servo.setTarget(10,4500) #turn the light off" valType="extendedCode"/>
+        <Param name="Begin Experiment" updates="constant" val="import maestro&amp;#10;servo = maestro.Controller('COM6')&amp;#10;servo.setAccel(0,-2)      #set servo 0 acceleration to -4&amp;#10;servo.setTarget(0,6000)&amp;#10;servo.setAccel(10,-2) #for the light&amp;#10;servo.setTarget(10,4500) #turn the light off" valType="extendedCode"/>
         <Param name="name" updates="None" val="importmaestro" valType="code"/>
         <Param name="Begin Routine" updates="constant" val="" valType="extendedCode"/>
         <Param name="End Routine" updates="constant" val="" valType="extendedCode"/>
@@ -520,32 +773,19 @@
     </Routine>
   </Routines>
   <Flow>
+    <Routine name="Slide_One_Servo_Info"/>
+    <Routine name="Slide_Two_Move_Servo_to_Rest"/>
     <LoopInitiator loopType="TrialHandler" name="trials">
-      <Param name="conditionsFile" updates="None" val="GrackleFlex_CONDITIONS_DarkPurpleReward.xlsx" valType="str"/>
+      <Param name="conditionsFile" updates="None" val="VioletReward_V2.xlsx" valType="str"/>
       <Param name="name" updates="None" val="trials" valType="code"/>
       <Param name="isTrials" updates="None" val="True" valType="bool"/>
       <Param name="random seed" updates="None" val="" valType="code"/>
-      <Param name="loopType" updates="None" val="random" valType="str"/>
+      <Param name="loopType" updates="None" val="sequential" valType="str"/>
       <Param name="nReps" updates="None" val="1" valType="code"/>
       <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
-      <Param name="conditions" updates="None" val="[{'Trial': u'a', 'colorLEFT': u'violet', 'colorRIGHT': u'purple', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'Trial': u'b', 'colorLEFT': u'purple', 'colorRIGHT': u'violet', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'Trial': u'a', 'colorLEFT': u'violet', 'colorRIGHT': u'purple', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'Trial': u'b', 'colorLEFT': u'purple', 'colorRIGHT': u'violet', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'Trial': u'a', 'colorLEFT': u'violet', 'colorRIGHT': u'purple', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'Trial': u'b', 'colorLEFT': u'purple', 'colorRIGHT': u'violet', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'Trial': u'a', 'colorLEFT': u'violet', 'colorRIGHT': u'purple', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'Trial': u'b', 'colorLEFT': u'purple', 'colorRIGHT': u'violet', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'Trial': u'a', 'colorLEFT': u'violet', 'colorRIGHT': u'purple', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'Trial': u'b', 'colorLEFT': u'purple', 'colorRIGHT': u'violet', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}]" valType="str"/>
+      <Param name="conditions" updates="None" val="[{'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Dark_Purple_Replacement.jpg', 'Trial': u'b', 'right_stim': u'Violet_Replacement.jpg', 'RIGHTrewarded': u'yes', 'LEFTrewarded': u'no'}, {'left_stim': u'Violet_Replacement.jpg', 'Trial': u'a', 'right_stim': u'Dark_Purple_Replacement.jpg', 'RIGHTrewarded': u'no', 'LEFTrewarded': u'yes'}]" valType="str"/>
       <Param name="Selected rows" updates="None" val="" valType="str"/>
     </LoopInitiator>
-    <LoopInitiator loopType="TrialHandler" name="trials_2">
-      <Param name="conditionsFile" updates="None" val="" valType="str"/>
-      <Param name="name" updates="None" val="trials_2" valType="code"/>
-      <Param name="isTrials" updates="None" val="True" valType="bool"/>
-      <Param name="random seed" updates="None" val="" valType="code"/>
-      <Param name="loopType" updates="None" val="random" valType="str"/>
-      <Param name="nReps" updates="None" val="100" valType="code"/>
-      <Param name="endPoints" updates="None" val="[0, 1]" valType="num"/>
-      <Param name="conditions" updates="None" val="None" valType="str"/>
-      <Param name="Selected rows" updates="None" val="" valType="str"/>
-    </LoopInitiator>
-    <Routine name="Trialstart"/>
-    <Routine name="Nopeckblankscreen"/>
-    <LoopTerminator name="trials_2"/>
-    <Routine name="Buffer"/>
     <Routine name="Colortest"/>
     <Routine name="FoodReward"/>
     <Routine name="ITI"/>
