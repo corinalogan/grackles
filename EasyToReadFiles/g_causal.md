@@ -15,7 +15,7 @@ This is one of the first studies planned for our long-term research on the role 
 
 ### A. STATE OF THE DATA
 
-\*\*Prior to collecting any <data:**> This preregistration was written, underwent two rounds of peer reviews and was recommended at PCI Ecology (see the [review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)).
+\*\*Prior to collecting any data:** This preregistration was written, underwent two rounds of peer reviews and was recommended at PCI Ecology (see the [review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)).
 
 ### B. PARTITIONING THE RESULTS
 
