@@ -55,12 +55,19 @@ This experiment adapts the procedure used by Blaisdell et al. (2006) to study ca
 
 ### D. METHODS
 
+#### **Open materials**
+
+Touchscreen training [protocol](https://docs.google.com/document/d/18HJzHVk-iFUwpBYRQoxVy1J6izFFr1_2joS9CRkyNSM/edit?usp=sharing).
+
 #### **Apparatus**
 
 Testing was conducted on an operant touchscreens mounted on a platform and placed on a cart inside an individual subject’s aviary. All stimuli were presented by computer on a color LCD monitor (NEC MultiSync LCD1550M). Pecks to the monitor were detected by an infrared touchscreen (Carroll Touch, Elotouch Systems, Fremont, CA) mounted in front of the monitor. A food hopper (Coulbourn Instruments, Allentown, PA) was located below the monitor with an access hole situated flush with the floor. When in the raised position, the hopper provided access to peanut pieces. Two speakers were present that could deliver a pure tone or a white noise stimulus. Geometric symbols could be displayed on the touchscreen monitor. These consisted of a yellow circle, a square, and a triangle, one shape in blue the other in green (the color of the square and triangle will be counterbalanced across subjects, while the yellow circle is for all subjects). All experimental procedures were programmed using PsychoPy (v1.85.2, Peirce (2009)).
 
 #### **Touch screen training**
 
+For the most up to date touchscreen training protocol, please see our [Google sheet](https://docs.google.com/document/d/18HJzHVk-iFUwpBYRQoxVy1J6izFFr1_2joS9CRkyNSM/edit?usp=sharing).
+
+**Training: food hopper**
 
 We would like grackles to associate the sound of the hopper moving with food being available (note: a light also turns on when the food hopper is available, however this experiment is conducted in outdoor aviaries where it is bright and thus the light might not be the most obvious cue). Every time the grackle approached the food hopper, we opened it remotely.  The opening makes a distinct sound, and the food hopper is left open until the grackle looked in before closing. End goal behavior for hopper training: grackle lands on platform, hopper is moved forward within reach, grackle retrieves food, hopper is moved out of reach, grackle can not obtain food.
 
@@ -75,7 +82,6 @@ Once the grackle comes to the platform, let it take the free piece of cracker, t
 
 5. **Criterion**: Subject needs at least 17 of the most recent 20 trials correct (with the hopper moving forward and backward at maximum speed), with at least 8/10 or 9/10 correct in the most recent two 10 trial blocks (as in @bateson2015opposite).  Intertrial interval =  10s (food is not available during this time so the grackle learns it must pay attention to when it is available).
 NOTE: if a bird passed criterion the previous day, re-run that program to make sure they retained the information before moving on to the next program.
-
 
 **Training: touch screen**
 
