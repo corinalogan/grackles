@@ -1,5 +1,9 @@
 # Table of Contents
 
+***Preregistrations: Peer Reviewed at PCI Ecology***
+
+4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./EasyToReadFiles/g_causal.md). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub. Peer review history at [PCI Ecology](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)
+
 ***Preregistrations***
 
 1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](./EasyToReadFiles/g_flexmanip.md). GitHub.
@@ -7,8 +11,6 @@
 2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Does manipulating behavioral flexibility affect exploration?](./EasyToReadFiles/g_exploration.md) GitHub.
 
 3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](./EasyToReadFiles/g_inhibition.md) GitHub.
-
-4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](./EasyToReadFiles/g_causal.md). Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. GitHub.
 
 5. Logan CJ, Bergeron L, Rowney C, McCune K. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](./EasyToReadFiles/g_flexforaging.md) GitHub.
 
