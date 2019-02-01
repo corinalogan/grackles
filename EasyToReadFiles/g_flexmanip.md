@@ -405,7 +405,7 @@ diversity <- read.csv("/Users/corina/GTGR/data/data_reversemulti.csv",
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(LatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+div <- MCMCglmm(log(LatencySolveNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -415,7 +415,7 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(LatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+base1 <- dredge(MCMCglmm(log(LatencySolveNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
@@ -431,7 +431,7 @@ diversity <- read.csv("/Users/corina/GTGR/data/data_reversemulti.csv",
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(LatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+div <- MCMCglmm(log(LatencyAttemptNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -441,7 +441,7 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(LatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+base1 <- dredge(MCMCglmm(log(LatencyAttemptNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
@@ -497,8 +497,7 @@ summary(serial)
 
 # How to calculate repeatability following advice from Tom
 # Houslay's blog http://rpubs.com/tomhouslay/200150
-library(lme4)
-rep <- lmer(TrialsToReverse ~ ReverseNumber + (1 | ID), data = serial2)
+rep <- glmer(TrialsToReverse ~ ReverseNumber + (1 | ID), data = serial2)
 
 #'we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals' http://rpubs.com/tomhouslay/200150
 library(tidyr)
