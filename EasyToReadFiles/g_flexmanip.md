@@ -125,6 +125,8 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 2.  Motor diversity: the number of different motor actions used when attempting to solve the multi-access box
 
+3.  ID (random effect because repeated measures on the same individuals)
+
 #### *P3a: repeatable within individuals within a context (reversal learning)*
 
 1.  Reversal number
