@@ -89,9 +89,9 @@ Number of trials to reverse a preference. An individual is considered to have a 
 
 *P2 alternative 2: additional analysis: latency and motor diversity*
 
-1.  Latency to attempt to solve a new locus on the multi-access box.
+1.  Latency to attempt to solve a new locus on the multi-access box (note: we will likely need to log transform this variable because latencies tend to be skewed)
 
-2.  Latency to solve a new locus on the multi-access box.
+2.  Latency to solve a new locus on the multi-access box (note: we will likely need to log transform this variable because latencies tend to be skewed)
 
 *P4: learning strategies*
 
