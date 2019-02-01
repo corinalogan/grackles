@@ -103,7 +103,7 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 1.  Reversal number
 
-2.  Batch
+2.  Batch (random effect because multiple batches included in the analysis)
 
 3.  ID (random effect because repeated measures on the same individuals)
 
@@ -117,7 +117,7 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 4.  Experimental group (manipulated=multiple reversals with color stimuli; control=one reversal plus equalized experience making choices where both are the same color and both contain a reward)
 
-5.  Batch
+5.  Batch (random effect because multiple batches included in the analysis)
 
 #### *P2 alternative 2: additional analysis: latency and motor diversity*
 
@@ -129,7 +129,7 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 1.  Reversal number
 
-2.  ID
+2.  ID (random effect because repeated measures on the same individuals)
 
 #### *P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
 
@@ -141,9 +141,9 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 4.  Cumulative number of rewards from previous trials on that day
 
-5.  ID (random effect)
+5.  ID  (random effect because repeated measures on the same individuals)
 
-6.  Batch (random effect)
+6.  Batch (random effect because multiple batches included in the analysis)
 
 #### *P3b: repeatable across contexts*
 
@@ -153,13 +153,13 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 3.  Average latency to solve a new locus
 
-4.  ID
+4.  ID (random effect because repeated measures on the same individuals)
 
 #### *P4: serial reversal learning strategy*
 
 1.  Trial number
 
-2.  ID
+2.  ID (random effect because repeated measures on the same individuals)
 
 ### E. ANALYSIS PLAN
 
@@ -259,9 +259,9 @@ Due to delays in setting up the field site, we were only able to test two grackl
 
 #### *P1: negative relationship between the number of trials to reverse a preference and the number of reversals?*
 
-**Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link.
+**Analysis:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -290,20 +290,19 @@ Actual power = 0.7083763
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect (approximated at f<sup>2</sup>=0.15 by Cohen (1988)).
 
 ``` r
-serial <- read.csv("/Users/corina/GTGR/data/data_reverse.csv", 
+seriald <- read.csv("/Users/corina/GTGR/data/data_reverse.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-serial1 <- glm(TrialsToReverse ~ ReverseNumber, family = "poisson", 
-    data = serial)
-# summary(serial1)
-
-sserial1 <- summary(serial1)
-library(xtable)
-sserial1.table <- xtable(sserial1)
-library(knitr)
-kable(sserial1.table, caption = "Table 1: Model selection output.", 
-    format = "html", digits = 2)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0), G2 = list(V = 1, nu = 0)))
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+    family = "poisson", data = seriald, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(serial)
+# autocorr(serial$Sol) #Did fixed effects converge?
+# autocorr(serial$VCV) #Did random effects converge?
 
 # Model Validation
 library(MuMIn)
@@ -318,9 +317,9 @@ kable(base1, caption = "Table 2: Model selection output.")
 
 #### *P2: serial reversal improves rule switching & problem solving*
 
-**Analysis:** Because the independent variables could influence each other, I will analyze them in a single model: Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. The contribution of each independent variable will be evaluated using the Estimate in the full model.
+**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model. A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -352,16 +351,17 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 improve <- read.csv("/Users/corina/GTGR/data/data_reversemulti.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-imp <- glm(AvgTrialsToReverse ~ ExperimentalGroup + AvgLatencySolveNewLoci + 
-    AvgLatencyAttemptNewLoci + TotalLoci + Batch, family = "poisson", 
-    data = improve)
-simp <- summary(imp)
-library(xtable)
-simp.table <- xtable(simp)
-library(knitr)
-kable(simp.table, caption = "Table 3: Model selection output.", 
-    format = "html", digits = 2)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0), G2 = list(V = 1, nu = 0)))
+imp <- MCMCglmm(TrialsToReverse ~ ExperimentalGroup + AvgLatencySolveNewLoci + 
+    AvgLatencyAttemptNewLoci + TotalLoci, random = ~Batch, 
+    family = "poisson", data = improve, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(imp)
+# autocorr(imp$Sol) #Did fixed effects converge?
+# autocorr(imp$VCV) #Did random effects converge?
 ```
 
 **P2 alternative 2: additional analysis: latency and motor diversity** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. The best-fitting model will be determined by comparing Akaike weights: this will show whether the best-fitting model results are likely to be reliable given the data (Burnham and Anderson 2003). Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIN package (D Bates, Maechler, and Bolker 2012). If the best fitting model has a high Akaike weight (&gt;0.89; (Burnham and Anderson 2003)), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 5).
