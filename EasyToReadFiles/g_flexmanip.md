@@ -67,6 +67,18 @@ Individual consistency of behavioral flexibility is defined as the number of tri
 
 ### D. METHODS
 
+**Planned Sample**
+
+Great-tailed grackles will be caught in the wild in Tempe, Arizona, USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 per treatment (control: 1 reversal; flexibility manipulation: multiple reversals including a transfer to a new stimulus)) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
+
+**Sample size rationale**
+
+We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). 
+
+**Data collection stopping rule**
+
+We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
+
 #### **Open materials**
 
 [Design files](./Multiaccess_box_design_files) for the multi-access box: 3D printer files and laser cutter files
@@ -639,19 +651,7 @@ From Logan (2016) (emphasis added):
 
 We anticipate that we will want to run additional/different analyses after reading McElreath (2016). We will revise this preregistration to include these new analyses before conducting the analyses above.
 
-### F. PLANNED SAMPLE
-
-Great-tailed grackles will be caught in the wild in Tempe, Arizona, USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 per treatment (control: 1 reversal; flexibility manipulation: multiple reversals including a transfer to a new stimulus)) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
-
-**Sample size rationale**
-
-We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size will be 8 birds per experiment (n=16 total), however we expect to be able to test many more.
-
-**Data collection stopping rule**
-
-We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
-
-### G. ETHICS
+### F. ETHICS
 
 This research is carried out in accordance with permits from the:
 
@@ -661,7 +661,7 @@ This research is carried out in accordance with permits from the:
 4.  Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
 5.  University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
 
-### H. AUTHOR CONTRIBUTIONS
+### G. AUTHOR CONTRIBUTIONS
 
 **Logan:** Hypothesis development, data collection, data analysis and interpretation, write up, revising/editing, materials/funding.
 
@@ -677,15 +677,15 @@ This research is carried out in accordance with permits from the:
 
 **McCune:** Data collection, data interpretation, revising/editing.
 
-### I. FUNDING
+### H. FUNDING
 
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan.
 
-### J. ACKNOWLEDGEMENTS
+### I. ACKNOWLEDGEMENTS
 
 We thank Dieter Lukas for help polishing the hypotheses and for developing an additional dependent variable (flexibility ratio); Ben Trumble for hosting the grackle project via office and lab space; Angela Bond for daily logistical support in the lab; Melissa Wilson Sayres for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Jay Taylor for grackle scouting and connecting us with facilities at Arizona State University; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; and Richard McElreath for project support.
 
-### K. [REFERENCES](MyLibrary.bib)
+### J. [REFERENCES](MyLibrary.bib)
 
 Bates, D, M Maechler, and B Bolker. 2012. “Lme4: Linear Mixed-Effects Models Using S4 Classes (2011). R Package Version 0.999375-42.”
 
