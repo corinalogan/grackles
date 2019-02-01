@@ -364,9 +364,9 @@ summary(imp)
 # autocorr(imp$VCV) #Did random effects converge?
 ```
 
-**P2 alternative 2: additional analysis: latency and motor diversity** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. Determine whether the test model results are likely to be reliable given the data when compared with the null model (Burnham and Anderson 2003). If the AIC difference between the two models is greater than 3, we will consider the model with the lower AIC value to be the best fitting model (Burnham and Anderson 2003).  The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 5).
+**P2 alternative 2: additional analysis: latency and motor diversity** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -399,23 +399,23 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 diversity <- read.csv("/Users/corina/GTGR/data/data_reversemulti.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-div <- glm(AvgLatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, 
-    family = "poisson", data = diversity)
-# summary(div)
-
-sdiv <- summary(div)
-library(xtable)
-sdiv.table <- xtable(sdiv)
-library(knitr)
-kable(sdiv.table, caption = "Table 4: Model selection output.", 
-    format = "html", digits = 2)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(LatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
 
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(glm(AvgLatencySolveNewLoci ~ TrialsToReverseLast + 
-    NumberMotorActionsMulti, family = "poisson", data = diversity))
+base1 <- dredge(MCMCglmm(LatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
 kable(base1, caption = "Table 5: Model selection output.")
 ```
@@ -425,25 +425,25 @@ kable(base1, caption = "Table 5: Model selection output.")
 diversity <- read.csv("/Users/corina/GTGR/data/data_reversemulti.csv", 
     header = T, sep = ",", stringsAsFactors = F)
 
-# GLM
-div <- glm(AvgLatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, 
-    family = "poisson", data = diversity)
-# summary(div)
-
-sdiv <- summary(div)
-library(xtable)
-sdiv.table <- xtable(sdiv)
-library(knitr)
-kable(sdiv.table, caption = "Table 6: Model selection output.", 
-    format = "html", digits = 2)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(LatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
 
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(glm(AvgLatencyAttemptNewLoci ~ TrialsToReverseLast + 
-    NumberMotorActionsMulti, family = "poisson", data = diversity))
+base1 <- dredge(MCMCglmm(LatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
-kable(base1, caption = "Table 7: Model selection output.")
+kable(base1, caption = "Table 5: Model selection output.")
 ```
 
 #### *P3a: repeatable within individuals within a context (reversal learning)*
