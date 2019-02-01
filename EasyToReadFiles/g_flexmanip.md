@@ -304,7 +304,7 @@ summary(serial)
 # autocorr(serial$Sol) #Did fixed effects converge?
 # autocorr(serial$VCV) #Did random effects converge?
 
-# Model Validation
+# AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
 base1 <- dredge(glm(TrialsToReverse ~ ReverseNumber, family = "poisson", 
@@ -313,7 +313,7 @@ library(knitr)
 kable(base1, caption = "Table 2: Model selection output.")
 ```
 
-**Model validation:** Determine whether the test model results are likely to be reliable given the data (Burnham and Anderson 2003). Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIN package (D Bates, Maechler, and Bolker 2012). If the best fitting model has a high Akaike weight (&gt;0.89; (Burnham and Anderson 2003)), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 2).
+**Model validation:** Determine whether the test model results are likely to be reliable given the data when compared with the null model (Burnham and Anderson 2003). If the AIC difference between the two models is greater than 3, we will consider the model with the lower AIC value to be the best fitting model (Burnham and Anderson 2003). The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 2).
 
 #### *P2: serial reversal improves rule switching & problem solving*
 
@@ -364,7 +364,7 @@ summary(imp)
 # autocorr(imp$VCV) #Did random effects converge?
 ```
 
-**P2 alternative 2: additional analysis: latency and motor diversity** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. The best-fitting model will be determined by comparing Akaike weights: this will show whether the best-fitting model results are likely to be reliable given the data (Burnham and Anderson 2003). Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIN package (D Bates, Maechler, and Bolker 2012). If the best fitting model has a high Akaike weight (&gt;0.89; (Burnham and Anderson 2003)), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 5).
+**P2 alternative 2: additional analysis: latency and motor diversity** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. Determine whether the test model results are likely to be reliable given the data when compared with the null model (Burnham and Anderson 2003). If the AIC difference between the two models is greater than 3, we will consider the model with the lower AIC value to be the best fitting model (Burnham and Anderson 2003).  The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 5).
 
 To determine our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
 
@@ -411,7 +411,7 @@ library(knitr)
 kable(sdiv.table, caption = "Table 4: Model selection output.", 
     format = "html", digits = 2)
 
-# Model Validation
+# AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
 base1 <- dredge(glm(AvgLatencySolveNewLoci ~ TrialsToReverseLast + 
@@ -437,7 +437,7 @@ library(knitr)
 kable(sdiv.table, caption = "Table 6: Model selection output.", 
     format = "html", digits = 2)
 
-# Model Validation
+# AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
 base1 <- dredge(glm(AvgLatencyAttemptNewLoci ~ TrialsToReverseLast + 
