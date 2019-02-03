@@ -24,7 +24,7 @@
 
 9. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). GitHub.
 
-*Note: full references are listed in [./Files/MyLibrary.bib](./MyLibrary.bib)*
+*Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
 ***Open Materials***
 
