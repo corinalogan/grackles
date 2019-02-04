@@ -85,9 +85,22 @@ Individual consistency of behavioral flexibility is defined as the number of tri
 
 ###D. METHODS
 
+**Planned Sample**
+	
+Great-tailed grackles will be caught in the wild in Tempe, Arizona, USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 per treatment (control: 1 reversal; flexibility manipulation: multiple reversals including a transfer to a new stimulus)) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
+	
+**Sample size rationale**
+	
+We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). 
+	
+**Data collection stopping rule**
+	
+We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
+
+
 ####**Open materials** 
 
-[Design files](./Multiaccess_box_design_files) for the multi-access box: 3D printer files and laser cutter files
+[Design files](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) for the multi-access box: 3D printer files and laser cutter files
 
 [Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all three experiments: color tube reversal learning, multi-access box, and touch screen reversal learning
 
@@ -108,9 +121,9 @@ Number of trials to reverse a preference. An individual is considered to have a 
 
 *P2 alternative 2: additional analysis: latency and motor diversity*
 
-1) Latency to attempt to solve a new locus on the multi-access box.
+1) Latency to attempt to solve a new locus on the multi-access box (note: we will likely need to log transform this variable because latency raw data tend to be skewed)
 
-2) Latency to solve a new locus on the multi-access box.
+2) Latency to solve a new locus on the multi-access box (note: we will likely need to log transform this variable because latency raw data tend to be skewed)
 
 *P4: learning strategies* 
 
@@ -122,7 +135,7 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 1) Reversal number
 
-2) Batch
+2) Batch (random effect because multiple batches included in the analysis)
 
 3) ID (random effect because repeated measures on the same individuals)
 
@@ -136,7 +149,7 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 4) Experimental group (manipulated=multiple reversals with color stimuli; control=one reversal plus equalized experience making choices where both are the same color and both contain a reward)
 
-5) Batch
+5) Batch (random effect because multiple batches included in the analysis)
 
 ####*P2 alternative 2: additional analysis: latency and motor diversity*
 
@@ -144,11 +157,13 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 2) Motor diversity: the number of different motor actions used when attempting to solve the multi-access box
 
+3) ID (random effect because repeated measures on the same individuals)
+
 ####*P3a: repeatable within individuals within a context (reversal learning)*
 
 1) Reversal number
 
-2) ID
+2) ID (random effect because repeated measures on the same individuals)
 
 ####*P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
 
@@ -160,9 +175,9 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 4) Cumulative number of rewards from previous trials on that day
 
-5) ID (random effect)
+5) ID (random effect because repeated measures on the same individuals)
 
-6) Batch (random effect)
+6) Batch (random effect because repeated measures on the same individuals)
 
 ####*P3b: repeatable across contexts*
 
@@ -170,15 +185,15 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 2) Condition (color tubes, multi-access box, touch screen)
 
-3) Average latency to solve a new locus
+3) Latency to solve a new locus
 
-4) ID
+4) ID (random effect because repeated measures on the same individuals)
 
 ####*P4: serial reversal learning strategy*
 
 1) Trial number
 
-2) ID
+2) ID (random effect because repeated measures on the same individuals)
 
 ###E. ANALYSIS PLAN
 
@@ -545,9 +560,9 @@ autocorr(rr1$VCV) #Did random effects converge?
 
 ####*P3b: individual consistency across contexts*
 
-**Analysis:** Do those individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box? Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. 
+**Analysis:** Do those individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box? Do those individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box? A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analyss in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -578,17 +593,16 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 improve1 <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLM: color reversal vs multi-access box
-rm <- glm(AvgTrialsToReverse ~ AvgLatencySolveNewLoci, data=improve1)
+# GLMM color reversal tubes compared with multi-access box and reversal on the touchscreen
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+rm <- MCMCglmm(LatencySolveNewLoci ~ Condition * ReversalNumber * TrialsToReverseT * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = improve1, verbose = F, prior = prior, 
+	    nitt = 13000, thin = 10, burnin = 3000)
 summary(rm)
-```
-
-```{r consistent2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-improve2 <- read.csv ("/Users/corina/GTGR/data/data_reversetouch.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#GLM: color reversal vs touch screen reversal
-rt <- glm(AvgTrialsToReverseR ~ AvgTrialsToReverseT, data=improve2)
-summary(rt)
+# autocorr(rm$Sol) #Did fixed effects converge?
+# autocorr(rm$VCV) #Did random effects converge?
 ```
 
 ####*P4: learning strategies*
@@ -609,29 +623,17 @@ From @logan2016behavioral (emphasis added):
 
 We anticipate that we will want to run additional/different analyses after reading @statrethinkingbook. We will revise this preregistration to include these new analyses before conducting the analyses above.
 
-###F. PLANNED SAMPLE
-
-Great-tailed grackles will be caught in the wild in Tempe, Arizona, USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 per treatment (control: 1 reversal; flexibility manipulation: multiple reversals including a transfer to a new stimulus)) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
-
-**Sample size rationale**
-
-We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). The minimum sample size will be 8 birds per experiment (n=16 total), however we expect to be able to test many more.
-
-**Data collection stopping rule**
-
-We will stop testing birds once we have completed two full aviary seasons (likely in March 2020).
-
-###G. ETHICS
+###F. ETHICS
 
 This research is carried out in accordance with permits from the:
 
 1) US Fish and Wildlife Service (scientific collecting permit number MB76700A-0,1,2)
 2) US Geological Survey Bird Banding Laboratory (federal bird banding permit number 23872)
-3) Arizona Game and Fish Department (scientific collecting license number SP594338 [2017] and SP606267 [2018])
+3) Arizona Game and Fish Department (scientific collecting license number SP594338 [2017], SP606267 [2018], and SP639866 [2019])
 4) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
-5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17)
+5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17 [2017])
 
-###H. AUTHOR CONTRIBUTIONS
+###G. AUTHOR CONTRIBUTIONS
 
 **Logan:** Hypothesis development, data collection, data analysis and interpretation, write up, revising/editing, materials/funding.
 
@@ -647,12 +649,12 @@ This research is carried out in accordance with permits from the:
 
 **McCune:** Data collection, data interpretation, revising/editing.
 
-###I. FUNDING
+###H. FUNDING
 
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology, and by a Leverhulme Early Career Research Fellowship to Logan.
 
-###J. ACKNOWLEDGEMENTS
+###I. ACKNOWLEDGEMENTS
 
 We thank Dieter Lukas for help polishing the hypotheses and for developing an additional dependent variable (flexibility ratio); Ben Trumble for hosting the grackle project via office and lab space; Angela Bond for daily logistical support in the lab; Melissa Wilson Sayres for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Jay Taylor for grackle scouting and connecting us with facilities at Arizona State University; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; and Richard McElreath for project support.
 
-###K. [REFERENCES](MyLibrary.bib)
+###J. [REFERENCES](MyLibrary.bib)
