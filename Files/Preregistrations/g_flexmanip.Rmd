@@ -314,6 +314,14 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r serial, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 seriald <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
 
+# Checking the residuals using the R package DHARMa (https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html)
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = fittedModel, n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+plot(simulationOutput) #QQ plot: want points on the red line, residual vs predicted lines should match each other. In the latter, red stars=data that are outside the range of simulated data
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors
+
+
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
