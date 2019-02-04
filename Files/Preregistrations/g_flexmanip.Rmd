@@ -377,9 +377,9 @@ library(knitr)
 kable(simp.table, caption="Table 3: Model selection output.", format="html", digits=2)
 ```
 
-**P2 alternative 2: additional analysis: latency and motor diversity** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. The best-fitting model will be determined by comparing Akaike weights: this will show whether the best-fitting model results are likely to be reliable given the data [@burnham2003model]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIN package [@bates2012lme4]. If the best fitting model has a high Akaike weight (>0.89; [@burnham2003model]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the [base/test *- delete as appropriate*] model (Table 5).
+**P2 alternative 2: additional analysis: latency and motor diversity** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (J. D. Hadfield 2010)) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) (J. Hadfield 2014). We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values &lt;0.01; (J. D. Hadfield 2010)), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-To determine our ability to detect actual effects, we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
 *Input:*
 
@@ -411,44 +411,50 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 #Latency to attempt to solve a new locus
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLM
-div <- glm(AvgLatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, family="poisson", data=diversity)
-#summary(div)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(log(LatencySolveNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
 
-sdiv <- summary(div)
-library(xtable)
-sdiv.table <- xtable(sdiv)
-library(knitr)
-kable(sdiv.table, caption="Table 4: Model selection output.", format="html", digits=2)
-
-#Model Validation
+# AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(glm(AvgLatencySolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, family="poisson", data=diversity))
+base1 <- dredge(MCMCglmm(log(LatencySolveNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
-kable(base1, caption="Table 5: Model selection output.")
+kable(base1, caption = "Table 5: Model selection output.")
 ```
 
 ```{r diversity2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Latency to solve a new locus
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLM
-div <- glm(AvgLatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, family="poisson", data=diversity)
-#summary(div)
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(log(LatencyAttemptNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
 
-sdiv <- summary(div)
-library(xtable)
-sdiv.table <- xtable(sdiv)
-library(knitr)
-kable(sdiv.table, caption="Table 6: Model selection output.", format="html", digits=2)
-
-#Model Validation
+# AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(glm(AvgLatencyAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, family="poisson", data=diversity))
+base1 <- dredge(MCMCglmm(log(LatencyAttemptNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
-kable(base1, caption="Table 7: Model selection output.")
+kable(base1, caption = "Table 5: Model selection output.")
 ```
 
 ####*P3a: repeatable within individuals within a context (reversal learning)*
