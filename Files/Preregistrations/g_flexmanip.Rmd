@@ -625,7 +625,7 @@ improve1 <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T,
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0)))
-rm <- MCMCglmm(log(LatencySolveNewLoci) ~ Condition * ReversalNumber * TrialsToReverseT * TrialsToReverse, random = ~ID, 
+rm <- MCMCglmm(NumberTrialsToSolveNewLoci ~ Condition * ReversalNumber * TrialsToReverseT * TrialsToReverse, random = ~ID, 
 	    family = "poisson", data = improve1, verbose = F, prior = prior, 
 	    nitt = 13000, thin = 10, burnin = 3000)
 summary(rm)
@@ -633,7 +633,7 @@ summary(rm)
 # autocorr(rm$VCV) #Did random effects converge?
 ```
 
-####*P4: learning strategies*
+####*P4: learning strategies (for birds in the manipulated group only)*
 
 **Analysis:** Learning strategies will be identified by matching them to the two known approximate strategies of the contextual, binary multi-armed bandit: epsilon-first and epsilon-decreasing ([@mcinerney2010], as in [@logan2016behavioral]). 
 
@@ -646,6 +646,34 @@ From @logan2016behavioral (emphasis added):
 >Equation 2 (exploitation phase): $$ ( 1 - \epsilon ) N $$
 
 >N is the number of trials given, and epsilon, $$\epsilon$$, represents the subject’s uncertainty about the location of the reward, starting at complete uncertainty ($\epsilon$ = 1) at the beginning of the experiment and decreasing rapidly as individuals gain experience with the task (exploration phase where the rewarded [option] is chosen below or at chance levels) and switch to the exploitative phase (the rewarded [option] is chosen significantly above chance levels). Because the [subjects] needed to learn the rules of the task, they necessarily had an exploration phase. The **epsilon-first strategy** involves an exploration phase followed by an entirely exploitative phase. The optimal strategy overall would be to explore one color in the first trial and the other color in the second trial, and then switch to an exploitative strategy (choose the rewarded [option] significantly above chance levels). In this case there would be no pattern [in the learning curve] in the choices [during] the exploration phase because it would consist of sampling each [option] only once. In the **epsilon-decreasing strategy**, subjects would start by making some incorrect choices and then increase their choice of the rewarded [option] gradually as their uncertainty decreases until they choose the rewarded [option] significantly above chance levels. In this case, a linear pattern emerges [in the learning curve] during the exploration phase. 
+
+We will then quantitatively determine to what degree each bird used the exploration versus exploitation strategy using methods in [federspiel2017adjusting] by calculating the number of 20-trial blocks where birds were choosing “randomly” (6-14 correct choices; called sampling blocks; akin to the exploration phase in our preregistration) was divided by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (15-20 correct choices; akin to the exploitation phase in our preregistration). These ratios, calculated for each bird for their serial reversals, quantitatively discern the exploration from the exploitation phases.
+
+```{r strategy, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+strat <- read.csv ("/Users/corina/GTGR/data/data_strategy.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# GLMM explore strategy (6-14 correct choices/20 trial block) ratio
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+st <- MCMCglmm(ratioExplore ~ ReversalNumber, random = ~ID, 
+	    family = "poisson", data = strat, verbose = F, prior = prior, 
+	    nitt = 13000, thin = 10, burnin = 3000)
+summary(st)
+# autocorr(st$Sol) #Did fixed effects converge?
+# autocorr(st$VCV) #Did random effects converge?
+
+# GLMM exploit strategy (6-14 correct choices/20 trial block) ratio
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+et <- MCMCglmm(ratioExploit ~ ReversalNumber, random = ~ID, 
+	    family = "poisson", data = strat, verbose = F, prior = prior, 
+	    nitt = 13000, thin = 10, burnin = 3000)
+summary(et)
+# autocorr(et$Sol) #Did fixed effects converge?
+# autocorr(et$VCV) #Did random effects converge?
+```
 
 ####*Alternative Analyses*
 
