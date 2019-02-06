@@ -121,9 +121,9 @@ Number of trials to reverse a preference. An individual is considered to have a 
 
 *P2 alternative 2: additional analysis: latency and motor diversity*
 
-1) Latency to attempt to solve a new locus on the multi-access box (note: we will likely need to log transform this variable because latency raw data tend to be skewed)
+1) Number of trials to attempt a new locus on the multi-access box
 
-2) Latency to solve a new locus on the multi-access box (note: we will likely need to log transform this variable because latency raw data tend to be skewed)
+2) Number of trials to solve (meet criterion) a new locus on the multi-access box
 
 *P4: learning strategies* 
 
@@ -429,7 +429,7 @@ diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(log(LatencySolveNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+div <- MCMCglmm(TrialsToSolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -439,7 +439,7 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(log(LatencySolveNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+base1 <- dredge(MCMCglmm(TrialsToSolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
@@ -454,7 +454,7 @@ diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(log(LatencyAttemptNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+div <- MCMCglmm(TrialsToAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -464,7 +464,7 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(log(LatencyAttemptNewLoci) ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+base1 <- dredge(MCMCglmm(TrialsToAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
