@@ -312,14 +312,6 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r serial, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 seriald <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
 
-# Checking the residuals using the R package DHARMa (https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html)
-library(DHARMa)
-simulationOutput <- simulateResiduals(fittedModel = fittedModel, n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-plot(simulationOutput) #QQ plot: want points on the red line, residual vs predicted lines should match each other. In the latter, red stars=data that are outside the range of simulated data
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors
-
-
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
@@ -339,6 +331,14 @@ base1 <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch,
 	    nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
 kable(base1, caption="Table 2: Model selection output.")
+
+# DATA CHECKING: Checking the residuals using the R package DHARMa (https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html)
+# NOTE: DHARMa doesn't support MCMCglmm, therefore we are using the closest supported model: glmerMod from the R package lme4
+library(DHARMa)
+simulationOutput <- simulateResiduals(fittedModel = glmerMod(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch)), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+plot(simulationOutput) #QQ plot: want points on the red line, residual vs predicted lines should match each other. In the latter, red stars=data that are outside the range of simulated data
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data when compared with the null model [@burnham2003model]. If the AIC difference between the two models is greater than 3, we will consider the model with the lower AIC value to be the best fitting model [@burnham2003model].
@@ -514,6 +514,15 @@ summary(serial)
 #autocorr(serial$Sol) #Did fixed effects converge?
 #autocorr(serial$VCV) #Did random effects converge?
 
+#REPEATABILITY
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units])
+
+#Now compare with the raw repeatability (null model)
+prior2 = list(G=list(G1=list(V=1,nu=0)))
+serialNull <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior2, nitt=13000, thin=10, burnin=3000)
+serialNull$VCV[,ID]/(serialNull$VCV[,ID]+serialNull$VCV[,units])
+
+######DELETE below after I test the new repeatability
 #How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
 rep <- glmer(TrialsToReverse ~ ReverseNumber + (1|ID), data=serial2)
 
