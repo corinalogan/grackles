@@ -205,65 +205,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 ####*Data checking*
 
-The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009].
-
-```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** The distribution of the actual data versus what a normal distribution would look like with simulated data."}
-#Check the dependent variables for normality: Histograms
-#Trials to reverse
-reverse <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Latency to attempt/solve a new locus
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
-
-op <- par(mfrow=c(2,3), mar=c(4,4,2,0.2))
-#This is what the distribution of actual data looks like
-hist(reverse$TrialsToReverse, xlab="Number of trials to reverse a preference", main="Actual Data")
-hist(diversity$AvgLatencyAttemptNewLoci, xlab="Latency to attempt a new locus (s)", main="Actual Data")
-hist(diversity$AvgLatencySolveNewLoci, xlab="Latency to solve a new locus (s)", main="Actual Data")
-
-#Given the actual data, this is what a normal distribution would look like
-X2 <- rnorm(1281, mean=mean(reverse$TrialsToReverse), sd=sd(reverse$TrialsToReverse))
-hist(X2, xlab="Number of trials to reverse a preference", main="Simulated Data")
-
-Y2 <- rnorm(1281, mean=mean(diversity$AvgLatencyAttemptNewLoci), sd=sd(diversity$AvgLatencyAttemptNewLoci))
-hist(Y2, xlab="Latency to attempt a new locus (s)", main="Simulated Data")
-
-Z2 <- rnorm(1281, mean=mean(diversity$AvgLatencySolveNewLoci), sd=sd(diversity$AvgLatencySolveNewLoci))
-hist(Z2, xlab="Latency to solve a new locus (s)", main="Simulated Data")
-
-```
-
-```{r dist_check2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 3.** Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]. Top row = Trials to reverse, bottom row = Latency to solve a new locus"}
-#Check the dependent variables for normality: Q-Q plot
-#Trials to reverse
-reverse <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Latency to attempt/solve a new locus
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Figure 2. Visual check of the Normal Q-Q plot
-op <- par(mfrow=c(2,4), mar=c(4,4,2,0.2))
-plot(glm(reverse$TrialsToReverse~reverse$ReverseNumber)) 
-plot(glm(diversity$AvgLatencySolveNewLoci~diversity$AvgLatencyAttemptNewLoci)) 
-```
-
-If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) [@zuur2009].
-
-```{r dist_checkResid, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 4.** Visual check of the residuals."}
-#Check the dependent variables for normality: Residuals
-detour <- read.csv ("/Users/corina/GTGR/data/data_detour.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Trials to reverse
-reverse <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Latency to attempt/solve a new locus
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Figure 3. Visual check of the residuals
-op <- par(mfrow=c(1,2), mar=c(4,4,2,0.2))
-plot(residuals(glm(reverse$TrialsToReverse~reverse$ReverseNumber)), ylab="Reverse residuals: Trials to reverse ~ Reverse number")
-plot(residuals(glm(diversity$AvgLatencySolveNewLoci~diversity$AvgLatencyAttemptNewLoci)), ylab="Multi-access residuals: Avg solve latency ~ Avg attempt latency")
-```
+The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
 ####*Determining the threshold: How many reversals are enough?*
 
@@ -312,6 +254,17 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r serial, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 seriald <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=seriald), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
@@ -331,14 +284,6 @@ base1 <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch,
 	    nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
 kable(base1, caption="Table 2: Model selection output.")
-
-# DATA CHECKING: Checking the residuals using the R package DHARMa (https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html)
-# NOTE: DHARMa doesn't support MCMCglmm, therefore we are using the closest supported model: glmerMod from the R package lme4
-library(DHARMa)
-simulationOutput <- simulateResiduals(fittedModel = glmerMod(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch)), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-plot(simulationOutput) #QQ plot: want points on the red line, residual vs predicted lines should match each other. In the latter, red stars=data that are outside the range of simulated data
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data when compared with the null model [@burnham2003model]. If the AIC difference between the two models is greater than 3, we will consider the model with the lower AIC value to be the best fitting model [@burnham2003model].
@@ -378,11 +323,22 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r improves, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 improve <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOut <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + AvgLatencyAttemptNewLoci + TotalLoci + (1|Batch), family=poisson, data=improve), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOut$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOut) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOut) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOut) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOut) #...there should be no pattern in the data points in the right panel
+plotResiduals(Condition, simulationOut$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0), G2 = list(V = 1, nu = 0)))
-imp <- MCMCglmm(TrialsToReverse ~ ExperimentalGroup + AvgLatencySolveNewLoci + 
+imp <- MCMCglmm(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + 
 	    AvgLatencyAttemptNewLoci + TotalLoci, random = ~Batch, 
 	    family = "poisson", data = improve, verbose = F, prior = prior, 
 	    nitt = 13000, thin = 10, burnin = 3000)
@@ -425,6 +381,18 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 #Latency to attempt to solve a new locus
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutp <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutp$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutp) #...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMulti, simulationOutp$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutp$scaledResiduals)
+
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
@@ -449,6 +417,18 @@ kable(base1, caption = "Table 5: Model selection output.")
 ```{r diversity2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Latency to solve a new locus
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMulti, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
 
 # GLMM
 library(MCMCglmm)
@@ -506,7 +486,18 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r repeatableR, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 serial2 <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID), family=poisson, data=serial2), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+
+# GLMM
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
@@ -514,12 +505,16 @@ summary(serial)
 #autocorr(serial$Sol) #Did fixed effects converge?
 #autocorr(serial$VCV) #Did random effects converge?
 
+serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) #latent scale adjusted repeatability and its credible interval
+
+
 #REPEATABILITY
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units])
 
 #Now compare with the raw repeatability (null model)
 prior2 = list(G=list(G1=list(V=1,nu=0)))
 serialNull <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior2, nitt=13000, thin=10, burnin=3000)
+
 serialNull$VCV[,ID]/(serialNull$VCV[,ID]+serialNull$VCV[,units])
 
 ######DELETE below after I test the new repeatability
@@ -576,7 +571,18 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r motivation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 rr <- read.csv ("/Users/corina/GTGR/data/data_reverseraw.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM - Is trial the main independent variable associated with learning performance (CorrectChoice) or are other variables associated with performance, including motivation and hunger?
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(CorrectChoice ~ Trial + LatencyToChoose + MinSinceFoodRemoved + NumberRewardsFromPrevTrials + (1|ID) + (1|Batch), family=binomial, data=rr), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(LatencyToChoose, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+
+# GLMM - Is trial the main independent variable associated with learning performance (CorrectChoice) or are other variables associated with performance, including motivation and hunger?
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0))) 
 
@@ -621,11 +627,22 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 ```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 improve1 <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLoci ~ Condition + ReversalNumber + TrialsToReverseT + TrialsToReverse + (1|ID), family=poisson, data=improve1), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+
 # GLMM color reversal tubes compared with multi-access box and reversal on the touchscreen
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0)))
-rm <- MCMCglmm(NumberTrialsToSolveNewLoci ~ Condition * ReversalNumber * TrialsToReverseT * TrialsToReverse, random = ~ID, 
+rm <- MCMCglmm(TrialsToSolveNewLoci ~ Condition * ReversalNumber * TrialsToReverseT * TrialsToReverse, random = ~ID, 
 	    family = "poisson", data = improve1, verbose = F, prior = prior, 
 	    nitt = 13000, thin = 10, burnin = 3000)
 summary(rm)
@@ -652,6 +669,17 @@ We will then quantitatively determine to what degree each bird used the explorat
 ```{r strategy, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 strat <- read.csv ("/Users/corina/GTGR/data/data_strategy.csv", header=T, sep=",", stringsAsFactors=F) 
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(ratioExplore ~ ReversalNumber + (1|ID), family=poisson, data=strat), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+
 # GLMM explore strategy (6-14 correct choices/20 trial block) ratio
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
@@ -662,6 +690,17 @@ st <- MCMCglmm(ratioExplore ~ ReversalNumber, random = ~ID,
 summary(st)
 # autocorr(st$Sol) #Did fixed effects converge?
 # autocorr(st$VCV) #Did random effects converge?
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(ratioExploit ~ ReversalNumber + (1|ID), family=poisson, data=strat), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
 
 # GLMM exploit strategy (6-14 correct choices/20 trial block) ratio
 library(MCMCglmm)
