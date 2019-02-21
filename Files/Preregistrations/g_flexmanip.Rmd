@@ -225,7 +225,74 @@ Due to delays in setting up the field site, we were only able to test two grackl
 
 We do not need a power analysis to estimate our ability to detect actual effects because, by definition, the individuals that complete this experiment must get faster at reversing in order to be able to pass the stopping criterion (two consecutive reversals in 50 trials or less). According to previous grackle data (from the pilot and from Santa Barbara), the fastest grackle passed their first reversal in 70 trials, which means that passing our serial reversal stopping criterion would require them to have improved their passing speed.
 
-```{r serialsimulation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r serial, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+seriald <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=seriald), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0), G2 = list(V = 1, nu = 0)))
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = seriald, verbose = F, prior = prior, 
+	    nitt = 13000, thin = 10, burnin = 3000)
+summary(serial)
+# autocorr(serial$Sol) #Did fixed effects converge?
+# autocorr(serial$VCV) #Did random effects converge?
+
+#AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = seriald, verbose = F, prior = prior, 
+	    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption="Table 2: Model selection output.")
+```
+
+####*P2: serial reversal improves rule switching & problem solving*
+
+**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model. A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0.41
+
+α err prob                    	=	0.05
+
+Power (1-β err prob)          	=	0.7
+
+Number of predictors          	=	5
+
+*Output:*
+
+Noncentrality parameter λ     	=	13.1200000
+
+Critical F                    	=	2.5867901
+
+Numerator df                  	=	5
+
+Denominator df                	=	26
+
+Total sample size             	=	32
+
+Actual power                  	=	0.7103096
+
+This means that, with our sample size of 32, we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
+
+```{r improvessimulation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 # SIMULATION TO ESTIMATE ESTIMATE VARIOUS EFFECT SIZES
 #Conducted per instructions in the squid documentation at https://cran.r-project.org/web/packages/squid/squid.pdf and at the online squid app (called using squidApp() in an R console)
 #note: the simulation model structure has ID as the random effect (random slopes for each individual) and population mean as the fixed effect. We did not include an environmental variable because we are not measuring environmental effects in our analysis
@@ -369,76 +436,6 @@ mean(output4$full_data$I) #-0.12 (smaller than 1)
 var(output4$full_data$I) #0.79 (smaller than 1)
 ```
 
-
-
-```{r serial, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-seriald <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=seriald), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-# GLMM
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0), G2 = list(V = 1, nu = 0)))
-serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = seriald, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000)
-summary(serial)
-# autocorr(serial$Sol) #Did fixed effects converge?
-# autocorr(serial$VCV) #Did random effects converge?
-
-#AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = seriald, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000))
-library(knitr)
-kable(base1, caption="Table 2: Model selection output.")
-```
-
-**Model validation:** Determine whether the test model results are likely to be reliable given the data when compared with the null model [@burnham2003model]. If the AIC difference between the two models is greater than 3, we will consider the model with the lower AIC value to be the best fitting model [@burnham2003model].
-
-####*P2: serial reversal improves rule switching & problem solving*
-
-**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model. A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
-
-To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
-
-*Input:*
-
-Effect size f²                	=	0.41
-
-α err prob                    	=	0.05
-
-Power (1-β err prob)          	=	0.7
-
-Number of predictors          	=	5
-
-*Output:*
-
-Noncentrality parameter λ     	=	13.1200000
-
-Critical F                    	=	2.5867901
-
-Numerator df                  	=	5
-
-Denominator df                	=	26
-
-Total sample size             	=	32
-
-Actual power                  	=	0.7103096
-
-This means that, with our sample size of 32, we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
 
 ```{r improves, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 improve <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
