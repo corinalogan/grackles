@@ -481,35 +481,23 @@ summary(serial)
 #autocorr(serial$Sol) #Did fixed effects converge?
 #autocorr(serial$VCV) #Did random effects converge?
 
-serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) #latent scale adjusted repeatability and its credible interval
-
-
 #REPEATABILITY
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units])
 
-#Now compare with the raw repeatability (null model)
-prior2 = list(G=list(G1=list(V=1,nu=0)))
-serialNull <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior2, nitt=13000, thin=10, burnin=3000)
 
-serialNull$VCV[,ID]/(serialNull$VCV[,ID]+serialNull$VCV[,units])
+repeata <- serial$VCV[,"ID"]/(serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.79 variance
+var(repeata) #0.15 variance
+posterior.mode(repeata) #0.99879
+HPDinterval(repeata, 0.95) #2.6e-14 to 0.99999
 
-######DELETE below after I test the new repeatability
-#How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
-rep <- glmer(TrialsToReverse ~ ReverseNumber + (1|ID), data=serial2)
+# Now compare with the raw repeatability: null model
+serialraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(serialraw)
 
-#"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
-library(tidyr)
-library(broom)
-trep <- tidy(rep,effects="ran_pars",scales="vcov")
-trep[trep$group=="ID",]$estimate/(sum(trep$estimate)) #this gives a number called Repeatability
-
-#To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
-library(lmerTest)
-rand(rep)
-detach(package:lmerTest)
-
-##Determine whether 
- + AvgLatencyToChoose + MinSinceFoodRemoved + NumberRewardsFromPrevTrials
+repeataraw <- serialraw$VCV[,"ID"]/(serialraw$VCV[,"ID"]+serialraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata) #0.99879
+HPDinterval(repeata, 0.95) #2.6e-14 to 0.99999
 ```
 
 ####*P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
