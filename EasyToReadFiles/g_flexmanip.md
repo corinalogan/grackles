@@ -1176,7 +1176,7 @@ Logan (2017-2018).
 We thank our PCI Ecology recommender, Aurelie Coulon, and reviewers,
 Maxime Dahirel and Andrea Griffin, for their feedback on this
 preregistration; Dieter Lukas for help polishing the hypotheses,
-developing an additional dependent variable (flexibility ratio); and
+developing an additional dependent variable (flexibility ratio), and
 assistance in responding to reviewer comments; Ben Trumble for hosting
 the grackle project via office and lab space; Angela Bond for daily
 logistical support in the lab; Melissa Wilson Sayres for sponsoring our
