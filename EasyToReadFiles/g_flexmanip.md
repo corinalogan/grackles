@@ -50,7 +50,8 @@ feasible in the time given.
 This preregistration was submitted to PCI Ecology for peer review (July
 2018), we received the first round of peer reviews a few days before
 data collection began (Sep 2018), and we revised and resubmitted after
-data collection had started (Feb 2019).
+data collection had started (Feb 2019, before any of the planned
+analyses had been conducted).
 
 ### B. PARTITIONING THE RESULTS
 
