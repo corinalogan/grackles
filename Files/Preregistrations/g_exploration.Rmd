@@ -164,9 +164,13 @@ kable(vtable, caption="Table 2: Model selection output.", format="markdown", dig
 
 All models will be run once per dependent variable.
 
+*P1 alternative 4: correlation between boldness and exploration*
+
+Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (we will choose the variable with the most data)
+
 *P3: does persistence correlate with reversal persistence?*
 
-1) The number of incorrect choices in the final reversal before making the first correct choice
+The number of incorrect choices in the final reversal before making the first correct choice
 
 *P6: repeatability of boldness, exploration and persistence*
 
@@ -227,6 +231,12 @@ All models will be run once per dependent variable.
 11) ID (random effect because multiple measures per individual)
 
 12) [Condition](./g_flexmanip.html): control, flexibility manipulation
+
+*P1 alternative 4: correlation between boldness and exploration*
+
+1) Time spent exploring the outside of the novel environment (within 20cm) before entering it
+
+2) Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
 
 *P3: correlations between persistence measures*
 
@@ -302,7 +312,7 @@ explore <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep="
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions + (1|Population) + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -348,7 +358,7 @@ NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0),R6=list(V=1,nu=0),R7=list(V=1,nu=0),R8=list(V=1,nu=0),R9=list(V=1,nu=0),R10=list(V=1,nu=0),R11=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0))) 
 
-expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch+Population, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(expl1)
 autocorr(expl1$Sol) #Did fixed effects converge?
 autocorr(expl1$VCV) #Did random effects converge?
@@ -357,7 +367,7 @@ autocorr(expl1$VCV) #Did random effects converge?
 # DATA CHECKING for 2nd GLMM
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(Ratio40 ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions + (1|Population) + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(Ratio40 ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -367,7 +377,7 @@ plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residua
 
 #2nd GLMM - dependent variable = ratio of correct divided by incorrect trials for first 40 trials of final reversal after making the first correct choice
 
-expl2 <- MCMCglmm(Ratio40 ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch+Population, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl2 <- MCMCglmm(Ratio40 ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 
 summary(expl2)
 autocorr(expl2$Sol) #Did fixed effects converge?
