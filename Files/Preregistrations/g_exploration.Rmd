@@ -368,14 +368,14 @@ NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0),R6=list(V=1,nu=0),R7=list(V=1,nu=0),R8=list(V=1,nu=0),R9=list(V=1,nu=0),R10=list(V=1,nu=0),R11=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0))) 
 
-expl1 <- MCMCglmm(AvgTrialsToReverse ~ Condition * TimeOutsideNovelEnv * LatencyExpEnv * AverageTimePerSectionNovelEnv * TotalNumberSectionsNovelEnv * LatencyTableExpObject * MultiaccessTouchesPerTime * LatencyBoldness * NoMotorActions * ID, random=~ID+Batch, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSectionNovelEnv + TotalNumberSectionsNovelEnv + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch+Population, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(expl1)
 autocorr(expl1$Sol) #Did fixed effects converge?
 autocorr(expl1$VCV) #Did random effects converge?
 
 #GLMM - dependent variable = ratio of correct divided by incorrect trials for first 40 trials of final reversal after making the first correct choice
 
-expl2 <- MCMCglmm(Ratio40 ~ Condition * TimeOutsideNovelEnv * LatencyExpEnv * AverageTimePerSectionNovelEnv * TotalNumberSectionsNovelEnv * LatencyTableExpObject * MultiaccessTouchesPerTime * LatencyBoldness * NoMotorActions * ID, random=~ID+Batch, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl2 <- MCMCglmm(Ratio40 ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSectionNovelEnv + TotalNumberSectionsNovelEnv + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch+Population, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 
 summary(expl2)
 autocorr(expl2$Sol) #Did fixed effects converge?
