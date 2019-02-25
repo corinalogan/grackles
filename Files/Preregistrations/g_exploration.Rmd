@@ -53,7 +53,7 @@ We will first verify that our measures of exploration, boldness and persistence 
 
 **P1 alternative 3:** There is no correlation between exploration and either dependent variable in reversal learning. This indicates that both dependent variables measure traits that are independent of exploration.
 
-**P1 alternative 4:** There is no correlation between exploration and either dependent variable in reversal learning because our novel object and novel environment methods are inappropriate for measuring exploratory tendency.  These measures of exploration both incorporate novelty and thus may measure boldness rather than exploration.  This is supported by a positive correlation between behavioral responses to our exploration and boldness assays.
+**P1 alternative 4:** There is no correlation between exploration and either dependent variable in reversal learning because our novel object and novel environment methods are inappropriate for measuring exploratory tendency. These measures of exploration both incorporate novelty and thus may measure boldness rather than exploration. This is supported by a positive correlation between behavioral responses to our exploration and boldness assays.
 
 **P3 alternative 1:** There is a positive correlation between persistence and the number of incorrect choices in reversal learning before making the first correct choice. This indicates that individuals that are persistent in one context are also persistent in another context.
 
@@ -187,33 +187,33 @@ All models will be run once per dependent variable.
 
 3) Time spent per section of a novel environment or in the corresponding areas on othe floor when the novel environment is not present (familiar environment) as an interaction with the Environment Condition: time spent in novel environment vs. time spent in familiar environment
 
-3) Time spent exploring the outside of the novel environment (within 20cm) before entering it
+4) Time spent exploring the outside of the novel environment (within 20cm) before entering it
 
 *P2: exploration of objects*
 
-4) Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
+5) Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
 
 *P3: persistence*
 
-5) Number of touches to the functional part of an apparatus per time (multi-access box, novel environment in P1, novel objects in P2 and P4) 
+6) Number of touches to the functional part of an apparatus per time (multi-access box, novel environment in P1, novel objects in P2 and P4) 
 
-6) Number of touches to the non-functional part of an apparatus per time ([multi-access box](./g_flexmanip.html)) 
+7) Number of touches to the non-functional part of an apparatus per time ([multi-access box](./g_flexmanip.html)) 
 
 *P4: boldness*
 
-7) Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (choose the variable with the most data)
+8) Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (choose the variable with the most data)
 
 *P5: motor diversity*
 
-8) Number of different motor actions used when attempting to solve the [multi-access box](./g_flexmanip.html) 
+9) Number of different motor actions used when attempting to solve the [multi-access box](./g_flexmanip.html) 
 
 *Additional*
 
-9) Age (adult: after hatch year, juvenile: hatch year). NOTE: this variable will be removed if only adults are tested (and we are planning to test only adults).
+10) Age (adult: after hatch year, juvenile: hatch year). NOTE: this variable will be removed if only adults are tested (and we are planning to test only adults).
 
-10) ID (random effect because multiple measures per individual)
+11) ID (random effect because multiple measures per individual)
 
-11) [Condition](./g_flexmanip.html): control, flexibility manipulation
+12) [Condition](./g_flexmanip.html): control, flexibility manipulation
 
 *P3: correlations between persistence measures*
 
@@ -360,6 +360,42 @@ summary(expl2)
 autocorr(expl2$Sol) #Did fixed effects converge?
 autocorr(expl2$VCV) #Did random effects converge?
 ```
+
+####*P1 alternative 4: correlations between exploration and boldness measures*
+
+```{r expbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+expbol <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyBoldness ~ TimeOutsideNovelEnv + LatencyTableExpObject, family=poisson, data=persist2), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#GLM
+eb <- glm(LatencyBoldness ~ TimeOutsideNovelEnv + LatencyTableExpObject, family="poisson", data=expbol)
+#summary(eb)
+
+eb2 <- summary(eb)
+library(xtable)
+eb2.table <- xtable(eb2)
+library(knitr)
+kable(eb2.table, caption="Table 2: Model selection output.", format="html", digits=2)
+
+#Model Validation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2))
+library(knitr)
+kable(base1, caption="Table 3: Model selection output.")
+```
+
+**Model validation:** Determine whether the test model results are likely to be reliable given the data [@burnham2003model]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package [@bates2012lme4]. If the best fitting model has a high Akaike weight (>0.89; [@burnham2003model]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the [base/test *- delete as appropriate*] model (Table 2).
 
 ####*P3: correlations between persistence measures*
 
