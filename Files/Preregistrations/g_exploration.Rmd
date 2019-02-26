@@ -518,7 +518,6 @@ summary(bold)
 #autocorr(bold$Sol) #Did fixed effects converge?
 #autocorr(bold$VCV) #Did random effects converge?
 
-#REPEATABILITY
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
 repeata <- bold$VCV[,"ID"]/(bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
@@ -538,7 +537,7 @@ posterior.mode(repeataF)
 HPDinterval(repeataF, 0.95)
 
 # Now compare with the raw repeatability: null model
-boldraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+boldraw <- MCMCglmm(LatencyToFeed ~ 1, random=~ID, family="poisson", data=bol, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(boldraw)
 
 repeataraw <- boldraw$VCV[,"ID"]/(boldraw$VCV[,"ID"]+boldraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
@@ -553,29 +552,48 @@ per <- read.csv ("/Users/corina/GTGR/data/data_persist.csv", header=T, sep=",", 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(NoTouches ~ Test * Condition + (1|ID), family=poisson, data=per), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+simulationOutput <- simulateResiduals(fittedModel = glmer(NoTouches ~ Test * Condition + (1|ID), family=poisson, data=per), n=250)
+simulationOutput$scaledResiduals 
+testDispersion(simulationOutput) 
+testZeroInflation(simulationOutput) 
+testUniformity(simulationOutput) 
+plot(simulationOutput) 
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #can't get this code to work yet
 
-#How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
+#REPEATABILITY
 #GLMM
-library(lme4)
-pers <- lmer(NoTouches ~ Test * Condition + (1|ID), data=per)
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+pers <- MCMCglmm(NoTouches ~ Test*Condition, random=~ID, family="poisson", data=per, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(pers)
+#autocorr(pers$Sol) #Did fixed effects converge?
+#autocorr(pers$VCV) #Did random effects converge?
 
-#"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
-library(tidyr)
-library(broom)
-tpers <- tidy(pers,effects="ran_pars",scales="vcov")
-tpers[tpers$group=="ID",]$estimate/(sum(tpers$estimate)) #this gives a number called Repeatability
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
-#To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
-library(lmerTest)
-rand(pers)
-detach(package:lmerTest)
+repeata <- pers$VCV[,"ID"]/(pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) 
+var(repeata) 
+posterior.mode(repeata) 
+HPDinterval(repeata, 0.95) 
+
+# Repeatability on the data/observed scale (accounting for fixed effects)
+#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(pers[["Sol"]]), function(i) {
+   var(predict(pers, it=i))  
+}) #estimates for each iteration of the MCMC
+
+repeataF <- (vf+pers$VCV[,"ID"])/(vf+pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted + data scale
+posterior.mode(repeataF) 
+HPDinterval(repeataF, 0.95)
+
+# Now compare with the raw repeatability: null model
+persraw <- MCMCglmm(NoTouches ~ 1, random=~ID, family="poisson", data=per, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(persraw)
+
+repeataraw <- persraw$VCV[,"ID"]/(persraw$VCV[,"ID"]+persraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata)
+HPDinterval(repeata, 0.95) 
 ```
 
 ```{r repeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
@@ -593,21 +611,40 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
+#REPEATABILITY
 #GLMM
-library(lme4)
-eem <- lmer(LatencyExpEnv ~ Condition + (1|ID), data=ee)
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+expl <- MCMCglmm(LatencyExpEnv ~ Condition, random=~ID, family="poisson", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(pers)
+#autocorr(expl$Sol) #Did fixed effects converge?
+#autocorr(expl$VCV) #Did random effects converge?
 
-#"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
-library(tidyr)
-library(broom)
-teem <- tidy(eem,effects="ran_pars",scales="vcov")
-teem[teem$group=="ID",]$estimate/(sum(teem$estimate)) #this gives a number called Repeatability
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
-#To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
-library(lmerTest)
-rand(eem)
-detach(package:lmerTest)
+repeata <- expl$VCV[,"ID"]/(expl$VCV[,"ID"]+expl$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) 
+var(repeata) 
+posterior.mode(repeata) 
+HPDinterval(repeata, 0.95) 
+
+# Repeatability on the data/observed scale (accounting for fixed effects)
+#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(expl[["Sol"]]), function(i) {
+   var(predict(expl, it=i))  
+}) #estimates for each iteration of the MCMC
+
+repeataF <- (vf+expl$VCV[,"ID"])/(vf+expl$VCV[,"ID"]+expl$VCV[,"units"]) #latent scale adjusted + data scale
+posterior.mode(repeataF) 
+HPDinterval(repeataF, 0.95)
+
+# Now compare with the raw repeatability: null model
+explraw <- MCMCglmm(LatencyExpEnv ~ 1, random=~ID, family="poisson", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(explraw)
+
+repeataraw <- explraw$VCV[,"ID"]/(explraw$VCV[,"ID"]+explraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata)
+HPDinterval(repeata, 0.95) 
 ```
 
 ```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
