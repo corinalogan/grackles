@@ -433,7 +433,7 @@ kable(base1, caption = "Table 5: Model selection output.")
 
 ####*P3a: repeatable within individuals within a context (reversal learning)*
 
-**Analysis:** Is reversal learning (colored tubes) repeatable within individuals within a context (reversal learning)? To calculate repeatability, a GLMM was run (function: glmer) where each individual had a random intercept (i.e., ID was a random effect). To obtain the repeatability estimate, which indicates how much of the total variance, after accounting for fixed effects, is explained by individual differences (ID), the estimate for ID is divided by the sum of the estimates of all random effects and residual variance (as in @houslay2016). The model was then run in lmerTest (@lmerTest) to determine whether the random effect (ID) was statistically significant (p<0.05).
+**Analysis:** Is reversal learning (colored tubes) repeatable within individuals within a context (reversal learning)? We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary.
 
 To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The protocol of the power analysis is here:
 
@@ -486,7 +486,7 @@ summary(serial)
 #autocorr(serial$VCV) #Did random effects converge?
 
 #REPEATABILITY
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units])
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
 
 repeata <- serial$VCV[,"ID"]/(serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) #0.79 variance
