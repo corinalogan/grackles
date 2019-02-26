@@ -490,9 +490,9 @@ kable(base1, caption="Table 3: Model selection output.")
 
 ####*P6: repeatability of exploration, boldness and persistence*
 
-**Analysis:** To calculate repeatability, we will run a GLMM (R package: lme4, function: lmer, @lme4) where each individual has a random intercept (i.e., ID is a random effect). To obtain the repeatability estimate, which indicates how much of the total variance after accounting for fixed effects is explained by individual differences (ID), the variance explained by ID is divided by the total variance (sum of the estimates of all random effects and residual variance) (as in @houslay2016). The model is then run in lmerTest (@lmerTest) to determine whether the random effect (ID) is statistically significant (p<0.05). 
+**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary.
 
-Note: The power analysis is the same as for P3 because there are the same number of explanatory variables (fixed effects).
+Note: The power analysis is the same as for P3 (below) because there are the same number of explanatory variables (fixed effects).
 
 ```{r repeatableBold, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Boldness
@@ -509,21 +509,41 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#How to calculate repeatability following advice from Tom Houslay's blog http://rpubs.com/tomhouslay/200150
+#REPEATABILITY
 #GLMM
-library(lme4)
-bold <- lmer(LatencyToFeed ~ Condition + (1|ID), data=bol)
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+bold <- MCMCglmm(LatencyToFeed ~ Condition, random=~ID, family="poisson", data=bol, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(bold)
+#autocorr(bold$Sol) #Did fixed effects converge?
+#autocorr(bold$VCV) #Did random effects converge?
 
-#"we can also calculate the conditional repeatability easily - in terms of how much of the total phenotypic variance (after accounting for fixed effects) is explained by differences between individuals" http://rpubs.com/tomhouslay/200150
-library(tidyr)
-library(broom)
-tbold <- tidy(bold,effects="ran_pars",scales="vcov")
-tbold[tbold$group=="ID",]$estimate/(sum(tbold$estimate)) #this gives a number called Repeatability
+#REPEATABILITY
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
-#To see whether ID is signficant (and, by proxy, repeatability), run lmerTest
-library(lmerTest)
-rand(bold)
-detach(package:lmerTest)
+repeata <- bold$VCV[,"ID"]/(bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) 
+var(repeata) 
+posterior.mode(repeata) 
+HPDinterval(repeata, 0.95) 
+
+# Repeatability on the data/observed scale (accounting for fixed effects)
+#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(bold[["Sol"]]), function(i) {
+   var(predict(bold, it=i))  
+}) #estimates for each iteration of the MCMC
+
+repeataF <- (vf+bold$VCV[,"ID"])/(vf+bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted + data scale
+posterior.mode(repeataF) 
+HPDinterval(repeataF, 0.95)
+
+# Now compare with the raw repeatability: null model
+boldraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(boldraw)
+
+repeataraw <- boldraw$VCV[,"ID"]/(boldraw$VCV[,"ID"]+boldraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata)
+HPDinterval(repeata, 0.95) 
 ```
 
 ```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
