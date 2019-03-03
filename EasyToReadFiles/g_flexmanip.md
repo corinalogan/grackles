@@ -1,4 +1,19 @@
-    #Make code wrap text so it doesn't go off the page when Knitting to PDF
+---
+title: Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?
+author: '[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, corina_logan@eva.mpg.de), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Benjamin Seitz (University of California Los Angeles), [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (University of California Los Angeles), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology)'
+date: '`r Sys.Date()`'
+output:
+  md_document: default
+  github_document: default  
+  html_document: default
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  word_document: default
+bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
+---
+
+  #Make code wrap text so it doesn't go off the page when Knitting to PDF
     library(knitr)
     opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
