@@ -1,7 +1,18 @@
-REVIEWERS: please copy and paste this link into your browser for an easy to read version
-----------------------------------------------------------------------------------------
+---
+title: "Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?"
+author: 'Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Carolyn Rowney (Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, corina_logan@eva.mpg.de)'
+date: '`r Sys.Date()`'
+output:
+  md_document: default
+  github_document: default
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  html_document: default
+  word_document: default
+bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
+---
 
-<https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md>
 
     library(knitr)
     opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
