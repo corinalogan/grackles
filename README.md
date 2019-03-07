@@ -1,6 +1,11 @@
 # Table of Contents
 
-***Preregistrations: Peer Reviewed at PCI Ecology***
+*Click the title of the preregistration you would like to see to be taken directly to that page*
+
+***Preregistrations: passed pre-study peer review at PCI Ecology***
+
+3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub.
+   - Pre-study peer review history at [PCI Ecology](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True)
 
 4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md). GitHub.
    - Pre-study peer review history at [PCI Ecology](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)
@@ -11,8 +16,6 @@
 1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). GitHub.
 
 2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Does manipulating behavioral flexibility affect exploration?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) GitHub.
-
-3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub.
 
 5. Logan CJ, Bergeron L, Rowney C, McCune K. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md) GitHub.
 
