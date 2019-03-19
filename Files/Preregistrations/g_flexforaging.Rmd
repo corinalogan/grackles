@@ -188,46 +188,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 ####*Data checking*
 
-The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009].
-
-```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 1.** Part 1. The distribution of the actual data versus what a normal distribution would look like with simulated data. Part 2. Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]."}
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Check the dependent variables for normality: Histograms
-op <- par(mfrow=c(2,3), mar=c(4,4,2,0.2))
-#This is what the distribution of actual data looks like
-hist(ff$TrialsToReverseLast, xlab="Trials to reverse (last)", main="Actual Data")
-hist(ff$FlexRatio, xlab="Correct/incorrect trials", main="Actual Data")
-
-#Given the actual data, this is what a normal distribution would look like
-X2 <- rnorm(1281, mean=mean(ff$TrialsToReverseLast), sd=sd(ff$TrialsToReverseLast))
-hist(X2, xlab="Trials to reverse (last)", main="Simulated Data")
-
-Y2 <- rnorm(1281, mean=mean(ff$FlexRatio), sd=sd(ff$FlexRatio))
-hist(Y2, xlab="Correct/incorrect trials", main="Simulated Data")
-
-
-#Check the dependent variables against independent variables for normality: Q-Q plots
-op <- par(mfrow=c(3,4), mar=c(4,4,2,0.2))
-plot(glm(ff$TrialsToReverseLast~ff$NumberFoodsEaten)) 
-plot(glm(ff$FlexRatio~ff$NumberFoodsEaten)) 
-plot(glm(ff$TrialsToReverseLast~ff$NumberForagingTechniques)) 
-plot(glm(ff$FlexRatio~ff$NumberForagingTechniques)) 
-```
-
-If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) [@zuur2009].
-
-```{r dist_checkResid, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** Visual check of the residuals."}
-#Check the dependent variables for normality: Residuals
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Figure 3. Visual check of the residuals
-op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
-plot(residuals(glm(ff$TrialsToReverseLast~ff$NumberFoodsEaten)), ylab="Residuals: Trials to reverse ~ No. foods")
-plot(residuals(glm(ff$FlexRatio~ff$NumberFoodsEaten)), ylab="Residuals: Correct/incorrect trials ~ No. foods")
-plot(residuals(glm(ff$TrialsToReverseLast~ff$NumberForagingTechniques)), ylab="Residuals: Trials to reverse ~ No. techniques")
-plot(residuals(glm(ff$FlexRatio~ff$NumberForagingTechniques)), ylab="Residuals: Correct/incorrect trials ~ No. techniques")
-```
+The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
 ####*P1-P2*
 
@@ -264,10 +225,6 @@ This means that, with our minimum sample size of 64, we have a 71% chance of det
 ```{r p1p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
-
 #Separate the sexes
 fem <- ff[ff$Sex=="f",]
 mal <- ff[ff$Sex=="m",]
@@ -278,7 +235,52 @@ Population <- as.factor(fem$Population)
 ID <- as.factor(mal$ID)
 Population <- as.factor(mal$Population)
 
-#GLMM with response variable = NumberFoodsEaten
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+
+#Data checking for GLMM 1 females
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for GLMM 1 males
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for GLMM 2 females
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumberForagingTechniques ~ FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for GLMM 2 males
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumberForagingTechniques ~ FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+
+#GLMM 
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
+#GLMM 1 with response variable = NumberFoodsEaten
 #females
 f1 <- MCMCglmm(NumberFoodsEaten ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
@@ -291,7 +293,7 @@ summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
-#GLMM with response variable = NumberForagingTechniques
+#GLMM 2 with response variable = NumberForagingTechniques
 #female
 f3 <- MCMCglmm(NumberForagingTechniques ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
@@ -307,14 +309,10 @@ summary(f4)
 
 ####*P3: flexible = more human foods*
 
-**Analysis:** A power analysis and GLMM were conducted as in P1-P2.
+**Analysis:** A power analysis and GLMM were conducted as in P1-P2, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variable being a proportion.
 
 ```{r p3, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #Separate the sexes
 fem <- ff[ff$Sex=="f",]
@@ -326,15 +324,42 @@ Population <- as.factor(fem$Population)
 ID <- as.factor(mal$ID)
 Population <- as.factor(mal$Population)
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+
+#Data checking for female GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=binomial, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=binomial, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
 #GLMM with response variable = NumberFoodsEaten
 #females
-f1 <- MCMCglmm(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="categorical", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-f2 <- MCMCglmm(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="categorical", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
@@ -351,10 +376,6 @@ Social network data are not independent (@croft2011hypothesis), therefore, to de
 ```{r p4, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
-
 #Separate the sexes
 fem <- ff[ff$Sex=="f",]
 mal <- ff[ff$Sex=="m",]
@@ -365,7 +386,88 @@ Population <- as.factor(fem$Population)
 ID <- as.factor(mal$ID)
 Population <- as.factor(mal$Population)
 
-#GLMM with response variable = MaxBondStrength
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+
+#Data checking for female GLMM 1
+simulationOutput <- simulateResiduals(fittedModel = glmer(MaxBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM 1
+simulationOutput <- simulateResiduals(fittedModel = glmer(MaxBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for female GLMM 2
+simulationOutput <- simulateResiduals(fittedModel = glmer(SumBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM 2
+simulationOutput <- simulateResiduals(fittedModel = glmer(SumBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for female GLMM 3
+simulationOutput <- simulateResiduals(fittedModel = glmer(MaleSharesTerritory ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM 3
+simulationOutput <- simulateResiduals(fittedModel = glmer(MaleSharesTerritory ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for female GLMM 4
+simulationOutput <- simulateResiduals(fittedModel = glmer(RelatednessForMaxBond ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM 4
+simulationOutput <- simulateResiduals(fittedModel = glmer(RelatednessForMaxBond ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
+#GLMM 1 with response variable = MaxBondStrength
 #females
 f1 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
@@ -378,7 +480,7 @@ summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
-#GLMM with response variable = AvgBondStrength
+#GLMM 2 with response variable = AvgBondStrength
 #female
 f3 <- MCMCglmm(SumBondStrength ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
@@ -391,7 +493,7 @@ summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
 #autocorr(f4$VCV) #Did random effects converge?
 
-#GLMM with response variable = MaleSharesTerritory
+#GLMM 3 with response variable = MaleSharesTerritory
 #female
 f3 <- MCMCglmm(MaleSharesTerritory ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
@@ -404,7 +506,7 @@ summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
 #autocorr(f4$VCV) #Did random effects converge?
 
-#GLMM with response variable = RelatednessForMaxBond
+#GLMM 4 with response variable = RelatednessForMaxBond
 #female
 f3 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
@@ -453,10 +555,6 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 ```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
-
 #Separate the sexes
 fem <- ff[ff$Sex=="f",]
 mal <- ff[ff$Sex=="m",]
@@ -466,6 +564,33 @@ ID <- as.factor(fem$ID)
 Population <- as.factor(fem$Population)
 ID <- as.factor(mal$ID)
 Population <- as.factor(mal$Population)
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+
+#Data checking for female GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(ImmigrantProbability ~ TrialsToReverseLast + FlexRatio + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(ImmigrantProbability ~ TrialsToReverseLast + FlexRatio + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+
+#GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #GLMM 
 #females
@@ -488,10 +613,6 @@ summary(f2)
 ```{r p6, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
-
 #Separate the sexes
 fem <- ff[ff$Sex=="f",]
 mal <- ff[ff$Sex=="m",]
@@ -502,7 +623,32 @@ Population <- as.factor(fem$Population)
 ID <- as.factor(mal$ID)
 Population <- as.factor(mal$Population)
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+
+#Data checking for female GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndexHabitat ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#Data checking for male GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndexHabitat ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
 #GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+
 #females
 f1 <- MCMCglmm(ShannonDiversityIndexHabitat ~ TrialsToReverseLast + FlexRatio + ExperimentalGroup + DominanceRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
