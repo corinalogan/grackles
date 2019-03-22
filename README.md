@@ -4,9 +4,9 @@
 
 ***Preregistrations: passed pre-study peer review at PCI Ecology***
 
-3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub & PCI Ecology [pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True)
+3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True))
 
-4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md). GitHub & PCI Ecology [pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True)
+4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md). GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True))
    - Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. 
 
 ***Preregistrations***
