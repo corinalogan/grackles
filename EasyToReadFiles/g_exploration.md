@@ -58,7 +58,7 @@ and submitted to PCI Ecology for peer review (Sep 2018).
 
 **After data collection had begun (and before any data analysis was
 conducted):** This preregistration was peer reviewed at PCI Ecology,
-revised, and resubmitted (Feb 2019).
+revised, and resubmitted (Feb 2019), and passed pre-study peer review (Mar 2019). See the [peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True).
 
 ### B. PARTITIONING THE RESULTS
 
