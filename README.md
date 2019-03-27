@@ -6,7 +6,7 @@
 
 1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
 
-2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) GitHub & b & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True))
+2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True))
 
 3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True))
 
