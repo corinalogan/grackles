@@ -4,7 +4,9 @@
 
 ***Preregistrations: passed pre-study peer review at PCI Ecology***
 
-1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True)).
+1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
+
+2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) GitHub & b & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True))
 
 3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True))
 
@@ -12,8 +14,6 @@
    - Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. 
 
 ***Preregistrations***
-
-2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Does manipulating behavioral flexibility affect exploration?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) GitHub.
 
 5. Logan CJ, Bergeron L, Rowney C, McCune K. 2017. [Does behavioral flexibility positively correlate with the number of food types eaten and foraging techniques used in a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md) GitHub.
 
