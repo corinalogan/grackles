@@ -1,7 +1,7 @@
 Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?
 ================
 Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Carolyn Rowney (Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>)
-2019-04-06
+2019-04-08
 
 -   [ABSTRACT](#abstract)
 -   [A. STATE OF THE DATA](#a.-state-of-the-data)
@@ -24,13 +24,13 @@ opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
 
 ### ABSTRACT
 
-This is one of the first studies planned for our long-term research on the role of behavioral flexibility in rapid geographic range expansions. **Project background:** Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience (@mikhalevich\_is\_2017), is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range (e.g., \[@lefebvre1997feeding\], \[@griffin2014innovation\], \[@chow2016practice\], \[@sol2000behavioural\], \[@sol2002behavioural\], \[@sol2005big\]). However, behavioral flexibility is rarely directly tested at the individual level, thus limiting our ability to determine how it relates to other traits, which limits the power of predictions about a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years (\[@wehtje2003range\], \[@peer2011invasion\]) (see an overview of the [5-year project timeline](./README.md)). **This investigation**: In this piece of the long-term project, we aim to understand whether grackle behavioral flexibility (color tube reversal learning - described in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) correlates (or not) with individual differences in the exploration of new environments and novel objects, boldness, persistence, and motor diversity (and whether the flexibility manipulation made such correlations more detectable). Results will indicate whether consistent individual differences in these traits might interact with measures of flexibility (reversal learning and solution switching). This will improve our understanding of which variables are linked with flexibility and how they are related, thus putting us in an excellent position to further investigate the mechanisms behind these links in future research.
+This is one of the first studies planned for our long-term research on the role of behavioral flexibility in rapid geographic range expansions. **Project background:** Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience (@mikhalevich\_is\_2017), is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range (e.g., \[@lefebvre1997feeding\], \[@griffin2014innovation\], \[@chow2016practice\], \[@sol2000behavioural\], \[@sol2002behavioural\], \[@sol2005big\]). However, behavioral flexibility is rarely directly tested at the individual level, thus limiting our ability to determine how it relates to other traits, which limits the power of predictions about a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years (\[@wehtje2003range\], \[@peer2011invasion\]) (see an overview of the [5-year project timeline](https://github.com/corinalogan/grackles/blob/master/README.md)). **This investigation**: In this piece of the long-term project, we aim to understand whether grackle behavioral flexibility (color tube reversal learning - described in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)) correlates (or not) with individual differences in the exploration of new environments and novel objects, boldness, persistence, and motor diversity (and whether the flexibility manipulation made such correlations more detectable). Results will indicate whether consistent individual differences in these traits might interact with measures of flexibility (reversal learning and solution switching). This will improve our understanding of which variables are linked with flexibility and how they are related, thus putting us in an excellent position to further investigate the mechanisms behind these links in future research.
 
 ### A. STATE OF THE DATA
 
 \*\*Prior to collecting any <data:**> This preregistration was written and submitted to PCI Ecology for peer review (Sep 2018).
 
-**After data collection had begun (and before any data analysis was conducted):** This preregistration was peer reviewed at PCI Ecology, revised, and resubmitted (Feb 2019).
+**After data collection had begun (and before any data analysis was conducted):** This preregistration was peer reviewed at PCI Ecology, revised, and resubmitted (Feb 2019), and passed pre-study peer review (Mar 2019). See the [peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True).
 
 ### B. PARTITIONING THE RESULTS
 
@@ -60,7 +60,7 @@ We will first verify that our measures of exploration, boldness and persistence 
 
 **P3 alternative 2:** There is no correlation between persistence and the number of incorrect choices in reversal learning before making the first correct choice. This indicates that flexibility is an independent trait.
 
-![Figure 1.](g_exploreFig1.png)
+![Figure 1.](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploreFig1.png)
 
 ***Figure 1.*** An overview of the study design and a selection of the variables we will measure for each assay. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (familiar, novel oject, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). After the flexibility manipulation occurs, assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
 
@@ -150,7 +150,7 @@ NOTE: to view a list of these variables in a table format, please see our Google
 
 2.  ID (random effect because multiple measures per individual)
 
-**ANALYSIS 2** - *P1-P5: flexibility correlates with exploratory behaviors*
+**ANALYSIS 2** - *H1: P1-P5: flexibility correlates with exploratory behaviors*
 
 **Dependent variables**
 
@@ -190,7 +190,7 @@ All models will be run once per dependent variable.
 
 12. [Condition](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md): control, flexibility manipulation
 
-**ANALYSIS 3** - *P1 alternative 4: correlation between boldness and exploration*
+**ANALYSIS 3** - *H1: P1 alternative 4: correlation between boldness and exploration*
 
 Dependent variable: Boldness: Latency to land on the table - OR - Latency to eat the food - OR - Latency to touch a threatening object next to food (we will choose the variable with the most data)
 
@@ -200,7 +200,7 @@ Independent variables:
 
 2.  Latency to land on the table next to an object (novel, familiar) (that does not contain food) in a familiar environment (that contains maintenance diet away from the object) - OR - latency to touch an object (novel, familiar) (choose the variable with the most data)
 
-**ANALYSIS 4** - *P3: does persistence correlate with reversal persistence?*
+**ANALYSIS 4** - *H1: P3: does persistence correlate with reversal persistence?*
 
 Dependent variable: The number of incorrect choices in the final reversal before making the first correct choice
 
@@ -210,7 +210,7 @@ Independent variables:
 
 2.  Condition: control, flexibility manipulation
 
-**ANALYSIS 5** - *P6: captive vs wild*
+**ANALYSIS 5** - *H2: P6: captive vs wild*
 
 **Dependent variables**
 
@@ -506,7 +506,7 @@ posterior.mode(repeata)
 HPDinterval(repeata, 0.95)
 ```
 
-#### *P1-P5: correlation of flexibility with exploration of new environments and objects, boldness, persistence, and motor diversity*
+#### *H1: P1-P5: correlation of flexibility with exploration of new environments and objects, boldness, persistence, and motor diversity*
 
 **Analysis:** If behavior is not repeatable across assays at Time 1 and Time 2 (six weeks apart, both assays occur after the flexibility manipulation takes place) for exploration, boldness, persistence, or motor diversity (see analysis for P6), we will not include these variables in analyses involving flexibility. If behavior is repeatable within individuals, we will examine the relationship between flexibility and these variables as follows. Note that the two exploration measures (novel environment and novel object) will be combined into one variable if they correlate and are both repeatable within individuals.
 
@@ -662,7 +662,7 @@ autocorr(expl2$Sol)  #Did fixed effects converge?
 autocorr(expl2$VCV)  #Did random effects converge?
 ```
 
-#### *P1 alternative 4: correlations between exploration and boldness measures*
+#### *H1: P1 alternative 4: correlations between exploration and boldness measures*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
@@ -706,7 +706,7 @@ kable(base1, caption = "Table 3: Model selection output.")
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data \[@burnham2003model\]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package \[@bates2012lme4\]. If the best fitting model has a high Akaike weight (&gt;0.89; \[@burnham2003model\]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 2).
 
-#### *P3: correlations between persistence measures*
+#### *H1: P3: correlations between persistence measures*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link.
 
@@ -777,6 +777,129 @@ kable(base1, caption = "Table 3: Model selection output.")
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data \[@burnham2003model\]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package \[@bates2012lme4\]. If the best fitting model has a high Akaike weight (&gt;0.89; \[@burnham2003model\]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the \[base/test *- delete as appropriate*\] model (Table 2).
+
+#### *H2: P6: captive vs wild*
+
+A GLMM (as in the repeatability analysis) will be conducted.
+
+``` r
+# Boldness
+cw <- read.csv("/Users/corina/GTGR/data/data_individual_differences.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyBoldness ~ 
+    Context + AssayAttempts + (1 | ID), family = poisson, data = cw), 
+    n = 250)  #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+bold <- MCMCglmm(LatencyBoldness ~ Context + AssayAttempts, random = ~ID, 
+    family = "poisson", data = cw, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(bold)
+# autocorr(bold$Sol) #Did fixed effects converge?
+# autocorr(bold$VCV) #Did random effects converge?
+```
+
+``` r
+# Boldness
+cw <- read.csv("/Users/corina/GTGR/data/data_individual_differences.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumberTouches ~ 
+    Context + AssayAttempts + (1 | ID), family = poisson, data = cw), 
+    n = 250)  #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+bold <- MCMCglmm(NumberTouches ~ Context + AssayAttempts, random = ~ID, 
+    family = "poisson", data = cw, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(bold)
+# autocorr(bold$Sol) #Did fixed effects converge?
+# autocorr(bold$VCV) #Did random effects converge?
+```
+
+``` r
+# Exploration: novel environment
+cw <- read.csv("/Users/corina/GTGR/data/data_individual_differences.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyExpEnv ~ 
+    Context + AssayAttempts + (1 | ID), family = poisson, data = cw), 
+    n = 250)  #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+bold <- MCMCglmm(LatencyExpEnv ~ Context + AssayAttempts, random = ~ID, 
+    family = "poisson", data = cw, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(bold)
+# autocorr(bold$Sol) #Did fixed effects converge?
+# autocorr(bold$VCV) #Did random effects converge?
+
+
+# Exploration: novel object
+cw <- read.csv("/Users/corina/GTGR/data/data_individual_differences.csv", 
+    header = T, sep = ",", stringsAsFactors = F)
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyTableExpObject ~ 
+    Context + AssayAttempts + (1 | ID), family = poisson, data = cw), 
+    n = 250)  #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+bold <- MCMCglmm(LatencyTableExpObject ~ Context + AssayAttempts, 
+    random = ~ID, family = "poisson", data = cw, verbose = F, 
+    prior = prior, nitt = 13000, thin = 10, burnin = 3000)
+summary(bold)
+# autocorr(bold$Sol) #Did fixed effects converge?
+# autocorr(bold$VCV) #Did random effects converge?
+```
 
 #### *Alternative Analyses*
 
