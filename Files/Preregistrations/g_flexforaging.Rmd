@@ -140,7 +140,7 @@ One model will be run per dependent variable.
 
 4) Male shares territory with another male: yes, no
 
-5) Relatedness for the strongest bond
+5) Relatedness for the strongest bond (following the protocol in @thrasher2018double to estimate pairwise relatedness between all individuals based on the extent of sharing of genetic variants as determined by ddRADseq)
 
 ***P5: flexible = immigrants***
 
@@ -201,34 +201,6 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 ####*P1-P2*
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
-
-To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected minimum sample size for the flexibility tests (n=64). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
-
-*Input:*
-
-Effect size f²                	=	0.166
-
-α err prob                    	=	0.05
-
-Power (1-β err prob)          	=	0.7
-
-Number of predictors          	=	4
-
-*Output:*
-
-Noncentrality parameter λ     	=	10.6240000
-
-Critical F                    	=	2.5279066
-
-Numerator df                  	=	4
-
-Denominator df                	=	59
-
-Total sample size             	=	64
-
-Actual power                  	=	0.7064103
-
-This means that, with our minimum sample size of 64, we have a 71% chance of detecting a medium effect (approximated at f^2=0.15 by @cohen1988statistical).
 
 ```{r p1p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -320,7 +292,7 @@ We will quantify the number of different food types and foraging techniques duri
 
 ####*P3: flexible = more human foods*
 
-**Analysis:** A power analysis and GLMM were conducted as in P1-P2, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variable being a proportion.
+**Analysis:** A GLMM was conducted as in P1-P2, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variable being a proportion.
 
 ```{r p3, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -378,7 +350,7 @@ summary(f2)
 
 ####*P4: flexible = a greater number of bonds or stronger bonds*
 
-**Analysis:** A power analysis and GLMM were conducted as in P1-P2.
+**Analysis:** A GLMM was conducted as in P1-P2.
 
 To quantify social relationships, we will conduct at least four 10-minute focal follows on each subject. We will find subjects in the wild because we will attach radio transmitter tags to all grackles that are released from the aviaries upon completion of their test battery. To ensure we fully sample social and foraging behavior, we will prioritize conducting focal follows on these tagged grackles for which we have a much larger amount of individualized data, including multiple measures of flexibility. We will also sample many other banded grackles that were never tested in the aviaries, and thus do not have measures of flexibility. By conducting focal follows on grackles that were not in captivity, we can verify that the time in captivity had no effect on grackle social behavior after release because aviary-tested birds should be indistinguishable from non-aviary-tested birds in these analyses.
 
@@ -571,34 +543,6 @@ summary(f4)
 
 **Analysis:** A GLMM was conducted as in P1-P2.
 
-The power analysis is the same as in P1-P2, except here we have two predictor variables rather than four, therefore we provide the protocol of this power analysis here:
-
-*Input:*
-
-Effect size f² =	0.27
-
-α err prob =	0.05
-
-Power (1-β err prob) =	0.7
-
-Number of predictors =	2
-
-*Output:*
-
-Noncentrality parameter λ =	8.6400000
-
-Critical F =	3.3276545
-
-Numerator df =	2
-
-Denominator df =	29
-
-Total sample size =	32
-
-Actual power =	0.7047420
-
-This means that, with our sample size of 32, we have a 70% chance of detecting a medium (approximated at f^2=0.15 by @cohen1988statistical) to large effect (approximated at f^2=0.35 by @cohen1988statistical).
-
 ```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -655,7 +599,7 @@ summary(f2)
 
 ####*P6: flexible = wider range of habitats*
 
-**Analysis:** A power analysis and GLMM were conducted as in P1-P2.
+**Analysis:** A GLMM was conducted as in P1-P2.
 
 ```{r p6, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
