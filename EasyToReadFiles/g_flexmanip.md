@@ -70,6 +70,8 @@ analyses had been conducted. See the [peer review history](https://ecology.peerc
 
 NOTE on 10 April 2019: We are discontinuing the reversal learning experiment on the touchscreen because it appears to measure something other than what we are trying to test and it requires a huge time investment for each bird (which consequently reduces the number of other tests they are available to participate in). This is not necessarily surprising because this is the first time touchscreen tests have been conducted in this species, and also the first time this particular reversal experiment has been conducted on a touchscreen with birds (to our knowledge). So we had no idea going into it what was going to happen. We are basing this decision on data from four grackles (2 in the flexibility manipulation group and 2 in the flexibility control group; 3 males and 1 female). All four of these individuals show highly inconsistent learning curves and require hundreds of trials to form each preference when compared to the performance of these individuals on the color tube reversal experiment. It appears that there is a confounding variable with the touchscreen such that they are extremely slow to learn a preference as indicated by passing our criterion of 17 correct trials out of the most recent 20. One confound could be that they must discriminate between shapes rather than colors. Shapes are known to require a few more trials for a preference to develop, but nothing on the order of what we found here (e.g., @shaw2015wild: mean=40 trials color, mean=55 trials shape in New Zealand robins; @isden2013performance: mean=6 trials color, mean=10 trials shape in spotted bowerbirds). Another confound could be that they find it somehow rewarding simply to touch the screen and have something happen, regardless of whether they receive a food reward (e.g., they touch the screen on one of the stimuli and the screen goes blank because the trial ends). It is unclear what this confounding variable could be and we will not investigate it further given that these individuals need to complete a large test battery. The time investment to complete the touchscreen reversal experiment is significant: of the birds in the manipulation group which undergo 5 reversals on the touchscreen, Mole took 4 months and Habanero is on a similar track (he is not done yet). The birds in the control group (Queso and Tapa) only undergo only 1 reversal on the touchscreen, so it overall requires less time for these individuals. We will not include the data from this experiment when conducting the cross-test comparisons in the Analysis Plan section of this preregistration. Instead, in the results section of the resulting article, we will provide summary results for this experiment and qualitatively compare it with performance on the color tube reversal test to explain why we removed this experiment.
 
+NOTE on 16 April 2019:  Since we are discontinuing the touchscreen reversal learning experiment, we will add an additional, but distinct multi-access box task.  As such, we will still measure flexibility across three different experiments.  There are two main differences between the plastic multi-access box, and the additional wooden multi-access box added on this date. First, the wooden multi-access box is a natural log in which we carved out 4 compartments.  As a result, the stimuli are more comparable to what the grackle has experienced during development in the wild.  Each compartment is covered by clear plastic doors that require different behaviors to open.  Furthermore, there is only one food item available in the plastic multi-access box and the bird could use any of 4 loci to reach it.  In contrast, the wooden multi-access box has a piece of food in each of the 4 separate compartments.  As such, we can determine if grackles are better able to inhibit manipulating a non-functional loci when food is no longer present. 
+
 ### B. PARTITIONING THE RESULTS
 
 We may present the different hypotheses in separate papers.
@@ -98,24 +100,24 @@ on current cues (e.g., the food is in a new location) (e.g., (Manrique,
 Völter, and Call 2013); (Griffin and Guez 2014); (Liu et al. 2016), but
 see (Homberg et al. 2007)).
 
-#### H2: Manipulating behavioral flexibility (improving reversal learning speed through serial reversals using colored tubers) improves flexibility (rule learning and/or switching) and problem solving in a new context (multi-access box and serial reversals on a touch screen).
+#### H2: Manipulating behavioral flexibility (improving reversal learning speed through serial reversals using colored tubers) improves flexibility (rule learning and/or switching) and problem solving in a new context (two distinct multi-access boxes and serial reversals on a touch screen).
 
 **P2:** Individuals that have improved their flexibility on a serial
 reversal learning task using colored tubes (requiring fewer trials to
 reverse a preference as the number of reversals increases) are faster to
 switch between new methods of solving (latency to solve or attempt to
 solve a new way of accessing the food \[locus\]), and learn more new
-loci (higher total number of solved loci) on a multi-access box
-flexibility task, and are faster to reverse preferences in a serial
+loci (higher total number of solved loci) on multi-access box
+flexibility tasks, and are faster to reverse preferences in a serial
 reversal task using a touch screen than individuals in the control group
 where flexibility has not been manipulated. The positive correlation
 between reversal learning performance using colored tubes and a touch
-screen (faster birds have fewer trials) and the multi-access box (faster
+screen (faster birds have fewer trials) and the multi-access boxes (faster
 birds have lower latencies) indicates that all three tests measure the
-same ability even though the multi-access box requires inventing new
+same ability even though the multi-access boxes require inventing new
 rules to solve new loci (while potentially learning a rule about
 switching: "when an option becomes non-functional, try a different
-option"") while reversal learning requires switching between two rules
+option") while reversal learning requires switching between two rules
 ("choose light gray" or "choose dark gray") or learning the rule to
 "switch when the previously rewarded option no longer contains a
 reward". Serial reversals eliminate the confounds of exploration,
@@ -134,9 +136,9 @@ environments (see relevant hypotheses in preregistrations on
 individuals in the experimental condition do not decrease their reversal
 speeds more than control individuals, then this experiment will
 elucidate whether general individual variation in flexibility relates to
-flexibility in two new contexts (multi-access box and serial reversals
+flexibility in new contexts (two distinct multi-access boxes and serial reversals
 on a touch screen) as well as problem solving ability (multi-access
-box). The prediction is the same in P2, but in this case variation in
+boxes). The prediction is the same in P2, but in this case variation in
 flexibility is constrained by traits inherent to the individual (some of
 which will be tested in a separate
 [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md)),
@@ -145,7 +147,7 @@ new environments.
 
 **P2 alternative 2:** If there is no correlation between reversal
 learning speed (colored tubes) and the latency to solve/attempt a new
-locus on the multi-access box, this could be because the latency to
+locus on the multi-access boxes, this could be because the latency to
 solve not only measures flexibility but also innovativeness. In this
 case, an additional analysis will be run with the latency to solve as
 the response variable, to determine whether the fit of the model (as
@@ -188,12 +190,12 @@ of minutes since the removal of their maintenance diet from their aviary
 plus the number of food rewards they received since then influenced the
 results.
 
-#### H3b: The consistency of behavioral flexibility in individuals across contexts (context 1=reversal learning on colored tubes, context 2=multi-access box, context 3=reversal learning on touch screen) indicates their ability to generalize across contexts.
+#### H3b: The consistency of behavioral flexibility in individuals across contexts (context 1=reversal learning on colored tubes, context 2=multi-access boxes, context 3=reversal learning on touch screen) indicates their ability to generalize across contexts.
 
 Individual consistency of behavioral flexibility is defined as the
 number of trials to reverse a color preference being strongly positively
-correlated within individuals with the latency to solve new loci on the
-multi-access box and with the number of trials to reverse a color
+correlated within individuals with the latency to solve new loci on each of the
+multi-access boxes, and with the number of trials to reverse a color
 preference on a touch screen (total number of touch screen reversals = 5
 per bird).
 
@@ -266,12 +268,12 @@ testing birds at our next field site (which we move to in the summer of
 
 [Design
 files](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles)
-for the multi-access box: 3D printer files and laser cutter files
+for the plastic multi-access box: 3D printer files and laser cutter files
 
 [Testing
 protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing)
-for all three experiments: color tube reversal learning, multi-access
-box, and touch screen reversal learning
+for all three experiments: color tube reversal learning, plastic multi-access
+box, wooden multi-access box, and touch screen reversal learning
 
 #### **Randomization and counterbalancing**
 
@@ -306,15 +308,15 @@ testing sessions occurred.
 
 *P2 alternative 2: additional analysis: latency and motor diversity*
 
-1.  Number of trials to attempt a new locus on the multi-access box
+1.  Number of trials to attempt a new locus on the multi-access boxes
 
 2.  Number of trials to solve (meet criterion) a new locus on the
-    multi-access box
+    multi-access boxes
 
 *P3b: additional analysis: individual consistency in flexibility across
 contexts + flexibility is correlated across contexts*
 
-Number of trials to solve a new loci on the multi-access box
+Number of trials to solve a new loci on the multi-access boxes
 
 *P4: learning strategies*
 
@@ -357,7 +359,7 @@ criterion of 17/20 correct choices (as in P1-P3).
     individual participated in
 
 2.  Motor diversity: the number of different motor actions used when
-    attempting to solve the multi-access box
+    attempting to solve the multi-access boxes
 
 3.  ID (random effect because repeated measures on the same individuals)
 
@@ -387,7 +389,7 @@ criterion of 17/20 correct choices (as in P1-P3).
 
 1.  Reversal number
 
-2.  Condition (color tubes, multi-access box, touch screen)
+2.  Condition (color tubes, plastic multi-access box, wooden multi-access box, touch screen)
 
 3.  Latency to solve a new locus
 
@@ -636,11 +638,17 @@ This means that, with our sample size of 32, we have a 71% chance of
 detecting a large effect (approximated at f<sup>2</sup>=0.35 by Cohen
 (1988)).
 
+We will first determine whether the total loci solved, the latency to solve or attempt at new loci are correlated across the two distinct multi-access boxes.  If there is a positive correlation, then we will only use the variables for the plastic multi-access box (for which we will likely have more data), as presented below.  If there is no correlation, we will incorporate the total loci solved, the latencies to solve and attempt at new loci for each of the multi-access boxes as independent variables in our model.
+
     improve <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
     # DATA CHECKING
     library(DHARMa)
     library(lme4)
+    cor(improve$AvgLatencySolveNewLoci_plastic, improve$AvgLatencySolveNewLoci_wooden)
+    cor(improve$AvgLatencyAttemptNewLoci_plastic, improve$AvgLatencyAttemptNewLoci_wooden)
+    cor(improve$TotalLoci_plastic, improve$TotalLoci_wooden)
+    
     simulationOut <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + AvgLatencyAttemptNewLoci + TotalLoci + (1|Batch), family=poisson, data=improve), n=250) #250 simulations, but if want higher precision change n>1000
     simulationOut$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
     testDispersion(simulationOut) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
