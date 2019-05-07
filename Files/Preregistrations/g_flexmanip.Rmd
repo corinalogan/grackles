@@ -41,7 +41,7 @@ This preregistration was submitted to PCI Ecology for peer review (July 2018), w
 
 NOTE on 10 April 2019: We are discontinuing the reversal learning experiment on the touchscreen because it appears to measure something other than what we are trying to test and it requires a huge time investment for each bird (which consequently reduces the number of other tests they are available to participate in). This is not necessarily surprising because this is the first time touchscreen tests have been conducted in this species, and also the first time this particular reversal experiment has been conducted on a touchscreen with birds (to our knowledge). So we had no idea going into it what was going to happen. We are basing this decision on data from four grackles (2 in the flexibility manipulation group and 2 in the flexibility control group; 3 males and 1 female). All four of these individuals show highly inconsistent learning curves and require hundreds of trials to form each preference when compared to the performance of these individuals on the color tube reversal experiment. It appears that there is a confounding variable with the touchscreen such that they are extremely slow to learn a preference as indicated by passing our criterion of 17 correct trials out of the most recent 20. One confound could be that they must discriminate between shapes rather than colors. Shapes are known to require a few more trials for a preference to develop, but nothing on the order of what we found here (e.g., @shaw2015wild: mean=40 trials color, mean=55 trials shape in New Zealand robins; @isden2013performance: mean=6 trials color, mean=10 trials shape in spotted bowerbirds). Another confound could be that they find it somehow rewarding simply to touch the screen and have something happen, regardless of whether they receive a food reward (e.g., they touch the screen on one of the stimuli and the screen goes blank because the trial ends). It is unclear what this confounding variable could be and we will not investigate it further given that these individuals need to complete a large test battery. The time investment to complete the touchscreen reversal experiment is significant: of the birds in the manipulation group which undergo 5 reversals on the touchscreen, Mole took 4 months and Habanero is on a similar track (he is not done yet). The birds in the control group (Queso and Tapa) only undergo only 1 reversal on the touchscreen, so it overall requires less time for these individuals. We will not include the data from this experiment when conducting the cross-test comparisons in the Analysis Plan section of this preregistration. Instead, in the results section of the resulting article, we will provide summary results for this experiment and qualitatively compare it with performance on the color tube reversal test to explain why we removed this experiment.
 
-NOTE on 16 April 2019: Because we are discontinuing the touchscreen reversal learning experiment, we will add an additional but distinct multi-access box task, which will allow us to continue to measure flexibility across three different experiments. There are two main differences between the current multi-access box, which is made of plastic, and the additional multi-access box added, which is made of wood. First, the wooden multi-access box is a natural log in which we carved out 4 compartments. As a result, the apparatus and solving options are more comparable to what grackles experience in the wild. Each compartment is covered by clear plastic doors that require different behaviors to open. Furthermore, there is only one food item available in the plastic multi-access box and the bird could use any of 4 loci to reach it. In contrast, the wooden multi-access box has a piece of food in each of the 4 separate compartments. As such, we can determine whether grackles are better able to inhibit manipulating a non-functional loci when food is no longer present. 
+NOTE on 16 April 2019: Because we are discontinuing the touchscreen reversal learning experiment, we will add an additional but distinct multi-access box task, which will allow us to continue to measure flexibility across three different experiments. There are two main differences between the current multi-access box, which is made of plastic, and the additional multi-access box added, which is made of wood. First, the wooden multi-access box is a natural log in which we carved out 4 compartments. As a result, the apparatus and solving options are more comparable to what grackles experience in the wild, though each compartment is covered by clear plastic doors that require different behaviors to open. Furthermore, there is only one food item available in the plastic multi-access box and the bird could use any of 4 loci to reach it. In contrast, the wooden multi-access box has a piece of food in each of the 4 separate compartments. With this difference, we can determine whether grackles are better able to inhibit manipulating a non-functional loci when food is no longer present.
 
 ###B. PARTITIONING THE RESULTS
 
@@ -374,27 +374,30 @@ Actual power                  	=	0.7047420
 
 This means that, with our sample size of 32, we have a 70% chance of detecting a medium (approximated at f^2^=0.15 by @cohen1988statistical) to large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
 
-```{r diversity1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+We will perform separate models for each multi-access box (plastic and wooden).
+
+```{r diversity1P, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Latency to attempt to solve a new locus
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
 
+# PLASTIC MULTI-ACCESS BOX (P)
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutp <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutp <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutp$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05
 testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
 plot(simulationOutp) #...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMulti, simulationOutp$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(NumberMotorActionsMultiW, simulationOutp$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 plotResiduals(TrialsToReverseLast, simulationOutp$scaledResiduals)
 
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(TrialsToSolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+div <- MCMCglmm(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -404,34 +407,32 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToSolveNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+base1 <- dredge(MCMCglmm(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
 kable(base1, caption = "Table 5: Model selection output.")
 ```
 
-```{r diversity2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#Latency to solve a new locus
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
-
+```{r diversity1W, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+# WOODEN MULTI-ACCESS BOX (W)
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMulti, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
-plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
+simulationOutp <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutp$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutp) #...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMultiW, simulationOutp$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutp$scaledResiduals)
 
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(TrialsToAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+div <- MCMCglmm(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -441,7 +442,83 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToAttemptNewLoci ~ TrialsToReverseLast + NumberMotorActionsMulti, random = ~ID, 
+base1 <- dredge(MCMCglmm(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption = "Table 5: Model selection output.")
+```
+
+```{r diversity2P, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Latency to solve a new locus
+diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# PLASTIC MULTI-ACCESS BOX (P)
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMultiP, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption = "Table 5: Model selection output.")
+```
+
+```{r diversity2W, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Latency to solve a new locus
+diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# WOODEN MULTI-ACCESS BOX (W)
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMultiW, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
