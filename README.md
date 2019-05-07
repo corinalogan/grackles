@@ -21,11 +21,15 @@
 
 7. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md) GitHub.
 
-8. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md). GitHub.
+8. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). GitHub.
 
-9. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). GitHub.
+9. McCune K, McElreath R, Logan CJ. 2017. [Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_sociallearning.md#a.-state-of-the-data). GitHub.
 
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
+
+***Preregistrations for Student Projects***
+
+1. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md). GitHub.
 
 ***Open Materials***
 
