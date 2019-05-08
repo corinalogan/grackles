@@ -1,7 +1,6 @@
 Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?
-
 ================
-[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Benjamin Seitz (University of California Los Angeles), [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (University of California Los Angeles), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology)
+[Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Carolyn Rowney (Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara, UCSB), Benjamin Seitz (University of California Los Angeles, UCLA), [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (UCLA), Dr. Zoe Johnson-Ulrich (UCSB), Dr. Kelsey McCune (UCSB)
 2019-05-08
 
 -   [ABSTRACT](#abstract)
