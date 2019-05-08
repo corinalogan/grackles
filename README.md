@@ -15,17 +15,23 @@
 
 ***Preregistrations***
 
+*(Note: preregistrations 5-8 were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
+
 5. Logan CJ, Bergeron L, McCune K, Lukas D. 2017. [Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md) GitHub.
 
 6. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) GitHub.
 
 7. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md) GitHub.
 
-8. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md). GitHub.
+8. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). GitHub.
 
-9. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). GitHub.
+9. McCune K, McElreath R, Logan CJ. 2017. [Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_sociallearning.md#a.-state-of-the-data). GitHub.
 
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
+
+***Preregistrations for Student Projects***
+
+1. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md). GitHub.
 
 ***Open Materials***
 
