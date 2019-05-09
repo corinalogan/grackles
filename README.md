@@ -4,34 +4,34 @@
 
 ***Preregistrations: passed pre-study peer review at PCI Ecology***
 
-1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
+1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) version) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
 
-2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True))
+2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_exploration.md) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd) version). GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True))
 
-3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True))
+3. Logan CJ, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, McCune K, Wascher CAF. 2017. [Are the more flexible individuals also better at inhibition?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_inhibition.md) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd) version). GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True))
 
-4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md). GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True))
+4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Logan CJ. 2017. [Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_causal.md). ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd) version). GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True))
    - Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. 
 
 ***Preregistrations***
 
 *(Note: preregistrations 5-8 were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
 
-5. Logan CJ, Bergeron L, McCune K, Lukas D. 2017. [Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md) GitHub.
+5. Logan CJ, Bergeron L, McCune K, Lukas D. 2017. [Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). GitHub.
 
-6. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) GitHub.
+6. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_withinpop.Rmd) version). GitHub.
 
-7. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md) GitHub.
+7. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_expansion.md) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_expansion.Rmd) version). GitHub.
 
-8. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). GitHub.
+8. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. [The genetics of behavioral flexibility across the range of a rapidly expanding species](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexgenes.md). ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexgenes.Rmd) version) GitHub.
 
-9. McCune K, McElreath R, Logan CJ. 2017. [Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_sociallearning.md#a.-state-of-the-data). GitHub.
+9. McCune K, McElreath R, Logan CJ. 2017. [Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_sociallearning.md). ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd) version). GitHub.
 
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
 ***Preregistrations for Student Projects***
 
-1. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md). GitHub.
+1. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. [Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md). ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_feathermites.Rmd) version). GitHub.
 
 ***Open Materials***
 
