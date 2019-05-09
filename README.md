@@ -17,7 +17,7 @@
 
 *(Note: preregistrations 5-8 were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
 
-5. Logan CJ, Bergeron L, McCune K, Lukas D. 2017. [Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexforaging.md) GitHub.
+5. Logan CJ, Bergeron L, McCune K, Lukas D. 2017. [Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html) GitHub.
 
 6. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) GitHub.
 
