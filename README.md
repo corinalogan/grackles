@@ -4,7 +4,7 @@
 
 ***Preregistrations: passed pre-study peer review at PCI Ecology***
 
-1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](http://corinalogan.com/Preregistrations/g_flexmanip.html#abstract) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) version) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
+1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Johnson-Ulrich Z, McCune K. 2017. [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](http://corinalogan.com/Preregistrations/g_flexmanip.html) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) version) GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
 
 2. McCune K, Rowney C, Bergeron L, Logan CJ. 2017. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](http://corinalogan.com/Preregistrations/g_exploration.html) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd) version). GitHub & PCI Ecology ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True))
 
@@ -19,7 +19,7 @@
 
 5. Logan CJ, Bergeron L, McCune K, Lukas D. 2017. [Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). GitHub.
 
-6. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_withinpop.md) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_withinpop.Rmd) version). GitHub.
+6. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [What are the costs and constraints of behavioral flexibility in great-tailed grackles?](http://corinalogan.com/Preregistrations/g_withinpop.html) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_withinpop.Rmd) version). GitHub.
 
 7. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Trumble B, Blackwell A, Escalante A, Pacheco M. 2018. [How and why does behavioral flexibility vary across the range of a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_expansion.html) ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_expansion.Rmd) version). GitHub.
 
