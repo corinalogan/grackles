@@ -1,6 +1,6 @@
 # Table of Contents
 
-*Click the title of the preregistration you would like to see to be taken directly to that page*
+*Click the title of the preregistration you would like to see to be taken directly to that page. The .Rmd version is a version-tracked reproducible manuscript*
 
 ***Preregistrations: passed pre-study peer review at PCI Ecology***
 
