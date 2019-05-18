@@ -1,3 +1,5 @@
+**NOTE! This .md file has been replaced with an easier-to-read html version. Please read the html version instead by [clicking here](http://corinalogan.com/Preregistrations/g_inhibition.html)**
+
 Are the more flexible great-tailed grackles also better at inhibition?
 ================
 [Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Benjamin Seitz (University of California Los Angeles), [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (University of California Los Angeles), [Dr. Claudia Wascher](https://www.claudiawascher.com) (Anglia Ruskin University)
