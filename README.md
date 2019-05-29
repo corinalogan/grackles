@@ -39,7 +39,7 @@
 
  - [PsychoPy2 code](https://github.com/corinalogan/grackles/tree/master/Files/TouchscreenPsychoPy2code) for touchscreen experiments
  
- - How to modify and use the [bownet](https://gitlab.com/corinalogan/the-grackle-project/blob/master/README.md) trapping method more safely
+ - How to modify the [bownet](https://gitlab.com/corinalogan/the-grackle-project/blob/master/README.md) trapping method and protocols to increase safety
 
 # The Grackle Project
 
