@@ -38,6 +38,8 @@
 - [Multiaccess box](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) (3D printer and laser cutter) for [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)
 
  - [PsychoPy2 code](https://github.com/corinalogan/grackles/tree/master/Files/TouchscreenPsychoPy2code) for touchscreen experiments
+ 
+ - How to modify and use the [bownet](https://gitlab.com/corinalogan/the-grackle-project/blob/master/README.md) trapping method more safely
 
 # The Grackle Project
 
