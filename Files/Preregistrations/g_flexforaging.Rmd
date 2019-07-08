@@ -61,7 +61,7 @@ We may decide to present the results from different hypotheses in separate paper
 
 **P2 alternative 1:** If the flexibility manipulation does not work in that those individuals in the experimental condition do not decrease their reversal learning speeds more than control individuals, then we will rely on the general individual variation in flexibility and how it relates to foraging in the wild (as in P1).
 
-**P3:** The proportion of a grackle's diet that is human foods and the proportion of their foraging techniques involving human foods is higher for the more flexible individuals, who will consistently occur in locations closer to known outdoor human food locations like picnic areas and outdoor cafe seating (measured as the repeatability of the individual's distance from cafes across multiple separate focal follows). For the diet, this is potentially due to A) having stayed in their parent's home range (i.e., they eat human food because it happens to be more prevalent in their home range than in other home ranges; local specialization) or B) because these individuals move around to seek out such opportunities (potentially seeking out habitat edges within their population). For the foraging techniques, this is potentially due to human foods and their packaging changing at a faster rate than natural foods and prey items and their accessibility. Foods  eaten and foraging techniques used will be recorded during focal follows. Because this species is highly associated with human-modified landscapes, it is likely that consuming human foods is part of the reason for this association, and that flexible individuals are better at solving these human-made "puzzle boxes" to access food.
+**P3:** The proportion of a grackle's diet that is human foods and the proportion of their foraging techniques involving human foods is higher for the more flexible individuals, who will consistently occur in locations closer to known outdoor human food locations like picnic areas and outdoor cafe seating (measured as the repeatability of the individual's distance from cafes across multiple separate focal follows) OR who will occupy a home range that contains more outdoor human food locations. For the diet, this is potentially due to A) having stayed in their parent's home range (i.e., they eat human food because it happens to be more prevalent in their home range than in other home ranges; local specialization) or B) because these individuals move around to seek out such opportunities (potentially seeking out habitat edges within their population). For the foraging techniques, this is potentially due to human foods and their packaging changing at a faster rate than natural foods and prey items and their accessibility. Foods  eaten and foraging techniques used will be recorded during focal follows. Because this species is highly associated with human-modified landscapes, it is likely that consuming human foods is part of the reason for this association, and that flexible individuals are better at solving these human-made "puzzle boxes" to access food.
 
 **P3 alternative 1:** There is no correlation between an individual's flexibility and the proportion of human foods in their diet, potentially because A) their daily range sizes encompass many different food resources, including human foods (though they are likely not specialized on human foods), and B) some less flexible individuals might specialize on human foods.
 
@@ -139,7 +139,11 @@ Food type (listed under the What modifier in the Eat behavior in the [ethogram](
 
 ***P3: flexible = more human foods***
 
-Proportion of diet per individual that is human food
+1) Proportion of diet per individual that is human food
+
+2) Distance to outdoor human food areas during focal follows
+
+3) Number of outdoor human food areas within the home range
 
 ***P4: flexible = a greater number of bonds or stronger bonds***
 
@@ -442,9 +446,57 @@ summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
-# Is distance from outdoor cafes a repeatable trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
+#Is distance from outdoor cafes a repeatable trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
 d1 <- rpt(dist ~ Sex + (1 | ID), grname = "ID", data = ff, datatype = "poisson", nboot = 1000, npermut = 300)
 summary(d1)
+#If repeatable, take average distance across focal follows to model relationship with flexibility
+tmp = aggregate(dist ~ ID, FUN = "mean", data = ff)
+colnames(tmp) = c("avg_dist","ID")
+ff = merge(ff, tmp, by = "ID", all = T)
+d2 <- MCMCglmm(avg_dist ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(d2)
+
+# Number of outdoor cafes within the home range of each individual, measured by calculating home range size and then summing the number of cafes.
+#Load packages
+library(adehabitatHR)
+library(sf)
+#Point to the correct data file and load it
+setwd("~/Documents/Grackle project/Space use")
+pts<-read.csv("gtgr_points.csv", header = T)
+#Set variables to ensure the models read the data properly
+pts$Latitude = as.numeric(as.character(pts$Latitude))
+pts$Longitude = as.numeric(as.character(pts$Longitude))
+pts$Date = as.character(pts$Date)
+pts$Time = as.character(pts$Time)
+pts$da.ti = as.POSIXct(paste(pts$Date, pts$Time), format="%Y-%m-%d %H:%M:%S")
+#Home range size can only be calculated when a bird has more than 5 relocations
+#Count the number of relocations for each bird, then exclude individuals with less than 6
+tmp = pts
+tmp$count = 1
+tmp = aggregate(count ~ Bird.Name, FUN = "sum", data = tmp)
+pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
+pts.min = pts.min[-which(pts.min$count<6),]
+pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
+#Convert dataframe to Spatial file type
+p.sf <- st_as_sf(pts.min, coords = c("Longitude", "Latitude"), crs = 4326) 
+class(p.sf) 
+p.spatial <- as(p.sf, "Spatial")
+class(p.spatial)
+#Calculate home range in square meters for each individual, excluding outliers
+hr = mcp(p.spatial[1], percent = 100, unout = "m2")
+plot(hr)
+#Read in dataframe with cafe locations
+cafs<-read.csv("cafe_points.csv", header = T)
+#Convert to spatial points dataframe
+c <- SpatialPointsDataFrame(cafs)
+#Count the number of cafes in each home range polygon
+cafes <- over(c, hr)
+cafe_data <- table(cafes$NAME_1)
+cafe_data <- merge(cafe_data, ff, by = "ID")
+
+c1 <- MCMCglmm(NumberCafesInTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=cafe_data, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+summary(c1)
+
 ```
 
 ####*P4: flexible = a greater number of bonds or stronger bonds*
