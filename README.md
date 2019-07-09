@@ -33,6 +33,8 @@
 
 1. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. **[Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_feathermites.Rmd) version).
 
+2. Sevchik A, Logan CJ, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
+
 ***Open Materials***
 
 - [Multiaccess box](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) (3D printer and laser cutter) for [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)
