@@ -56,11 +56,17 @@ P5 alternative 2: Individuals from the the middle of the expanded range will sol
 
 P5 alternative 3: There will be no difference in the number of options solved, the rate of solving, and the reliance on personal versus social information on the social learning task across grackle populations. This is potentially because grackles in each population are equally social and generalist foragers ([@levebvre1996is]), measured in a separate preregistration (http://corinalogan.com/Preregistrations/g_flexforaging.html) and rely on a mixture of personal and social information.
 
+#### H3: Repeated assessments of social learning with two similar apparatuses will illuminate whether performance is consistent within individuals.
+
+P6: Grackles will show repeatable performance on the social learning task over sequential trials with two functionally similar but visually distinct apparatuses (@logan2016new, @mccune2019captive). This would indicate that behavioral interactions with the task result from inherent learning abilities.
+
+P6 alternative 1: Grackles will not show repeatable learning performance on the two apparatuses. This could happen for several reasons. First, it may indicate that the two apparatuses may vary in difficulty and so performance on one is not predictive of performance on the other. Secondly, the distinct visual appearance of the two apparatuses could differentially stimulate behavioral responses that lead to variation in performance (i.e. one apparatus has clear plastic doors so food is visible, while the food is not visible in the other apparatus). Third, grackles may show faster learning on the second social learning assessment after experience with the first.
+
 ###C. METHODS
 
 **Planned Sample**
 	
-Great-tailed grackles will be caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations) until as much of the population is banded as possible (estimated 400 grackles in the area, 56 have been banded as of 6 May 2019). Some individuals (~6-16) will be brought temporarily into aviaries where demonstrators will be trained on a particular locus of the apparatus before being released back to the wild to serve as demonstrators for the experiment, which will occur in the wild (in the same way as @logan2016new, except in the wild).
+Great-tailed grackles will be caught in the wild in Tempe, Arizona USA for individual identification (colored leg bands in unique combinations) until as much of the population is banded as possible (estimated 400 grackles in the area, 56 have been banded as of 6 May 2019). Some individuals (~6-16) will be brought temporarily into aviaries where demonstrators will be trained on a particular locus of the apparatus before being released back to the wild to serve as demonstrators for the experiment, which will occur in the wild (in the same way as @logan2016new, except in the wild). We will attempt to train grackles in the aviaries on a solving method for each of two visually distinct but functionally similar apparatuses (@logan2016new, @mccune2019captive). However, if the solving methods on one apparatus are two difficult for the grackles to learn in the small time period in which they are in captivity, then we will only use one apparatus and will not test H3. 
 
 **Data collection stopping rule**
 	
@@ -68,7 +74,7 @@ Eight sessions of up to 45 minutes per group will be conducted. A group is defin
 
 ####**Randomization and counterbalancing** 
 
-In the population in the middle of the expanded range, we will attempt to counterbalance demonstrators among the three groups such that each group will observe a demonstrator that was trained in a distinct solving method, and observers in each group will not be exposed to other demonstrators using different opening methods. We will counterbalance the core and edge populations by training demonstrators on one solving method in each group (1 group per population) such that the core population demonstrators will be trained on one solving method, and the edge demonstrators will be trained in a different solving method.
+In the population in the middle of the expanded range, we will attempt to counterbalance demonstrators among the three groups such that each group will observe a demonstrator that was trained in a distinct solving method, and observers in each group will not be exposed to other demonstrators using different opening methods. If we are able to train demonstrators on solving methods for both of the apparatuses, then we will counterbalance which group sees which apparatus type first. We will counterbalance the core and edge populations by training demonstrators on one solving method in each group (1 group per population) such that the core population demonstrators will be trained on one solving method, and the edge demonstrators will be trained in a different solving method. 
 
 ####**Blinding of conditions during analysis**
 
@@ -105,6 +111,20 @@ No blinding is involved in this study.
 10) Population (center, middle, edge)
 
 11) Random effect: ID (to allow for multiple events from the same individual)
+
+####*P6*
+
+1) Apparatus
+
+2) Sex
+
+3) Age
+
+4) Dominance rank
+
+5) Population (center, middle, edge)
+
+6) Random effect: ID (to allow for multiple events from the same individual)
 
 ###D. ANALYSIS PLAN
 
@@ -148,6 +168,57 @@ plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residua
 ####*P4: How many observations?*
 
 The analysis will be conducted as in @barrett2017pay using multilevel experience-weighted attraction models that can determine how individuals accumulate experience and the probability of an option being chosen. We will also use this analysis to investigate P1-P3.
+
+####*P6: Repeatability of performance?*
+
+We will only conduct this analysis if we are able to train demonstrator grackles in aviaries on solving methods for both apparatuses. If so, wild grackle groups will receive sequential trials with first one apparatus, then the second apparatus.
+
+```{r mod, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+data1 <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# REPEATABILITY GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+learn.rpt <- MCMCglmm(latencyattempt ~ Apparatus + Sex + Age + Rank + Population, random = ~ID, family = "poisson", 
+    data = data1, verbose = F, prior = prior, nitt = 13000, thin = 10, 
+    burnin = 3000)
+summary(learn.rpt)
+# autocorr(learn.rpt$Sol) #Did fixed effects converge?
+# autocorr(learn.rpt$VCV) #Did random effects converge?
+
+# In MCMCglmm, the latent scale adjusted repeatability and
+# its credible interval can simply be obtained by:
+
+rpt <- learn.rpt$VCV[, "ID"]/(learn.rpt$VCV[, "ID"] + learn.rpt$VCV[, "units"])  #latent scale adjusted repeatability and its credible interval
+mean(rpt)
+var(rpt)
+posterior.mode(rpt)
+HPDinterval(rpt, 0.95)
+
+# Repeatability on the data/observed scale (accounting for
+# fixed effects) code from Supplementary Material S2 from
+# Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(learn.rpt[["Sol"]]), function(i) {
+    var(predict(learn.rpt, it = i))
+})  #estimates for each iteration of the MCMC
+
+repeataF <- (vf + learn.rpt$VCV[, "ID"])/(vf + learn.rpt$VCV[, "ID"] + 
+    learn.rpt$VCV[, "units"])  #latent scale adjusted + data scale
+posterior.mode(repeataF)
+HPDinterval(repeataF, 0.95)
+
+# Now compare with the raw repeatability: null model
+learn.raw <- MCMCglmm(latencyattempt ~ 1, random = ~ID, family = "poisson", 
+    data = data1, verbose = F, prior = prior, nitt = 13000, thin = 10, 
+    burnin = 3000)
+summary(learn.raw)
+
+repeataraw <- learn.raw$VCV[, "ID"]/(learn.raw$VCV[, "ID"] + learn.raw$VCV[, 
+    "units"])  #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeataraw)
+HPDinterval(repeataraw, 0.95)
+```
 
 ###E. ETHICS
 
