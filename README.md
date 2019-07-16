@@ -53,7 +53,7 @@ The version is noted in the Commit comment, and the different versions can be se
 
 <img src="./Files/GrackleProjectTimeline.png" width=500>
 
-The same individuals will experience the experiments listed in each column (i.e., the same ~32 individuals in the left column (Years 1 and 2) will experience numbers 1-9, and the same ~32 individuals in the right column (Years 3-5) will experience A-D, plus numbers 5-9).
+The same individuals will experience the experiments listed in each column (i.e., the same ~32 individuals in the left column (Years 1 and 2) will experience numbers 1-9, and the same ~32 individuals in the right column (Years 3-5) will experience A-D, plus numbers 5-9). Year 1 started in September 2018.
 
 ### License
 
