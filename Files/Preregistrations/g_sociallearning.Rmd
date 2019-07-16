@@ -112,7 +112,7 @@ We do not plan to **exclude** any data. When **missing data** occur, the existin
 
 ####*Data checking*
 
-The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
+The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). 
 
 ####*P1-P4: Learning mechanisms*
 
@@ -126,7 +126,7 @@ library(DHARMa)
 library(lme4)
 
 #Latency to solve
-simulationOutput <- simulateResiduals(fittedModel = glmer(latencysolve ~ Locus + Group ID + StartTime + ObservedAnother + Apparatus + Sex + Age + Rank + Population + (1|ID), family=poisson, data=data1), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(latencysolve ~ Locus + Group ID + StartTime + ObservedAnother + Apparatus + Sex + Age + Rank + Population + (1|ID), family=poisson, data=data1), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -135,7 +135,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #Latency to attempt to solve
-simulationOutput <- simulateResiduals(fittedModel = glmer(latencyattempt ~ Locus + Group ID + StartTime + ObservedAnother + Apparatus + Sex + Age + Rank + Population + (1|ID), family=poisson, data=data1), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(latencyattempt ~ Locus + Group ID + StartTime + ObservedAnother + Apparatus + Sex + Age + Rank + Population + (1|ID), family=poisson, data=data1), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
