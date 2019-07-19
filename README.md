@@ -2,6 +2,8 @@
 
 *Click the **title** of the preregistration you would like to see to be taken directly to that page. The **.Rmd** version is a version-tracked reproducible manuscript*
 
+&ast; = undergraduate co-author
+
 ***Preregistrations: passed pre-study peer review at PCI Ecology***
 
 1. Logan CJ, Rowney C, Bergeron L, Seitz B, Blaisdell A, Folsom M, Johnson-Ulrich Z, McCune K. 2017. **[Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](http://corinalogan.com/Preregistrations/g_flexmanip.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) version) *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True))
@@ -33,7 +35,7 @@
 
 1. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. **[Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_feathermites.Rmd) version).
 
-2. Sevchik A, Logan CJ, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
+2. &ast;Sevchik A, Logan CJ, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
 
 ***Open Materials***
 
