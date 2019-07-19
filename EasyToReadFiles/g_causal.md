@@ -1,3 +1,5 @@
+**NOTE! This .md file has been replaced with an easier-to-read html version. Please read the html version instead by [clicking here](http://corinalogan.com/Preregistrations/g_causal.html)**
+
 Do the more flexible individuals rely more on causal cognition? Observation versus intervention in causal inference in great-tailed grackles
 ================
 [Dr. Aaron Blaisdell](http://pigeonrat.psych.ucla.edu) (University of California Los Angeles), Dr. Zoe Johnson-Ulrich (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Luisa Bergeron (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Carolyn Rowney (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), Benjamin Seitz (University of California Los Angeles), Dr. Kelsey McCune (University of California Santa Barbara / Max Planck Institute for Evolutionary Anthropology), [Dr. Corina Logan](http://CorinaLogan.com) (Max Planck Institute for Evolutionary Anthropology, <corina_logan@eva.mpg.de>)
