@@ -44,6 +44,10 @@
  - [PsychoPy2 code](https://github.com/corinalogan/grackles/tree/master/Files/TouchscreenPsychoPy2code) for touchscreen experiments
  
  - How to modify the [bownet](https://gitlab.com/corinalogan/the-grackle-project/blob/master/README.md) trapping method and protocols to increase safety
+ 
+ - Protocol: [nest checks](https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolNestCheck.pdf) to collect indicators of nest building, egg laying behavior, nestling and fledgling presence, and nest failure
+
+- Protocol: [biometrics](https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolBiometrics.pdf)
 
 # The Grackle Project
 
