@@ -35,7 +35,7 @@
 
  - E. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. **[Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_feathermites.Rmd) version).
 
- - F. &ast;Sevchik A, Logan CJ, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
+ - F. &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
 
 ***Open Materials***
 
@@ -44,6 +44,10 @@
  - [PsychoPy2 code](https://github.com/corinalogan/grackles/tree/master/Files/TouchscreenPsychoPy2code) for touchscreen experiments
  
  - How to modify the [bownet](https://gitlab.com/corinalogan/the-grackle-project/blob/master/README.md) trapping method and protocols to increase safety
+ 
+ - Protocol: [nest checks](https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolNestCheck.pdf) to collect indicators of nest building, egg laying behavior, nestling and fledgling presence, and nest failure
+
+- Protocol: [biometrics](https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolBiometrics.pdf)
 
 # The Grackle Project
 
