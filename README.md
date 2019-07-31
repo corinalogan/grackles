@@ -31,13 +31,9 @@
  
  - E. McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2019. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** [.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd)
 
-*Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
-
-***Preregistrations for Student Projects***
-
- - E. Taylor JE, Johnson-Ulrich Z, Bergeron, Rowney C, Logan CJ. 2017. **[Feather mite variation across the range of a rapidly expanding species, the great-tailed grackle](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_feathermites.md)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_feathermites.Rmd) version).
-
  - F. &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
+
+*Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
 ***Open Materials***
 
