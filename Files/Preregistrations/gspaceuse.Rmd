@@ -143,6 +143,614 @@ One model will be run for each dependent variable
 
 We do not plan to **exclude** any data and no data are **missing**. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). 
 
+#### *Scaffold of the statistical model we will use for analysis*
+
+These scripts and code are available at https://github.com/ctross/grackleator.
+
+```{r functions, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### gracklenomial.R
+gracklenomial <- function(GrackBins){
+model_dat_2=list(
+Trips=dim(GrackBins)[1],
+Bins=dim(GrackBins)[2],
+GrackBins=GrackBins)
+
+model_code_2 <- '
+data{
+	int Trips;
+	int Bins;
+	int GrackBins [Trips,Bins];
+}
+
+parameters{
+ simplex[Bins] A;
+ real<lower=0,upper=1> B;
+}
+
+model{
+ vector[Bins] C;
+ A ~ dirichlet(rep_vector(1,Bins));
+ B ~ beta(1,1);
+
+ for( i in 2:Trips){
+ 	C = to_vector(GrackBins[i-1])/sum(GrackBins[i-1]);
+	GrackBins[i] ~ multinomial( A*(1-B) + B*C  );
+    }
+}
+'
+ m2 <- stan( model_code=model_code_2, data=model_dat_2,refresh=1,chains=1, control = list(adapt_delta = 0.9, max_treedepth = 13))
+
+ return(m2)
+}
+
+
+### gracklepars.R
+gracklepars <- function(m1){
+MuD_M<-data.frame(Group="Step-Size",Group2="Mean",Group3="Mean",Value=rstan::extract(m1,pars="MuD_M")$MuD_M) # Mean Step-Size over Days
+DispD_M<-data.frame(Group="Step-Size",Group2="Mean",Group3="Dispersion",Value=rstan::extract(m1,pars="DispD_M")$DispD_M) # Dispersion in Mean Step-Size over days
+
+MuD_D <-data.frame(Group="Step-Size",Group2="Dispersion",Group3="Mean",Value=rstan::extract(m1,pars="MuD_D")$MuD_D)#  Mean Dispersion in Step-Size 
+DispD_D <-data.frame(Group="Step-Size",Group2="Dispersion",Group3="Dispersion",Value=rstan::extract(m1,pars="DispD_D")$DispD_D)# Dispersion in Dispersion in Step-Size 
+
+MuA_M <-data.frame(Group="Heading Change",Group2="Mean",Group3="Mean",Value=rstan::extract(m1,pars="MuA_M")$MuA_M)# Mean Angle Change over Days
+DispA_M <-data.frame(Group="Heading Change",Group2="Mean",Group3="Dispersion",Value=rstan::extract(m1,pars="DispA_M")$DispA_M)# Dispersion in Mean Angle Change over days
+
+MuA_D <-data.frame(Group="Heading Change",Group2="Dispersion",Group3="Mean",Value=rstan::extract(m1,pars="MuA_D")$MuA_D)#  Mean Dispersion in Angle Change 
+DispA_D <-data.frame(Group="Heading Change",Group2="Dispersion",Group3="Dispersion",Value=rstan::extract(m1,pars="DispA_D")$DispA_D)# Dispersion in Dispersion in Angle Change
+
+df_allx<-rbind(MuD_M,DispD_M,MuD_D,DispD_D,MuA_M,DispA_M,MuA_D,DispA_D)
+
+ ggplot(df_allx, aes(x=Value)) + geom_density(aes(group=Group3, colour=Group3, fill=Group3), alpha=0.3)   + facet_wrap(Group2~Group,scales="free")+
+ labs(y="Regression parameters") + theme(strip.text.x = element_text(size=14,face="bold"),axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold")) 
+}
+
+
+### grackletrip.R
+grackletrip <- function(m1){
+ m1a<-rstan::extract(m1,pars="AlphaAngle")
+ sample_eff<-apply(m1a$AlphaAngle,2,quantile,probs=c(0.05,0.5,0.95))
+ df_angle<-data.frame(Trip=c(1:dim(m1a$AlphaAngle)[2]),Group="Heading Change",Group2="Mean",
+                      LI=sample_eff[1,],
+                      Median=sample_eff[2,],
+                      HI=sample_eff[3,])
+                      
+ m1d<-rstan::extract(m1,pars="AlphaDist")
+ sample_eff<-apply(m1d$AlphaDist,2,quantile,probs=c(0.05,0.5,0.95))
+ df_dist<-data.frame(Trip=c(1:dim(m1d$AlphaDist)[2]),Group="Step-Size",Group2="Mean",
+                      LI=sample_eff[1,],
+                      Median=sample_eff[2,],
+                      HI=sample_eff[3,])
+                      
+ df_all1<-rbind(df_angle,df_dist)
+
+  m1a<-rstan::extract(m1,pars="DAngle")
+ sample_eff<-apply(exp(m1a$DAngle),2,quantile,probs=c(0.05,0.5,0.95))
+ df_angle<-data.frame(Trip=c(1:dim(m1a$DAngle)[2]),Group="Heading Change",Group2="Dispersion",
+                      LI=sample_eff[1,],
+                      Median=sample_eff[2,],
+                      HI=sample_eff[3,])
+                      
+ m1d<-rstan::extract(m1,pars="SDDist")
+ sample_eff<-apply(exp(m1d$SDDist),2,quantile,probs=c(0.05,0.5,0.95))
+ df_dist<-data.frame(Trip=c(1:dim(m1d$SDDist)[2]),Group="Step-Size",Group2="Dispersion",
+                      LI=sample_eff[1,],
+                      Median=sample_eff[2,],
+                      HI=sample_eff[3,])
+                      
+ df_all2<-rbind(df_angle,df_dist)
+
+ df_all<-rbind(df_all1,df_all2)
+
+ ggplot(df_all,aes(x=Trip,y=Median))+geom_point()+
+ geom_linerange(aes(ymin=LI,ymax=HI))+facet_wrap(Group2~Group,scales="free")+
+ labs(y="Regression parameters") + theme(strip.text.x = element_text(size=14,face="bold"),axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold")) + 
+ scale_x_continuous(breaks= pretty_breaks())
+}
+
+
+### grackleate.R
+grackleate <- function(AlphaDist=2.8,AlphaAngle=0,BetaDist=rep(0,10),BetaAngle=rep(0,10),SDDist=1,DAngle=2,Thresh=50, Lags=10, steps=150, seed=123456, Reps=30,N_Patches=13){
+
+################################################################################# Set up Patches of Food                                                
+X_Mushrooms<-vector("list",N_Patches)                                           # Location of prey
+Y_Mushrooms<-vector("list",N_Patches)                                           # 
+
+set.seed(seed)                                                                  # Reset Seed
+
+N_PerPatch<-rpois(N_Patches, 200)                                               # Create some prey
+for(i in 1:N_Patches){
+X_Mushrooms[[i]]<-rnorm(N_PerPatch[i], runif(1,-2500,2500), rpois(1, 350))+100
+Y_Mushrooms[[i]]<-rnorm(N_PerPatch[i], runif(1,-2500,2500), rpois(1, 350))+100
+}
+
+X_Mushrooms_per_step<-vector("list",steps)                                      # Location of prey
+Y_Mushrooms_per_step<-vector("list",steps)                                      #
+
+for(i in 1:steps){
+ X_Mushrooms_per_step[[i]]<-X_Mushrooms
+ Y_Mushrooms_per_step[[i]]<-Y_Mushrooms
+}                                                                 
+                                                                                     
+################################################################################ Start Model
+Store.X <- matrix(NA,ncol=Reps,nrow=steps-1)
+Store.Y <- matrix(NA,ncol=Reps,nrow=steps-1)
+
+for(q in 1:Reps){                                                               # Run simulation several times
+set.seed(seed)                                                                  # Reset seed
+
+N_PerPatch<-rpois(N_Patches, 200)                                               # Choose number of items per patch
+
+for(i in 1:N_Patches){
+X_Mushrooms[[i]]<-rnorm(N_PerPatch[i], runif(1,-2500,2500), rpois(1, 350))+100  # Make some patches of prey
+Y_Mushrooms[[i]]<-rnorm(N_PerPatch[i], runif(1,-2500,2500), rpois(1, 350))+100  #
+}
+
+X_Mushrooms_per_step<-vector("list",steps)                                      # Location of prey
+Y_Mushrooms_per_step<-vector("list",steps)                                      #
+
+for(i in 1:steps){
+ X_Mushrooms_per_step[[i]]<-X_Mushrooms
+ Y_Mushrooms_per_step[[i]]<-Y_Mushrooms
+}
+
+loc.x<-c()                                                                      # Location of forager
+loc.y<-c()                                                                      #
+
+speed<-c()                                                                      # Speed or step size
+heading<-c()                                                                    # Absolute heading
+d.heading<-c()                                                                  # Heading change
+
+Hits<-c()                                                                       # Binary vector of encounters
+
+loc.x[1:Lags]<-rep(0,Lags)                                                      # Intialize vectors
+loc.y[1:Lags]<-rep(0,Lags)                                                      #
+heading[1:Lags]<-rep(0,Lags)                                                    #
+speed[1:Lags]<-rep(0,Lags)                                                      #
+Hits[1:Lags]<-rep(0,Lags)                                                       #
+
+plot(loc.x,loc.y,typ="l",ylim=c(-3500,3500),xlim=c(-3500,3500))                 # Plot prey items
+ for(i in 1:N_Patches){                                                         #
+  points(X_Mushrooms[[i]],Y_Mushrooms[[i]], col="red",pch=".")                  #
+   }                                                                            #
+
+set.seed(q*103)
+
+################################################################################ Now model forager movement
+
+for(s in (Lags+1): (steps-1)){                                                  
+ X_Mushrooms <- X_Mushrooms_per_step[[s]]
+ Y_Mushrooms <- Y_Mushrooms_per_step[[s]]
+
+ PredDist <- AlphaDist;                                                         # First calculate mean prediction conditional on encounters
+for(k in 1:Lags){                                                               #    
+ PredDist <- PredDist + BetaDist[k]*ifelse(Hits[s-k]>0,1,0);                                  #
+       }                                                                        #
+
+ R<- exp(rnorm(1,PredDist,SDDist))                                              # Then simulate a step distance. 
+    
+ PredAngle <- AlphaAngle;                                                       # Again calculate mean prediction conditional on encounters
+for(k in 1:Lags){                                                               #    
+ PredAngle <- PredAngle + BetaAngle[k]*ifelse(Hits[s-k]>0,1,0);                              #
+        }                                                                       #
+                
+ Theta<- rbeta(1,inv_logit(PredAngle)*DAngle,                                   # And then simulate a directional change
+          (1-inv_logit(PredAngle))*DAngle)*180*ifelse(runif(1,0,1)>0.5,1,-1)    # The 180 shifts from the unit to the maximum absolute distance
+                                                                                # The ifelse just chooses a random direction
+                                                                             
+ heading[s]<-(heading[s-1]+Theta)%%360                                          # Store new heading. Note that the %% is the mod operation to wrap around if needed
+ d.heading[s] <- abs(Theta)/180                                                 # Also store just the delta heading
+ speed[s] <- R                                                                  # And the speed slash step size
+   
+ ynew <- R * sin(deg2rad(heading[s]))                                           # Now convert polar to Cartesian, to get the offset for a new x and y pair
+ xnew <- R * cos(deg2rad(heading[s]))                                           #
+   
+ loc.x[s]<-loc.x[s-1]+xnew                                                      # Make the new x and y pair
+ loc.y[s]<-loc.y[s-1]+ynew                                                      #
+
+############################################################################### Now check for an encounter 
+ Scrap2<-c()
+ for(i in 1:N_Patches){                                                         # For each patch
+  Scrap<-rep(NA,length(X_Mushrooms[[i]]))
+ for(j in 1:length(X_Mushrooms[[i]])){                                          # For each mushroom in patch
+ Scrap[j]<- dist(loc.x[s],X_Mushrooms[[i]][j],loc.y[s],Y_Mushrooms[[i]][j]);    # Calculate the distance from the forager to the mushroom
+ if(Scrap[j]<Thresh){                                                           # If the forager is closer than the visual radius slash encounter threshold
+ points(X_Mushrooms[[i]][j],Y_Mushrooms[[i]][j], col="blue",pch=20)             # Plot a hit
+
+       for(allgone in s: (steps-1)){
+       X_Mushrooms_per_step[[allgone]][[i]][j]<-99999                           # If this run is for destructive foraging
+       X_Mushrooms_per_step[[allgone]][[i]][j]<-99999                           # disappear food for all future timesteps
+      }
+ }}
+ 
+ Scrap2[i]<- ifelse(sum(ifelse(Scrap<Thresh,1,0))>0,sum(ifelse(Scrap<Thresh,1,0)),0)      # Check for hits, also can replace sum(ifelse(Scrap<Thresh,1,0)) with 1
+ }
+ 
+ Hits[s]<-ifelse(sum(Scrap2)==0,0,sum(Scrap2))                                            # If there is a hit, then set encounters to 1
+  
+ lines(loc.x,loc.y,ylim=c(-2500,2500),xlim=c(-2500,2500))                                 # Plot updates to the foragers path
+}
+ Store.X[,q] <- loc.x
+ Store.Y[,q] <- loc.y
+ }
+
+
+ return(list(X=Store.X[(Lags+1):length(loc.x),],Y=Store.Y[(Lags+1):length(loc.y),]))
+ }
+
+
+### grackleations.R
+grackleations <- function(m2){
+df2<-data.frame(Parameter="B",Value=rstan::extract(m2,pars="B")$B) # Mean Step-Size over Days
+
+
+ ggplot(df2, aes(x=Value)) + geom_density(aes(fill=Parameter), alpha=0.3) +
+ theme(strip.text.x = element_text(size=14,face="bold"),axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold")) 
+}
+
+
+### gracklebinner.R
+gracklebinner <- function(tracks,nbin=c(15,15),ab_override=NULL){
+
+Trips <- dim(tracks$X)[2]
+GrackBins <- matrix(NA,nrow=Trips,ncol=nbin[1]*nbin[2])
+bins<-bin2(cbind(c(z$X),c(z$Y)),nbin=nbin)
+
+if(length(dim(ab_override))==0){
+for( i in 1:Trips){
+GrackBins[i,] <- c(bin2(cbind(z$X[,i],z$Y[,i]),nbin=nbin,ab=bins$ab)$nc)
+ }
+ } else{
+for( i in 1:Trips){
+GrackBins[i,] <- c(bin2(cbind(z$X[,i],z$Y[,i]),nbin=nbin,ab=ab_override)$nc)
+ }
+ }
+
+return(GrackBins)
+}
+
+
+### grackleize.R
+grackleize <- function(StoreX,StoreY) {                                          
+############################################################ Prepare Data
+ Trip <- dim(StoreX)[2]  
+ MaxTicks<-dim(StoreX)[1]
+    
+ Distance <-matrix(NA,ncol=max(Trip),nrow=MaxTicks) 
+ Ang <-matrix(NA,ncol=max(Trip),nrow=MaxTicks)
+ AngDiff <-matrix(NA,ncol=max(Trip),nrow=MaxTicks)
+
+ N<-c()
+ for(j in 1:max(Trip)){
+ X <- StoreX[,j]
+ Y <- StoreY[,j]
+ N[j] <- length(X)
+  
+ Dist<-c()  
+ ang1<-c()
+ angdif<-c()
+  
+ for(i in 2:N[j]){
+ Dist[i]<- dist(X[i],X[i-1],Y[i],Y[i-1]);
+ ang1[i]<- ang(X[i],X[i-1],Y[i],Y[i-1])
+ if(i>3){
+ angdif[i]<- ang.dif(ang1[i],ang1[i-1])
+         }}    
+         
+ Distance[1:N[j],j]<-Dist
+ Ang[1:N[j],j]<-ang1       
+ AngDiff[1:N[j],j]<-angdif
+ }
+
+ for(i in 1:MaxTicks){
+ for(j in 1:max(Trip)){
+  Distance[i,j] <- ifelse(Distance[i,j]==0,
+                          runif(1,0,min(Distance[which(Distance != 0)],na.rm=TRUE)),
+                          Distance[i,j])
+      }}
+      
+
+ Distance[is.na(Distance)] <- 999999
+
+ EmptyAngle <-  fitdistr( ScaleBeta(c(na.omit(c(AngDiff)))),start=list(shape1=1,shape2=1),"beta")$estimate
+
+ for(i in 1:MaxTicks){
+ for(j in 1:max(Trip)){
+  AngDiff[i,j] <- ifelse(is.nan(AngDiff[i,j]), rbeta(1,EmptyAngle[1], EmptyAngle[2])*pi,AngDiff[i,j])
+      }}
+      
+ AngDiff <- ScaleBeta(AngDiff)
+ AngDiff[is.na(AngDiff)] <- 999999
+
+ AngDiff <- AngDiff[c(-1,-2,-3),]
+ Distance <- Distance[c(-1,-2,-3),]
+ N <- N-3
+ MaxTicks<-MaxTicks-3
+
+
+########################################################## Extract data for Stan    
+model_dat=list(
+Distance=Distance, 
+AngDiff=AngDiff,
+N=N,
+MaxTrip=max(Trip),
+MaxTicks=MaxTicks)
+
+################################################################# Fit Stan Model
+model_code_1 <- '
+data{
+int MaxTrip;
+int MaxTicks;
+int N[MaxTrip];
+
+real Distance[MaxTicks,MaxTrip];
+real AngDiff[MaxTicks,MaxTrip];
+}
+
+parameters {
+ real MuD_M;
+ real MuA_M;
+
+ real<lower=0> DispD_M;
+ real<lower=0> DispA_M;
+
+ real MuD_D;
+ real MuA_D;
+
+ real<lower=0> DispD_D;
+ real<lower=0> DispA_D;
+
+ vector[MaxTrip] AlphaDist_Raw;
+ vector[MaxTrip] SDDist_Raw; 
+
+ vector[MaxTrip] AlphaAngle_Raw;
+ vector[MaxTrip] DAngle_Raw; 
+}
+
+transformed parameters{
+ vector[MaxTrip] AlphaDist;
+ vector[MaxTrip] SDDist; 
+
+ vector[MaxTrip] AlphaAngle;
+ vector[MaxTrip] DAngle; 
+
+ AlphaDist = MuD_M + DispD_M*AlphaDist_Raw;
+ SDDist = MuD_D + DispD_D*SDDist_Raw;
+
+ AlphaAngle = MuA_M + DispA_M*AlphaAngle_Raw;
+ DAngle = MuA_D + DispA_D*DAngle_Raw;  
+
+}
+
+model{
+  MuD_M~normal(0,5); 
+  MuA_M~normal(0,5); 
+
+  DispD_M~cauchy(0,1); 
+  DispA_M~cauchy(0,1); 
+
+  MuD_D~normal(0,5); 
+  MuA_D~normal(0,5); 
+
+  DispD_D~cauchy(0,1); 
+  DispA_D~cauchy(0,1); 
+
+  AlphaDist_Raw~normal(0,1); 
+  SDDist_Raw~normal(0,1); 
+
+  AlphaAngle_Raw~normal(0,1); 
+  DAngle_Raw~normal(0,1); 
+
+for(j in 1:MaxTrip){
+{
+
+ vector[N[j]] PredAngle;
+ vector[N[j]] PredDist;
+ vector[N[j]] Dist;
+ vector[N[j]] AngleDifference;
+  
+ for(i in 1:N[j]){
+  PredDist[i] = AlphaDist[j]; 
+  } 
+        
+ for(i in 1:N[j]){
+  PredAngle[i] = AlphaAngle[j]; 
+  }       
+              
+ for(i in 1:N[j]){            
+  Dist[i] = Distance[i,j];              
+  AngleDifference[i] = AngDiff[i,j];
+  }
+
+ Dist ~ lognormal(PredDist,exp(SDDist[j]));
+ AngleDifference ~ beta(inv_logit(PredAngle)*exp(DAngle[j]), (1-inv_logit(PredAngle))*exp(DAngle[j]));
+ }}    
+
+}
+
+'
+
+ m1 <- stan( model_code=model_code_1, data=model_dat,refresh=1,chains=1, control = list(adapt_delta = 0.9, max_treedepth = 15))
+
+ return(m1)
+}
+
+
+
+### setup.R
+# Load libraries
+	 library(MASS)
+	 library(mvtnorm)
+	 library(fields)
+	 library(ggplot2)
+	 library(rethinking)  
+	 library(sfsmisc)
+	 library(ash)
+	 library(reshape)
+	 library(maptools)
+	 library(gridExtra)
+	 library(scales)
+	 library(msm)
+	 library(maps)
+	 library(grid)
+	 library(xtable)
+	
+	# Define functions
+	 dist2<-function(a,b){return(sqrt( (b[2]-a[2])^2   + (b[1]-a[1])^2 ))}  
+	
+	 dist<-function(x2a,x1a,y2a,y1a){return(sqrt((x2a-x1a)^2 + (y2a-y1a)^2))}  
+	
+	 rad2deg <- function(rad) {(rad * 180) / (pi)}
+	
+	 deg2rad <- function(deg) {(deg * pi) / (180)}
+	
+	 ang.dif <- function(x,y) {min((2 * pi) - abs(x - y), abs(x - y))}
+	
+	 lp_dist <-function(a,b,c){ 
+	                           # Return distance between a point and line segment 
+	                           t <- -(((a[1]-c[1])*(b[1]-a[1]) + (a[2]-c[2])*(b[2]-a[2])) / ((b[1]-a[1])^2 + (b[2] - a[2])^2 ))
+	
+	                           if(t >0 & t <1){    
+	                            numer <- abs(  (b[2]-a[2])*c[1] -(b[1]-a[1])*c[2] + b[1]*a[2] - b[2]*a[1])
+	                            denom <- sqrt( (b[2]-a[2])^2   + (b[1]-a[1])^2 ) 
+	                            return(numer/denom)  
+	                             }
+	
+	                           else{
+	                            d1 <- dist2(a,c)
+	                            d2 <- dist2(b,c)   
+	                            return( min(d1,d2))                              
+	                             }                                                
+	                           }
+	
+	ScaleBeta <- function(X){
+	 a<-0
+	 b<-pi
+	 y<-X
+	 Samp<-50
+	
+	 y2 <- (y-a)/(b-a)
+	 y3<-(y2*(Samp - 1) + 0.5)/Samp
+	 y3}
+	
+	ang<-function(x2,x1,y2,y1){
+	  Theta<-seq(0,2*pi,length.out=100)
+	  DB<-cbind(cos(Theta),sin(Theta))
+	   r <- dist(x2,x1,y2,y1)
+	   x0<-(x2-x1)/r
+	   y0<-(y2-y1)/r
+	
+	   (atan2(y0,x0) + pi )
+	   }
+	
+	################################################################# Set parameters
+	Thresh <- 50         # Threshold of visual range
+	Lags<-10             # Lags at which there are effects of encounters on movement, kinda hardcoded---careful with changes
+	Steps<-150           # Length of simulation
+	Reps <- 30           # Number of replications
+	
+	# Adaptive model parameters
+	Phi0A <- 3.2
+	Psi0A <- 0
+	PhiA  <- c(-0.76, -0.65, -0.58, -0.43, -0.29, -0.15, -0.03,0,0,0)
+	PsiA <- c(0.5, 0.3, 0.25, 0.2, 0.17, 0.15, 0.13, 0.11, 0.09, 0.08)
+	OmegaA <- 0.4
+	EtaA <- 2
+	
+	 # Levy parameters
+	Phi0L <- 2.8
+	Psi0L <- 0
+	PhiL  <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	PsiL <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	OmegaL <- 1
+	EtaL <- 2
+	
+	 # Brownian parameters
+	Phi0B <- 25
+	Psi0B <- 0
+	PhiB  <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	PsiB <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	OmegaB <- 15
+	EtaB <- 2
+```
+
+
+
+```{r grackleator, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#This is an R package for modeling bird movement (available at https://github.com/ctross/grackleator)
+
+#Install by running on R:
+library(devtools)
+install_github("Ctross/grackleator")
+
+#Some quick examples:
+
+#First, lets look at movement dynamics:
+
+# Load library and attach data
+library(grackleator)  
+
+# Simulate tracks from 1 grackle over 30 trips
+z <- grackleate(AlphaDist=3.8,AlphaAngle=0,SDDist=1.5,DAngle=2)
+
+# Analyze results of trips for step-size and angle change
+m1 <- grackleize(z$X,z$Y)
+ 
+# Plot results over trips
+grackletrip(m1)
+
+# Plot bird-specific parameters
+gracklepars(m1)
+
+#And now habitat selection:
+# Load library and attach data
+library(grackleator)  
+
+# Simulate tracks from 1 grackle over 30 trips
+z <- grackleate(AlphaDist=3.8,AlphaAngle=0,SDDist=1.5,DAngle=2)
+
+# Bin data on 2D grid
+GrackBins<- gracklebinner(z,ab_override=matrix(c(-3000,-3000,3000,3000),nrow=2,ncol=2))
+
+# Model location data
+m2 <- gracklenomial(GrackBins)
+ 
+# Plot environmental hotspots
+image(matrix(colSums(GrackBins), nrow=15,ncol=15)) # Overall
+image(matrix(GrackBins[1,], nrow=15,ncol=15)) # Day 1
+image(matrix(GrackBins[2,], nrow=15,ncol=15)) # Day 2
+image(matrix(GrackBins[3,], nrow=15,ncol=15)) # Day 3
+image(matrix(get_posterior_mean(m2,pars="A"), nrow=15,ncol=15)) # Overall
+
+# Plot bird-specific parameters
+grackleations(m2)
+
+# Now create data with temporal correlations
+GrackBins2 <- GrackBins
+A <- get_posterior_mean(m2,pars="A")
+A <- A/sum(A)
+B <- 0.8
+
+for(i in 2:30)
+GrackBins2[i,] <- rmultinom(1,sum(GrackBins2[i-1,]),A*(1-B) + B*(GrackBins2[i-1,]/sum(GrackBins2[i-1,])))
+
+# Analyze the new data
+m3 <- gracklenomial(GrackBins2)
+
+# Plot environmental hotspots
+image(matrix(colSums(GrackBins2), nrow=15,ncol=15)) # Overall
+image(matrix(GrackBins2[1,], nrow=15,ncol=15)) # Day 1
+image(matrix(GrackBins2[2,], nrow=15,ncol=15)) # Day 2
+image(matrix(GrackBins2[3,], nrow=15,ncol=15)) # Day 3
+
+image(matrix(get_posterior_mean(m3,pars="A"), nrow=15,ncol=15)) # Post
+
+# Plot bird-specific parameters
+grackleations(m3)
+```
+
 #### *P1 analysis*
 
 We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the minimum convex polygon method for estimating home range size (in hectares) using the R packages adehabitatHR [@calenge2006package] and sf [@pebesma2018simple]. Minimum convex polygon is widely used to estimate home range size and only includes points within the areas used by the animal during “normal activities” [@calenge2011home]. Therefore, outlier relocation detections are usually excluded. We are interested in all exploratory movements by grackles, so we will not exclude any outlier relocations.  
