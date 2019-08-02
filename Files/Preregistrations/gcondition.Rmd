@@ -127,6 +127,8 @@ No blinding is involved in this investigation.
 
 3) Random effect: Year (to determine whether conditions in a given breeding season similarly affected all grackle behavior and nest success)
 
+4) Random effect: Bird ID (because there will be multiple measures of reproductive success for each bird)
+
 ### D. ANALYSIS PLAN
 
 We will **exclude** data that was collected from the grackles when they were released from the aviaries to avoid any confounds due to their time in the aviary (e.g., perhaps unlimited nutritious food in the aviaries decreased their fat score). Therefore, all data included in this study will come only from wild-caught grackles (including the birds that were brought into the aviaries on their first capture). When **missing data** occur, the existing data for that individual will be included in the analyses for which their data exist. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). When there is more than one experimenter collecting data, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the sessions.
@@ -178,7 +180,8 @@ A GLMM is conducted as in P1, except this GLMM used a binomial distribution (cal
 d <- read.csv ("/Users/corina/GTGR/data/data_condition.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Factor the random effect variables
-Experimenter <- as.factor(d$Experimenter)
+Year <- as.factor(d$Year)
+ID <- as.factor(d$ID)
 
 # DATA CHECKING
 library(DHARMa)
@@ -188,7 +191,7 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 #Data checking for GLMM: fledglings 
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Experimenter, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -196,7 +199,7 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 #Data checking for GLMM: territory holder
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Aviary, random=~Experimenter, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -204,13 +207,13 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 #GLMM fledglings
-m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Year, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m1)
 #autocorr(m1$Sol) #Did fixed effects converge?
 #autocorr(m1$VCV) #Did random effects converge?
 
 #GLMM territory holder
-m2 <- MCMCglmm(Territory ~ FatScore + Aviary, random=~Year, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m2 <- MCMCglmm(Territory ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m2)
 #autocorr(m2$Sol) #Did fixed effects converge?
 #autocorr(m2$VCV) #Did random effects converge?
