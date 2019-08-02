@@ -33,6 +33,9 @@
 
  - F. &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
 
+ - G. &ast;Berens JM, Logan CJ, Folsom M, Bergeron L, McCune KB. 2019. **[Validating morphological condition indices and their relationship with reproductive success in great-tailed grackles](http://corinalogan.com/Preregistrations/gcondition.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd))
+
+
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
 ***Open Materials***
