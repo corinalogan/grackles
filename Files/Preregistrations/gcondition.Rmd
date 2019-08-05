@@ -72,7 +72,7 @@ We will continue to color mark as many grackles as possible, and collect biometr
 
 #### **Data collection stopping rule**
 
-We will stop collecting data for this project in early August 2020, at the conclusion of the second breeding season in Tempe, Arizona.
+We will stop collecting data for this project in early August 2020 when research at the Tempe, Arizona field site will be finished.
 
 #### **Open materials**
 
@@ -121,13 +121,15 @@ No blinding is involved in this investigation.
 
 **P2: condition and reproductive success**
 
-1) Fat score (note: if the fat score and the ratio of body weight to tarsus length are positively correlated, then we will use only fat score in the model for P2. If they are not positively correlated, then we will add the ratio as an independent variable in the P2 model)
+1) Fat score 
+   - Note 1: if the fat score and the ratio of body weight to tarsus length are positively correlated, then we will use only fat score in the model for P2. If they are not positively correlated, then we will add the ratio as an independent variable in the P2 analysis
+   - Note 2: if fat score and/or the ratio of body weight to tarsus length vary by season (breeding or non-breeding), then we will only use the data from the breeding season to ensure that less time has elapsed between the collection of condition and reproductive success variables
 
 2) Temporarily held in aviaries for behavioral testing at any point during this study (yes, no)
 
 3) Random effect: Year (to determine whether conditions in a given breeding season similarly affected all grackle behavior and nest success)
 
-4) Random effect: Bird ID (because there will be multiple measures of reproductive success for each bird)
+4) Random effect: Bird ID (because there may be multiple measures of reproductive success for each bird)
 
 ### D. ANALYSIS PLAN
 
@@ -205,6 +207,10 @@ testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+#Check to see whether condition variables vary by season
+fs <- glm(FatScore ~ Season, family = "poisson", data = d)
+bs <- glm(Body ~ Season, family = "poisson", data = d)
 
 #GLMM fledglings
 m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
