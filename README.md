@@ -15,7 +15,7 @@
 4. Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, McCune K, Folsom M, Logan CJ. 2017. **[Do the more flexible individuals rely more on causal cognition? Observation versus intervention in casual inference in great-tailed grackles](http://corinalogan.com/Preregistrations/g_causal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True))
    - Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. 
 
-5. Logan CJ, Bergeron L, McCune K, Folsom M, Lukas D. 2017. **[Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=35&reviews=True))
+5. Logan CJ, Lukas D, Bergeron L, Folsom M, McCune K. 2017. **[Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=35&reviews=True))
 
 ***Preregistrations***
 
