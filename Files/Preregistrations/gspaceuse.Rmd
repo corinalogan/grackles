@@ -147,7 +147,62 @@ One model will be run for each dependent variable
 
 We do not plan to **exclude** any data and no data are **missing**. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). 
 
-#### *Scaffold of the statistical model we will use for analysis*
+We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the minimum convex polygon method for estimating home range size (in hectares) using the R packages adehabitatHR [@calenge2006package] and sf [@pebesma2018simple]. Minimum convex polygon is widely used to estimate home range size and only includes points within the areas used by the animal during “normal activities” [@calenge2011home]. Therefore, outlier relocation detections are usually excluded. We are interested in all exploratory movements by grackles, so we will not exclude any outlier relocations.  
+
+From the GPS point locations collected on each individual, we will use a Bayesian model (detailed below) to extract mean and dispersion of step lengths and turning angles for each bird on each daily track. We will determine if the amount of daily autocorrelation is repeatable within individuals across days by analyzing the distribution of the dispersion parameter for step length and turning angle. A narrow distribution would indicate there is low variability (high repeatability) in the daily movement behaviors of the individual.
+
+Moreover, we will determine if grackles show individual differences in consistent use of habitat by overlaying a 5 x 5m grid array across the landscape.  We will then create matrices describing the number of times a grackle was observed in each cell each day. High autocorrelation among each daily matrix indicates a low-exploring individual that remains in the same spatial locations across days.
+
+If movement behavior and spatial location choice is repeatable, then we will use the average value for each individual to model the relationship with performance at our exploration tasks and as a function of study site location. 
+
+
+#### *Calculating home range size*
+```{r h1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Load packages
+library(adehabitatHR)
+library(sf)
+
+#Point to the correct data file and load it
+setwd("~/Documents/Grackle project/Space use")
+
+pts<-read.csv("gtgr_points.csv", header = T)
+pts<-pts[,-c(4:6,8:10)]
+
+#Set variables to ensure the models read the data properly
+pts$Latitude = as.numeric(as.character(pts$Latitude))
+pts$Longitude = as.numeric(as.character(pts$Longitude))
+pts$Date = as.character(pts$Date)
+pts$Time = as.character(pts$Time)
+pts$da.ti = as.POSIXct(paste(pts$Date, pts$Time), format="%Y-%m-%d %H:%M:%S")
+
+### Home range size can only be calculated when a bird has more than 5 relocations
+### Count the number of relocations for each bird, then exclude individuals with less than 6
+tmp = pts
+tmp$count = 1
+tmp = aggregate(count ~ Bird.Name, FUN = "sum", data = tmp)
+pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
+pts.min = pts.min[-which(pts.min$count<6),]
+pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
+
+### Convert dataframe to Spatial file type
+p.sf <- st_as_sf(pts.min, coords = c("Longitude", "Latitude"), crs = 4326) 
+class(p.sf) 
+p.spatial <- as(p.sf, "Spatial")
+class(p.spatial)
+
+### Calculate home range in square meters for each individual, excluding outliers
+hr = mcp(p.spatial[1], percent = 100, unout = "m2")
+plot(hr)
+hr = as.data.frame(hr)
+
+### Normalize data for regression model 
+hist(log(hr$area)) 
+
+exp <- read.csv("Explore_combined.csv", header = T)
+hr_exp = merge(exp, hr, by = "id", all = T)
+```
+
+#### *Functions to scaffold the statistical model we will use for analysis of movement behaviors*
 
 These scripts and code are available at https://github.com/ctross/grackleator.
 
@@ -681,6 +736,7 @@ for(j in 1:MaxTrip){
 ```
 
 
+#### *Modeling bird movement behaviors: step length, turning angle, spatial location preference*
 
 ```{r grackleator, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #This is an R package for modeling bird movement (available at https://github.com/ctross/grackleator)
@@ -755,65 +811,48 @@ image(matrix(get_posterior_mean(m3,pars="A"), nrow=15,ncol=15)) # Post
 grackleations(m3)
 ```
 
-#### *P1 analysis*
-
-We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the minimum convex polygon method for estimating home range size (in hectares) using the R packages adehabitatHR [@calenge2006package] and sf [@pebesma2018simple]. Minimum convex polygon is widely used to estimate home range size and only includes points within the areas used by the animal during “normal activities” [@calenge2011home]. Therefore, outlier relocation detections are usually excluded. We are interested in all exploratory movements by grackles, so we will not exclude any outlier relocations.  
-
-For our second dependent variable, we will quantify the amount of daily autocorrelation in the GPS point locations collected on each individual by comparing Mantel correlograms of a matrix describing distance in space to a matrix of distance in time [@cushman2005elephants].  
-
-We will determine if the amount of daily autocorrelation is significantly repeatable within individuals across days by dividing our data into 24-hr time periods for each bird and calculating autocorrelation of movement within a day using Mantel correlogram analysis as above. Then we will use Pearson’s product moment correlation to compare space use across the correlograms for each time period. We will use a Monte-Carlo permutation procedure to determine whether the correlation coefficient describing the daily similarity in movement behavior is significantly different from chance [@cushman2005elephants].   
-
-If movement behavior is repeatable, then we will use the average autocorrelation value for each individual to model the relationship with performance at our exploration tasks and as a function of study site location.  
+ 
 
 #### *H1: P1 - Exploration measured in captivity relates to space use behavior*
 
 ```{r h1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#Load packages
-library(adehabitatHR)
-library(sf)
 
-#Point to the correct data file and load it
-setwd("~/Documents/Grackle project/Space use")
+m1 = lm(log(area) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+hist(m1$resid)
+summary(m1)
 
-pts<-read.csv("gtgr_points.csv", header = T)
-pts<-pts[,-c(4:6,8:10)]
+m2 = lm(log(std_step)) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+hist(m2$resid)
+summary(m2)
 
-#Set variables to ensure the models read the data properly
-pts$Latitude = as.numeric(as.character(pts$Latitude))
-pts$Longitude = as.numeric(as.character(pts$Longitude))
-pts$Date = as.character(pts$Date)
-pts$Time = as.character(pts$Time)
-pts$da.ti = as.POSIXct(paste(pts$Date, pts$Time), format="%Y-%m-%d %H:%M:%S")
+m3 = lm(log(std_angle)) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+hist(H3$resid)
+summary(m3)
 
-### Home range size can only be calculated when a bird has more than 5 relocations
-### Count the number of relocations for each bird, then exclude individuals with less than 6
-tmp = pts
-tmp$count = 1
-tmp = aggregate(count ~ Bird.Name, FUN = "sum", data = tmp)
-pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
-pts.min = pts.min[-which(pts.min$count<6),]
-pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
+m4 = lm(log(loc_pref)) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+hist(H4$resid)
+summary(m4)
+```
 
-### Convert dataframe to Spatial file type
-p.sf <- st_as_sf(pts.min, coords = c("Longitude", "Latitude"), crs = 4326) 
-class(p.sf) 
-p.spatial <- as(p.sf, "Spatial")
-class(p.spatial)
+#### *H2: P2 - Space use behaviors vary among populations across the range*
 
-### Calculate home range in square meters for each individual, excluding outliers
-hr = mcp(p.spatial[1], percent = 100, unout = "m2")
-plot(hr)
-hr = as.data.frame(hr)
+```{r h2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
-### Normalize data for regression model 
-hist(log(hr$area)) 
+m1 = lm(log(area) ~ Site + Sex + Condition, data = hr_exp)
+hist(m1$resid)
+summary(m1)
 
-exp <- read.csv("Explore_combined.csv", header = T)
-hr_exp = merge(exp, hr, by = "id", all = T)
+m2 = lm(log(std_step)) ~ Site + Sex + Condition, data = hr_exp)
+hist(m2$resid)
+summary(m2)
 
-H1 = lm(log(area) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
-hist(H1$resid)
-summary(H1)
+m3 = lm(log(std_angle)) ~ Site + Sex + Condition, data = hr_exp)
+hist(m3$resid)
+summary(m3)
+
+m4 = lm(log(loc_pref)) ~ Site + Sex + Condition, data = hr_exp)
+hist(m4$resid)
+summary(m4)
 ```
 
 ###E. ETHICS
