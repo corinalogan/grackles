@@ -148,13 +148,13 @@ One model will be run for each dependent variable
 
 We do not plan to **exclude** any data and no data are **missing**. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). 
 
-We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the minimum convex polygon method for estimating home range size (in hectares) using the R packages adehabitatHR [@calenge2006package] and sf [@pebesma2018simple]. Minimum convex polygons are widely used to estimate home range size and they only include points within the areas used by the animal during “normal activities” [@calenge2011home]. Therefore, outlier relocation detections are usually excluded. We are interested in all exploratory movements by grackles, so we will not exclude any outlier relocations.  
+We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the minimum convex polygon method for estimating home range size (in square meters) using the R packages adehabitatHR [@calenge2006package] and sf [@pebesma2018simple]. Minimum convex polygons are widely used to estimate home range size and they only include points within the areas used by the animal during “normal activities” [@calenge2011home]. Therefore, outlier relocation detections are usually excluded. We are interested in all exploratory movements by grackles, so we will not exclude any outlier relocations.  
 
-From the GPS point locations collected on each individual, we will use a Bayesian model (detailed below) to extract the mean and dispersion of step lengths and turning angles for each bird on each daily track, as in @pacheco2019nahua. We will determine whether the amount of daily autocorrelation is repeatable within individuals across days by analyzing the distribution of the dispersion parameter for step length and for turning angle. A narrow distribution would indicate there is low variability (high repeatability) in the daily movement behaviors of the individual.
+From the GPS point locations collected on each individual, we will use a Bayesian model (detailed below) to extract the mean and dispersion (variance) of step lengths and turning angles for each bird on each daily track, as in @pacheco2019nahua. We will determine whether the amount of daily autocorrelation is repeatable within individuals across days by analyzing the distribution of the dispersion parameter for step length and for turning angle. A narrow distribution would indicate there is low variability (high repeatability) in the daily movement behaviors of the individual.
 
 Moreover, we will determine whether grackles show individual differences in consistent use of habitat by overlaying a 5 x 5m grid array across the landscape. We will then create matrices describing the number of times a grackle was observed in each cell on each day. High autocorrelation among daily matrices indicates a low-exploring individual that frequents the same spatial locations across days.
 
-If movement behavior and spatial location choice is repeatable, then we will use the average value for each individual to model the relationship with performance at our exploration tasks, and study site location. 
+If movement behavior and spatial location choice is repeatable, then we will use the standard deviation of step length and turning angle, as well as the autocorrelation value among daily spatial preference matrices, for each individual to model the relationship with performance at our exploration tasks, and study site location. 
 
 
 #### *Calculating home range size*
@@ -167,7 +167,6 @@ library(sf)
 setwd("~/Documents/Grackle project/Space use")
 
 pts<-read.csv("gtgr_points.csv", header = T)
-pts<-pts[,-c(4:6,8:10)]
 
 #Set variables to ensure the models read the data properly
 pts$Latitude = as.numeric(as.character(pts$Latitude))
@@ -191,7 +190,7 @@ class(p.sf)
 p.spatial <- as(p.sf, "Spatial")
 class(p.spatial)
 
-### Calculate home range in square meters for each individual, excluding outliers
+### Calculate home range in square meters for each individual, excluding no outliers (percent = 100)
 hr = mcp(p.spatial[1], percent = 100, unout = "m2")
 plot(hr)
 hr = as.data.frame(hr)
@@ -202,9 +201,10 @@ hist(log(hr$area))
 ### Make data sheet with the experimental exploration measures combined with the home range measures
 exp <- read.csv("Explore_combined.csv", header = T)
 hr_exp = merge(exp, hr, by = "id", all = T)
+write.csv(hr_exp, "space_use.csv")
 ```
 
-#### *Functions to scaffold the statistical model we will use for analysis of movement behaviors*
+#### *Code to create functions for analyzing movement behaviors*
 
 All scripts and code are available at https://github.com/ctross/grackleator.
 
@@ -819,26 +819,25 @@ grackleations(m3)
 #### *H1: P1 - Exploration measured in captivity relates to space use behavior*
 
 ```{r h1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-exp <- read.csv("Explore_combined.csv", header = T)
-hr_exp = merge(exp, hr, by = "id", all = T)
+data <- read.csv("Space_use.csv", header = T)
 
 # Home range 
-m1 = lm(log(area) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+m1 = lm(log(area) ~ ExpObj + ExpEnv + Sex + Condition, data = data)
 hist(m1$resid)
 summary(m1)
 
 # Step length 
-m2 = lm(log(std_step)) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+m2 = lm(log(std_step)) ~ ExpObj + ExpEnv + Sex + Condition, data = data)
 hist(m2$resid)
 summary(m2)
 
 # Turning angle
-m3 = lm(log(std_angle)) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+m3 = lm(log(std_angle)) ~ ExpObj + ExpEnv + Sex + Condition, data = data)
 hist(H3$resid)
 summary(m3)
 
 # Spatial preferences
-m4 = lm(log(loc_pref)) ~ ExpObj + ExpEnv + Sex + Condition, data = hr_exp)
+m4 = lm(log(loc_pref)) ~ ExpObj + ExpEnv + Sex + Condition, data = data)
 hist(H4$resid)
 summary(m4)
 ```
@@ -846,26 +845,25 @@ summary(m4)
 #### *H2: P2 - Space use behaviors vary among populations across the range*
 
 ```{r h2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-exp <- read.csv("Explore_combined.csv", header = T)
-hr_exp = merge(exp, hr, by = "id", all = T)
+data <- read.csv("Space_use.csv", header = T)
 
 # Home range 
-m1 = lm(log(area) ~ Site + Sex + Condition, data = hr_exp)
+m1 = lm(log(area) ~ Site + Sex + Condition, data = data)
 hist(m1$resid)
 summary(m1)
 
 # Step length
-m2 = lm(log(std_step)) ~ Site + Sex + Condition, data = hr_exp)
+m2 = lm(log(std_step)) ~ Site + Sex + Condition, data = data)
 hist(m2$resid)
 summary(m2)
 
 # Turning angle
-m3 = lm(log(std_angle)) ~ Site + Sex + Condition, data = hr_exp)
+m3 = lm(log(std_angle)) ~ Site + Sex + Condition, data = data)
 hist(m3$resid)
 summary(m3)
 
 # Spatial preference
-m4 = lm(log(loc_pref)) ~ Site + Sex + Condition, data = hr_exp)
+m4 = lm(log(loc_pref)) ~ Site + Sex + Condition, data = data)
 hist(m4$resid)
 summary(m4)
 ```
