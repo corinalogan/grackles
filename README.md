@@ -21,9 +21,9 @@
 
 *(Note: preregistrations A-C were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
 
- - A. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Escalante A, Pacheco M. 2018. **[What are the costs and constraints of behavioral flexibility in great-tailed grackles?](http://corinalogan.com/Preregistrations/g_withinpop.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_withinpop.Rmd) version). 
+ - A. Logan CJ, Rowney C, Bergeron L, McCune K, MacPherson M, Bond A, Blackwell A, Escalante A, Pacheco M. 2018. **[What are the costs and constraints of behavioral flexibility in great-tailed grackles?](http://corinalogan.com/Preregistrations/g_withinpop.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_withinpop.Rmd) version). 
 
- - B. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Escalante A, Pacheco M. 2018. **[How and why does behavioral flexibility vary across the range of a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_expansion.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_expansion.Rmd) version). 
+ - B. Logan CJ, Rowney C, Bergeron L, McCune K, MacPherson M, Bond A, Blackwell A, Escalante A, Pacheco M. 2018. **[How and why does behavioral flexibility vary across the range of a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_expansion.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_expansion.Rmd) version). 
 
  - C. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. **[The genetics of behavioral flexibility across the range of a rapidly expanding species](http://corinalogan.com/Preregistrations/g_flexgenes.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexgenes.Rmd) version). 
 
