@@ -17,6 +17,8 @@
 
 5. Logan CJ, Lukas D, Bergeron L, Folsom M, McCune K. 2017. **[Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=35&reviews=True))
 
+ - D. McCune K, McElreath R, Logan CJ. 2017. **[Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](http://corinalogan.com/Preregistrations/g_sociallearning.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://doi.org/10.24072/pci.ecology.100032)
+
 ***Preregistrations***
 
 *(Note: preregistrations A-C were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
@@ -26,8 +28,6 @@
  - B. Logan CJ, Rowney C, Bergeron L, McCune K, MacPherson M, Bond A, Blackwell A, Escalante A, Pacheco M. 2018. **[How and why does behavioral flexibility vary across the range of a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_expansion.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_expansion.Rmd) version). 
 
  - C. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. **[The genetics of behavioral flexibility across the range of a rapidly expanding species](http://corinalogan.com/Preregistrations/g_flexgenes.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexgenes.Rmd) version). 
-
- - D. McCune K, McElreath R, Logan CJ. 2017. **[Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](http://corinalogan.com/Preregistrations/g_sociallearning.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd) version). 
  
  - E. McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2019. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** [.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd)
 
@@ -35,6 +35,7 @@
 
  - G. &ast;Berens JM, Logan CJ, Folsom M, Bergeron L, McCune KB. 2019. **[Validating morphological condition indices and their relationship with reproductive success in great-tailed grackles](http://corinalogan.com/Preregistrations/gcondition.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd))
 
+*Preregistrations are study plans that are written before the data are collected (or before analyzing the data when using data that already exist). We get them peer reviewed before we conduct the study to ensure that we get the most out of the resources we invest by correcting any issues before they arise. Additionally, once a preregistration has passed pre-study peer review, it is almost guaranteed to be published upon a quick post-study peer review, which checks to make sure we did what we said we were going to do and if there were any deviations, that these deviations maintain the scientific validity of the work.
 
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
