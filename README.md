@@ -17,7 +17,7 @@
 
 5. Logan CJ, Lukas D, Bergeron L, Folsom M, McCune K. 2017. **[Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=35&reviews=True))
 
- - D. McCune K, McElreath R, Logan CJ. 2017. **[Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](http://corinalogan.com/Preregistrations/g_sociallearning.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://doi.org/10.24072/pci.ecology.100032)
+ - D. McCune K, McElreath R, Logan CJ. 2017. **[Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](http://corinalogan.com/Preregistrations/g_sociallearning.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://doi.org/10.24072/pci.ecology.100032))
 
 ***Preregistrations***
 
