@@ -133,6 +133,10 @@ No blinding is involved in this investigation.
 
 We will **exclude** data that was collected from the grackles when they were released from the aviaries to avoid any confounds due to their time in the aviary (e.g., perhaps unlimited nutritious food in the aviaries decreased their fat score). However, to validate that our measures of tarsus length are precise and accurate, we will measure the tarsus length of a subset of grackles brought into the aviaries twice. We will then calculate the repeatability of these multiple measures. All other data  included in this study will come only from wild-caught grackles (including the birds that were brought into the aviaries on their first capture). When **missing data** occur, the existing data for that individual will be included in the analyses for which their data exist. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). When there is more than one experimenter collecting data, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the sessions.
 
+####*Ability to detect actual effects*
+
+To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations, we used G&ast;Power (v.3.1, @faul2007g, @faul2009statistical) to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMMs, thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these particular research questions.
+
 ####*Data checking*
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). 
@@ -142,6 +146,35 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 **Analysis:** We use a Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; (Hadfield 2010)) with an ordinal distribution (for categorical variables in MCMCglmm) and probit link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) (Hadfield 2014). We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; (Hadfield 2010)), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 Where we have multiple measures of tarsus length, we will check that our measurements are repeatable using the rptR package (stoffel2017rptr).
+
+To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We changed the power and the effect size until we reached an output that we project our sample size will be (n=90). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	0.15
+
+α err prob                    	=	0.05
+
+Power (1-β err prob)          	=	0.86
+
+Number of predictors          	=	3
+
+*Output:*
+
+Noncentrality parameter λ     	=	13.3500000
+
+Critical F                    	=	2.7119214
+
+Numerator df                  	=	3
+
+Denominator df                	=	85
+
+Total sample size             	=	89
+
+Actual power                  	=	0.8635760
+
+This means that, with a sample size of 89, we would have an 86% chance of detecting a medium effect (approximated at f^2^=0.15 by @cohen1988statistical). 
+
 
 ```{r p1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv ("/Users/corina/GTGR/data/data_condition.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -180,6 +213,34 @@ summary(m)
 #### *P2 analysis: condition and repro success*
 
 A GLMM is conducted as in P1, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variables being categorized as only yes or no. If fat score and the ratio of body weight to tarsus length are positively correlated in P1, then we will use only fat score as the independent variable in this GLMM. If they are not positively correlated, we will include both as independent variables.
+
+A power analysis was conducted as above for P1 and the protocol reported here:
+
+*Input:*
+
+Effect size f²                	=	0.15
+
+α err prob                    	=	0.05
+
+Power (1-β err prob)          	=	0.90
+
+Number of predictors          	=	2
+
+*Output:*
+
+Noncentrality parameter λ     	=	13.2000000
+
+Critical F                    	=	3.1038387
+
+Numerator df                  	=	2
+
+Denominator df                	=	85
+
+Total sample size             	=	88
+
+Actual power                  	=	0.9020264
+
+This means that, with a sample size of 88, we would have a 90% chance of detecting a medium effect (approximated at f^2^=0.15 by @cohen1988statistical). 
 
 ```{r p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv ("/Users/corina/GTGR/data/data_condition.csv", header=T, sep=",", stringsAsFactors=F) 
