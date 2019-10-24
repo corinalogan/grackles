@@ -192,7 +192,7 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 #Data checking for GLMM
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(FatScore ~ Body + Season + Aviary, random=~Experimenter, family="poisson", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(FatScore ~ Body + Season + Aviary, random=~Experimenter, family="ordinal", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -205,7 +205,7 @@ plotResiduals(Season, simulationOutput$scaledResiduals) #plot the residuals agai
 rpt(log(Body) ~ (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 500, npermut = 500)
 
 #GLMM 
-m <- MCMCglmm(FatScore ~ Body + Season + Aviary, random=~Experimenter, family="poisson", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+m <- MCMCglmm(FatScore ~ Body + Season + Aviary, random=~Experimenter, family="ordinal", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(m)
 #autocorr(m$Sol) #Did fixed effects converge?
 #autocorr(m$VCV) #Did random effects converge?
