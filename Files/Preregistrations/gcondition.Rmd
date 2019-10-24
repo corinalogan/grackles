@@ -261,7 +261,7 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 #Data checking for GLMM: fledglings 
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Aviary + Nest.number, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
