@@ -125,7 +125,7 @@ No blinding is involved in this investigation.
 
 2) Temporarily held in aviaries for behavioral testing at any point during this study, since this may affect breeding behaviors (yes, no)
 
-3) Nest number: Whether the nest was the individual's first, second, third, etc. nesting attempt. Only used when modeling female reproductive success.
+3) Julian date: To account for variation in nest success due to the progression of the breeding season
 
 3) Random effect: Year (to determine whether conditions in a given breeding season similarly affected all grackle behavior and nest success)
 
@@ -261,7 +261,7 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 #Data checking for GLMM: fledglings 
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Aviary + Nest.number, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Aviary + Date, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -269,7 +269,7 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 #Data checking for GLMM: territory holder
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Aviary + Date, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -282,7 +282,7 @@ bs <- glm(Body ~ Season, family = "gaussian", data = d)
 
 #Mixed-effect logistic regression
 # Females
-m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary + Nest.number, random = ~Year + 
+m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary + Date, random = ~Year + 
     ID, family = "categorical", data = d, verbose = F, prior = prior, 
     nitt = 130000, thin = 10, burnin = 30000)
 summary(m1)
@@ -291,7 +291,7 @@ summary(m1)
 
 
 # Males
-m2 <- MCMCglmm(Territory ~ FatScore + Aviary, random = ~Year + 
+m2 <- MCMCglmm(Territory ~ FatScore + Aviary + Date, random = ~Year + 
     ID, family = "categorical", data = d, verbose = F, prior = prior, 
     nitt = 130000, thin = 10, burnin = 30000)
 summary(m2)
@@ -332,14 +332,14 @@ logexp <- function(exposure = 1) {
 }
 
 # Females
-m3 <- glm(Fledglings ~ FatScore + Aviary + Nest.number + (1|Year) + 
+m3 <- glm(Fledglings ~ FatScore + Aviary + Date + (1|Year) + 
     (1|ID), family = binomial,
          family=binomial(link=logexp(d$Exposure)),
          data = d, start=c(1,0))
 summary(m3)
 
 # Males
-m4 <- glm(Territory ~ FatScore + Aviary + (1|Year) + 
+m4 <- glm(Territory ~ FatScore + Aviary + Date + (1|Year) + 
     (1|ID), family = binomial,
          family=binomial(link=logexp(d$Exposure)),
          data = d, start=c(1,0))
