@@ -212,7 +212,7 @@ summary(m)
 
 #### *P2 analysis: condition and repro success*
 
-A GLMM is conducted as in P1, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variables being categorized as only yes or no. If fat score and the ratio of body weight to tarsus length are positively correlated in P1, then we will use only fat score as the independent variable in this GLMM. If they are not positively correlated, we will include both as independent variables.
+To model the effect of body condition on reproductive success, we will use two types of logistic mixed-effect models. Both types are supported in the literature, but are slightly different in the way in which the link function is specified. First, we will model reproductive success using a generalized linear mixed model framework with a logit link function (i.e. @milenkaya2015success). We will also use a logistic exposure model that has a link function which accounts for the time interval between nest checks when estimating the probability of daily nest survival (@shaffer2004unified). If fat score and the scaled mass index are positively correlated in P1, then we will use only fat score as the independent variable in this GLMM. If they are not positively correlated, we will include both as independent variables.
 
 Previous research found a non-linear relationship between reproductive success and body condition variables (@milenkaya2015success). To check whether this is occuring in our data, we will first plot our raw data to determine if we need to include a non-linear body condition independent variable into our model (i.e. FatScore2). Our dependent variable is binary, so to more clearly see the trends in the data, on the x-axis we will bin our condition scores into 5 categories based on standard deviations (sd) around the mean (low = < 2 sd, moderately low = -2 sd to -1 sd, moderate = -1 sd to +1 sd, moderately high = +1 sd to +2 sd, high = > 2 sd). Then on the y-axis we will use the proportion of individuals in each category that had successful nests.
 
@@ -278,17 +278,71 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 fs <- glm(FatScore ~ Season, family = "poisson", data = d)
 bs <- glm(Body ~ Season, family = "poisson", data = d)
 
-#GLMM fledglings
-m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#Mixed-effect logistic regression
+# Females
+m1 <- MCMCglmm(Fledglings ~ FatScore + Aviary, random = ~Year + 
+    ID, family = "categorical", data = d, verbose = F, prior = prior, 
+    nitt = 130000, thin = 10, burnin = 30000)
 summary(m1)
 #autocorr(m1$Sol) #Did fixed effects converge?
 #autocorr(m1$VCV) #Did random effects converge?
 
-#GLMM territory holder
-m2 <- MCMCglmm(Territory ~ FatScore + Aviary, random=~Year + ID, family="categorical", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+
+# Males
+m2 <- MCMCglmm(Territory ~ FatScore + Aviary, random = ~Year + 
+    ID, family = "categorical", data = d, verbose = F, prior = prior, 
+    nitt = 130000, thin = 10, burnin = 30000)
 summary(m2)
 #autocorr(m2$Sol) #Did fixed effects converge?
 #autocorr(m2$VCV) #Did random effects converge?
+
+
+
+#Logistic exposure model, where “Exposure” is the number of days between nest checks
+## First run code for the exposure link function
+library(MASS)
+logexp <- function(exposure = 1) {
+  ## hack to help with visualization, post-prediction etc etc
+  get_exposure <- function() {
+    if (exists("..exposure", env=.GlobalEnv))
+      return(get("..exposure", envir=.GlobalEnv))
+    exposure
+  }
+  linkfun <- function(mu) qlogis(mu^(1/get_exposure()))
+  ## FIXME: is there some trick we can play here to allow
+  ##   evaluation in the context of the 'data' argument?
+  linkinv <- function(eta) plogis(eta)^get_exposure()
+  logit_mu_eta <- function(eta) {
+    ifelse(abs(eta)>30,.Machine$double.eps,
+           exp(eta)/(1+exp(eta))^2)
+  }
+  mu.eta <- function(eta) {       
+    get_exposure() * plogis(eta)^(get_exposure()-1) *
+      logit_mu_eta(eta)
+  }
+  valideta <- function(eta) TRUE
+  link <- paste("logexp(", deparse(substitute(exposure)), ")",
+                sep="")
+  structure(list(linkfun = linkfun, linkinv = linkinv,
+                 mu.eta = mu.eta, valideta = valideta, 
+                 name = link),
+            class = "link-glm")
+}
+
+# Females
+m3 <- glm(Fledglings ~ FatScore + Nest number + Aviary + (1|Year) + 
+    (1|ID), family = binomial,
+         family=binomial(link=logexp(d$Exposure)),
+         data = d, start=c(1,0))
+summary(m3)
+
+# Males
+m4 <- glm(Territory ~ FatScore + Aviary + (1|Year) + 
+    (1|ID), family = binomial,
+         family=binomial(link=logexp(d$Exposure)),
+         data = d, start=c(1,0))
+summary(m4)
+
 ```
 
 ###E. ETHICS
