@@ -18,6 +18,8 @@
 5. Logan CJ, Lukas D, Bergeron L, Folsom M, McCune K. 2017. **[Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://ecology.peercommunityin.org/public/rec?id=35&reviews=True))
 
  - D. McCune K, McElreath R, Logan CJ. 2017. **[Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](http://corinalogan.com/Preregistrations/g_sociallearning.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd) version). *PCI Ecology* ([pre-study peer review history](https://doi.org/10.24072/pci.ecology.100032))
+ 
+  - F. &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd)) *PCI Ecology* ([pre-study peer review history](https://doi.org/10.24072/pci.ecology.100036))
 
 ***Preregistrations***
 
@@ -30,8 +32,6 @@
  - C. Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. **[The genetics of behavioral flexibility across the range of a rapidly expanding species](http://corinalogan.com/Preregistrations/g_flexgenes.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexgenes.Rmd) version). 
  
  - E. McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2019. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** [.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd)
-
- - F. &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic diversity in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd))
 
  - G. &ast;Berens JM, Logan CJ, Folsom M, Bergeron L, McCune KB. 2019. **[Validating morphological condition indices and their relationship with reproductive success in great-tailed grackles](http://corinalogan.com/Preregistrations/gcondition.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd))
 
