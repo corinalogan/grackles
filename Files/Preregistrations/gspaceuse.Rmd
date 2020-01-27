@@ -107,13 +107,13 @@ No blinding is involved in this investigation.
 
 ####**Summary of methods for measuring exploration [McCune et al. 2019](http://corinalogan.com/Preregistrations/g_exploration.html)**
 
-Exploration assays for the grackles that are temporarily held in aviaries occur twice: once near the beginning of their aviary time and once again approximately 6 weeks later. We will analyze whether these are repeatable within individuals. The order of assays (exploration novel environment, exploration novel object, and boldness) is counterbalanced across individuals.
+Exploration assays for the grackles that are temporarily held in aviaries occur twice: once near the beginning of their aviary time and once again approximately 6 weeks later. We will analyze whether behavioral responses during assays are repeatable within individuals. The order of assays (exploration novel environment, exploration novel object, and boldness) is counterbalanced across individuals.
 
 ####**Dependent variables**
 
 **P1-P2**
 
-1) Home range size (square meters): an estimate calculated with the minimum convex polygon technique, which consists of the smallest polygon to enclose all GPS location points for an individual grackle during its normal activities [@calenge2011home]. Because we are interested in the full range of movements of grackles, we will not exclude any outlier GPS locations.
+1) Home range size (square meters): an estimate calculated using the autocorrelated-Gaussian reference function kernel density estimate (AKDE), which is the only estimate of home range that accounts for the autocorrelation due to the small time period between each or our GPS locations [@noonan2019comprehensive]. This estimate consists of the area enclosing 95% of GPS location points for an individual grackle during its normal activities. 
 
 2) Autocorrelation of step length (meters): measured as the standard deviation of step lengths (the distance between two sequential GPS points)
 
@@ -151,7 +151,7 @@ One model will be run for each dependent variable
 
 We do not plan to **exclude** any data and if there are **missing** data (e.g., if a bird had to be released before collecting their data at time 2) these birds will be excluded from analyes requiring data from time 1 and 2. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam) and Stan (version 2.18, @carpenter2017stan). 
 
-We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the minimum convex polygon method for estimating home range size (in square meters) using the R packages adehabitatHR [@calenge2006package] and sf [@pebesma2018simple]. Minimum convex polygons are widely used to estimate home range size and they only include points within the areas used by the animal during “normal activities” [@calenge2011home]. Therefore, outlier relocation detections are usually excluded. We are interested in all movements by grackles, so we will not exclude any outlier relocations. ‘Normal activities’ indicate that grackles are not engaging in behaviors that would artificially skew their space use, for example mobbing a predator or the experimenter, or behavior before sunrise or after sunset when they are at the roost. Outside of these circumstances, we will include all data to detect any space use movements. 
+We will first verify that the GPS point locations on each bird result in asymptotic convergence as in @leo2016home. To calculate our dependent variables we will use the autocorrelated kernel density estimate method for quantifying home range size (in square meters) using the akde function in the R packages ctmm [@calabrese2016ctmm] and sf [@pebesma2018simple]. Autocorrelated kernel density estimates (AKDE) of home range size are the most accurate when data are collected close together in time and space [@noonan2019comprehensive]. We are interested in all movements by grackles, so we will not exclude any outlier relocations collected during “normal activities” [@calenge2011home]. ‘Normal activities’ indicate that grackles are not engaging in behaviors that would artificially skew their space use, for example mobbing a predator or the experimenter, or behavior before sunrise or after sunset when they are at the roost. Outside of these circumstances, we will include all data to detect any space use movements. 
 
 From the GPS point locations collected on each individual, we will use a Bayesian model (detailed below) to estimate the following parameters: mean and dispersion (variance) of step lengths and turning angles for each bird on each daily track (@pacheco2019nahua). We will determine whether these parameters governing movement are stable (or variable) within individuals across days. A small variance would indicate there is low variability (high repeatability) in the daily movement behaviors of the individual.
 
@@ -166,7 +166,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 #### *Calculating home range size*
 ```{r hr, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Load packages
-library(adehabitatHR)
+library(ctmm)
 library(sf)
 
 #Point to the correct data file and load it
@@ -196,7 +196,7 @@ class(p.sf)
 p.spatial <- as(p.sf, "Spatial")
 class(p.spatial)
 
-### Calculate home range in square meters for each individual, excluding no outliers (percent = 100)
+### Calculate home range in square meters for each individual
 hr = mcp(p.spatial[1], percent = 100, unout = "m2")
 plot(hr)
 hr = as.data.frame(hr)
