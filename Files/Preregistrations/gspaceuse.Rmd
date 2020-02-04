@@ -198,16 +198,22 @@ pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
 pts.min = pts.min[-which(pts.min$count<6),]
 pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
 
-### Convert dataframe to Spatial file type
-p.sf <- st_as_sf(pts.min, coords = c("Longitude", "Latitude"), crs = 4326) 
-class(p.sf) 
-p.spatial <- as(p.sf, "Spatial")
-class(p.spatial)
+#### Calculating home range size ####
+#Turn dataframe into telemetry object
+telem = pts.min[,c(1,2,4,5,7)] #only need bird name, date, lat and long, time
+telem$timestamp = paste(telem$Date,telem$Time, sep=' ') #telem format requires date/time merged together for timestamp
+telem = telem[,-c(2,5)] #remove other date and time columns
+colnames(telem) = c("individual.local.identifier","location.lat","location.long","timestamp") #use required column names
+telem = as.telemetry(telem, timeformat = "%Y-%m-%d %H:%M:%S",timezone = "")
 
-### Calculate home range in square meters for each individual
-hr = mcp(p.spatial[1], percent = 100, unout = "m2")
-plot(hr)
-hr = as.data.frame(hr)
+for(i in 1:length(telem)){
+  GUESS = ctmm.guess(telem$i, interactive = FALSE)
+  m = ctmm.fit(telem$i, GUESS)
+  hr = akde(telem$i, m)
+  est = summary(hr)$CI[2]
+  results = rbind(results,est)
+} 
+
 
 ### Normalize data for regression model 
 hist(log(hr$area)) 
