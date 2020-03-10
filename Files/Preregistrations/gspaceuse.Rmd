@@ -194,13 +194,13 @@ pts$Date = as.character(pts$Date)
 pts$Time = as.character(pts$Time)
 pts$da.ti = as.POSIXct(paste(pts$Date, pts$Time), format="%Y-%m-%d %H:%M:%S")
 
-### Home range size can only be calculated when a bird has more than 10 relocations
-### Count the number of relocations for each bird, then exclude individuals with less than 9
+### Home range size can only be calculated when a bird has more than 20 relocations
+### Count the number of relocations for each bird, then exclude individuals with less than 19
 tmp = pts
 tmp$count = 1
 tmp = aggregate(count ~ Bird.Name, FUN = "sum", data = tmp)
 pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
-pts.min = pts.min[-which(pts.min$count<9),]
+pts.min = pts.min[-which(pts.min$count<19),]
 pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
 
 #### Calculating home range size ####
