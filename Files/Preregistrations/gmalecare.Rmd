@@ -225,6 +225,10 @@ The DNA was processed using ddRADseq (double digest restriction-site associated 
 
 As part of separate preregistrations, we conduct [systematic nest checks](http://corinalogan.com/Preregistrations/g_withinpop.html), which includes recording the behavior of females and males in the nesting area; [focal follows](http://corinalogan.com/Preregistrations/g_flexforaging.html), which includes food sharing behavioral data; and we track the [space use](http://corinalogan.com/Preregistrations/gspaceuse.html) of grackles. These data collection protocols provide the opportunity to discover and record male parental care in a more systematic way rather than simply relying on chance anecdotes. We will continue collecting all of these data, as well as anecdotes, during the breeding seasons at all three study populations.
 
+#### **Planned sample**
+
+Great-tailed grackles (n > 200) will be caught in the wild at three field sites across their geographic range: the center of their original range (at a site to be determined in Central America), the middle of the northward expanding edge (Tempe, Arizona USA), and near the northern expanding edge (Woodland, California USA). Individuals will be identified using colored leg bands in unique combinations, their data collected (blood, feathers, and biometrics), and then they will be released back to the wild where we will collect data on their behavior. 
+
 #### **Sample size rationale**
 
 We are unsure of how many males will provide male parental care at the three populations under study. However, given that we have observed at least three males engaging in parental care in Arizona, and observations of this behavior in two locations in southern California, we think it is likely that we will observe at least one male providing care at the northern California field site, but likely not more than a few. We are not sure what to expect from the Central American field site because no reports of male parental care have come from this region. Therefore, it is likely that our sample size will be <15 males who provide parental care.
@@ -245,7 +249,7 @@ The researchers analyzing the DNA samples will be blind to the sex and identity 
 
 When the investigation is complete, the data will be published in the Knowledge Network for Biocomplexity's data repository.
 
-#### **Dependent variables**
+#### **Response variables**
 
 ##### *Hormones*
 
@@ -302,11 +306,43 @@ Note: if scaled mass index and hematocrit are correlated, we will choose only on
 
 We do not plan to exclude any data. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). When there is more than one experimenter analyzing the blood samples, the experimenter will be added as a random effect to account for potential differences between experimenters in conducting the analyses. Only data from the breeding season will be analyzed.
 
+#### *Ability to detect actual effects*
+
+To understand what effect sizes we will be able to detect given our sample size limitations and the number of explanatory variables, we used G&ast;Power (v.3.1, @faul2007g, @faul2009statistical) to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). We realize that these power analyses are not fully aligned with our study design, however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these measures.
+
 #### *Data checking*
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). 
 
 ####*H1: hormones (P1-P3)*
+
+To roughly estimate our ability to detect actual effects, we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=9). The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	1.5
+
+α err prob                    	=	0.05
+
+Power (1-β err prob)          	=	0.7
+
+Number of predictors          	=	2
+
+*Output:*
+
+Noncentrality parameter λ     	=	13.5000000
+
+Critical F                    	=	5.1432528
+
+Numerator df                  	=	2
+
+Denominator df                	=	6
+
+Total sample size             	=	9
+
+Actual power                  	=	0.7128627
+
+This means that, with a projected sample size of 9, we have a 71% chance of detecting only very large effects (approximated at f^2^=0.80 by @cohen1988statistical). 
 
 **Analysis:** We will run a Generalized Linear Model (GLM; glm function, stats package) with a Gaussian distribution and identity link. We will determine whether an explanatory variable had an effect or not using the Estimate in the full model.
 
@@ -376,6 +412,35 @@ pr <- glm(Progesterone ~ Cared + Sex, family="gaussian", data=d)
 We will first assess how carers are related to the offspring they cared for by checking whether the offspring shares an allele at each locus with either of the two potential parents allowing for some mismatches which could result from allelic dropout (missing a variant in one of the individuals due to chance processes during the ddRADseq) or mutation. For example, we will examine whether Chile and/or Crema are the parents of Pepino. If not, then we will test for potential indirect fitness benefits by determining genetic relatedness between them using the package “related” (@pew2015related) in R, following methods in @thrasher2018double. We will use the function 'compareestimators' to assess which relatedness estimator appears to perform the best, given the characteristics of our data. We will use a sample of individuals from the same population to set the background allele frequencies to assess whether, for example, Chile, Crema, and Pepino are more closely related than what would be expected by chance.
 
 ####*H4: mating strategy*
+
+To roughly estimate our ability to detect actual effects, we ran a power analysis as in H1 above. The protocol of the power analysis is here:
+
+*Input:*
+
+Effect size f²                	=	2.2
+
+α err prob                    	=	0.05
+
+Power (1-β err prob)          	=	0.7
+
+Number of predictors          	=	3
+
+*Output:*
+
+Noncentrality parameter λ     	=	19.8000000
+
+Critical F                    	=	5.4094513
+
+Numerator df                  	=	3
+
+Denominator df                	=	5
+
+Total sample size             	=	9
+
+Actual power                  	=	0.7095689
+
+This means that, with a projected sample size of 9, we have a 71% chance of detecting only very large effects (approximated at f^2^=0.80 by @cohen1988statistical). 
+
 
 We will run a Generalized Linear Model (GLM; glm function, stats package) with a binomial distribution and logit link. We will determine whether an explanatory variable had an effect or not using the Estimate in the full model.
 
