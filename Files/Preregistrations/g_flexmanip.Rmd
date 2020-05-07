@@ -198,6 +198,8 @@ Proportion of correct choices in a non-overlapping sliding window of 4-trial bin
 
 5) Batch (random effect because multiple batches included in the analysis). Note: batch is a test cohort, consisting of 8 birds being tested simultaneously
 
+Note April 2020: we realized that the average latency to solve a new locus after solving a different locus is confounded with the total number of loci solved because the measure of innovation is included in the definition. Therefore, we will remove this independent variable when conducting the analysis so that we are only examining pure measures of flexibility (average latency to attempt to solve) and innovation (total number of loci solved).
+
 #### *P2 alternative 2: additional analysis: latency and motor diversity*
 
 1) Number of trials to reverse a preference in the last reversal that individual participated in
@@ -256,124 +258,256 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 To address the power analysis issues, we will run simulations on our Arizona data set before conducting any analyses in this preregistration. We will first run null models (i.e., dependent variable ~ 1 + random effects), which will allow us to determine what a weak versus a strong effect is for each model. Then we will run simulations based on the null model to explore the boundaries of influences (e.g., sample size) on our ability to detect effects of interest of varying strengths. If simulation results indicate that our Arizona sample size is not larger than the lower boundary, we will continue these experiments at the next field site until we meet the minimum suggested sample size.
 
-**APRIL 2020 (pre-data analysis):** following procedures in @statrethinkingbook, we first constructed a **hypothesis-appropriate mathematical model** that encompasses the relationship between the variables of interest. This takes the form of:
+**SIMULATIONS APRIL 2020 (pre-data analysis):** following procedures in @statrethinkingbook, we first constructed a **hypothesis-appropriate mathematical model** that encompasses the relationship between the variables of interest for each analysis: 1) number of loci solved on the multiaccess box ~ trials to reverse, and 2) latency to attempt a new locus on the multiaccess box ~ trials to reverse. 
 
-y ~ Normal($\mu$, $\sigma$) *[likelihood]*
+The model for the first relationship takes the form of:
 
-$\mu$ ~ $\alpha$ + $\beta$x  *[linear model]*
+locisolved ~ Binomial(4, p) *[likelihood]*
 
-y is the number of trials to reverse a preference (with fewer trials indicating faster reversal and thus more flexibility), $\mu$ is the population average trials to reverse, $\sigma$ is the population standard deviation for trials to reverse, $\alpha$ is the intercept, $\beta$ is the expected amount of change in y for every one unit change in x, and x is the number of options solved on the multiaccess box. 
+logit(p) ~ $\alpha$[batch] + $\beta$trials  *[model]*
 
-Expected values for reversal learning using color tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles (@logan2016behavioral). This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21. In our model, the variation in the actual data is reflected by both the population standard deviation and the expected amount of change related to the explanatory variable. Therefore, after running simulations, we decided to set the population standard deviation to 10. Expected values for the number of options solved on the multiaccess box were set to either 0-4 or 0-2 (out of 4 options maximum) because we were unsure of whether the grackles would be able to solve any options on the multiaccess box because this experiment had never been done on this species before. After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+locisolved is the number of loci solved on the multiaccess box, 4 is the total number of loci on the multiaccess box, p is the probability of solving a locus in a trial, $\alpha$ is the intercept and each batch gets its own, $\beta$ is the expected amount of change in locisolved for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
 
-$\alpha$ ~ Normal(91,10) *[$\alpha$ prior]*
+Expected values for the number of loci solved on the multiaccess box were set to either 2 or 0 (out of 4 loci maximum) because we were unsure of whether the grackles would be able to solve any loci on the multiaccess box because this experiment had never been done on this species before. Expected values for reversal learning using color tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles (@logan2016behavioral). This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21. In our model, the variation in the actual data is reflected by both the population standard deviation and the expected amount of change related to the explanatory variable. Therefore, after running simulations, we decided to set the population standard deviation to 10. After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+
+$\alpha$ ~ Normal(4,10) *[$\alpha$ prior]*
 
 $\beta$ ~ Normal(0,5) *[$\beta$ prior]*
 
-$\sigma$ ~ Uniform(0,40) *[$\sigma$ prior]*
+We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means (see Figure 10.6 in @statrethinkingbook). For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean). 
 
-We used a normal distribution for y, $\alpha$, and $\beta$ because they are (or are based on) sums with large means (see Figure 10.6 in @statrethinkingbook). For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean). We chose a uniform distribution for $\sigma$ because it constrains $\sigma$ to have a positive probability of the standard deviation being between 0 and 40 trials (based on the range of the number of trials to reverse a preference in Santa Barbara grackles (@logan2016behavioral): 39-130, therefore 130 trials minus the average number of trials (91), which is about 40).
-
-```{r modelparameters, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r modelparameters1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
 library(rstan)
 library(formatR)
 
-### Mathematical model in R code
-N <- 100 #simulating with 100 lines (individuals, which is what I predict will be the sample size after measuring all 3 populations)
-t ~ dnorm(mu, sigma)
-mu <- a + b*x
-a <- dnorm(91,21)
-b <- rlnorm(N,0,0.5)
-sigma <- dunif(x,0,40)
+### SIMULATION
+#SET PARAMETERS for population values = these are what we are varying!
 
-### SIMULATION 1: see what range of values the model produces
-N <- 100 #simulating with 100 lines (individuals, which is what we predict will be the sample size after measuring all three populations)
-a <- rnorm(N,91,21)
-b <- rnorm(N,0,10) #10 because 5 categories of MAB innovations (0-4) so 5*10=50 trial difference and there is a 60 trial difference in the Santa Barbara reversal range 70-130
+#Setting beta
+b <- 0.1
+plot(x=21*c(-2:2)+91,y=4*inv_logit(0+b*c(-2:2))) #plot expected relationship between loci solved (y axis) and trials to reverse (x axis) based on varying b. Result1 = in the simulation b should not be larger than 1 (or smaller than -1) because at 1 it ranges from solving 0.5-3.5 loci which is basically the min and max possible range. Beta=0.1 means 
 
-plot( NULL , xlim=c(0,4) , ylim=c(50,150) , xlab="options solved" , ylab="trials to reverse" )
-abline( h=70 , lty=2 ) #this is the lower limit seen in the SB data
-abline( h=130 , lty=1 , lwd=0.5 ) #this is the upper limit seen in the SB data
-mtext( "b ~ dnorm(0,10)" )
-xbar <- 2 #the median in the range of MAB solves 0-4
-for ( i in 1:N ) curve( a[i] + b[i]*(x - xbar) ,
-from=min(0) , to=max(4) , add=TRUE , col=col.alpha("black",0.2) ) #0-4 options on MAB
-#RESULT = there are lines out of bounds, so...
+#Setting b prior: our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1 (these will be the limits for the simulation)
+x <- seq(-2,2,length=100) #make a normal distribution
+hx <- dnorm(x,mean=0,sd=0.4) #change sd until you get the width you want
+plot(x,hx,xlim=c(-2,2),ylim=c(0,1)) #plot to see whether values now match our expectation for this prior and the result from figuring out beta prior
+#Result2 = in the model (ulam) we want to set the b prior to be (0,0.4)
 
-### SIMULATION 2 - log the response variable trials to reverse
-N <- 100
-a <- rnorm(N,91,21)
-b <- rlnorm(N,0,1) #1 because log of 10 is 1 (Rethinking p. 96)
+#Figuring out probability, p
+batch1mean <- 2 #solves on average 2 loci 
+batch2mean <- 1.6 #solves on average 1.6 loci
 
-plot( NULL , xlim=c(0,4) , ylim=c(50,150) , xlab="options solved" , ylab="trials to reverse" )
-abline( h=70 , lty=2 )
-abline( h=130 , lty=1 , lwd=0.5 )
-mtext( "b ~ dnorm(0,1)" )
-xbar <- 2
-for ( i in 1:N ) curve( a[i] + b[i]*(x - xbar) ,
-from=min(0) , to=max(4) , add=TRUE , col=col.alpha("black",0.2) )
-#RESULT = more lines are within bounds, but now no negative correlations, which will be possible in the actual data, so...
+batch1mean <- log((batch1mean/4)/(1-(batch1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
+batch2mean <- log((batch2mean/4)/(1-(batch2mean/4))) 
 
-### SIMULATION 3 - change b standard deviation to 2 rather than 10
-N <- 100 
-a <- rnorm(N,91,21)
-b <- rnorm(N,0,2) #2 because want to constrain the slopes to be less extreme
+#Figuring out alpha prior
+probabilities<-inv_logit(rnorm(10000,mean=-2,sd=0.5))
+mean(probabilities) #this is the mean number of loci solved
+loci <- vector()
+for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
+hist(loci) #we didn't know whether they would be able to solve any loci bc this species had never been given this MAB before. Therefore, we set the mean number of loci solved to 0 (which is -2 inverse logit scale of the probability), and the sd to 2 because then it is possible that some individuals can solve all 4 options (even though solving all 4 is rare) (if sd is lower, then the possibility to solve 4 options disappears, if higher then solving 1-4 becomes equally likely or 4 becomes more likely). Minimum SD=0.5
 
-plot( NULL , xlim=c(0,4) , ylim=c(50,150) , xlab="options solved" , ylab="trials to reverse" )
-abline( h=70 , lty=2 )
-abline( h=130 , lty=1 , lwd=0.5 )
-mtext( "b ~ dnorm(0,2)" )
-xbar <- 2 
-for ( i in 1:N ) curve( a[i] + b[i]*(x - xbar) ,
-from=min(0) , to=max(4) , add=TRUE , col=col.alpha("black",0.2) ) 
-#RESULT = now lines mostly within bounds and includes negative correlations. Some lines go a little to far below the lower boundary, so...
+probabilities<-inv_logit(rnorm(10000,mean=0,sd=0.3))
+loci <- vector()
+for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
+mean(loci) #this is the mean number of loci solved
+hist(loci) #Alternatively, we expect a bell curve with most of the individuals being average at solving loci (at the mean=2 loci) and some being more innovative while others are less. Minimum SD=0.3
 
-### SIMULATION 4 - constrain a (intercept) so it starts within bounds (reduce sd from 21) and have steeper slopes (increase b sd)
-N <- 100
-a <- rnorm(N,91,10)
-b <- rnorm(N,0,5) #increased b sd to 5
+#Figuring out how much noise we expect (sd in alpha) = 0.4
+hist(inv_logit(rnorm(10000,mean=0,sd=1))) #it is spread out along the x axis so the many individuals in the ends are going to have different probabilities from the pop mean
+hist(inv_logit(rnorm(10000,mean=0,sd=0.4))) #this is much narrower, thus most of the individuals will match the pop mean and this reduces noise
 
-plot( NULL , xlim=c(0,4) , ylim=c(50,150) , xlab="options solved" , ylab="trials to reverse" )
-abline( h=70 , lty=2 )
-abline( h=130 , lty=1 , lwd=0.5 ) 
-mtext( "b ~ dnorm(0,5)" )
-xbar <- 2
-for ( i in 1:N ) curve( a[i] + b[i]*(x - xbar) ,
-from=min(0) , to=max(4) , add=TRUE , col=col.alpha("black",0.2) ) 
-#RESULT = the slopes and this beta seem the most realistic for what we expect the range of values to be (a change in solving 1 more or 1 less option on MAB leads to a change in reversing 5 trials faster or slower)
+#Result = in the simulation alpha sd should not be larger than 1 because at 1 it ranges from a probability of solving 0.12-0.88 loci which is basically the min and max possible range. But since this is the sd, we want it narrower than the full range (so it isn't a flat prior), so set it to something like 0.5 (0.7 with a beta of 1 looks like alpha covers 41% of the variation w a sample size of 15 birds, which was the boundary for a different simulation using a normal distribution in a separate preregistration xpopbehaviorhabitat. So we could detect effects that are at least as large as the noise)
 
 
-### SIMULATION 5: now change beta from -5 to +5 to see what happens within the range of possible slopes
-betas <- c(-5,-4,-3,-2,-1,0,1,2,3,4,5)
-n <- 5 #sample size: number of grackles
-sample <- matrix(nrow=n*11,ncol=2) #data frame: column 1=number of options solved on MAB, column 2=number of trials to reverse
-a <- rnorm(1,91,10) #this is the alpha for the whole population
-sigma <- runif(1,-5,5) #adding the runif noise term (sigma) so the points are more like gitter and not perfectly aligned on the regression. This is the measurement error (e.g., I didn't measure the trials to reverse perfectly, whatever causes the bird to choose the light or dark gray tube is not always perfect), which also reflects the potential error that reversal learning performance is or is not an indicator of flexibility
+#RUN SIMULATION WITH PARAMETERS (this is the simulated data that the model (below) will use to estimate beta) Generate values for simulated individuals from two simulated batches: vary the alpha batch mean (expected number of loci solved and whether batches differ) and alpha sd (the noise in the population in the number of loci solved), beta (the slope between number of loci solved and trials to reverse), sample size
+b <- 1  #beta
+asd <- 0.3 #alpha sd for the population. We set this smaller than what we had it above bc we wanted to make it so individuals were not equally likely to have similar results
+batch1mean <- 1.9 #alpha batch mean: solves on average 2 loci 
+batch2mean <- 2.1 #alpha batch mean: solves on average 1.6 loci
+n <- 16
 
-for (k in 1:11){
-b <- betas[k] #run through each beta
+batch1mean <- log((batch1mean/4)/(1-(batch1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
+batch2mean <- log((batch2mean/4)/(1-(batch2mean/4))) 
 
-for (i in 1:n){
-MAB <- round(runif(1,0,4),0) #n, min, max number of MAB options solved
-sample[(k-1)*n+i,2] <- a + b * MAB + runif(1,-5,5) #simulating trials to reverse per individual
-sample[(k-1)*n+i,1] <- MAB
-}}
-#sample #look at the data sheet
+individuals<-matrix(nrow=16,ncol=8)
+colnames(individuals)<-c("loci","trials","batch","probability","logit trials","logit base value","base probability","logit probability")
+for (i in 1:n/2) {
+  trials<-rnorm(1,0,1)
+  batch1 <- rnorm(1,batch1mean,asd) #n, mean, sd of probability of solving a locus. SD is the noise
+  p <- batch1 + b*trials
+  individuals[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) #50 trials (drawing 50 times (the highest number of trials an individual could get is probably 50 trials). Each trial is an opportunity to solve a locus and they can only solve 1 locus per trial. Sum for how many of the loci in total did they solve across the 50 trials
+  ifelse(individuals[i,1]>4,individuals[i,1]<-4,individuals[i,1]<-individuals[i,1])
+  individuals[i,2]<-trials*21+91 #column: number trials to reverse (standardized) and then unstandardized (multiply by sd + mean)
+  individuals[i,3]<-1 #column: batch=1
+  individuals[i,4]<-inv_logit(p) #column: p (probability)
+  individuals[i,5]<-trials #the logit of trials to reverse
+  individuals[i,6]<-batch1 #logit base value of alpha (for the intercept for this ind)
+  individuals[i,7]<-inv_logit(batch1) #base probability is the inverse logit of the previous column
+  individuals[i,8]<-p #logit probability
+}
 
-##Plot it
-#The plot shows that there are differences in the relationship between trials to reverse and number of MAB loci solved when beta changes. It also shows that our sample size of 15 grackles should be enough
-plot(sample[1:n,], ylim=c(50,150), xlim=c(0,4))
-points(sample[(n+1):(2*n),], col="purple")
-points(sample[(2*n+1):(3*n),], col="red")
-points(sample[(3*n+1):(4*n),], col="blue")
-points(sample[(4*n+1):(5*n),], col="green")
-points(sample[(5*n+1):(6*n),], col="yellowgreen")
-points(sample[(6*n+1):(7*n),], col="yellow")
-points(sample[(7*n+1):(8*n),], col="magenta")
-points(sample[(8*n+1):(9*n),], col="grey25")
-points(sample[(9*n+1):(10*n),], col="grey15")
-points(sample[(10*n+1):(11*n),], col="grey75")
+for (i in (n/2+1):n) {
+  trials<-rnorm(1,0,1)
+  batch2 <- rnorm(1,batch2mean,asd) #n, mean, sd
+  p <- batch2 + b*trials
+  individuals[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) 
+  ifelse(individuals[i,1]>4,individuals[i,1]<-4,individuals[i,1]<-individuals[i,1])
+  individuals[i,2]<-trials*21+91
+  individuals[i,3]<-2 #batch=2
+  individuals[i,4]<-inv_logit(p)
+  individuals[i,5]<-trials
+  individuals[i,6]<-batch2
+  individuals[i,7]<-inv_logit(batch2)
+  individuals[i,8]<-p
+}
+
+#individuals #check the data
+plot(individuals[,1]~individuals[,2]) #visualize the relationship
+#plot(individuals[1:8,1]~individuals[1:8,2]) #batch1 goes full range of both variables
+#plot(individuals[9:16,1]~individuals[9:16,2]) #batch2 goes full range of both variables
+
+
+### RUN MODEL
+#don't change alpha or beta parameters here because they are changed above
+dat <- list(locisolved = individuals[,1],
+            trials = standardize(individuals[,2]),
+            batch = individuals[,3]
+              )
+
+m1 <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 , log_lik=TRUE )
+
+precis(m1,depth=2)
+#mean(individuals[1:8,1])
+#mean(individuals[9:16,1])
+
+
+#check posterior for p to look at the distribution of probabilities that are probable
+prior <- extract.prior(m,n=1e4)
+p <- inv_logit(prior$a) #convert from logit to actual probability
+dens(p,adj=0.1)
+#result1: it was a normal curve with a peak at 3.5, let's see what happens if we flatten it saying that we expect all probabilities to be probable (changed a sd from 0.5 to 1.5)
+#result2: this worked - the distribution is flat at 1.2
+
+
+#check to see if including batch has an influence on the estimate of b by removing batch
+mwobatch <- ulam( alist(
+  locisolved ~ dbinom(4,p) , 
+  logit(p) <- a + b*trials , #standardize trials so 0=mean
+  a ~ dnorm(0,0.5) , 
+  b ~ dnorm(0,2)
+) , data=dat , chains=4 , log_lik=TRUE )
+
+precis(mwobatch,depth=2)
+mean(individuals[1:8,1])
+mean(individuals[9:16,1])
+#result = really similar to model m1
+```
+
+For the **second analysis**, average latency to attempt a new locus on the multiaccess box as it relates to trials to reverse (both are measures of flexibility), we simulated data and set the model as follows: 
+
+latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
+
+log($\lambda_i$) ~ $\alpha$[batch] + $\beta$trials  *[linear model]*
+
+latency is the average latency to attempt a new locus on the multiaccess box, $\lambda_i$ is the rate (probability of attempting a locus in each second) per bird (and we take the log of it to make sure it is always positive); birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, $\alpha$ is the intercept for the rate per batch, $\beta$ is the expected amount of change in the rate of attempting to solve in any given second for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
+
+Expected values for the latency to attempt a new locus on the multiaccess box was set to between 1-2700 sec because the experiment ends for a bird if they do not obtain the food in 3 consecutive trials, and each trial can last up to 15 min. Because we did not have prior data for this species on this test, we set the mean to 300 sec, which is half way through a usual 10 min trial because it seems likely that if a bird is going to attempt another locus, it will likely do so at the next opportunity, especially after being successful in the previous trial. Expected values for reversal learning using color tubes are the same as above. After running simulations, we identified the following to be the most likely priors for our expected data:
+
+$\phi$ ~ 1/(Exponential(1)) *[$\phi$ prior]*
+
+$\alpha$ ~ Normal(300,50) *[$\alpha$ prior]*
+
+$\beta$ ~ Normal(0,5) *[$\beta$ prior]*
+
+We used a gamma-Poisson distribution for latency because it constrains the values to be positive and to primarily occur sooner rather than later, which is what we expect from the grackles (based on data from New Caledonian crows and kea in @auersperg_flexibility_2011). For $\phi$, we used an exponential distribution because it is standard for this paramter. We used a normal distribution for $\alpha$, and $\beta$ because they are (or are based on) sums with large means (see Figure 10.6 in @statrethinkingbook). For the $\alpha$ prior . For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean).
+
+```{r modelparameters2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(rethinking)
+library(rstan)
+library(formatR)
+
+### SIMULATIONS: GAMMA-POISSON
+n <- 16 #number of individuals
+b<- 1 #slope between latency and trials, want positive and negative values so mean=0
+phi <- 150 #this gives us a distribution that we expect (long right tail)
+asd<-0.5 #alpha sd is our noise parameter. Decrease this to make the upper bound come to a reasonable number
+
+individuals<-matrix(nrow=16,ncol=3)
+colnames(individuals)<-c("trials","latency","batch")
+
+for (i in 1:n/2){
+  trials <- rnorm(1,0,1) #distribution for trials. These are standardized values. To convert back to the original units: trials*21+91
+  a1 <- rnorm(1,mean=6.5,asd) #intercept for batch 1, mean=log of 450 sec, sd puts the range at 164-1212 sec (asd is our noise parameter)
+  lambda <- exp(a1 + b*trials) #the linear model for batch 1
+  latency <- rgampois(1,lambda,phi) #this is the latency per individual
+  
+  individuals[i,1]<-trials*21+91
+  individuals[i,2]<-latency
+  individuals[i,3]<-1
+}
+
+for (i in (n/2+1):n){
+  trials <- rnorm(1,0,1) 
+  a2 <- rnorm(1,mean=5.5,sd=asd)
+  lambda <- exp(a2 + b*trials)
+  latency <- rgampois(1,lambda,phi) 
+  
+  individuals[i,1]<-trials*21+91
+  individuals[i,2]<-latency
+  individuals[i,3]<-2
+}
+
+### RUN THE MODEL
+#Load packages
+library("Rcpp")
+library("rstan") 
+library(rethinking)
+library(ggplot2)
+
+dat <- list(trials = standardize(as.numeric(individuals[,1])),
+            latency = as.integer(individuals[,2]),
+            batch = as.integer(individuals[,3])
+)
+
+m2 <- ulam(
+  alist(
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[batch] + b*trials,
+    a[batch] ~ dnorm(1,1),
+    b ~ dnorm(0,1),
+    phi ~ dexp(1)
+  ),data=dat, log_lik=TRUE, messages=FALSE)
+
+###NOTE: this model doesn't work on my computer...something about the rcpp package needing to be installed from scratch? Follow instructions here: https://github.com/stan-dev/rstan/wiki/How-to-build-rstan-package%3F
+
+###To make the model work, need to set up a few things... (this took me a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next)
+
+###Update R
+#install installr package
+#updateR(TRUE) #didn't work bc it can't find my R folder on my computer
+#updateR(fast = FALSE, browse_news, install_R, copy_packages, copy_Rprofile.site, keep_old_packages, update_packages, start_new_R, quit_R, print_R_versions = TRUE, GUI = TRUE, to_checkMD5sums = FALSE, keep_install_file = FALSE, download_dir = "/Users/corina/Library/R", silent = FALSE, setInternet2 = TRUE, cran_mirror = "https://cran.rstudio.com/") #didn't work bc it can't find my R folder on my computer
+#manually updated R and reinstalled packages
+
+###Install rethinking
+#install package devtools
+#devtools::install_github("rmcelreath/rethinking",ref="Experimental")
+
+###Install xcode (first download the app from the app store)
+#In terminal, type: "xcode-select --install"
+
+###Get STAN working https://github.com/rmcelreath/rethinking
+#Install C++ toolchain and configuration https://github.com/stan-dev/rstan/wiki/Installing-RStan-from-source-on-a-Mac
+#install.packages("Rcpp", repos = "https://rcppcore.github.io/drat") 
+#Then install rstan per instructions at the previous link
+
+###Now we're ready to go!
 ```
 
 We **translated the simulation output into effect sizes** and examined what kind of effect size these parameter values represent (Table 1). For each $\beta$, we calculated the effect size (Box 13.3 in @lajeunesse2013recovering: linear regression):
@@ -398,70 +532,7 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
           ))
 ```
 
-We then used the mathematical model to run **simulations** on simulated data to estimate the measurement error associated with varying sample size, $\beta$, and the range of multiaccess box loci solved (Table 2). Before running the simulation, we decided that a model would detect an effect if 89% of the posterior sample was on the same side of zero (following @statrethinkingbook). We ran the simulation with $\beta$=-5 because this was a high value at which an appropriate range of values were observed in the simulation testing phase, $\beta$=0 because this would be the scenario in which there is no relationship between trials to reverse and number of multiaccess box loci solved, and $\beta$=-1 to determine how small of a difference we can detect and with what amount of associated noise ($\sigma$). When $\beta$=0 we want all of the regression coefficients to cross zero (10 out of 10 random repetitions) and when $\beta$ $\neq$ 0 we want none of the regression coefficients to cross zero (0 out of 10 random repetitions). We used the simulations to determine at what point this was the case for each combination of parameters.
-
-```{r sim, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-
-###To make the model work, need to set up a few things... (this took me a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next)
-
-###Update R
-#install installr package
-#updateR(TRUE) #didn't work bc it can't find my R folder on my computer
-#updateR(fast = FALSE, browse_news, install_R, copy_packages, copy_Rprofile.site, keep_old_packages, update_packages, start_new_R, quit_R, print_R_versions = TRUE, GUI = TRUE, to_checkMD5sums = FALSE, keep_install_file = FALSE, download_dir = "/Users/corina/Library/R", silent = FALSE, setInternet2 = TRUE, cran_mirror = "https://cran.rstudio.com/") #didn't work bc it can't find my R folder on my computer
-#manually updated R and reinstalled packages
-
-###Install rethinking
-#install package devtools
-#devtools::install_github("rmcelreath/rethinking",ref="Experimental")
-
-###Install xcode (first download the app from the app store)
-#In terminal, type: "xcode-select --install"
-
-###Get STAN working https://github.com/rmcelreath/rethinking
-#Install C++ toolchain and configuration https://github.com/stan-dev/rstan/wiki/Installing-RStan-from-source-on-a-Mac
-#install.packages("Rcpp", repos = "https://rcppcore.github.io/drat") 
-#Then install rstan per instructions at the previous link
-
-###Now we're ready to go!
-#Load packages
-library("Rcpp")
-library("rstan") 
-library(rethinking)
-library(ggplot2)
-
-n <- 15 #sample size, number of grackles
-sample <- matrix(nrow=n*10,ncol=2) #1 col for MAB scores, 1 col for reverse scores
-regcoef <- matrix(nrow=10,ncol=1) #store regression coefficients here
-sigma <- runif(1,-5,5) 
-
-for (k in 1:10){
-  a <- rnorm(1,91,10) #this is the alpha for the whole pop
-  b <- -1
-  
-  for (i in 1:n){
-    MAB <- round(runif(1,0,4),0) #n, min, max
-    sample[(k-1)*n+i,2] <- a + b * MAB + runif(1,-14,14) 
-    sample[(k-1)*n+i,1] <- MAB
-  }
-  
-  dat_list <- list(
-    trials = (sample[(((k-1))*n+1):(k*n),2]),
-    MAB = (sample[(((k-1))*n+1):(k*n),1])
-  )
-  
-  m1 <- ulam(
-    alist(
-      trials ~ dnorm( mu , sigma ),
-      mu <- a+bM*MAB,
-      a~normal(91,10),
-      bM~normal(0,5),
-      sigma~dexp(1)
-    ),data=dat_list,messages=FALSE)
-  
-  regcoef[k,1]<-precis(m1)$"94.5%"[2]<0
-  
-}
-```
+We then used the simulations to run **models** on simulated data to estimate the measurement error associated with varying sample size, $\beta$, and the range of multiaccess box loci solved or latency to attempt a new locus (Table 2). Before running the models, we decided that a model would detect an effect if 89% of the posterior sample was on the same side of zero (following @statrethinkingbook). We ran the simulation with $\beta$=3 (latency) because this was a high value at which an appropriate range of values were observed in the simulation testing phase, $\beta$=0 because this would be the scenario in which there is no relationship between the response variable and the trials to reverse, and $\beta$=-1 to determine how small of a difference we can detect and with what amount of associated noise ($\sigma$). When $\beta$=0 we want all of the regression coefficients to cross zero (10 out of 10 random repetitions) and when $\beta$ $\neq$ 0 we want none of the regression coefficients to cross zero (0 out of 10 random repetitions). We ran the models several times with various parameters to determine at what point this was the case for each combination of parameters.
 
 **Table 2.** Simulation outputs from varying $\beta$, sample size (n), $\sigma$, and range of multiaccess box [MAB] loci solved. 
 
