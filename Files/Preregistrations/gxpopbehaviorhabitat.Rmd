@@ -94,7 +94,7 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
 ```
 
 
-#### H3 (suitable habitat GTGR-BTGR): The availability of habitat, not inherent species differences, explains why great-tailed grackles (GTGR) are able to much more rapidly expand their range than boat-tailed grackles (BTGR) (Figure 3).
+#### H3 (suitable habitat GTGR-BTGR): The availability of habitat, not inherent species differences, explains why great-tailed grackles (GTGR) are able to much more rapidly expand their range than boat-tailed grackles (BTGR) (Fig. 3; @wehtje2003range, @selander1961analysis).
 
 **Prediction 3:** GTGR and BTGR use different habitats, and the habitat of GTGR, but not that of BTGR, has increased in availability and connectivity over the past few decades.
 
@@ -324,105 +324,143 @@ We will analyze our data using the above model once all of the data have been co
 
 **Model and simulation**
 
-Expected values for the number of options solved on the multiaccess log were set to 0-4 (out of 4 options maximum) because this apparatus had been used on two species of jays who exhibited individual variation in the number of loci solved between 0-4 (California scrub-jays and Mexican jays: @mccune2018cognition, @mccune2019captive). After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+Expected values for the number of options solved on the multiaccess log were set to 0-4 (out of 4 options maximum) because this apparatus had been used on two species of jays who exhibited individual variation in the number of loci solved between 0-4 (California scrub-jays and Mexican jays: @mccune2018cognition, @mccune2019captive).
 
-$\mu$ ~ Normal(2,0.9) *[$\mu$ prior]*
+locisolved ~ Binomial(4, p) *[likelihood]*
 
-$\sigma$ ~ Uniform(0,4) *[$\sigma$ prior]*
+logit(p) ~ $\alpha$[site]  *[model]*
 
-We used a normal distribution for $\mu$ because it is a sum (see Figure 10.6 in @statrethinkingbook). We estimate that the grackles might solve an average of 2 loci, therefore we set the mean to 2. We chose a uniform distribution for $\sigma$ because it constrains $\sigma$ to have a positive probability with the standard deviation being the range of options possible (0-4).
+locisolved is the number of loci solved on the multiaccess box, 4 is the total number of loci on the multiaccess box, p is the probability of solving a locus in a trial, $\alpha$ is the intercept, and each site gets its own intercept. After running simulations, we identified the following distribution to be the most likely priors for our expected data:
 
-```{r modelinnovation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+$\alpha$ ~ Normal(0,1) *[$\alpha$ prior]*
+
+We used a normal distribution for $\alpha$ because it is a sum (see Figure 10.6 in @statrethinkingbook). We set the mean to 0 (on a logit scale, which means this is solving 2 loci on average on the actual scale) at a probability of 0.5.
+
+```{r innovation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
 library(rstan)
 
-#Plot priors to make sure the prior behaves as expected (p.82 Rethinking)
-curve( dnorm( x , 2 , 0.9 ) , from=0 , to=5 ) #mu a bit too wide initially (sd=1.4), which made solving 5 loci possible. Reduced sd until only 4 max loci possible
-curve( dunif( x , 0 , 4 ) , from=-1 , to=5 ) #sigma result as expected
+### SIMULATION
+#Figuring out probability, p
+s1mean <- 2 #site 1: solves on average 2 loci 
+s2mean <- 1.6 #site 2: solves on average 1.6 loci
+s3mean <- 3.6 #site 3: solves on average 1.6 loci
 
-#Prior predictive simulation (p.82 Rethinking)
-sample_mu <- rnorm( 1e4 , 2 , 0.9 )
-sample_sigma <- runif( 1e4 , 0 , 4 )
-prior_t <- rnorm( 1e4 , sample_mu , sample_sigma ) 
-dens( prior_t ) #Result: a little too wide
+s1mean <- log((s1mean/4)/(1-(s1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
+s2mean <- log((s2mean/4)/(1-(s2mean/4))) 
+s3mean <- log((s3mean/4)/(1-(s3mean/4))) 
+
+#Figuring out alpha prior
+probabilities<-inv_logit(rnorm(10000,mean=0,sd=0.3))
+loci <- vector()
+for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
+mean(loci) #this is the mean number of loci solved
+hist(loci) #We expect a bell curve with most of the individuals being average at solving loci (at the mean=2 loci) and some being more innovative while others are less. Minimum SD=0.3
+
+#Figuring out how much noise we expect (sd in alpha) = 0.4
+hist(inv_logit(rnorm(10000,mean=0,sd=1))) #it is spread out along the x axis so the many individuals in the ends are going to have different probabilities from the pop mean
+hist(inv_logit(rnorm(10000,mean=0,sd=0.5))) #this is much narrower, thus most of the individuals will match the pop mean and this reduces noise
+
+#Result = in the simulation alpha sd should not be larger than 1 because at 1 it ranges from a probability of solving 0.12-0.88 loci which is basically the min and max possible range. But since this is the sd, we want it narrower than the full range (so it isn't a flat prior), so set it to something like 0.5
 
 
-### SIMULATION: Manipulate mu mean, mu sd, and n (grackles)
-#Simulate data for the model
-n <- 45 #number of grackles in total across all sites (~20/site; AZ=11 MAB log, 17 MAB plastic)
-sites <- matrix(nrow=n,ncol=4) #store data here
-colnames(sites)<-c("loci","mu","sigma","site")
+#RUN SIMULATION WITH PARAMETERS (this is the simulated data that the model (below) will use) Generate values for simulated individuals from 3 simulated sites: vary the alpha site mean (expected number of loci solved and whether sites differ) and alpha sd (the noise in the population in the number of loci solved), and sample size
+asd <- 0.3 #alpha sd for the population. We set this smaller than what we had it above bc we wanted to make it so individuals were not equally likely to have similar results
+s1mean <- 1.9 #site 1: alpha mean: solves on average 2 loci 
+s2mean <- 2.1 #site 2: alpha mean: solves on average 1.6 loci
+s3mean <- 2.2 #site 3: alpha mean: solves on average 3.6 loci
+n <- 60
 
-for (i in 1:(n/3)){
-  mu1 <- rnorm( 1 , 1 , 0.9 ) #mu for site 1
-  sigma1 <- runif( 1 , 0 , 4 ) #sigma for site 1
-  trials <- rnorm(1,mu1,sigma1) #distribution for loci
-  
-  sites[i,1]<-trials
-  sites[i,2]<-mu1
-  sites[i,3]<-sigma1
-  sites[i,4]<-1 #site
+s1mean <- log((s1mean/4)/(1-(s1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
+s2mean <- log((s2mean/4)/(1-(s2mean/4))) 
+s3mean <- log((s3mean/4)/(1-(s3mean/4))) 
+
+sites<-matrix(nrow=n,ncol=6)
+colnames(sites)<-c("loci","site","probability","logit base value","base probability","logit probability")
+for (i in 1:n/3) {
+  s1 <- rnorm(1,s1mean,0.5) #n, mean, sd of probability of solving a locus. SD is the noise
+  p <- s1
+  sites[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) #50 trials (drawing 50 times (the highest number of trials an individual could get is probably 50 trials). Each trial is an opportunity to solve a locus and they can only solve 1 locus per trial. Sum for how many of the loci in total did they solve across the 50 trials
+  ifelse(sites[i,1]>4,sites[i,1]<-4,sites[i,1]<-sites[i,1])
+  sites[i,2]<-1 #column: site 1
+  sites[i,3]<-inv_logit(p) #column: p (probability)
+  sites[i,4]<-s1 #logit base value of alpha (for the intercept for this site)
+  sites[i,5]<-inv_logit(s1) #base probability is the inverse logit of the previous column
+  sites[i,6]<-p #logit probability
 }
 
 for (i in ((n/3)+1):((n/3)+(n/3))){
-  mu2 <- rnorm( 1 , 2 , 0.9 ) #mu for site 2
-  sigma2 <- runif( 1 , 0 , 4 ) #sigma for site 2
-  trials <- rnorm(1,mu2,sigma2) 
-  
-  sites[i,1]<-trials
-  sites[i,2]<-mu2
-  sites[i,3]<-sigma2
-  sites[i,4]<-2 #site
+  s2 <- rnorm(1,s2mean,0.5) #n, mean, sd of probability of solving a locus. SD is the noise
+  p <- s2
+  sites[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) 
+  ifelse(sites[i,1]>4,sites[i,1]<-4,sites[i,1]<-sites[i,1])
+  sites[i,2]<-2 #column: site 2
+  sites[i,3]<-inv_logit(p)
+  sites[i,4]<-s2
+  sites[i,5]<-inv_logit(s2)
+  sites[i,6]<-p 
 }
 
 for (i in ((n/3)+(n/3)+1):n){
-  mu3 <- rnorm( 1 , 4 , 0.9 ) #mu for site 3
-  sigma3 <- runif( 1 , 0 , 4 ) #sigma for site 3
-  trials <- rnorm(1,mu3,sigma3)
-  
-  sites[i,1]<-trials
-  sites[i,2]<-mu3
-  sites[i,3]<-sigma3
-  sites[i,4]<-3 #site
+  s3 <- rnorm(1,s3mean,0.5) #n, mean, sd of probability of solving a locus. SD is the noise
+  p <- s3
+  sites[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) 
+  ifelse(sites[i,1]>4,sites[i,1]<-4,sites[i,1]<-sites[i,1])
+  sites[i,2]<-3 #column: site 3
+  sites[i,3]<-inv_logit(p)
+  sites[i,4]<-s3
+  sites[i,5]<-inv_logit(s3)
+  sites[i,6]<-p 
 }
 
-### THE MODEL
-dat <- list(trials = as.numeric(sites[,1]),
-            site = as.integer(sites[,4])
-) #This sets up the data sheet with the simulated data that the model will run on
+#Have a look at the relationship to double check the relationship is as expected when back translating to the original units
+plot(sites[,3],sites[,1]) #positive relationship as expected
 
-s1 <- ulam(
-  alist(
-trials ~ dnorm(mu[site],sigma),
-mu[site] ~ dnorm(2,0.9),
-sigma ~ dunif(0,4)
-),data=dat, log_lik=TRUE, messages=FALSE) #This is the model
+
+### RUN MODEL
+#don't change alpha or beta parameters here because they are changed above
+dat <- list(locisolved = sites[,1],
+            site = sites[,2]
+              )
+
+m1 <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[site] , #site=random effect
+  a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
+) , data=dat , chains=4 , log_lik=TRUE )
+
+precis(m1,depth=2)
+#mean(sites[1:8,1])
+#mean(sites[9:16,1])
+
+#Figure out alpha sd: check posterior for p to look at the distribution of probabilities that are probable (this is where we would figure out whether we need to tweak alpha sd in m1) (p.328)
+#prior <- extract.prior(m1,n=1e4)
+#p <- inv_logit(prior$a) #convert from logit to actual probability
+#dens(p,adj=0.1)
+#result1: it was a normal curve with a peak at 0.5
 
 #Plot it
-labels <- paste( "mu[" , 1:3 , "]:" , levels(dat$site) , sep="" ) 
-plot( precis( s1 , depth=2 , pars="mu" ) , labels=labels ,  xlab="expected loci solved" ) #contrasts plot p.157
-
-#Summary data
-precis(s1,depth=2) #depth=2 means to show any vector parameters (p.156)
+labels <- paste( "a[" , 1:3 , "]:" , levels(dat$site) , sep="" ) 
+plot( precis( m1 , depth=2 , pars="a" ) , labels=labels ,  xlab="expected loci solved" ) #contrasts plot p.157
 
 #Compute pairwise contrasts
 #Comparing sites 1 and 2
-post1 <- extract.samples(s1) 
-post1$diff_12 <- post1$mu[,1] - post1$mu[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+post1 <- extract.samples(m1) 
+post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
 
 #Comparing sites 1 and 3
-post2 <- extract.samples(s1) 
-post2$diff_13 <- post2$mu[,1] - post2$mu[,3] 
+post2 <- extract.samples(m1) 
+post2$diff_13 <- post2$a[,1] - post2$a[,3] 
 precis(post2,depth=2)
 
 #Comparing sites 2 and 3
-post3 <- extract.samples(s1) 
-post3$diff_23 <- post3$mu[,2] - post3$mu[,3] 
+post3 <- extract.samples(m1) 
+post3$diff_23 <- post3$a[,2] - post3$a[,3] 
 precis(post3,depth=2)
 ```
 
-We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a total sample size of 45 if the average number of loci solved differs by 2 loci or more and the standard deviation is generally a maximum of 1.2 at each site (Table 2). For a sample size of 60, which is more like what we expect (even though the Arizona sample size is 11 for the multiaccess log and 17 on a similar multiaccess box), we will be able to detect site differences if the average number of loci solved differs by 1 locus or more and the standard deviation is generally a maximum of 0.9 at each site (Table 2).
+We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a total sample size of 45 if the average number of loci solved differs by 1.2 loci or more and the standard deviation is generally a maximum of 0.9 at each site (Table 2). For a sample size of 60, which is more like what we expect (even though the Arizona sample size is 11 for the multiaccess log and 17 on a similar multiaccess box), we will be able to detect site differences if the average number of loci solved differs by 0.7 of a locus or more and the standard deviation is generally a maximum of 1 at each site (Table 2).
 
 **Results (using our actual data)**
 
@@ -433,101 +471,106 @@ We will analyze our data using the above model once all of the data have been co
 
 **Model and simulation**
 
-Expected values for the latency to approach a novel object range from 0-2700 sec, which encompasses the time period during which they are exposed to the object (sessions last up to 45 min). After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+We modeled the average latency to approach an object and compared these between sites. We simulated data and set the model as follows: 
 
-$\mu$ ~ Normal(1350,500) *[$\mu$ prior]*
+latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
 
-$\sigma$ ~ Uniform(0,2700) *[$\sigma$ prior]*
+log($\lambda_i$) ~ $\alpha$[site]  *[linear model]*
 
-We used a normal distribution for $\mu$ because it is a sum (see Figure 10.6 in @statrethinkingbook). We estimate that the grackles might approach the object anywhere in the session, therefore we set the mean at the halfway mark: 1350 sec. We chose a uniform distribution for $\sigma$ because it constrains $\sigma$ to have a positive probability with the standard deviation being the range of seconds possible (0-2700).
+latency is the average latency to approach an object, $\lambda_i$ is the rate (probability of approaching the object in each second) per bird (and we take the log of it to make sure it is always positive); birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, and $\alpha$ is the intercept for the rate per site. 
 
-```{r modelexploration, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+Expected values for the latency to approach a novel object range from 0-2700 sec, which encompasses the time period during which they are exposed to the object (sessions last up to 45 min). However, we do not provide an upper limit for the model because those birds that do not approach within 2700 sec would eventually have had to approach the object to access their food (it's just that sessions did not run that long). After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+
+$\phi$ ~ 1/(Exponential(1)) *[$\phi$ prior]*
+
+$\alpha$ ~ Normal(1350,500) *[$\alpha$ prior]*
+
+We used a gamma-Poisson distribution for latency because it constrains the values to be positive. We estimate that the grackles might approach the object anywhere in the session, therefore we set the mean at the halfway mark: 1350 sec. For $\phi$, we used an exponential distribution because it is standard for this paramter. We used a normal distribution for $\alpha$ because it is a sum with a large mean (see Figure 10.6 in @statrethinkingbook). For the $\alpha$ prior .
+
+```{r exploration, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
 library(rstan)
+library(Rcpp)
 
-#Plot priors to make sure the prior behaves as expected (p.82 Rethinking)
-curve( dnorm( x , 1350 , 500 ) , from=-10 , to=3000 ) #mu a bit too narrow initially (sd=200), which made approaches at either end of the session impossible. Increased sd until all seconds in the session were possible
-curve( dunif( x , 0 , 2700 ) , from=-100 , to=3000 ) #sigma result as expected
+#Looked into using a poisson rather than a gamma poisson distribution, but poisson only has one paramater (lambda) and it doesn't let me change the shape of the curve. So I need to use a gamma poisson distribution
+hist(rpois(1000,1350)) #1000=sample size, mean=1350 sec
 
-#Prior predictive simulation (p.82 Rethinking)
-sample_mu <- rnorm( 1e4 , 1350 , 500 )
-sample_sigma <- runif( 1e4 , 0 , 2700 )
-prior_t <- rnorm( 1e4 , sample_mu , sample_sigma ) 
-dens( prior_t ) #Result: a little too wide
+### SIMULATIONS: GAMMA-POISSON
+#FYI this is a useful resource for gamma poisson distributions https://en.wikipedia.org/wiki/Gamma_distribution
+#Lambda * phi = variance. NOTE: lambda=mu, and phi is sometimes called scaling factor or scale
 
+#Find the right mean seconds to approach (alpha mean) and phi
+hist(rgampois(10000,2000,1000),breaks=30) #10000 samples, mu (average seconds to approach), scaling factor=1000 that gives variance (variance=mu * scale). 7.2=log of 1350 sec. Look at the shape of the curve and adjust the mean and scale until you get the shape you want. I want a flat line
+sum(rgampois(10000,2000,1000)>2700) #use this to see how many of the 1000 simulated grackles did not come down in the 2700 sec session. Estimate 25% of the grackles will not participate so 250 grackles. =2500 
+median(rgampois(10000,2000,1000)) #check the median to see if it is around 1350 sec. =1652
+var(rgampois(10000,2000,1000)) #variance of the 1000 individuals in the sample above, mean=2000 seconds, phi=1000. SD=sqrt of variance
+#Result: log(lambda)=alpha = 2000 seconds (this is alpha mu), phi=1000
 
-### SIMULATION: Manipulate mu mean, mu sd, and n (grackles)
-#Simulate data for the model
-n <- 60 #number of grackles in total across all sites (~20/site; AZ=17). Must be a multiple of 3 because there are 3 sites
-sites <- matrix(nrow=n,ncol=4) #store data here
-colnames(sites)<-c("latency","mu","sigma","site")
+#Simulate the data
+n <- 60 #number of individuals
+phi <- 1000 #this gives us a distribution that we expect (long right tail)
 
-for (i in 1:(n/3)){
-  mu1 <- rnorm( 1 , 100 , 500 ) #mu for site 1
-  sigma1 <- runif( 1 , 0 , 2700 ) #sigma for site 1
-  trials <- rnorm(1,mu1,sigma1) #distribution for loci
-  
-  sites[i,1]<-trials
-  sites[i,2]<-mu1
-  sites[i,3]<-sigma1
-  sites[i,4]<-1 #site
+am1<-5.7 #site 1 alpha mean: 5.7=log of 300 sec (seconds to approach an object)
+am2<-6.9 #site 2 alpha mean: 6.9=log of 1000 sec
+am3<-7.6 #site 3 alpha mean: 7.6=log 2000 sec. 
+
+sites<-matrix(nrow=n,ncol=2)
+colnames(sites)<-c("latency","site")
+
+for (i in 1:n/3){
+  lambda <- exp(am1) #the linear model for site 1
+  latency <- rgampois(1,lambda,phi) #this is the latency per individual
+  sites[i,1]<-latency
+  sites[i,2]<-1 #site 1
 }
 
 for (i in ((n/3)+1):((n/3)+(n/3))){
-  mu2 <- rnorm( 1 , 1000 , 500 ) #mu for site 2
-  sigma2 <- runif( 1 , 0 , 2700 ) #sigma for site 2
-  trials <- rnorm(1,mu2,sigma2) 
-  
-  sites[i,1]<-trials
-  sites[i,2]<-mu2
-  sites[i,3]<-sigma2
-  sites[i,4]<-2 #site
+  lambda <- exp(am2)
+  latency <- rgampois(1,lambda,phi)
+  sites[i,1]<-latency
+  sites[i,2]<-2 #site 2
 }
 
 for (i in ((n/3)+(n/3)+1):n){
-  mu3 <- rnorm( 1 , 2500 , 500 ) #mu for site 3
-  sigma3 <- runif( 1 , 0 , 2700 ) #sigma for site 3
-  trials <- rnorm(1,mu3,sigma3)
-  
-  sites[i,1]<-trials
-  sites[i,2]<-mu3
-  sites[i,3]<-sigma3
-  sites[i,4]<-3 #site
+  lambda <- exp(am3)
+  latency <- rgampois(1,lambda,phi)
+  sites[i,1]<-latency
+  sites[i,2]<-3 #site 3
 }
 
-### THE MODEL
-dat <- list(trials = as.numeric(sites[,1]),
-            site = as.integer(sites[,4])
-) #This sets up the data sheet with the simulated data that the model will run on
+sites[sites[,1]>2700,1]<-2701 #make all non-participatory birds have a 2701
 
-s1 <- ulam(
+### RUN THE MODEL
+dat <- list(latency = as.integer(sites[,1]),
+            site = as.integer(sites[,2])
+)
+
+m2 <- ulam(
   alist(
-trials ~ dnorm(mu[site],sigma),
-mu[site] ~ dnorm(1350,500),
-sigma ~ dunif(0,2700)
-),data=dat, log_lik=TRUE, messages=FALSE) #This is the model
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[site],
+    a[site] ~ dnorm(1,1),
+    phi ~ dexp(1)
+  ),data=dat, log_lik=TRUE, messages=FALSE)
 
-#Plot it
-labels <- paste( "mu[" , 1:3 , "]:" , levels(dat$site) , sep="" ) 
-plot( precis( s1 , depth=2 , pars="mu" ) , labels=labels ,  xlab="expected latency (sec)" ) #contrasts plot p.157
-
-#Summary data
-precis(s1,depth=2) #depth=2 means to show any vector parameters (p.156)
+#Plot it (contrasts plot p.157)
+labels <- paste( "a[" , 1:3 , "]:" , levels(dat$site) , sep="" ) 
+plot( precis( m2 , depth=2 , pars="a" ) , labels=labels ,  xlab="expected latency" )
 
 #Compute pairwise contrasts
 #Comparing sites 1 and 2
-post1 <- extract.samples(s1) 
-post1$diff_12 <- post1$mu[,1] - post1$mu[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+post1 <- extract.samples(m2) 
+post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
 
 #Comparing sites 1 and 3
-post2 <- extract.samples(s1) 
-post2$diff_13 <- post2$mu[,1] - post2$mu[,3] 
+post2 <- extract.samples(m2) 
+post2$diff_13 <- post2$a[,1] - post2$a[,3] 
 precis(post2,depth=2)
 
 #Comparing sites 2 and 3
-post3 <- extract.samples(s1) 
-post3$diff_23 <- post3$mu[,2] - post3$mu[,3] 
+post3 <- extract.samples(m2) 
+post3$diff_23 <- post3$a[,2] - post3$a[,3] 
 precis(post3,depth=2)
 ```
 
@@ -542,7 +585,7 @@ We will analyze our data using the above model once all of the data have been co
 
 **Model and simulation**
 
-Expected values for the number of trials not participated in could range from 0-350 (likely maxima: 300 trials reversal learning, 50 trials multiaccess log). After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+Expected values for the number of trials not participated in could range from 0-350 (likely maxima: 300 trials reversal learning [70 trials initial discrimination, 130 trials reversal, 100 non-participation trials], 50 trials multiaccess log). After running simulations, we identified the following distribution and priors the most likely for our expected data:
 
 $\mu$ ~ Normal(175,75) *[$\mu$ prior]*
 
