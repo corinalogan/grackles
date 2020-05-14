@@ -314,7 +314,7 @@ precis(post3,depth=2)
 
 We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 at each site if the average number of trials to reverse a preference differs by >13 trials, and the standard deviation is a maximum of 21 at each site (Table 2). For a sample size of 20 at each site, which is more like what we expect, we will be able to detect site differences if the average number of trials to reverse a preference differs by >11 trials, and the standard deviation is a maximum of 23 at each site  (Table 2).
 
-**Table 2.** Simulation outputs from varying sample size (n), and $\alpha$ means and standard deviations. From the pairwise contrasts, if the difference between the distributions crosses zero (yes), then we are not able to detect differences between the two sites. If they do not cross zero (no), then we are able to detect differences between the two sites.
+**Table 2.** Simulation outputs from varying sample size (n), and $\alpha$ means and standard deviations. From the pairwise contrasts, if the difference between the distributions crosses zero (yes), then we are not able to detect differences between the two sites. If they do not cross zero (no), then we are able to detect differences between the two sites. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites.
 
 ```{r tableparam, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv ("/Users/corina/GitHub/grackles/Files/Preregistrations/gxpopbehaviorhabitat_Table2.csv", header=F, sep=",", stringsAsFactors=F) 
@@ -332,7 +332,8 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
             V8 = colDef(name="mu3_sd"),
             V9 = colDef(name="Difference crosses zero? S1-S2"),
             V10 = colDef(name="Difference crosses zero? S1-S3"),
-            V11 = colDef(name="Difference crosses zero? S2-S3")
+            V11 = colDef(name="Difference crosses zero? S2-S3"),
+            V12 = colDef(name="Notes")
           ))
 ```
 
@@ -540,9 +541,9 @@ var(rgampois(10000,2000,1000)) #variance of the 1000 individuals in the sample a
 n <- 60 #number of individuals
 phi <- 1000 #this gives us a distribution that we expect (long right tail)
 
-am1<-5.7 #site 1 alpha mean: 5.7=log of 300 sec (seconds to approach an object)
-am2<-6.9 #site 2 alpha mean: 6.9=log of 1000 sec
-am3<-7.6 #site 3 alpha mean: 7.6=log 2000 sec. 
+am1<-4.6 #site 1 alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7
+am2<-6.3 #site 2 alpha mean: 6.2=log of 500 sec, 550s=6.3, 600s=6.4
+am3<-7.3 #site 3 alpha mean: 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
 
 sites<-matrix(nrow=n,ncol=2)
 colnames(sites)<-c("latency","site")
@@ -569,6 +570,20 @@ for (i in ((n/3)+(n/3)+1):n){
 }
 
 sites[sites[,1]>2700,1]<-2701 #make all non-participatory birds have a 2701
+
+#In case I want to check what the data look like
+#mean(sites[sites[,2]==1,1]) #site 1
+#mean(sites[sites[,2]==2,1]) #site 2
+#mean(sites[sites[,2]==3,1]) #site 3
+
+#hist(sites[sites[,2]==1,1],breaks=30) #site 1
+#hist(sites[sites[,2]==2,1],breaks=30) #site 2
+#hist(sites[sites[,2]==3,1],breaks=30) #site 1
+
+#Maybe we want to compare the proportion of observations below the median between 2 sites?
+#median(sites[sites[,2]!=3,1]) # 62
+#sum(sites[sites[,2]==1,1]>62) # 7
+#sum(sites[sites[,2]==2,1]>62) # 13
 
 ### RUN THE MODEL
 dat <- list(latency = as.integer(sites[,1]),
@@ -607,7 +622,7 @@ post3$diff_23 <- post3$a[,2] - post3$a[,3]
 precis(post3,depth=2)
 ```
 
-We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 at each site if the average latency to approach the object differs by at least 1200 sec and the standard deviation is generally a maximum of 200 at each site (Table 2). For a sample size of 20 at each site, which is more like what we expect, we will be able to detect site differences if the average latency to approach the object differs by at least 1100 sec and the standard deviation is generally a maximum of 275 at each site (Table 2).
+We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 at each site or 20 at each site if the average latency to approach the object differs by at least 450 sec at each site (Table 2). We kept the shape of the curve (which can be thought of as similar to a standard deviation) the same across sites because we do not think this assumption will change across populations (i.e., there will be lots of variation at each site with some individuals approaching almost immediately, others in the middle of the session, and others near the end).
 
 **Results (using our actual data)**
 
@@ -643,10 +658,10 @@ hist(rnorm(n,mean=275,sd=27)) #mean number of total trials, based on the estimat
 hist(inv_logit(rnorm(2000,mean=0,sd=1.5))) #what do we expect the probability of participating to be? A flat line. And that's what this gets us. 2000 sample size, mean=0 (0.5 probability on inverse logit scale), sd is of our expectation of the prior - doesn't have to have anything to do with what happens in the actual population. The larger the SD, the less certain we are about what we expect
 
 #Manipulate these variables
-n <-45 #number of grackles in total across all 3 sites
-site1mean<-0.65 #site 1 alpha mean: proportion of trials participated in
+n <-60 #number of grackles in total across all 3 sites
+site1mean<-0.67 #site 1 alpha mean: proportion of trials participated in
 site2mean<-0.75
-site3mean<-0.90
+site3mean<-0.83
 asd1 <- 0.25 #site 1 alpha sd: proportion of trials participated in
 asd2 <- 0.25 #site 2 alpha sd
 asd3 <- 0.25 #site 3 alpha sd
@@ -695,7 +710,7 @@ m1<-ulam(
 #Plot it
 post <- extract.samples(m1) 
 probability <- inv_logit(post$a)
-labels <- paste( "a[" , 1:3 , "]:" , levels(dat$site) , sep="" ) 
+labels <- paste( "a[" , 1:3 , "]:" , levels(dat_list$site) , sep="" ) 
 plot( precis( as.data.frame(probability) ) , xlim=c(0,1), labels=labels ,  xlab="proportion of trials participated in" ) #contrasts plot p.157
 
 #Summary data
@@ -718,7 +733,7 @@ post3$diff_23 <- inv_logit(post3$a[,2]) - inv_logit(post3$a[,3])
 precis(post3,depth=2)
 ```
 
-We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 per site if the average proportion of trials participated in differs by at least 0.15 and the standard deviation is generally a maximum of 0.55 at each site (Table 2). For a sample size of 20 at each site, which is more like what we expect, the detection difference is the same as for a sample size of 15 (Table 2).
+We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 per site or 20 per site if the average proportion of trials participated in differs by at least 0.08 and the standard deviation is generally a maximum of 0.25 at each site (Table 2).
 
 **Results (using our actual data)**
 
