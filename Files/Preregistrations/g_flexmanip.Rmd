@@ -76,6 +76,8 @@ NOTE on 16 April 2019: Because we are discontinuing the touchscreen reversal lea
 
 NOTE on 17 April 2020 (pre-data analysis): we completed our simulation to explore the lower boundary of a minimum sample size and determined that our sample size for the Arizona study site is above the minimum (see details and code in [Ability to detect actual effects](http://corinalogan.com/Preregistrations/g_flexmanip.html#ability_to_detect_actual_effects).
 
+NOTE on 14 May 2020 (pre-data analysis): please see our [Alternative Analyses](#alternative-analyses) section where we describe how we changed the analysis for P2 and that we are replacing this analysis with the new models in the [Ability to detect actual effects](#ability-to-detect-actual-effects) section.
+
 ### B. PARTITIONING THE RESULTS
 
 We may present the different hypotheses in separate papers.
@@ -260,15 +262,17 @@ To address the power analysis issues, we will run simulations on our Arizona dat
 
 **SIMULATIONS APRIL 2020 (pre-data analysis):** following procedures in @statrethinkingbook, we first constructed a **hypothesis-appropriate mathematical model** that encompasses the relationship between the variables of interest for each analysis: 1) number of loci solved on the multiaccess box ~ trials to reverse, and 2) latency to attempt a new locus on the multiaccess box ~ trials to reverse. 
 
-The model for the first relationship takes the form of:
+**Simulation and model: number of loci solved on the multiaccess box ~ trials to reverse**
+
+The model takes the form of:
 
 locisolved ~ Binomial(4, p) *[likelihood]*
 
 logit(p) ~ $\alpha$[batch] + $\beta$trials  *[model]*
 
-locisolved is the number of loci solved on the multiaccess box, 4 is the total number of loci on the multiaccess box, p is the probability of solving a locus in a trial, $\alpha$ is the intercept and each batch gets its own, $\beta$ is the expected amount of change in locisolved for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
+locisolved is the number of loci solved on the multiaccess box, 4 is the total number of loci on the multiaccess box, p is the probability of solving any one locus across the whole experiment, $\alpha$ is the intercept and each batch gets its own, $\beta$ is the expected amount of change in locisolved for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
 
-Expected values for the number of loci solved on the multiaccess box were set to either 2 or 0 (out of 4 loci maximum) because we were unsure of whether the grackles would be able to solve any loci on the multiaccess box because this experiment had never been done on this species before. Expected values for reversal learning using color tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles (@logan2016behavioral). This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21. In our model, the variation in the actual data is reflected by both the population standard deviation and the expected amount of change related to the explanatory variable. Therefore, after running simulations, we decided to set the population standard deviation to 10. After running simulations, we identified the following distribution to be the most likely priors for our expected data:
+Expected values for the number of loci solved on the multiaccess box were set to either 2 or 0 (out of 4 loci maximum) because we were unsure of whether the grackles would be able to solve any loci on the multiaccess box because this experiment had never been done on this species before. Expected values for reversal learning using color tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles (@logan2016behavioral). This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21. In our model, the variation in the actual data is reflected by both the population standard deviation and the expected amount of change related to the explanatory variable. After running simulations, we identified the following distributions and priors to be the most likely for our expected data:
 
 $\alpha$ ~ Normal(4,10) *[$\alpha$ prior]*
 
@@ -410,15 +414,17 @@ mean(individuals[9:16,1])
 #result = really similar to model m1
 ```
 
-For the **second analysis**, average latency to attempt a new locus on the multiaccess box as it relates to trials to reverse (both are measures of flexibility), we simulated data and set the model as follows: 
+**Simulation and model: latency to attempt a new locus on the multiaccess box ~ trials to reverse**
+
+For the average latency to attempt a new locus on the multiaccess box as it relates to trials to reverse (both are measures of flexibility), we simulated data and set the model as follows: 
 
 latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
 
-log($\lambda_i$) ~ $\alpha$[batch] + $\beta$trials  *[linear model]*
+log($\lambda_i$) ~ $\alpha$[batch] + $\beta$trials  *[the model]*
 
-latency is the average latency to attempt a new locus on the multiaccess box, $\lambda_i$ is the rate (probability of attempting a locus in each second) per bird (and we take the log of it to make sure it is always positive); birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, $\alpha$ is the intercept for the rate per batch, $\beta$ is the expected amount of change in the rate of attempting to solve in any given second for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
+latency is the average latency to attempt a new locus on the multiaccess box, $\lambda_i$ is the rate (probability of attempting a locus in each second) per bird (and we take the log of it to make sure it is always positive; birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, $\alpha$ is the intercept for the rate per batch, $\beta$ is the expected amount of change in the rate of attempting to solve in any given second for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
 
-Expected values for the latency to attempt a new locus on the multiaccess box was set to between 1-2700 sec because the experiment ends for a bird if they do not obtain the food in 3 consecutive trials, and each trial can last up to 15 min. Because we did not have prior data for this species on this test, we set the mean to 300 sec, which is half way through a usual 10 min trial because it seems likely that if a bird is going to attempt another locus, it will likely do so at the next opportunity, especially after being successful in the previous trial. Expected values for reversal learning using color tubes are the same as above. After running simulations, we identified the following to be the most likely priors for our expected data:
+Expected values for the latency to attempt a new locus on the multiaccess box was set to between 1-2700 sec because the experiment ends for a bird if they do not obtain the food in 3 consecutive trials, and each trial can last up to 15 min. Because we did not have prior data for this species on this test, we set the mean to 300 sec, which is half way through a usual 10 min trial because it seems likely that if a bird is going to attempt another locus, it will likely do so at the next opportunity, especially after being successful in the previous trial. Expected values for reversal learning using color tubes are the same as above. After running simulations, we identified the following to be the most likely distributions and priors for our expected data:
 
 $\phi$ ~ 1/(Exponential(1)) *[$\phi$ prior]*
 
@@ -426,7 +432,7 @@ $\alpha$ ~ Normal(300,50) *[$\alpha$ prior]*
 
 $\beta$ ~ Normal(0,5) *[$\beta$ prior]*
 
-We used a gamma-Poisson distribution for latency because it constrains the values to be positive and to primarily occur sooner rather than later, which is what we expect from the grackles (based on data from New Caledonian crows and kea in @auersperg_flexibility_2011). For $\phi$, we used an exponential distribution because it is standard for this paramter. We used a normal distribution for $\alpha$, and $\beta$ because they are (or are based on) sums with large means (see Figure 10.6 in @statrethinkingbook). For the $\alpha$ prior . For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean).
+We used a gamma-Poisson distribution for latency because it constrains the values to be positive and to primarily occur sooner rather than later, which is what we expect from the grackles (based on data from New Caledonian crows and kea in @auersperg_flexibility_2011). For $\phi$, we used an exponential distribution because it is standard for this paramter. We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means (see Figure 10.6 in @statrethinkingbook). For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean).
 
 ```{r modelparameters2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -512,7 +518,7 @@ We **translated the simulation output into effect sizes** and examined what kind
 
 r = $\beta$ (SDx / SDy) = $\beta$ (1.5 / 21)
 
-Where r is the Pearson product moment correlation and SD is the standard deviation. For the standard deviation of x (number of loci solved on the multiacccess box), we estimated a possible value of 1.5. For the standard deviation of y (trials to reverse), we used 21 from the Santa Barbara grackle data (@logan2016behavioral). We then calculated the effect sizes and R2 values for each value of $\beta$.
+Where r is the Pearson product moment correlation and SD is the standard deviation. For the standard deviation of x (number of loci solved on the multiacccess box), we estimated a possible value of 1.5. For the standard deviation of y (trials to reverse), we used 21 from the Santa Barbara grackle data (@logan2016behavioral). We then calculated the effect sizes and R^2^ values for each value of $\beta$.
 
 **Table 1.** The connection between $\beta$ and effect sizes (SDx=standard deviation of x, SDy=standard deviation of y, R^2^=R squared).
 
@@ -609,7 +615,9 @@ library(knitr)
 kable(base1, caption="Table 2: Model selection output.")
 ```
 
-#### *P2: serial reversal improves rule switching & problem solving*
+#### *P2: serial reversal improves rule switching and problem solving*
+
+**Note on 14 May 2020:** Please see our [Alternative Analyses](#alternative-analyses) section where we describe that we will conduct this analysis as in the new models in the [Ability to detect actual effects](#ability-to-detect-actual-effects) section, which will replace the analysis listed below.
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model. A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
@@ -1121,6 +1129,12 @@ summary(et)
 #### *Alternative Analyses*
 
 We anticipate that we will want to run additional/different analyses after reading @statrethinkingbook. We will revise this preregistration to include these new analyses before conducting the analyses above.
+
+**14 May 2020:** After reading @statrethinkingbook and taking McElreath's stats course, we changed a couple of things about the analysis plan in this preregistration (before we analyzed any of our data). These are the changes we made:
+
+1) [Ability to detect actual effects](#ability-to-detect-actual-effects): We added two simulations and hypothesis-specific models for P2. One examines the relationship between the number of loci solved on the multiaccess box and the number of trials to reverse a preference. The other examines the latency to attempt another locus on the multiaccess box and the number of trials to reverse a preference.
+
+2) [P2: serial reversal improves rule switching and problem solving](#p2-serial-reversal-improves-rule-switching-and-problem-solving): In conducting point 1, we realized that we had misinterpreted which variable should be the response variable in this analysis. We originally set the number of trials to reverse as the response variable, however we should have instead set the number of loci solved as the response variable and then planned to conduct a second model with the latency to attempt a new locus as the response variable and number of trials as the explanatory variable. This is because a) we manipulated the number of trials to reverse, therefore it must be the explanatory variable; and b) they should be split into two models because of a and because these are two very different relationships that should be considered in their own models. We also realized that Condition (manipulated or control) does not need to be a variable in any of our models because the manipulated birds have, by definition, faster reversal speeds. For these reasons, when we conduct the P2 analysis in this preregistration, we will use the custom models we made in point 1 above rather than the planned MCMCglmm model.
 
 ### F. ETHICS
 
