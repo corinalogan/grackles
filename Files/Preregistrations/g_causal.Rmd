@@ -274,7 +274,7 @@ The rest are the same as in P1.
 
 ##### Interobserver reliability of dependent variables
 
-To determine whether experimenters coded the dependent variables in a repeatable way, a hypothesis-blind video coder, Sierra Planck, was first trained in video coding the dependent variables (number of times the bird pecked the screen, number of times the head entered the food hopper, and number of seconds spent searching for food per trial), and then she coded 20% of the videos. The experimenter's data was compared with Planck's data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random). We consider the classification of what the bird actually did as repeatable across coders if the ICC=0.90 or greater.
+To determine whether experimenters coded the dependent variables in a repeatable way, a hypothesis-blind video coder, Sierra Planck, was first trained in video coding the dependent variables (number of times the bird pecked the screen, number of times the head entered the food hopper, and number of seconds spent searching for food per trial), and then she coded 20% of the videos. The experimenter's data was compared with Planck's data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). We consider the classification of what the bird actually did as repeatable across coders if the ICC=0.90 or greater.
 
 For the **interobserver reliability (IOR) training**, Planck coded two videos: 1) A087AG 2020-01-22 Causal Test Intervene S1 T1, and 2) A064LR 2019-12-20 Causal Test Observe S1 T1. When Planck's results were compared with the experimenter's, the scores were as follows:
  
@@ -301,6 +301,7 @@ The first score stayed the same, while the second and third improved. However, n
 Because the score remained below our passing threshold, we decided to use only the computer-generated data for number of screen pecks. Though we must note that the computer-generated data was not entirely accurate: there were many occasions where the screen did not register a screen peck and the experimenter had to remotely use the mouse to click where the bird pecked.
 
 ```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(irr) #ICC package
 
 # did Sierra Planck pass interobserver reliability training? No, but unclear whether the original coders were correct so CL coded bird 87's video to check. 
 
@@ -445,29 +446,16 @@ plot(residuals(glm(cause$KeyPecksFood~cause$KeyPecksNovel)), ylab="Pecks to food
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
+NOTE: July 2020: We realized that using the number of key pecks to the screen as a dependent variable and placing condition as an independent variable, would not tell us anything about whether the bird used causal cognition. To determine whether they use causal cognition, we needed one score per bird that accounts for their performance in the intervene conditions relative to the observe conditions (see the Results section for equation details). Now that we have one score per bird, the model changed from a GLMM to a GLM because there will only be one row of data per bird, and we removed condition as an independent variable. 
+
 ```{r cause1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 cause <- read.csv ("/Users/corina/GTGR/data/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
 
-#Select only data from Experiment 1
-cause <- cause[cause$Experiment==1,]
-
-### NOTE: June 2020 add ID as a fixed effect so we can see bird-level performance. In the middle of a debate about how to analyze causal in relation to flexibility because causal measures only make sense if they are analyzed by breaking down how the conditions relate to each other
-
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-
-#GLMM with response variable = key pecks to the food key
-cause1 <- MCMCglmm(KeyPecksFood ~ Condition + AvgTrialsReverse + AvgLatencySwitch, random=~ID, family="poisson", data=cause, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#GLMM with response variable = causal cognition score
+m1 <- glm(CausalScore ~ TrialsReverseLast + AvgLatencySwitch, family="poisson", data=cause)
 summary(cause1)
 #autocorr(cause1$Sol) #Did fixed effects converge?
 #autocorr(cause1$VCV) #Did random effects converge?
-
-#GLMM with response variable = key pecks to the stimulus key
-cause1a <- MCMCglmm(KeyPecksNovel ~ Condition + AvgTrialsReverse + AvgLatencySwitch, random=~ID, family="poisson", data=cause, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(cause1a)
-#autocorr(cause1a$Sol) #Did fixed effects converge?
-#autocorr(cause1a$VCV) #Did random effects converge?
 ```
 
 #### Prediction 2: common-cause vs causal chain
