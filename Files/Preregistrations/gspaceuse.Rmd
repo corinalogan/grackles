@@ -163,6 +163,8 @@ One model will be run for each dependent variable
 
 8) Maximum group size observed across each individual’s focal follows (data collected as part of [Logan et al. 2019](http://corinalogan.com/Preregistrations/g_flexforaging.html))
 
+9) Season (breeding or non-breeding)
+
 
 **P2**
 
@@ -174,6 +176,8 @@ One model will be run for each dependent variable
 
 4) Population density (number of grackles per square meter in each study area: Arizona, California, Central America)
 
+5)  Season (breeding or non-breeding)
+
 ### D. ANALYSIS PLAN
 
 We do not plan to **exclude** any data and if there are **missing** data (e.g. if a bird had to be released before collecting their data at time 2) these birds will be excluded from analyses requiring data from times 1 and 2. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam) and Stan (version 2.18, @carpenter2017stan). 
@@ -182,8 +186,6 @@ When calculating our dependent variables we are interested in all movements by g
 
 From the GPS point locations collected on each individual, we will calculate home range size using the akde function in the R packages ctmm [@calabrese2016ctmm] and sf [@pebesma2018simple]. We will use a Bayesian model (detailed below) to estimate the following parameters: mean and dispersion (variance) of step lengths and turning angles for each bird on each daily track (@pacheco2019nahua). We will determine whether these parameters governing movement are stable or variable within individuals across days. A small variance would indicate there is low variability (high repeatability) in the daily movement behaviors of the individual. 
 Moreover, we will determine whether grackles show individual differences in consistent use of habitat by overlaying a grid array across the landscape. We will then create matrices describing the number of times a grackle was observed in each cell on each day. High autocorrelation among daily matrices indicates an individual that frequents the same spatial locations across days.
-
-We will determine whether our space use variables vary by season (breeding or non-breeding). If season has no significant effect, all data will be included in our subsequent analyses. If there is a significant effect of season, we will run models separately for each dependent variable and each season. 
 
 We will quantify region-specific grackle density by fitting a hierarchical model that accounts for imperfect detection. Specifically, we will use the model developed by @amundson2014hierarchical which integrates data on time of detection and distance estimates to account for the probability a bird is available to be detected (pa), and the probability it is detected given it is available (pd), respectively (@nichols2009inference). All parameters (density, pa, and pd) will be modeled as a function of region.  Because we expect that vocalization rates will be greater for males than females, we will also model pa as a function of sex. We will extract the estimate of expected point-level density for each reason and use this estimate as the covariate in our movement models.
 
@@ -900,22 +902,22 @@ This means that, with our minimum sample size of 60, we have a 70% chance of det
 data <- read.csv("Space_use.csv", header = T)
 
 # Home range 
-m1 = lm(log(area) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group, data = data)
+m1 = lm(log(area) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group + Season, data = data)
 hist(m1$resid)
 summary(m1)
 
 # Step length 
-m2 = lm(log(std_step)) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group, data = data)
+m2 = lm(log(std_step)) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group + Season, data = data)
 hist(m2$resid)
 summary(m2)
 
 # Turning angle
-m3 = lm(log(std_angle)) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group, data = data)
+m3 = lm(log(std_angle)) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group + Season, data = data)
 hist(H3$resid)
 summary(m3)
 
 # Spatial preferences
-m4 = lm(log(loc_pref)) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group, data = data)
+m4 = lm(log(loc_pref)) ~ ExpObj + ExpEnv + Sex + History + Breeding + Feeding + Condition + Group + Season, data = data)
 hist(H4$resid)
 summary(m4)
 ```
@@ -954,22 +956,22 @@ This means that, with our minimum sample size of 60, we have a 70% chance of det
 data <- read.csv("Space_use.csv", header = T)
 
 # Home range 
-m1 = lm(log(area) ~ Site + Sex + History, data = data)
+m1 = lm(log(area) ~ Site + Sex + History + Season, data = data)
 hist(m1$resid)
 summary(m1)
 
 # Step length
-m2 = lm(log(std_step)) ~ Site + Sex + History, data = data)
+m2 = lm(log(std_step)) ~ Site + Sex + History + Season, data = data)
 hist(m2$resid)
 summary(m2)
 
 # Turning angle
-m3 = lm(log(std_angle)) ~ Site + Sex + History, data = data)
+m3 = lm(log(std_angle)) ~ Site + Sex + History + Season, data = data)
 hist(m3$resid)
 summary(m3)
 
 # Spatial preference
-m4 = lm(log(loc_pref)) ~ Site + Sex + History, data = data)
+m4 = lm(log(loc_pref)) ~ Site + Sex + History + Season, data = data)
 hist(m4$resid)
 summary(m4)
 ```
