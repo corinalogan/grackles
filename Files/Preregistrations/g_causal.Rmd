@@ -454,7 +454,7 @@ library(jtools) #load package for the table
 summ(m1, caption = "Table 3: GLM output.")
 ```
 
-Flexibility comprehensive: In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. There are two basic components: First, we have an updating or learning equation that tells us how attractions to different behavioral options $A_{i,j, t+1}$ (i.e. how preferable option $i$ is to the bird $j$ at time $t+1$) change over time as a function of previous attractions $A_{i ,j, t}$ and recently experienced payoffs $\pi_{i,j,t}$.
+Flexibility comprehensive: In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. There are two basic components: First, we have an updating or learning equation that tells us how attractions to different behavioral options $A_{i,j, t+1}$ (i.e. how preferable option $i$ is to the bird $j$ at time $t+1$) change over time as a function of previous attractions $A_{i ,j, t}$ and recently experienced payoffs $\pi_{i,j,t}$.
 
 $A_{i,j, t+1} = (1-\phi_j) A_{i,j,t} + \phi_j \pi_{i,j,t}$. 
 
@@ -462,16 +462,68 @@ The (bird-specific) parameter $\phi_j$ describes the weight of recent experience
  
  $P(i)_{t+1} = \frac{\exp(\lambda_j A_{i, j, t})}{\sum\limits_{m=1}^{2}\exp(\lambda_j A_{m, j, t})}.$
  
-The parameter $\lambda_j$ represents the exploration rate of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). This closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity ([@bond_serial_2007]). To account for potential differences between experimenters, we also included experimenter ID as random effects (omitted from previous equations to enhance readability). 
+The parameter $\lambda_j$ represents the exploration rate of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). This closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity ([@bond_serial_2007]). To account for potential differences between experimenters, we also include experimenter ID as random effects (omitted from previous equations to enhance readability). 
 
-This analysis resulted in posterior distributions for $\phi_j$ and $\lambda_j$, the two components of behavioral flexibility, for each individual bird. To use these estimates in a GLM predicting causal score, we need to propagate the full uncertainty from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large stan model. We include both parameters as predictors and estimate their respective independent effect on causal score as well as an interaction term. 
+This analysis resulted in posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM predicting causal score, we need to propagate the full uncertainty from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large stan model. We include both parameters as predictors and estimate their respective independent effect on causal score as well as an interaction term. 
 
-```{r cause1, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r reinforcement, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 #Load data
 cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
 
+# Process data for reinforcement learning model
+
+d <- subset(d, d$Reversal != "Control: Yellow Tube")
+d <- subset(d, d$CorrectChoice != -1)
+
+d$Reversal <- as.integer(d$Reversal)
+d$Correct <- as.integer(d$CorrectChoice)
+d$Trial <- as.integer(d$Trial)
+d <- subset(d, is.na(d$Correct) == FALSE)
+
+#Construct choice variable
+d$Choice <- NA
+for (i in 1: nrow(d)) {
+  if (d$Reversal[i] %in% seq(0, max(unique(d$Reversal)), by = 2)){
+    
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 1
+    } else {
+      d$Choice[i] <- 2
+    } 
+  } else {
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 2
+    } else {
+      d$Choice[i] <- 1
+    } 
+  }
+}
+
+# Combined model
+
+#Only birds with causal score
+d_cause <- subset(d, d$ID %in% cause$BirdName)
+
+# Sort birds alphabetically
+d_cause <- d_cause[with(d_cause, order(d_cause$ID)), ]
+cause <- cause[with(cause, order(cause$BirdName)), ]
+
+d_cause$id <- sapply(1:nrow(d_cause), function (i) which(unique(d_cause$ID) == d_cause$ID[i]) )
+d_cause$Expid <-  sapply(1:nrow(d_cause), function (i) which(unique(d$Experimenter) == d$Experimenter[i]) )
+d_cause <- subset(d_cause, select = c(id, Experimenter, Trial, Choice, Correct))
+
+dat <- as.list(d_cause)
+dat$N <- nrow(d_cause)
+dat$N_id <- length(unique(d_cause$id))
+dat$N_exp <- length(unique(d_cause$Expid))
+dat$z <- cause$CausalScore
+
+library(rstan)
+
+m <- stan( file = url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/Reinforcement_GLM.stan.stan") , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))  
 
 ```
 
