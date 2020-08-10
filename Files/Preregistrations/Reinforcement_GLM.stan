@@ -7,7 +7,6 @@ data{
    int N_exp;
    int id[N];
    int Expid[N];
-   int Trial[N];
    int Choice[N];
    int Correct[N];
    real z[N_id];
@@ -62,8 +61,8 @@ b_int ~ normal(0,1);
 
 sigma ~ exponential(1);
 
-logit_phi ~  normal(0,1);
-log_L ~  normal(0,1);
+logit_phi ~  normal(0,2);
+log_L ~  normal(0,2);
 
 // varying effects
 to_vector(z_ID) ~ normal(0,1);
