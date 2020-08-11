@@ -1,33 +1,37 @@
 ---
 title: "Are the more flexible great-tailed grackles also better at inhibition?"
 author: 
- - 'McCune KB^2^'
- - 'MacPherson M^2^'
  - 'Johnson-Ulrich Z^2^'
  - 'Bergeron L^2^'
  - 'Rowney C^1^'
- - 'Seitz B^3^'
  - 'Folsom M^1^'
  - 'Deffner D^1^'
  - '[Logan CJ](http://CorinaLogan.com)^1^'
+ - '[McCune KB](https://www.kelseymccune.com)^2^'
+ - '[MacPherson M](http://maggiepmacpherson.com)^2^'
+ - '[Seitz B](https://benjaminseitz.wixsite.com/mysite)^3^'
  - '[Blaisdell A](http://pigeonrat.psych.ucla.edu)^3^'
  - '[Wascher C](https://www.claudiawascher.com)^4^'
 date: '`r Sys.Date()`'
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  md_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
-  md_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
+always_allow_html: true
+header-includes:
+  - \usepackage[left]{lineno}
+  - \linenumbers
 ---
 
 ##### Affiliations: 
@@ -94,8 +98,9 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
             V5 = colDef(name="Detour % correct"),
             V6 = colDef(name="Detour % correct modified"),
             V7 = colDef(name="Detour pre- or post-reversal"),
-            V8 = colDef(name="Trials to reverse in last reversal"),
-            V9 = colDef(name="Average latency to attempt new solution (MAB)")
+            V8 = colDef(name="Trials to reverse in first reversal"),
+            V9 = colDef(name="Trials to reverse in last reversal"),
+            V10 = colDef(name="Average latency to attempt new solution (MAB)")
           ))
 ```
 
@@ -278,7 +283,7 @@ NOTE (Aug 2020): Because the data are analyzed in a GLM, meaning that there is o
 1) Condition: pre- or post-reversal learning tests
 
 
-##### Interobserver reliability of dependent variables
+##### Unregistered analysis: Interobserver reliability of dependent variables
 
 To determine whether experimenters coded the dependent variables in a repeatable way, hypothesis-blind video coders, Sophie Kaube (detour) and Brynna Hood (go no-go), were first trained in video coding the dependent variables (detour and go no-go: whether the bird made the correct choice or not), requiring a Cohen's unweighted kappa of 0.90 or above to pass training (using the psych package in R @psych). This threshold indicates that the two coders (the experimenter and the video coder) agree with each other to a high degree (@landis1977measurement). After passing training, the video coders coded 24% (detour) and 33% (go no-go) of the videos for each experiment and the unweighted Cohen's kappa was calculated to determine how objective and repeatable scoring was for this variable, while noting that the experimenter had the advantage over the video coder because watching the videos was not as clear as watching the bird participate in the trial from the aisle of the aviaries. The unweighted kappa was used because this is a categorical variable where the distances between the numbers are meaningless (0=incorrect choice, 1=correct choice, -1=did not participate).
 
@@ -356,7 +361,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 #### Data checking
 
-The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009]. If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution [@zuur2009].
+The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009]. If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution [@zuur2009]. Detour data look normal, go no go data are questionable, and both have patternless residuals, therefore we presume normality for both variables.
 
 ```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, fig.cap="**Figure 2.** Part 1. The distribution of the actual data versus what a normal distribution would look like with simulated data. Part 2. Residuals vs fitted: checking for homogeneity, which is satisfied if residuals have an even spread across the x-axis; Normal Q-Q: residuals are normally distributed if they are on the diagonal line; Residuals vs leverage: Cook's distance <1 means no influential observations [@zuur2009]."}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -366,13 +371,13 @@ colnames(d) <- c("Bird","ID","Gonogo150","Gonogo85","Detour","DetourA","Detourpr
 #Check the dependent variables for normality: Histograms
 op <- par(mfrow=c(2,4), mar=c(4,4,2,0.2))
 #This is what the distribution of actual data looks like
-hist(d$Gonogo150, xlab="Go no-go: Trials to criterion", main="Actual Data") #not normally distributed
-hist(d$Gonogo85, xlab="Go no-go: Trials to criterion", main="Actual Data") #much more normally distributed than Gonogo150
+hist(d$Gonogo150, xlab="Go no-go 150: Trials to criterion", main="Actual Data") #not normally distributed
+hist(d$Gonogo85, xlab="Go no-go 85 (unregistered): Trials to criterion", main="Actual Data") #much more normally distributed than Gonogo150
 hist(d$Detour, xlab="Detour: First approach", main="Actual Data")
 
 #Given the actual data, this is what a normal distribution would look like
 Y2 <- rnorm(1281, mean=mean(d$Gonogo150), sd=sd(d$Gonogo150))
-hist(Y2, xlab="Go/no-go: Trials to criterion", main="Simulated Data") #The NAs break this, but looking at the histogram, the data are not normally distributed
+hist(Y2, xlab="Go/no-go 150: Trials to criterion", main="Simulated Data") #The NAs break this, but looking at the histogram, the data are not normally distributed
 
 Z2 <- rnorm(1281, mean=mean(d$Detour), sd=sd(d$Detour))
 hist(Z2, xlab="Detour: First approach", main="Simulated Data")
@@ -388,8 +393,8 @@ plot(glm(d$Detour~d$TrialsLast))
 ##Check the dependent variables for normality: Residuals
 op <- par(mfrow=c(1,3), mar=c(4,4,2,0.2))
 plot(residuals(glm(d$Detour~d$TrialsLast)), ylab="Detour residuals: First approach ~ Trials to reverse")
-plot(residuals(glm(d$Gonogo150~d$TrialsLast)), ylab="Go/no-go 150: Residuals Correct response ~ Trials to reverse")
-plot(residuals(glm(d$Gonogo85~d$TrialsLast)), ylab="Go/no-go 85: Residuals Correct response ~ Trials to reverse")
+plot(residuals(glm(d$Gonogo150~d$TrialsLast)), ylab="Go-no-go 150: Residuals Correct response ~ Trials to reverse")
+plot(residuals(glm(d$Gonogo85~d$TrialsLast)), ylab="Go-no-go 85 (unregistered): Residuals Correct response ~ Trials to reverse")
 #All look patternless. Analyze all three dependent variables.
 ```
 
@@ -442,6 +447,8 @@ library(knitr)
 kable(better1.table, caption="Table U: Model selection output.", format="html", digits=2)
 ```
 
+These analyses were not conducted because the experiment failed due to the grackles never habituating to the test apparatuses.
+
 #### P1: go no-go
 
 **Analysis:** 
@@ -479,7 +486,7 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 ```{r go, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
-colnames(d) <- c("Bird","ID","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost","TrialsLast","AvgLatency")
+colnames(d) <- c("Bird","ID","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost","TrialsFirst","TrialsLast","AvgLatency")
 
 #GLM
 m1 <- glm(Gonogo150 ~ TrialsLast, family="poisson", data=d)
@@ -491,7 +498,20 @@ kable(sm1.table, caption="Table T: Model selection output.", format="html", digi
 
 m2 <- glm(Gonogo85 ~ TrialsLast, family="poisson", data=d)
 sm2 <- summary(m2) #there is no relationship between the number of trials to pass criterion in go no go and the number of trials to reverse a preference (in the last reversal) (though the estimate 0.005 is significant: p<2e-16)
+
+#have a look at the plot to see why m2, but not m1 is positively related
+plot(Gonogo85~TrialsLast, data=d) #Taquito is a huge outlier here and if I look at the rest of the data, I don't see a positive relationship. Need more data to know whether this relationship holds
+
+
+#UNREGISTERED analyses: number of trials to reverse in the first reversal (which will make this data comparable with more species)
+u1 <- glm(Gonogo150 ~ TrialsFirst, family="poisson", data=d)
+su1 <- summary(u1) #there is no relationship between the number of trials to pass criterion in go no go and the number of trials to reverse a preference (in the first reversal)
+
+u2 <- glm(Gonogo85 ~ TrialsFirst, family="poisson", data=d)
+su2 <- summary(u2) #there is no relationship between the number of trials to pass criterion in go no go and the number of trials to reverse a preference (in the first reversal) (though the estimate 0.008 and the standard error is lower than the estimate so it doesn't cross zero, it is is significant: p<2e-16)
 ```
+
+
 
 **Model 2b:** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
