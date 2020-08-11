@@ -468,7 +468,7 @@ The (bird-specific) parameter $\phi_j$ describes the weight of recent experience
  
 The parameter $\lambda_j$ represents the exploration rate of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). This closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity ([@bond_serial_2007]). To account for potential differences between experimenters, we also include experimenter ID as random effects (omitted from previous equations to enhance readability). 
 
-This analysis resulted in posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM predicting causal score, we need to propagate the full uncertainty from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large stan model. We include both parameters as predictors and estimate their respective independent effect on causal score as well as an interaction term. 
+This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM predicting causal score, we need to propagate the full uncertainty from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters as predictors and estimate their respective independent effect on causal score as well as an interaction term. 
 
 ```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
@@ -513,11 +513,11 @@ d_cause <- subset(d, d$ID %in% cause$BirdName)
 
 # Sort birds alphabetically
 d_cause <- d_cause[with(d_cause, order(d_cause$ID)), ]
-cause <- cause[with(cause, order(cause$BirdName)), ]
+cause   <- cause[with(cause, order(cause$BirdName)), ]
 
 d_cause$id <- sapply(1:nrow(d_cause), function (i) which(unique(d_cause$ID) == d_cause$ID[i]) )
 d_cause$Expid <-  sapply(1:nrow(d_cause), function (i) which(unique(d$Experimenter) == d$Experimenter[i]) )
-d_cause <- subset(d_cause, select = c(id, Experimenter, Trial, Choice, Correct))
+d_cause <- subset(d_cause, select = c(id, Expid, Choice, Correct))
 
 dat <- as.list(d_cause)
 dat$N <- nrow(d_cause)
@@ -527,7 +527,125 @@ dat$z <- cause$CausalScore
 
 library(rstan)
 
-m <- stan( file = url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/Reinforcement_GLM.stan.stan") , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))  
+combined_reinforcement_GLM <- "
+
+// This model combines reinforcement learning model and regression of other stuff
+// Including interaction on GLM
+
+data{
+   int N;
+   int N_id;
+   int N_exp;
+   int id[N];
+   int Expid[N];
+   int Choice[N];
+   int Correct[N];
+   real z[N_id];
+}
+
+parameters{
+
+  // Learning model
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;
+  cholesky_factor_corr[2] Rho_ID;
+
+  // Varying effects clustered on experimenter
+  matrix[2,N_exp] z_EXP;
+  vector<lower=0>[2] sigma_EXP;
+  cholesky_factor_corr[2] Rho_EXP;
+
+  // GLM
+  real alpha;
+  real b_phi;
+  real b_lambda;
+  real b_int;
+  real<lower=0> sigma;
+}
+
+transformed parameters{
+
+matrix[N_id,2] v_ID; // varying effects on individuals
+matrix[N_exp,2] v_EXP; // varying effects on experimenter
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+}
+
+model{
+
+matrix[N_id,2] A; // attraction matrix
+vector[N_id] phi_i;
+vector[N_id] lambda_i;
+
+vector[N_id] phi_i_s ;
+vector[N_id] lambda_i_s ;
+
+alpha ~ normal(0,1);
+b_phi ~ normal(0,1);
+b_lambda ~ normal(0,1);
+b_int ~ normal(0,1);
+
+sigma ~ exponential(1);
+
+logit_phi ~  normal(0,2);
+log_L ~  normal(0,2);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+to_vector(z_EXP) ~ normal(0,1);
+sigma_EXP ~ exponential(1);
+Rho_EXP ~ lkj_corr_cholesky(4);
+
+
+// initialize attraction scores
+for ( i in 1:N_id ) A[i,1:2] = rep_vector(0,2)';
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1] + v_EXP[Expid[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi +  v_ID[id[i],2] + v_EXP[Expid[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , 1:2 ] = ( (1-phi)*to_vector(A[ id[i] , 1:2 ]) + phi*pay)';
+
+}//i
+
+// Define bird specific values on the outcome scale and standardize
+
+lambda_i = exp(log_L + v_ID[,1]);
+phi_i = inv_logit(logit_phi + v_ID[,2]);
+
+lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
+phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
+
+z ~ normal(alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s .* phi_i_s, sigma);
+
+}
+
+"
+
+m <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 13))  
 
 ```
 
