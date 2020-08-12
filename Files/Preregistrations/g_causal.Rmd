@@ -464,7 +464,7 @@ summ(m1, caption = "Table 3: GLM output.")
 
 There are two basic components: 
 
-First, we have an updating or learning equation that tells us how attractions to different behavioral options $A_{i,j, t+1}$ (i.e., how preferable option $i$ is to the bird $j$ at time $t+1$) change over time as a function of previous attractions $A_{i ,j, t}$ and recently experienced payoffs $\pi_{i,j,t}$ (i.e., whether they received a reward in a given trial or not).
+First, we have an updating or learning equation that tells us how attractions to different behavioral options $A_{i,j, t+1}$ (i.e., how preferable option $i$ is to the bird $j$ at time $t+1$) change over time as a function of previous attractions $A_{i ,j, t}$ and recently experienced payoffs $\pi_{i,j,t}$ (i.e., whether they received a reward in a given trial or not). Attraction scores thus reflect the accumulated learning history up to this point. 
 
 $A_{i,j, t+1} = (1-\phi_j) A_{i,j,t} + \phi_j \pi_{i,j,t}$. 
 
@@ -476,7 +476,7 @@ The second major part of the model expresses the probability an individual $j$ c
  
 The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). This closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. To account for potential differences between experimenters, we also included experimenter ID as a random effect (omitted from previous equations to enhance readability, but available in the code below). 
 
-This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM that predicts their causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on causal score as well as an interaction term. 
+This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM that predicts their causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on causal score as well as an interaction term.
 
 ```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
@@ -658,27 +658,10 @@ m <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000, cor
 
 
 
-### NOTE: To make the model work, need to set up a few things... (this took Logan a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next)
+### NOTE: To make the model work, you need to set up a few things... (this took Logan a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next). 
 
-###Update R
-#install installr package
-#updateR(TRUE) #didn't work bc it can't find my R folder on my computer
-#updateR(fast = FALSE, browse_news, install_R, copy_packages, copy_Rprofile.site, keep_old_packages, update_packages, start_new_R, quit_R, print_R_versions = TRUE, GUI = TRUE, to_checkMD5sums = FALSE, keep_install_file = FALSE, download_dir = "/Users/corina/Library/R", silent = FALSE, setInternet2 = TRUE, cran_mirror = "https://cran.rstudio.com/") #didn't work bc it can't find my R folder on my computer
-#manually updated R and reinstalled packages
+###It's best to go to https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started for instructions on how to install stan (and other dependencies) on your computer and get started. There are also plenty of stan fora where you find answers to most common problems at https://discourse.mc-stan.org/. 
 
-###Install rethinking
-#install package devtools
-#devtools::install_github("rmcelreath/rethinking",ref="Experimental")
-
-###Install xcode (first download the app from the app store)
-#In terminal, type: "xcode-select --install"
-
-###Get STAN working https://github.com/rmcelreath/rethinking
-#Install C++ toolchain and configuration https://github.com/stan-dev/rstan/wiki/Installing-RStan-from-source-on-a-Mac
-#install.packages("Rcpp", repos = "https://rcppcore.github.io/drat") 
-#Then install rstan per instructions at the previous link
-
-###Now we're ready to go!
 ```
 
 
@@ -742,6 +725,8 @@ This research is carried out in accordance with permits from the:
 **Folsom:** Data collection, revising/editing.
 
 **MacPherson:** Data collection, data interpretation, revising/editing.
+
+**Deffner:** Implementation and interpretation of reinforcement learning model, revising/editing.
 
 **Logan:** Hypothesis development, data analysis and interpretation, write up, revising/editing, materials/funding.
 
