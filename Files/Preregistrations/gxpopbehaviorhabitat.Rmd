@@ -84,7 +84,7 @@ We may decide to present the results from different hypotheses in separate artic
 
 **Prediction 1 alternative 1:** **Human-modified environments are suitable habitat for grackles** (e.g., @selander1961analysis, @johnson2001great, @wehtje2003range), **and the amount of human-modified environments has and is increasing** (e.g., @liu2020high). If the original behaviors exhibited by this species happen to be suited to the uniformity of human-modified landscapes (e.g., urban, agricultural, etc. environments are modified in similar ways across Central and North America), then the averages and/or variances of these traits will be similar in the grackles sampled from populations across their range (Table 1). *This supports the hypothesis* that, because this species is closely associated with human-modified environments, which may be similar across the geographic range of this species, individuals in new areas may not need to learn very much about their new environment: they can eat familiar foods and access these foods in similar ways across their range (e.g., fast food restaurant chains likely make the same food and package it in the same packaging in Central and North America, outdoor cafes and garbage cans also look the same across their range). Alternatively, it is possible that 2.9 generations at the edge site is too long after their original establishment date to detect differences in the averages and/or variances (though evidence from experimental evolution suggests that, even after 30 generations there is no change in certain behaviors when comparing domestic guinea pigs with 30 generations of wild-caught captive guinea pigs @kunzl2003wild, whereas artificial selection can induce changes in spatial ability in as little as two generations @kotrschal2013artificial). If the sampled individuals had already been living at this location for long enough (or for their whole lives) to have learned what they need about this particular environment (e.g., there may no longer be evidence of increased flexibility/innovativeness/exploration/persistence), there may be no reason to maintain population diversity in these traits to continue to learn about this environment. We will not be able to distinguish between these two alternatives within alternative 1 because populations closer to the northern edge of this species' range were too small for us to establish such a field site.
 
-![**Figure 1.** What plays a larger role in a rapid range expansion: behavior changes or suitable habitat changes? A visual representation of Q1 (top) and Q2 (bottom).](gxpopbehaviorhabitatFig1.png)
+![**Figure 1.** What is the role of behavior in a rapid range expansion? A visual representation of Q1 and Q2. The colors represent the edge (yellow), middle (red), and core (white) populations in Figure 3.](gxpopbehaviorhabitatFig1.png)
 
 ![**Figure 2.** Experimental protocol. Great-tailed grackles from the core, middle, and edge populations will be tested for their: (top left) flexibility (number of trials to reverse a previously learned color tube-food association); (middle) innovativeness (number of options [lift, swing, pull, push] solved to obtain food from within a multi-access log); (bottom left) persistence (proportion of trials participated in during flexibility and innovativeness tests); and (far right) exploration (latency to approach/touch a novel object).](gxpopbehaviorhabitatFig2.png)
 
@@ -119,7 +119,7 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
 
 **Prediction 5:** **Some inherent trait allows GTGR to expand even though both species have unused habitat available to them**. *This supports the hypothesis* that the original behavior of GTGR was already well adapted to facilitate a range expansion.
 
-![**Figure 3.** Ecological niche modeling of the presence/absence of great-tailed grackles (GTGR; left), which are rapidly expanding their geographic range, and boat-tailed grackles (BTGR; right), which are not. The presence/absence map layer will be overlaid over habitat layers to determine habitat suitability and availability. Map credit: eBird.org.](gxpopbehaviorhabitatFig3.png)
+![**Figure 3.** Ecological niche modeling of the presence/absence of great-tailed grackles (GTGR; left), which are rapidly expanding their geographic range, and boat-tailed grackles (BTGR; right), which are not. The presence/absence map layer will be overlaid over habitat layers to determine habitat suitability and availability. The colors represent the edge (yellow), middle (red), and core (white) populations. Map credit: eBird.org.](gxpopbehaviorhabitatFig3.png)
 
 
 
@@ -394,6 +394,86 @@ precis(post3,depth=2)
 #Then install rstan per instructions at the previous link
 
 ###Now we're ready to go!
+
+
+
+
+
+#### NOW keep means the same across pops and change the mu standard deviations, reduce the sigma variance so we expect less measurement error (sigma=10) otherwise the large expectation of measurement error (previously sigma=40) overshadows any actual differences attributable to SD differences across individuals within a site
+### SIMULATION: Manipulate mu mean, mu sd, and n (grackles)
+#Simulate data for the model
+n <- 45 #number of grackles in total across all sites (~20/site; AZ=20)
+sites <- matrix(nrow=n,ncol=4) #store data here
+colnames(sites)<-c("trials","mu","sigma","site")
+
+for (i in 1:(n/3)){
+  mu1 <- rnorm( 1 , 91 , 15 ) #mu for site 1
+  sigma1 <- runif( 1 , 0 , 10 ) #sigma for site 1
+  trials <- rnorm(1,mu1,sigma1) #distribution for trials
+  
+  sites[i,1]<-trials
+  sites[i,2]<-mu1
+  sites[i,3]<-sigma1
+  sites[i,4]<-1 #site
+}
+
+for (i in ((n/3)+1):((n/3)+(n/3))){
+  mu2 <- rnorm( 1 , 91 , 25 ) #mu for site 2
+  sigma2 <- runif( 1 , 0 , 10 ) #sigma for site 2
+  trials <- rnorm(1,mu2,sigma2) #distribution for trials
+  
+  sites[i,1]<-trials
+  sites[i,2]<-mu2
+  sites[i,3]<-sigma2
+  sites[i,4]<-2 #site
+}
+
+for (i in ((n/3)+(n/3)+1):n){
+  mu3 <- rnorm( 1 , 91 , 45 ) #mu for site 3
+  sigma3 <- runif( 1 , 0 , 10 ) #sigma for site 3
+  trials <- rnorm(1,mu3,sigma3) #distribution for trials
+  
+  sites[i,1]<-trials
+  sites[i,2]<-mu3
+  sites[i,3]<-sigma3
+  sites[i,4]<-3 #site
+}
+
+### THE MODEL - added SITE to sigma!
+dat <- list(trials = as.numeric(sites[,1]),
+            site = as.integer(sites[,4])
+) #This sets up the data sheet with the simulated data that the model will run on
+
+s1 <- ulam(
+  alist(
+trials ~ dnorm(mu[site],sigma[site]),
+mu[site] ~ dnorm(91,21),
+sigma[site] ~ dunif(0,40)
+),data=dat, log_lik=TRUE, messages=FALSE) #This is the model
+
+#Plot it
+labels <- paste( "mu[" , 1:3 , "]:" , levels(dat$site) , sep="" ) 
+plot( precis( s1 , depth=2 , pars="mu" ) , labels=labels ,  xlab="expected trials to reverse" ) #contrasts plot p.157
+
+#Summary data
+precis(s1,depth=2) #depth=2 means to show any vector parameters (p.156)
+
+#Compute pairwise contrasts
+#Comparing sites 1 and 2
+post1 <- extract.samples(s1) 
+post1$diff_12 <- post1$sigma[,1] - post1$sigma[,2] #subtract the SD (in the mu term) for site 2 from the SD for site 1. col1=site 1, col2=site 2
+precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
+#hist(post1$diff_12) #another way of visualizing it
+
+#Comparing sites 1 and 3
+post2 <- extract.samples(s1) 
+post2$diff_13 <- post2$sigma[,1] - post2$sigma[,3] 
+precis(post2,depth=2)
+
+#Comparing sites 2 and 3
+post3 <- extract.samples(s1) 
+post3$diff_23 <- post3$sigma[,2] - post3$sigma[,3] 
+precis(post3,depth=2)
 ```
 
 We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 at each site if the average number of trials to reverse a preference differs by >13 trials, and the standard deviation is a maximum of 21 at each site (Table 2). For a sample size of 20 at each site, which is more like what we expect, we will be able to detect site differences if the average number of trials to reverse a preference differs by >11 trials, and the standard deviation is a maximum of 23 at each site  (Table 2).
@@ -420,6 +500,32 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
             V12 = colDef(name="Notes")
           ))
 ```
+
+To investigate the degree to which we can detect differences in the variances between sites, we ran another version of the **mathematical model** using a sample size of 15 per site and we held the mean number of trials to reverse a preference constant between all populations. We then changed the $\alpha$ standard deviations and performed pairwise site contrasts. We determined that it will be difficult to detect meaningful differences in variances in the number of trials to reverse a preference between sites (Table 3). 
+
+**Table 3.** Simulation outputs from varying the $\alpha$ standard deviations (the variance). We calculate pairwise contrasts between the estimated standard deviations from the posterior distribution: if for a large sample the difference is both positive and negative and crosses zero (yes), then we are not able to detect differences between the two sites. If the differences between the means are all on one side of zero for 89% of the posterior samples (no), then we are able to detect differences between the two sites. We chose the 89% interval based on [@statrethinkingbook]. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites.
+
+```{r tableparam, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+d <- read.csv ("/Users/corina/GitHub/grackles/Files/Preregistrations/gxpopbehaviorhabitat_Table2.csv", header=F, sep=",", stringsAsFactors=F) 
+
+library(reactable)
+reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
+          columns = list(
+            V1 = colDef(name="Response variable"),
+            V2 = colDef(name="n"),
+            V3 = colDef(name="mu1"),
+            V4 = colDef(name="mu2"),
+            V5 = colDef(name="mu3"),
+            V6 = colDef(name="mu1_sd"),
+            V7 = colDef(name="mu2_sd"),
+            V8 = colDef(name="mu3_sd"),
+            V9 = colDef(name="Difference crosses zero? S1-S2"),
+            V10 = colDef(name="Difference crosses zero? S1-S3"),
+            V11 = colDef(name="Difference crosses zero? S2-S3"),
+            V12 = colDef(name="Notes")
+          ))
+```
+
 
 **Results (using our actual data)**
 
