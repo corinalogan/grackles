@@ -151,7 +151,7 @@ We will stop collecting data on wild-caught grackles in Q1 and Q2 (data for Q3 a
   
   - **Dispersal:** DNA is collected from the grackles, processed, and analyzed for pairwise relatedness using ddRADseq and Stacks as in @sevchik2019dispersal ([protocol](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html)).
   
-  - **Habitat:** We will conduct ecological niche modeling to investigate grackle presence as it overlaps with available habitat across their range. Grackles will be considered as present or absent in a particular geographic area based on sightings reported at eBird.org. We identified suitable habitat variables from @selander1961analysis, @johnson2001great, and @post1996boat (e.g., types of suitable land cover including wetlands, marine coastal, arable land, grassland, mangrove, urban), and we added additional variables relevant to our hypotheses (e.g., distance to nearest uninhabited suitable habitat patch to the north, presence/absence of water in the area). A suitable habitat map will be generated across the Americas using GIS.
+  - **Habitat:** We will conduct ecological niche modeling to investigate grackle presence as it overlaps with available habitat across their range. Grackles will be considered as present or absent in a particular geographic area based on sightings reported at eBird.org. We identified suitable habitat variables from @selander1961analysis, @johnson2001great, and @post1996boat (e.g., types of suitable land cover including wetlands, marine coastal, arable land, grassland, mangrove, urban), and we added additional variables relevant to our hypotheses (e.g., distance to nearest uninhabited suitable habitat patch to the north, presence/absence of water in the area). A suitable habitat map will be generated across the Americas using ecological niche models.
 
 #### Open data (Q1 & Q2)
 
@@ -165,7 +165,7 @@ When the study is complete, the data will be published in the Knowledge Network 
 
 #### Blinding during analysis
 
-Blinding is usually not involved in the final analyses because the experimenters collect the data (and therefore have seen some form of it) and run the analyses. Hypotheses- and data-blind video coders are recruited to conduct interobserver reliability of 20% of the videos for each experiment.
+Blinding is usually not involved in the final analyses because the experimenters collect the data (and therefore have seen some form of it) and run the analyses. Hypothesis- and data-blind video coders are recruited to conduct interobserver reliability of 20% of the videos for each experiment.
 
 
 ### E. ANALYSIS PLAN
@@ -735,6 +735,7 @@ hist(rnorm(10000,mean=1350,sd=500)) #this gives us a range from 0-3000 sec, whic
 hist(rpois(1000,1350)) #1000=sample size, mean=1350 sec
 
 ### SIMULATIONS: GAMMA-POISSON
+## NOTE: we varied the sample size and mean to explore the boundaries of differences we would be able to detect between sites. However, we did not vary the variance because in this equation, the mean and variance are tied together.
 #FYI this is a useful resource for gamma poisson distributions https://en.wikipedia.org/wiki/Gamma_distribution
 #Lambda * phi = variance. NOTE: lambda=mu, and phi is sometimes called scaling factor or scale
 
@@ -830,7 +831,7 @@ post3$diff_23 <- post3$a[,2] - post3$a[,3]
 precis(post3,depth=2)
 ```
 
-We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 at each site or 20 at each site if the average latency to approach the object differs by at least 450 sec at each site (Table 2). We kept the shape of the curve (which can be thought of as similar to a standard deviation) the same across sites because we do not think this assumption will change across populations (i.e., there will be lots of variation at each site with some individuals approaching almost immediately, others in the middle of the session, and others near the end).
+We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 at each site or 20 at each site if the average latency to approach the object differs by at least 450 sec at each site (Table 2). We kept the shape of the curve (which can be thought of as similar to a standard deviation) the same across sites because we do not think this assumption will change across populations (i.e., there will be lots of variation at each site with some individuals approaching almost immediately, others in the middle of the session, and others near the end). 
 
 **Results (using our actual data)**
 
@@ -866,10 +867,10 @@ hist(rnorm(n,mean=275,sd=27)) #mean number of total trials, based on the estimat
 hist(inv_logit(rnorm(2000,mean=0,sd=1.5))) #what do we expect the probability of participating to be? A flat line. And that's what this gets us. 2000 sample size, mean=0 (0.5 probability on inverse logit scale), sd is of our expectation of the prior - doesn't have to have anything to do with what happens in the actual population. The larger the SD, the less certain we are about what we expect
 
 #Manipulate these variables
-n <-60 #number of grackles in total across all 3 sites
-site1mean<-0.67 #site 1 alpha mean: proportion of trials participated in
-site2mean<-0.75
-site3mean<-0.83
+n <-45 #number of grackles in total across all 3 sites
+site1mean<-0.70 #site 1 alpha mean: proportion of trials participated in
+site2mean<-0.70
+site3mean<-0.70
 asd1 <- 0.25 #site 1 alpha sd: proportion of trials participated in
 asd2 <- 0.25 #site 2 alpha sd
 asd3 <- 0.25 #site 3 alpha sd
@@ -903,7 +904,7 @@ for (i in ((2*n/3)+1):n) {
 
 testdata$optout <- testdata$totaltrials-testdata$participated #Populate the optout column: Calculate the trials not participated in: subtract participated in from the total
 
-#RUN THE MODEL (this is the simulated data that the model (below) will use) Generate values for simulated individuals from 3 simulated sites: vary the alpha site mean (expected number of trials participated in and whether sites differ) and alpha sd (the noise in the population in the number of trials participated in), and sample size
+#RUN THE MODEL (this is the simulated data that the model (below) will use) Generate values for simulated individuals from 3 simulated sites: vary the alpha site mean (expected number of trials participated in and whether sites differ) and alpha sd (the noise/variance in the population in the number of trials participated in), and sample size
 dat_list <- list( participated = as.integer(testdata$participated),
                   totaltrials = as.integer(testdata$totaltrials),
                   site = as.integer(testdata$site) )
@@ -941,7 +942,7 @@ post3$diff_23 <- inv_logit(post3$a[,2]) - inv_logit(post3$a[,3])
 precis(post3,depth=2)
 ```
 
-We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 per site or 20 per site if the average proportion of trials participated in differs by at least 0.08 and the standard deviation is generally a maximum of 0.25 at each site (Table 2).
+We then ran the **mathematical model** and performed pairwise contrasts and determined that we will be able to detect differences between sites with a sample size of 15 per site or 20 per site if the average proportion of trials participated in differs by at least 0.08 and the standard deviation is generally a maximum of 0.25 at each site (Table 2). We will be able to detect differences in the variances (standard deviation) between sites when they differ by at least 0.1 (Table 3).
 
 **Results (using our actual data)**
 
