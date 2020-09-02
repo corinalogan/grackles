@@ -91,7 +91,7 @@ Evidence of causal cognition in grackles would be apparent by an interaction in 
 options(width=60)
 d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causalTable1.csv", header = F, sep = ",", stringsAsFactors = F)
 
-colnames(d)<-c("Cases","Sum of squares","df","Mean square","F","p","eta squared")
+colnames(d)<-c("Cases","Sum of squares","df","Mean square","F","p","eta^2")
 
 knitr::kable(d)
 ```
@@ -124,12 +124,23 @@ There was no evidence that those birds with lower causal scores were faster to r
 
 **Table 3.** Results from the GLM: causal score ~ number of trials in last reversal.
 
-[INSERT TABLE 3]
+```{r cause1results, eval=T, warning=F, results='asis', echo=T, include=T}
+cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
+d<-data.frame(cause)
+
+#GLM with response variable = causal cognition score
+m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
+#summary(m1)
+
+#load packages for the output table
+library(jtools) 
+library(huxtable)
+suppressMessages(export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE)))
+```
 
 To further tease apart potential cognitive components underlying flexibility, we developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment (“Flexibility comprehensive”). Through a computational Bayesian reinforcement learning model including bird and experimenter ID as random effects, we obtained individual-level estimates for each bird’s random choice and learning rates (see Analysis Plan > Prediction 1 > Flexibility comprehensive for details). We validated the model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem], and we found that this parameterization accurately reproduces learning curves observed in real animals (see Figure 3).
 
-![**Figure 3.** Proportion of correct choices per color preference trial for Santa Barbara, California great-tailed grackles (N = 8; top), and “birds” simulated from the reinforcement learning model using parameter estimates (N = 8; bottom). Dashed vertical lines indicate color reversal. Error bars show standard errors of the means.](g_causalFig2.jpg)
-
+![**Figure 3.** Proportion of correct choices per color preference trial for Santa Barbara, California great-tailed grackles (N = 8; top), and “birds” simulated from the reinforcement learning model using parameter estimates (N = 8; bottom). Dashed vertical lines indicate color reversal. Error bars show standard errors of the means.](g_causalFig3.png)
 
 The following results are presented as posterior means and 89% highest posterior density intervals (HPDI). Using the individual-level estimates to predict causal scores in a GLM, we did not find robust associations between either learning rate (= 0.03, HPDI = -0.63 - 0.69) or random choice rate (= -0.40, HPDI = -0.96 - 0.25) and birds’ causal scores. There was also no interaction between the estimates of the two learning parameters in the model ( x = 0.01, HPDI = -0.95 - 0.97).
 
@@ -514,7 +525,7 @@ If the data do not appear normally distributed, visually check the residuals. If
 
 NOTE: July 2020: We realized that using the number of key pecks to the screen as a dependent variable and placing condition as an independent variable, would not tell us anything about whether the bird used causal cognition. To determine whether they use causal cognition, we needed one score per bird that accounts for their performance in the intervene conditions relative to the observe conditions (see the Results section for equation details). Now that we have one score per bird, the model changed from a GLMM to a GLM because there will only be one row of data per bird, and we removed condition as an independent variable. Additionally, the causal score has a Gaussian distribution because it is a continuous measurement.
 
-```{r cause1, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r cause1, eval=T, warning=F, results='asis', echo=T, include=T}
 cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
 d<-data.frame(cause)
 
@@ -528,13 +539,11 @@ m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
 #m3 <- glm(CausalScore ~ FlexComp, family="gaussian", data=d)
 #summary(m3)
 
-library(jtools) #load package for the table
-#library(kableExtra)
-#summ.glm(m1, model.info = getOption("summ-model.info", TRUE))
-
-#You can force knitr to give the console style of output by setting the chunk option render = 'normal_print' https://cran.r-project.org/web/packages/jtools/vignettes/summ.html
-#library(knitr)
-#knit_print(m1, render = 'normal_print')
+#load packages for the output table
+library(jtools) 
+library(huxtable)
+#summ(m1) #This results in 3 tables showing the outputs, but I only want one table so use export_summs
+suppressMessages(export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) #suppressMessages gets rid of the text saying that the broom package overwrites something in jtools
 ```
 
 **Flexibility comprehensive:** In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. 
