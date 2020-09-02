@@ -10,17 +10,17 @@ author:
 - '[Logan CJ](http://CorinaLogan.com)^3^'
 date: '`r Sys.Date()`'
 output:
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
-  md_document: 
-    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
+  md_document: 
+    toc: true
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
@@ -37,13 +37,10 @@ header-includes:
 *Corresponding author: blaisdell@psych.ucla.edu
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE) #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
-```
-
-```{r}
-#Make code wrap text so it doesn't go off the page when Knitting to PDF
 library(knitr)
-opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE) #Make code wrap text so it doesn't go off the page when Knitting to PDF
+
+knitr::opts_chunk$set(echo = TRUE) #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 ```
 
 &nbsp;
@@ -79,7 +76,7 @@ The current experiment adapted the procedure used by @blaisdell2006causal to stu
 
 Our results indicate whether grackles exhibited causal inference, whether it was related to behavioral flexibility, and whether causal cognition might be worth considering in the context of how a species is able to rapidly expand its geographic range.
 
-![**Figure 1.** Actual design for experiment 1: Test figures adapted from @blaisdell2006causal. In the Training phase, subjects first learn to peck at a food key to elicit food from the food hopper. Subjects then receive trials during which the white star is presented on the screen followed by a tone, and then they receive two types of trials interspersed within each training session: 1) the white star followed by food or 2) the noise and food presented at the same time. In the Test phase, those individuals in the Observation condition hear a tone or a noise while seeing only the food key on the screen, but individuals in the intervene condition can elicit the tone or noise by pecking at separate response keys that elicit those auditory stimuli. The prediction is that if individuals form a common cause model such that star produces tone and food, observing the tone should lead to individuals to expect food (indicated by the subject pecking the screen), because if tone is on, circle caused it, and it also caused food. Meanwhile, if they intervene to produce the tone, they will not expect food (i.e., they will not peck the screen) because they know their intervention caused the tone and not the circle (which also causes food). Additionally, observing noise should also lead an expectation of food (i.e., pecking the screen) because noise and food were paired simultaneously during training. Meanwhile, even if they intervene and cause the noise they should still expect food (i.e., peck the screen) because when the noise is on food is available regardless of what caused it (because the noise and the food were paired simultaneously). (T=tone, L=light, F=food, P=peck key)](g_causalExp1actual.png)
+![**Figure 1.** Actual design for experiment 1: Test figures adapted from @blaisdell2006causal. In the Training phase, subjects first learn to peck at a food key to elicit food from the food hopper. Subjects then receive trials during which the white star is presented on the screen followed by a tone, and then they receive two types of trials interspersed within each training session: 1) the white star followed by food or 2) the noise and food presented at the same time. In the Test phase, those individuals in the Observation condition hear a tone or a noise while seeing only the food key on the screen, but individuals in the intervene condition can elicit the tone or noise by pecking at separate response keys that elicit those auditory stimuli. The prediction is that if individuals form a common cause model such that star produces tone and food, observing the tone should lead to individuals to expect food (indicated by the subject pecking the screen), because if tone is on, circle caused it, and it also caused food. Meanwhile, if they intervene to produce the tone, they will not expect food (i.e., they will not peck the screen) because they know their intervention caused the tone and not the circle (which also causes food). Additionally, observing noise should also lead an expectation of food (i.e., pecking the screen) because noise and food were paired simultaneously during training. Meanwhile, even if they intervene and cause the noise they should still expect food (i.e., peck the screen) because when the noise is on food is available regardless of what caused it (because the noise and the food were paired simultaneously). (T=tone, L=light, F=food, P=peck key)](g_causalExp1actualsm.png)
 
 ### RESULTS
 
@@ -95,10 +92,12 @@ d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Fil
 
 colnames(d)<-c("Cases","Sum of squares","df","Mean square","F","p","eta^2")
 
-knitr::kable(d)
+library(kableExtra)
+knitr::kable(d) %>%
+kable_styling(full_width = T, position = "left")
 ```
 
-![**Figure 2.** Mean screen pecks per trial per bird (n=8 grackles) in the Intervene (open circles) and Observe (black squares) conditions depending on whether the audio cue was the tone or noise. Within individual performances are shown by the lines connecting the circles to the squares. The bars indicate the group average per condition (light gray=Intervene, dark gray=Observe).](g_causalFig2sm.jpg){width=60%}
+![**Figure 2.** Mean screen pecks per trial per bird (n=8 grackles) in the Intervene (open circles) and Observe (black squares) conditions depending on whether the audio cue was the tone or noise. Within individual performances are shown by the lines connecting the circles to the squares. The bars indicate the group average per condition (light gray=Intervene, dark gray=Observe).](g_causalFig2sm.jpg){width=70%}
 
 
 #### Do causal cognition scores relate to behavioral flexibility performance?
@@ -119,7 +118,9 @@ d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Fil
 
 colnames(d)<-c("Bird name","Bird ID","Causal score","Number of trials to reverse last preference","Avg. seconds to switch options MAB")
 
-knitr::kable(d)
+library(kableExtra)
+knitr::kable(d) %>%
+kable_styling(full_width = T, position = "left")
 ```
 
 There was no evidence that those birds with lower causal scores were faster to reverse their most recent preference because there was no relationship between these two variables (Table 3). 
@@ -136,8 +137,9 @@ m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
 
 #load packages for the output table
 library(jtools) 
-library(huxtable)
-suppressMessages(export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE)))
+#library(huxtable)
+base::suppressMessages(jtools::export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) #suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
+knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) #this prevents an issue with xcolor package when rendering to PDF
 ```
 
 To further tease apart potential cognitive components underlying flexibility, we developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment (“Flexibility comprehensive”). Through a computational Bayesian reinforcement learning model including bird and experimenter ID as random effects, we obtained individual-level estimates for each bird’s random choice and learning rates (see Analysis Plan > Prediction 1 > Flexibility comprehensive for details). We validated the model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem], and we found that this parameterization accurately reproduces learning curves observed in real animals (see Figure 3).
@@ -392,27 +394,27 @@ library(irr) #ICC package
 # did Sierra Planck pass interobserver reliability training? No, but unclear whether the original coders were correct so CL coded bird 87's video to check. 
 
 #Number of times pecked screen = SC & CL match enough after a bit more coding, MM doesn't match (in Intervene didn't seem to count the peck to the screen that initiated the trial)
-pmm <- c(0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,1,1,0,0,3,0,0) #live coder data from NumberOfTimesPeckedScreen for videos below (bird 64 then 87)
-psc <- c(0,0,0,0,0,0,0,0,0,0,0,0,1,2,4,1,1,2,1,1,1,1,1,1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
-pcl <- c(0,0,0,0,0,0,0,0,0,0,0,0,1,2,1,1,2,2,1,1,1,2,1,1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+pmm <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 1, 1, 0, 0, 3, 0, 0) #live coder data from NumberOfTimesPeckedScreen for videos below (bird 64 then 87)
+psc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 1, 1, 2, 1, 1, 1, 1, 1, 1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+pcl <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2, 1, 1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
 da <- data.frame(pmm,psc)
 da2 <- data.frame(pcl,psc)
 icc(da, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.16
 icc(da2, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.69. Would be 0.92 if the 4 in SC's was changed to a 1 bc of the clarification in the instructions (only count the peck that starts the tone, not the pecks before it bc the trial hasn't technically started yet). Have CL & SC code 1 more video w data in this column to pass
 
 #Number of times head entered food hopper = SC & CL almost exactly match, MM doesn't match
-hmm <- c(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0,0) #live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
-hsc <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
-hcl <- c(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+hmm <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0) #live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
+hsc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+hcl <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
 data <- data.frame(hmm,hsc)
 data2 <- data.frame(hcl,hsc)
 icc(data, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.51
 icc(data2, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.79 only 1 point different
 
 #Number of seconds searching for food = no pairs pass
-smm <- c(1,0,1,1,6,0,0,0,1,0,1,0,2,3,2,3,2,3,1,1,2,3,3,1) #live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
-ssc <- c(4,2,2,2,5,1,1,0,2,0,1,0,1,2,2,4,3,2,1,1,1,2,3,1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
-scl <- c(8,3,5,4,10,3,1,2,7,6,5,1,5,5,5,6,3,7,1,3,3,4,5,2) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+smm <- c(1, 0, 1, 1, 6, 0, 0, 0, 1, 0, 1, 0, 2, 3, 2, 3, 2, 3, 1, 1, 2, 3, 3, 1) #live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
+ssc <- c(4, 2, 2, 2, 5, 1, 1, 0, 2, 0, 1, 0, 1, 2, 2, 4, 3, 2, 1, 1, 1, 2, 3, 1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+scl <- c(8, 3, 5, 4, 10, 3, 1, 2, 7, 6, 5, 1, 5, 5, 5, 6, 3, 7, 1, 3, 3, 4, 5, 2) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
 dat <- data.frame(smm,ssc)
 dat2 <- data.frame(scl,ssc)
 icc(dat, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.71
@@ -421,20 +423,20 @@ icc(dat2, model = "oneway", type = "consistency", unit = "single", conf.level = 
 
 ##26 March 2020: SC & CL additionally coded bird 64's intervene videos to see if it improved matching (after revising the instructions as well). Data analyzed here are the videos above plus: A064LR 2019-12-19 Causal Test Intervene S1 T1 (pt. 1) and A064LR 2019-12-19 Causal Test Intervene S1 T1 (pt. 2)
 #Number of times pecked screen = SC & CL don't match enough after a bit more coding
-psc <- c(0,0,0,0,0,0,0,0,0,0,0,0,1,2,4,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1) #37 data points
-pcl <- c(0,0,0,0,0,0,0,0,0,0,0,0,1,2,1,1,2,2,1,1,1,2,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1) 
+psc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 1, 1, 2, 1, 1, 1, 1, 1, 1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1) #37 data points
+pcl <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1) 
 da <- data.frame(pcl,psc)
 icc(da, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.69
 
 #Number of times head entered food hopper = SC & CL almost match
-hsc <- c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0) #37 data points
-hcl <- c(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0)
+hsc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) #37 data points
+hcl <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0)
 data <- data.frame(hcl,hsc)
 icc(data, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.85
 
 #Number of seconds searching for food = don't match
-ssc <- c(4,2,2,2,5,1,1,0,2,0,1,0,1,2,2,4,3,2,1,1,1,2,3,1,1,2,2,2,2,0,6,2,4,8,10,8,4) #37 data points
-scl <- c(8,3,5,4,10,3,1,2,7,6,5,1,5,5,5,6,3,7,1,3,3,4,5,2,4,7,4,8,4,2,9,4,2,13,7,11,4)
+ssc <- c(4, 2, 2, 2, 5, 1, 1, 0, 2, 0, 1, 0, 1, 2, 2, 4, 3, 2, 1, 1, 1, 2, 3, 1, 1, 2, 2, 2, 2, 0, 6, 2, 4, 8, 10, 8, 4) #37 data points
+scl <- c(8, 3, 5, 4, 10, 3, 1, 2, 7, 6, 5, 1, 5, 5, 5, 6, 3, 7, 1, 3, 3, 4, 5, 2, 4, 7, 4, 8, 4, 2, 9, 4, 2, 13, 7, 11, 4)
 dat <- data.frame(scl,ssc)
 icc(dat, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.39
 
@@ -539,9 +541,9 @@ m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
 
 #load packages for the output table
 library(jtools) 
-library(huxtable)
-#summ(m1) #This results in 3 tables showing the outputs, but I only want one table so use export_summs
-suppressMessages(export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) #suppressMessages gets rid of the text saying that the broom package overwrites something in jtools
+#library(huxtable)
+base::suppressMessages(jtools::export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) #suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
+knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) #this prevents an issue with xcolor package when rendering to PDF
 ```
 
 **Flexibility comprehensive:** In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. 
