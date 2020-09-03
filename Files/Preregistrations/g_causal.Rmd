@@ -1,26 +1,26 @@
 ---
 title: Do the more flexible individuals rely more on causal cognition? Observation versus intervention in causal inference in great-tailed grackles
 author: 
-- 'Rowney C^3^'
-- 'Folsom M^3^'
-- 'Deffner D^3^'
 - '[Blaisdell A](http://pigeonrat.psych.ucla.edu)^1^'
 - '[Seitz B](https://benjaminseitz.wixsite.com/mysite)^1^'
+- 'Rowney C^3^'
+- 'Folsom M^3^'
 - '[MacPherson M](http://maggiepmacpherson.com)^2^'
+- 'Deffner D^3^'
 - '[Logan CJ](http://CorinaLogan.com)^3^'
 date: '`r Sys.Date()`'
 output:
+  pdf_document:
+    keep_tex: no
+    latex_engine: xelatex
+  md_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
-  md_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
@@ -38,9 +38,11 @@ header-includes:
 
 ```{r setup, include=FALSE}
 library(knitr)
-opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE) #Make code wrap text so it doesn't go off the page when Knitting to PDF
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE) 
+#Make code wrap text so it doesn't go off the page when Knitting to PDF
 
-knitr::opts_chunk$set(echo = TRUE) #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
+knitr::opts_chunk$set(echo = TRUE) 
+#sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 ```
 
 &nbsp;
@@ -125,7 +127,7 @@ kable_styling(full_width = T, position = "left")
 
 There was no evidence that those birds with lower causal scores were faster to reverse their most recent preference because there was no relationship between these two variables (Table 3). 
 
-**Table 3.** Results from the GLM: causal score ~ number of trials in last reversal.
+**Table 3.** Results from the GLM: causal score ~ number of trials in last reversal. The estimate and (standard error) are shown.
 
 ```{r cause1results, eval=T, warning=F, results='asis', echo=T, include=T}
 cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -138,8 +140,10 @@ m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
 #load packages for the output table
 library(jtools) 
 #library(huxtable)
-base::suppressMessages(jtools::export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) #suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
-knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) #this prevents an issue with xcolor package when rendering to PDF
+base::suppressMessages(jtools::export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) 
+#suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
+knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) 
+#this prevents an issue with xcolor package when rendering to PDF
 ```
 
 To further tease apart potential cognitive components underlying flexibility, we developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment (“Flexibility comprehensive”). Through a computational Bayesian reinforcement learning model including bird and experimenter ID as random effects, we obtained individual-level estimates for each bird’s random choice and learning rates (see Analysis Plan > Prediction 1 > Flexibility comprehensive for details). We validated the model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem], and we found that this parameterization accurately reproduces learning curves observed in real animals (see Figure 3).
@@ -394,27 +398,38 @@ library(irr) #ICC package
 # did Sierra Planck pass interobserver reliability training? No, but unclear whether the original coders were correct so CL coded bird 87's video to check. 
 
 #Number of times pecked screen = SC & CL match enough after a bit more coding, MM doesn't match (in Intervene didn't seem to count the peck to the screen that initiated the trial)
-pmm <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 1, 1, 0, 0, 3, 0, 0) #live coder data from NumberOfTimesPeckedScreen for videos below (bird 64 then 87)
-psc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 1, 1, 2, 1, 1, 1, 1, 1, 1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
-pcl <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2, 1, 1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+pmm <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 1, 1, 0, 0, 3, 0, 0) 
+#live coder data from NumberOfTimesPeckedScreen for videos below (bird 64 then 87)
+psc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 4, 1, 1, 2, 1, 1, 1, 1, 1, 1) 
+#video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+pcl <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2, 1, 1) 
+#video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
 da <- data.frame(pmm,psc)
 da2 <- data.frame(pcl,psc)
-icc(da, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.16
-icc(da2, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.69. Would be 0.92 if the 4 in SC's was changed to a 1 bc of the clarification in the instructions (only count the peck that starts the tone, not the pecks before it bc the trial hasn't technically started yet). Have CL & SC code 1 more video w data in this column to pass
+icc(da, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) 
+#=0.16
+icc(da2, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) 
+#=0.69. Would be 0.92 if the 4 in SC's was changed to a 1 bc of the clarification in the instructions (only count the peck that starts the tone, not the pecks before it bc the trial hasn't technically started yet). Have CL & SC code 1 more video w data in this column to pass
 
 #Number of times head entered food hopper = SC & CL almost exactly match, MM doesn't match
-hmm <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0) #live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
-hsc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
-hcl <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+hmm <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0) 
+#live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
+hsc <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0) 
+#video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+hcl <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0) 
+#video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
 data <- data.frame(hmm,hsc)
 data2 <- data.frame(hcl,hsc)
 icc(data, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.51
 icc(data2, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.79 only 1 point different
 
 #Number of seconds searching for food = no pairs pass
-smm <- c(1, 0, 1, 1, 6, 0, 0, 0, 1, 0, 1, 0, 2, 3, 2, 3, 2, 3, 1, 1, 2, 3, 3, 1) #live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
-ssc <- c(4, 2, 2, 2, 5, 1, 1, 0, 2, 0, 1, 0, 1, 2, 2, 4, 3, 2, 1, 1, 1, 2, 3, 1) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
-scl <- c(8, 3, 5, 4, 10, 3, 1, 2, 7, 6, 5, 1, 5, 5, 5, 6, 3, 7, 1, 3, 3, 4, 5, 2) #video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+smm <- c(1, 0, 1, 1, 6, 0, 0, 0, 1, 0, 1, 0, 2, 3, 2, 3, 2, 3, 1, 1, 2, 3, 3, 1) 
+#live coder data from NumberOfTimesHeadEnteredFoodHopper for videos below (bird 64 then 87)
+ssc <- c(4, 2, 2, 2, 5, 1, 1, 0, 2, 0, 1, 0, 1, 2, 2, 4, 3, 2, 1, 1, 1, 2, 3, 1) 
+#video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
+scl <- c(8, 3, 5, 4, 10, 3, 1, 2, 7, 6, 5, 1, 5, 5, 5, 6, 3, 7, 1, 3, 3, 4, 5, 2) 
+#video coder data from  for video A064LR 2019-12-20 Causal Test Observe S1 T1 and A087AG 2020-01-22 Causal Test Intervene S1 T1
 dat <- data.frame(smm,ssc)
 dat2 <- data.frame(scl,ssc)
 icc(dat, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.71
@@ -452,7 +467,8 @@ data  #Check to make sure it looks right
 # Note: c(2,3) is telling R to look at columns 2 ('1HeadEnteredHopper') and 3 ('2HeadEnteredHopper') and compare them. Double check this:
 data[,2]
 data[,3]
-icc(data[,c(2,3)], model="oneway", type="consistency", unit="single", conf.level=0.95) # ICC = 0.70 (95% Confidence Interval: 0.52-0.82)
+icc(data[,c(2,3)], model="oneway", type="consistency", unit="single", conf.level=0.95) 
+# ICC = 0.70 (95% Confidence Interval: 0.52-0.82)
 ```
 
 ### E. ANALYSIS PLAN
@@ -506,7 +522,8 @@ d<-data.frame(cause)
 ##Check the dependent variables for normality: Histograms
 op <- par(mfrow=c(2,2), mar=c(4,4,2,0.2))
 #This is what the distribution of actual data looks like
-hist(d$CausalScore, xlab="Causal score", main="Actual Data") #it has a tail on the right, but not on the left
+hist(d$CausalScore, xlab="Causal score", main="Actual Data") 
+#it has a tail on the right, but not on the left
 
 #Given the actual data, this is what a normal distribution would look like
 Y2 <- rnorm(1281, mean=mean(d$CausalScore), sd=sd(d$CausalScore))
@@ -514,7 +531,8 @@ hist(Y2, xlab="Causal score", main="Simulated Data")
 
 ##Check the dependent variable for normality: Q-Q plot
 op <- par(mfrow=c(1,4), mar=c(4,4,2,0.2))
-plot(glm(d$CausalScore~d$TrialsReverseLast)) #residuals look normally distributed, Cook's distance 0.8 or lower. So the data are clear to analyze.
+plot(glm(d$CausalScore~d$TrialsReverseLast)) 
+#residuals look normally distributed, Cook's distance 0.8 or lower. So the data are clear to analyze.
 ```
 
 If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution (Figure 4) [@zuur2009]. The data were normally distributed.
@@ -542,8 +560,10 @@ m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
 #load packages for the output table
 library(jtools) 
 #library(huxtable)
-base::suppressMessages(jtools::export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) #suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
-knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) #this prevents an issue with xcolor package when rendering to PDF
+base::suppressMessages(jtools::export_summs(m1, model.names=c("Causal score ~ Trials to reverse"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) 
+#suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
+knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) 
+#this prevents an issue with xcolor package when rendering to PDF
 ```
 
 **Flexibility comprehensive:** In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. 
@@ -794,10 +814,6 @@ This research is carried out in accordance with permits from the:
 **Blaisdell:** Hypothesis development, experimental design, data analysis and interpretation, revising/editing, write up.
 
 **Seitz:** Programmed the touchscreen experiment, experimental design, data analysis and interpretation, revising/editing.
-
-**Johnson-Ulrich:** Touchscreen programming, revising/editing.
-
-**Bergeron:** Data collection, revising/editing.
 
 **Rowney:** Data collection, revising/editing.
 
