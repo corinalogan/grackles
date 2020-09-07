@@ -191,7 +191,9 @@ This means that, with a sample size of 89, we would have an 86% chance of detect
 
 
 ```{r p1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv ("/Users/corina/GTGR/data/data_condition.csv", header=T, sep=",", stringsAsFactors=F) 
+
+setwd("~/Documents/Grackle project")
+d <- read.csv("data_condition.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Factor the random effect variables
 Experimenter <- as.factor(d$Experimenter)
@@ -203,6 +205,15 @@ library(MCMCglmm)
 
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
+colnames(d) = c("Date","Aviary","ID","FatScore","mass","Ltarsus","Rtarsus","tarsus","Lwing","Rwing","wing","Season","Experimenter","notes")
+
+### Determine which measure will go into the calculaation of SMI to be the "Body" variable ###
+#which structural body size measure shows a higher correlation with body mass?
+cor.test(d$tarsus,d$mass) # r = 0.75, p < 0.001
+cor.test(d$wing,d$mass) # r = 0.92, p < 0.001
+### wing length will be the structural body measure that we use for SMI
+
+
 #Data checking for GLMM
 simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(FatScore ~ Body + Season, random=~Experimenter, family="ordinal", data=d, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
@@ -213,9 +224,6 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 plotResiduals(Body, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 plotResiduals(Season, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#which structural body size measure shows a higher correlation with body mass?
-cor.test(tarsus,mass)
-cor.test(wing,mass)
 
 #repeatability of structural body mass measurements ("Body" represents either wing length or tarsus length, whichever was more correlated with body mass)
 rpt(log(Body) ~ (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 500, npermut = 500)
