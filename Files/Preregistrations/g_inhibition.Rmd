@@ -64,7 +64,7 @@ Erin Vogel (2019) Adapting to a changing environment: advancing our understandin
 
 ### ABSTRACT
 
-It is thought that those individuals who are more behaviorally flexible (measured as reversal learning) must also be better at inhibiting because one should need to inhibit a previously learned behavior to change their behavior when the task changes [the flexibility component; @manrique_repeated_2013; @griffin2014innovation; @liu2016learning]. However, @homberg2007serotonin showed that rats with improved inhibition (due to gene knock outs) did not perform better in a reversal learning experiment (a measure of behavioral flexibility) than non-knock out rats. These results challenge the assumption that inhibition is involved in making flexible decisions. We test the hypothesis that behavioral flexibility requires inhibition by measuring both variables in the same individuals. We set out to measure grackle inhibition in three experiments (delay of gratification, go-no go, detour) to determine whether those individuals that are more flexible (measured as reversal learning and solution switching on a puzzlebox by @logan2019flexmanip) are also better at inhibiting. We were not able to run the delay of gratification experiment because the grackles never habituated to the apparatuses, therefore the inhibition results come from the go no-go and detour experiments. Touch screen experiments had never been conducted in this species before, and it was one of our goals to validate whether this set up is viable for running an inhibition task on wild-caught adult grackles. We found that the grackles were able to learn to use the touch screen and to complete the go no-go test on it, thus validating the use of this set up for future experiments. Results showed that neither inhibition test correlated with either measure of behavioral flexibility, indicating that inhibition and flexibility are two separate traits. Performance on the two inhibition tests, go no-go and detour, did not correlate with each other, indicating that they do not measure the same trait. Performance on the detour test was not affected by extensive experience obtaining food from tubes in the reversal learning test because grackles who received detour before reversal did not perform differently from those who received detour after reversal. We consider the go no-go test a more accurate measure of inhibition because it requires an active decision to inhibit a motor behavior, rather than a passive form of motor inhibition as in the detour task. 
+It is thought that those individuals who are more behaviorally flexible (measured as reversal learning) must also be better at inhibiting because one should need to inhibit a previously learned behavior to change their behavior when the task changes [the flexibility component; @manrique_repeated_2013; @griffin2014innovation; @liu2016learning]. However, @homberg2007serotonin showed that rats with improved inhibition (due to gene knock outs) did not perform better in a reversal learning experiment (a measure of behavioral flexibility) than non-knock out rats. These results challenge the assumption that inhibition is involved in making flexible decisions. We test the hypothesis that behavioral flexibility requires inhibition by measuring both variables in the same individuals. We set out to measure grackle inhibition in three experiments (delay of gratification, go-no go, detour) to determine whether those individuals that are more flexible (measured as reversal learning and solution switching on a puzzlebox by @logan2019flexmanip) are also better at inhibiting. We were not able to run the delay of gratification experiment because the grackles never habituated to the apparatuses, therefore the inhibition results come from the go no-go and detour experiments. Touch screen experiments had never been conducted in this species before, and it was one of our goals to validate whether this set up is viable for running an inhibition task on wild-caught adult grackles. We found that the grackles were able to learn to use the touch screen and to complete the go no-go test on it, thus validating the use of this set up for future experiments. Results showed that neither inhibition test correlated with either measure of behavioral flexibility, indicating that inhibition and flexibility are two separate traits. However, a posthoc analysis of the go no-go data using a different passing criterion (number of trials to reach 85% correct, rather than needing to get 100% correct by trial 150 and 85% correct thereafter) showed a positive correlation with the number of trials to reverse a preference. We are reluctant to rely on this result because it was a posthoc analysis and the relationship appeared entirely due to one outlier. We would need a larger sample size to determine whether this is a reliable result. Performance on the two inhibition tests, go no-go and detour, did not correlate with each other, indicating that they do not measure the same trait. Performance on the detour test was not affected by extensive experience obtaining food from tubes in the reversal learning test because grackles who received detour before reversal did not perform differently from those who received detour after reversal. We consider the go no-go test a more accurate measure of inhibition because it requires an active decision to inhibit a motor behavior, rather than a passive form of motor inhibition as in the detour task. 
 
 ### [Video summary](https://youtu.be/TXFOYqZztf4)
 
@@ -748,34 +748,83 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 The reliability of the inhibition tests will be calculated using Cronbach's Alpha (as in @friedman2004relations; R package: psych [@psych], function: alpha), which is indicated by std.alpha in the output.
 
 ```{r reliability, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-dat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datareliabilityanalysis.csv"), header=F, sep=",", stringsAsFactors=F)
+dat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datareliabilityanalysis.csv"), header=T, sep=",", stringsAsFactors=F)
 dat <- data.frame(dat)
-colnames(dat) <- c("Gonogo150","Gonogo85","Detour","DetourA")
-#Note: n=8 grackles in this analysis & 1 is female
+#Note: n=8 grackles participated in both of these tests (1 is female). Had to make IDs numeric for the code below to run
+
+#From http://personality-project.org/r/r.guide.html#alpha "correlate the 5 items, rounded off to 2 decimals, use pairwise cases"
+round(cor(dat,use="pair"),2)             
+#correlations: go no-go 150 and detour=0.50, go no-go 85 and detour=0.40, go no-go 150 and detoura=0.70, go no-go 85 and detoura=0.29, go no-go 150 and 85=0.23, detour and detoura=0.73
+
+#define a function to find the alpha coefficient
+alpha.scale=function (x,y)   #create a reusable function to find coefficient alpha
+	#input to the function are a scale and a data.frame of the items in the scale
+        {
+                Vi=sum(diag(var(y,na.rm=TRUE)))     #sum of item variance
+                Vt=var(x,na.rm=TRUE)                #total test variance
+                n=dim(y)[2]     #how many items are in the scale?  (calculated dynamically)
+                ((Vt-Vi)/Vt)*(n/(n-1))}             #alpha
+
+#find the alpha for the scale E1 made up of the 5 items in E1.df 
+E.alpha=alpha.scale(dat,dat)  
+E.alpha
 
 library(psych)
-reliab <- alpha(dat, check.keys=TRUE) 
+datdf <- with(dat,data.frame(gng150, detour)) #another way to create the data.frame
+alpha(datdf) 
+
+reliab <- psych::alpha(dat) 
 #Check.keys automatically reverses the coding for variables that are negatively correlated with the total scale. How to interpret: http://data.library.virginia.edu/using-and-interpreting-cronbachs-alpha/ "If all of the scale items are entirely independent from one another (i.e., are not correlated or share no covariance), then alpha = 0; and, if all of the items have high covariances, then alpha will approach 1 as the number of items in the scale approaches infinity. In other words, the higher the alpha coefficient, the more the items have shared covariance and probably measure the same underlying concept."
 summary(reliab)
 #Insert into text: `r reliab$std.alpha`
 ```
 
-When comparing all three tests, alpha= .
+
 
 #### P2: correlation across inhibition tasks
 
 **See analysis description for P1 alternative 2.** 
 
 ```{r reliability2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-rel2 <- read.csv ("/Users/corina/GTGR/data/data_inhibition2.csv", header=T, sep=",", stringsAsFactors=F) 
+dat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datareliabilityanalysis.csv"), header=T, sep=",", stringsAsFactors=F)
+dat <- data.frame(dat)
+#Note: n=8 grackles participated in both of these tests (1 is female). Had to make IDs numeric for the code below to run
+
+
+#From http://personality-project.org/r/r.guide.html#alpha 
+attach(dat) #make this the active path
+dat1=gng150+detour
+dat2=data.frame(gng150+detour)
+summary(dat2)
+
+#"correlate the 5 items, rounded off to 2 decimals, use pairwise cases"
+round(cor(dat2,use="pair"),2)             
+#correlations: go no-go 150 and detour=0.50, go no-go 85 and detour=0.40, go no-go 150 and detoura=0.70, go no-go 85 and detoura=0.29, go no-go 150 and 85=0.23, detour and detoura=0.73
+
+#define a function to find the alpha coefficient
+alpha.scale=function (x,y)   #create a reusable function to find coefficient alpha
+	#input to the function are a scale and a data.frame of the items in the scale
+        {
+                Vi=sum(diag(var(y,na.rm=TRUE)))     #sum of item variance
+                Vt=var(x,na.rm=TRUE)                #total test variance
+                n=dim(y)[2]     #how many items are in the scale?  (calculated dynamically)
+                ((Vt-Vi)/Vt)*(n/(n-1))}             #alpha
+
+#find the alpha for the scale E1 made up of the 5 items in E1.df 
+E.alpha=alpha.scale(dat1,dat2)  
+E.alpha
+detach(dat)
 
 library(psych)
-reliab2 <- alpha(rel2, check.keys=TRUE)
+datdf <- with(dat,data.frame(gng150, detour)) #another way to create the data.frame
+alpha(datdf) 
+
+reliab2 <- psych::alpha(dat, n.var="2") 
+#Check.keys automatically reverses the coding for variables that are negatively correlated with the total scale. How to interpret: http://data.library.virginia.edu/using-and-interpreting-cronbachs-alpha/ "If all of the scale items are entirely independent from one another (i.e., are not correlated or share no covariance), then alpha = 0; and, if all of the items have high covariances, then alpha will approach 1 as the number of items in the scale approaches infinity. In other words, the higher the alpha coefficient, the more the items have shared covariance and probably measure the same underlying concept."
 summary(reliab2)
-#Insert into text: `r reliab2$std.alpha`
 ```
 
-When analyzing only the delayed gratification and go no-go tasks, the reliability is alpha= *fill in result when data are available*.
+When analyzing the go no-go and detour tasks, the reliability is alpha=`r reliab$std.alpha`. 
 
 #### P3: does training improve detour performance?
 
