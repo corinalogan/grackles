@@ -671,7 +671,7 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 ```
 
 
-**Model 2b: latency to respond in the go no-go experiment** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+**Model 2b: latency to respond in the go no-go experiment** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01 after lag 0; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 NOTE (Sep 2020): we changed the distribution to Gaussian (with an identity link) because MCMCglmm would not run on a Poisson (it kept saying there were negative integers even after we removed them). A Gaussian distribution also works for this kind of data because the response variable is a latency in seconds.
 
@@ -707,20 +707,36 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_data_gonogoExperimenter.csv"), header=T, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
 
-#Remove the trials where grackles did not participate
-d1 <- d[!d$CorrectChoice==-1,] 
+#Remove trials that grackles didn't participate in, & Queso who didn't complete this experiment
+d1 <- d[!d$CorrectChoice==-1  & !d$ID=="Queso",] 
 
 #Set numeric and factors so MCMCglmm will run
 d1$LatencyFirstPeckToScreen <- as.numeric(d1$LatencyFirstPeckToScreen)
 d1$Trial <- as.numeric(d1$Trial)
 d1$CorrectChoice <- as.factor(d1$CorrectChoice)
+d1$ID <- as.factor(d1$ID)
+
+#Make a figure
+plot(d1$CorrectChoice,d1$LatencyFirstPeckToScreen, ylab="Latency of first peck to screen per trial (seconds)", xlab="Choice")
+plot(d1$ID,d1$CorrectChoice, ylab="Choice", xlab="ID")
+plot(d1$Trial,d1$LatencyFirstPeckToScreen, ylab="Latency of first peck to screen per trial (seconds)", xlab="Choice"), pch=19 #need correct choice and by ID
+
+#trying to get the figure i want - check Zuur et al for ideas
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(3,4,0.2,0.2))
+plot(d1$Trial,d1$LatencyFirstPeckToScreen, ylab="Latency of first peck to screen per trial (seconds)", xlab="Choice", pch=19)
+abline(lm(d1$LatencyFirstPeckToScreen ~ d1$Trial))
+points(jacks_afffreqMC$Age, jacks_afffreqMC$Frequency)
+abline(lm(jacks_afffreqMC$Frequency ~ jacks_afffreqMC$Age), lty=3)
+legend(x="topright", legend=c(pch19="PC", pch1="MC"), pch=c(19,1), box.lty=1)
+mtext("Age",side=1,line=2,outer=FALSE,adj=0.5,font=1,cex=1)
+par(op)
+
 
 #GLMM
 library(MCMCglmm)
-#prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),G=list(G1=list(V=1,nu=0))))
 prior2 = list(G=list(G1=list(V=1,nu=0)))
 
-go <- MCMCglmm(LatencyFirstPeckToScreen ~ CorrectChoice * Trial, random=~ID, family="gaussian", data=d1, verbose=F, prior=prior2, nitt=3000000, thin=1000, burnin=1200000)
+go <- MCMCglmm(LatencyFirstPeckToScreen ~ CorrectChoice * Trial, random=~ID, family="gaussian", data=d1, verbose=F, prior=prior2, nitt=5000000, thin=10000, burnin=3000000)
 #gaussian = identity link for mcmcglmm https://cran.r-project.org/web/packages/MCMCglmm/vignettes/Overview.pdf
 summary(go)
 autocorr(go$Sol) 
@@ -941,6 +957,8 @@ This research is carried out in accordance with permits from the:
 **Blaisdell:** Experimental design (go no-go task), data interpretation, revising/editing.
 
 **Folsom:** Data collection, data interpretation, revising/editing.
+
+**Deffner:** Data analysis (Flexibilitx 4 model), revising/editing.
 
 **Wascher:** Hypothesis development, experimental design (delayed gratification and detour tasks), data analysis and interpretation, write up, revising/editing.
 
