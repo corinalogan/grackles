@@ -105,6 +105,8 @@ reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=
 
 #### Prediction 1: go no-go
 
+**Model 2a: Number of trials**
+
 There was no correlation between the number of trials to pass criterion in the go no-go experiment and the number of trials to reverse a preference in the colored tube reversal experiment (in their **last reversal**) when using our original go no-go passing criterion (if 100% correct is not reached by trial 150, then they pass when they reach 85% correct after trial 150, measured in the most recent 20 trial block; Table 2). Nine grackles participated in the go no-go experiment and they passed criterion in an average of 178 trials (standard deviation: 15, range: 160 trials to not passing before the experiment ended at 200 trials).
 
 ##### Unregistered analyses
@@ -158,6 +160,40 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #library(knitr)
 #kable(sm1.table, caption="Table T: Model selection output.", format="html", digits=2)
 ```
+
+**Model 2b: Latency to peck screen**
+
+The model examining the latency of the first peck to the screen per trial (response variable) in association with whether the response was correct or not and the trial number did not converge. Therefore, we cannot include the analysis here or make conclusions based on it. Additionally, there was a problem matching the latency data across data sheets. Latency data was brought in from the PsychoPy data sheets, however the number of trials reported by the experimenter and by PsychoPy sometimes differed for reasons that are unclear. Therefore, the first latency to peck the screen is not completely accurately matched between the two data sheets.
+
+```{r golatencyResults, eval=T, warning=F, results='asis', echo=T, include=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_data_gonogoExperimenter.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- data.frame(d)
+
+#Remove trials that grackles didn't participate in, & Queso who didn't complete this experiment
+d1 <- d[!d$CorrectChoice==-1  & !d$ID=="Queso",] 
+
+#Set numeric and factors so MCMCglmm will run
+d1$LatencyFirstPeckToScreen <- as.numeric(d1$LatencyFirstPeckToScreen)
+d1$Trial <- as.numeric(d1$Trial)
+d1$CorrectChoice <- as.factor(d1$CorrectChoice)
+d1$ID <- as.factor(d1$ID)
+
+#Figure: x=trial number,  y=latency to peck screen, by choice (wrong, correct on go trial, correct on no go trial)
+wrong <- d1[d1$CorrectChoice=="0",]
+go <- d1[d1$CorrectChoice=="1",]
+nogo <- d1[d1$CorrectChoice=="2",]
+
+op <- par(mfrow=c(3,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(wrong$Trial,wrong$LatencyFirstPeckToScreen, ylab="Latency first peck/trial (s)", xlab="", xlim=c(0,300), cex=2)
+mtext("Incorrect choice",side=3,line=0,cex=1.5)
+plot(go$Trial,go$LatencyFirstPeckToScreen, ylab="Latency first peck/trial (s)", xlab="", xlim=c(0,300), cex=2)
+mtext("Correct choice: Go trials",side=3,line=0,cex=1.5)
+plot(nogo$Trial,nogo$LatencyFirstPeckToScreen, ylab="Latency first peck/trial (s)", xlab="Trial number", xlim=c(0,300), cex=2)
+mtext("Correct choice: No Go trials",side=3,line=0,cex=1.5)
+par(op)
+```
+
+**Figure 1.** The latency to the first peck on the screen per trial across trials according to whether they made the incorrect choice (top), the correct choice on the Go trials (middle), or the correct choice on the No Go trials (bottom).
 
 #### Prediction 1: detour
 
@@ -718,32 +754,18 @@ d1$Trial <- as.numeric(d1$Trial)
 d1$CorrectChoice <- as.factor(d1$CorrectChoice)
 d1$ID <- as.factor(d1$ID)
 
-#Figure: x=trial number,  y=latency to peck screen, by choice (wrong, correct on go trial, correct on no go trial)
-wrong <- d1[d1$CorrectChoice=="0",]
-go <- d1[d1$CorrectChoice=="1",]
-nogo <- d1[d1$CorrectChoice=="2",]
-
-op <- par(mfrow=c(1,3), oma=c(0,0,0,0), mar=c(4,4,2,0.2))
-plot(wrong$Trial,wrong$LatencyFirstPeckToScreen, ylab="Latency of first peck to screen per trial (seconds): incorrect choice", xlab="Trial number")
-mtext("Incorrect chioce",side=3,line=0)
-plot(go$Trial,go$LatencyFirstPeckToScreen, ylab="Latency of first peck to screen per trial (seconds): correct choice Go trials", xlab="Trial number")
-mtext("Correct chioce: Go trials",side=3,line=0)
-plot(nogo$Trial,nogo$LatencyFirstPeckToScreen, ylab="Latency of first peck to screen per trial (seconds): correct choice No Go trials", xlab="Trial number")
-mtext("Correct chioce: No Go trials",side=3,line=0)
-par(op)
-
-
 #GLMM
 library(MCMCglmm)
 prior2 = list(G=list(G1=list(V=1,nu=0)))
 
-go <- MCMCglmm(LatencyFirstPeckToScreen ~ CorrectChoice * Trial, random=~ID, family="gaussian", data=d1, verbose=F, prior=prior2, nitt=5000000, thin=5000, burnin=2500000)
+go <- MCMCglmm(LatencyFirstPeckToScreen ~ CorrectChoice * Trial, random=~ID, family="gaussian", data=d1, verbose=F, prior=prior2, nitt=3000000, thin=8000, burnin=2800000)
 #gaussian = identity link for mcmcglmm https://cran.r-project.org/web/packages/MCMCglmm/vignettes/Overview.pdf
 summary(go)
 autocorr(go$Sol) 
-#Did fixed effects converge? No, changed nitt and burning from 13000 and 3000 respectively
+#Did fixed effects converge? No, changed nitt and burning from 13000 and 3000 respectively but nothing is getting it to converge
 autocorr(go$VCV) 
-#Did random effects converge?
+#Did random effects converge? No, changed nitt and burning from 13000 and 3000 respectively but nothing is getting it to converge
+#The model did not converge so cannot include it in the results section
 ```
 
 #### P1: detour
