@@ -4,28 +4,31 @@
 
 &ast; = undergraduate co-author
 
-***Preregistrations: passed pre-study peer review at PCI Ecology***
+### Post-study articles: passed pre-study peer review at PCI Ecology & currently in post-study peer review at PCI Ecology
+
+  - &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html)**. (http://corinalogan.com/Preregistrations/gdispersal_manuscript.html) In principle acceptance by *PCI Ecology* of the version on 29 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100036) peer review history.
+
+
+### Preregistrations: passed pre-study peer review at PCI Ecology
 
 1) Logan CJ, MacPherson M, Rowney C, Bergeron L, Seitz B, Blaisdell A, Folsom M, Johnson-Ulrich Z, Sevchik A, McCune K. 2019. **[Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](http://corinalogan.com/Preregistrations/g_flexmanip.html)** (http://corinalogan.com/Preregistrations/g_flexmanip.html) In principle acceptance by *PCI Ecology* of the version on 26 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True) peer review history.
 
-2) McCune K, MacPherson M, Rowney C, Bergeron L, Folsom M, Logan CJ. 2019. **[Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](http://corinalogan.com/Preregistrations/g_exploration.html)** (http://corinalogan.com/Preregistrations/g_exploration.html) In principle acceptance by *PCI Ecology* of the version on 27 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True) peer review history.
+2) McCune K, MacPherson M, Rowney C, Bergeron L, Folsom M, Deffner D, Breen A, Logan CJ. 2019. **[Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](http://corinalogan.com/Preregistrations/g_exploration.html)** (http://corinalogan.com/Preregistrations/g_exploration.html) In principle acceptance by *PCI Ecology* of the version on 27 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True) peer review history.
 
-3) Logan CJ, McCune K, MacPherson M, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, Folsom M, Wascher CAF. 2019. **[Are the more flexible individuals also better at inhibition?](http://corinalogan.com/Preregistrations/g_inhibition.html)** (http://corinalogan.com/Preregistrations/g_inhibition.html) In principle acceptance by *PCI Ecology* of the version on 6 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True) peer review history.
+3) Logan CJ, McCune K, MacPherson M, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, Folsom M, Deffner D, Wascher CAF. 2019. **[Are the more flexible individuals also better at inhibition?](http://corinalogan.com/Preregistrations/g_inhibition.html)** (http://corinalogan.com/Preregistrations/g_inhibition.html) In principle acceptance by *PCI Ecology* of the version on 6 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=32&reviews=True) peer review history.
 
-4) Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Folsom M, MacPherson M, Logan CJ. 2019. **[Do the more flexible individuals rely more on causal cognition? Observation versus intervention in causal inference in great-tailed grackles](http://corinalogan.com/Preregistrations/g_causal.html)**. (http://corinalogan.com/Preregistrations/g_causal.html) In principle acceptance by *PCI Ecology* of the version on 31 Jan 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) peer review history.
+4) Blaisdell A, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Folsom M, MacPherson M, Deffner D, Logan CJ. 2019. **[Do the more flexible individuals rely more on causal cognition? Observation versus intervention in causal inference in great-tailed grackles](http://corinalogan.com/Preregistrations/g_causal.html)**. (http://corinalogan.com/Preregistrations/g_causal.html) In principle acceptance by *PCI Ecology* of the version on 31 Jan 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) peer review history.
    - Note: this preregistration is also at the [Open Science Framework](https://osf.io/g5tnh/) because it occurred before the GitHub repository was created. I posted the .Rmd file here at GitHub to implement version tracking. 
 
 5) Logan CJ, Lukas D, Bergeron L, Folsom M, McCune K. 2019. **[Is behavioral flexibility related to foraging and social behavior in a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_flexforaging.html)** (http://corinalogan.com/Preregistrations/g_flexforaging.html) In principle acceptance by *PCI Ecology* of the version on 6 Aug 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=35&reviews=True) peer review history.
 
  - D) McCune K, McElreath R, Logan CJ. 2019. **[Investigating the use of learning mechanisms in a species that is rapidly expanding its geographic range](http://corinalogan.com/Preregistrations/g_sociallearning.html)**. (http://corinalogan.com/Preregistrations/g_sociallearning.html). In principle acceptance by *PCI Ecology* of the version on 11 Oct 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_sociallearning.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100032) peer review history.
  
-  - F) &ast;Sevchik A, Logan CJ, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal.html)**. (http://corinalogan.com/Preregistrations/gdispersal.html) In principle acceptance by *PCI Ecology* of the version on 29 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100036) peer review history.
-
  - G) &ast;Berens JM, Logan CJ, Folsom M, Bergeron L, McCune KB. 2019. **[Validating morphological condition indices and their relationship with reproductive success in great-tailed grackles](http://corinalogan.com/Preregistrations/gcondition.html)**. (http://corinalogan.com/Preregistrations/gcondition.html) In principle acceptance by *PCI Ecology* of the version on 8 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100035) peer review history.
 
  - H) Folsom MA, MacPherson M, Lukas D, McCune KB, Bergeron L, Bond A, Blackwell A, Rowney C, Logan CJ. 2020. **[Repeated parental care by adult male great-tailed grackles and its association with hormones, fitness, specific populations, and mating strategies](http://corinalogan.com/Preregistrations/gmalecare.html)**. (http://corinalogan.com/Preregistrations/gmalecare.html) In principle acceptance by *PCI Ecology* of the version on 15 Jun 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gmalecare.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gmalecare.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100054) peer review history.
  
-***Preregistrations***
+### Preregistrations
 
 *(Note: preregistrations A-C were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
 
@@ -37,23 +40,29 @@
  
  - E) McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2019. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd) version)
  
- - I) Logan CJ, McCune KB, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd) version)
+ - I) Logan CJ, McCune KB, Breen A, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd) version)
 
 *Preregistrations are study plans that are written before the data are collected (or before analyzing the data when using data that already exist). We get them peer reviewed before we conduct the study to ensure that we get the most out of the resources we invest by correcting any issues before they arise. Additionally, once a preregistration has passed pre-study peer review, it is almost guaranteed to be published upon a quick post-study peer review, which checks to make sure we did what we said we were going to do and if there were any deviations, that these deviations maintain the scientific validity of the work.*
 
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
-***Open Materials***
+### Open Materials
 
 - [Multiaccess box](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) (3D printer and laser cutter) for [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md)
 
  - [PsychoPy2 code](https://github.com/corinalogan/grackles/tree/master/Files/TouchscreenPsychoPy2code) for touchscreen experiments
  
- - How to modify the [bownet](https://gitlab.com/corinalogan/the-grackle-project/blob/master/README.md) trapping method and protocols to increase safety
- 
- - Protocol: [nest checks](https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolNestCheck.pdf) to collect indicators of nest building, egg laying behavior, nestling and fledgling presence, and nest failure
+ - Protocol: [nest checks](https://github.com/corinalogan/grackles/blob/master/Files/Protocols/protocolNestCheck.pdf) to collect indicators of nest building, egg laying behavior, nestling and fledgling presence, and nest failure
 
-- Protocol: [biometrics](https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolBiometrics.pdf)
+- Protocol: [biometrics](https://github.com/corinalogan/grackles/blob/master/Files/Protocols/protocolBiometrics.pdf)
+
+**How to increase safety when using the bownet trapping method**
+ - Bownet deployment [protocol](https://github.com/corinalogan/grackles/blob/master/Files/Protocols/Bownet/GrackleBownetTrapDeploymentProtocol.pdf)
+ - Bownet training [checklist](https://github.com/corinalogan/grackles/blob/master/Files/Protocols/Bownet/Bownet_training_checklist.pdf)
+ - Bownet training [tracking](https://github.com/corinalogan/grackles/blob/master/Files/Protocols/Bownet/BownetTrainingTracking.ods) data sheet
+ - [Poster](https://github.com/corinalogan/grackles/blob/master/Files/Protocols/Bownet/2019-06-24_AOS_poster_bownet_modification.pdf) presented by Luisa Bergeron at the American Ornithological Society meeting in June 2019 in Alaska
+
+**Citation:** Bergeron L & Logan CJ. 2019. Modifications to the bownet trapping method to increase safety for medium-sized, agile birds. American Ornithological Society Meeting, Alaska.
 
 # The Grackle Project
 
