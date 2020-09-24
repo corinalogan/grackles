@@ -7,17 +7,17 @@ author: Berens JM (Arizona State University), [Logan CJ](http://CorinaLogan.com)
   KB (UCSB, kelseybmccune@gmail.com)
 date: "`r Sys.Date()`"
 output:
-  word_document:
-    toc: yes
-    toc_depth: '4'
-  md_document:
-    toc: yes
   html_document:
     toc: yes
     toc_depth: 4
     toc_float:
       collapsed: no
     code_folding: hide
+  md_document:
+    toc: yes
+  word_document:
+    toc: yes
+    toc_depth: '4'
   github_document:
     toc: yes
   pdf_document:
@@ -197,10 +197,11 @@ Actual power                  	=	0.8635760
 This means that, with a sample size of 89, we would have an 86% chance of detecting a medium effect (approximated at f^2^=0.15 by @cohen1988statistical). 
 
 
-```{r p1, echo=FALSE, warning=FALSE, results='asis'}
+```{r p1, echo=FALSE, warning=FALSE, results='asis', eval=T, echo=T, include=T}
 
-#setwd("~/Documents/Grackle project")
-d <- read.csv("data_condition.csv", header=T, sep=",", stringsAsFactors=F) # the "Condition" tab from the Google sheet data_condition
+# the "Condition" tab from the Google sheet data_condition
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_datacondition.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- data.frame(d)
 
 # DATA CHECKING
 library(DHARMa)
@@ -216,7 +217,8 @@ colnames(d) = c("Date","Aviary","ID","Sex","FatScore","mass","Ltarsus","Rtarsus"
 
 #remove data from birds we caught as juveniles
 d = d[-which(d$ID == "Chilaquile" | d$ID == "Roja" | d$ID == "Becky" | d$ID == "Pepino" | 
-               d$ID == "Morada" | d$ID == "Taco" | d$ID == "Pan Dulce"),] #remove birds where condition was measured when juveniles
+               d$ID == "Morada" | d$ID == "Taco" | d$ID == "Pan Dulce"),] 
+#remove birds where condition was measured when juveniles
 
 #factor random effects and round fat score variables listed as x.5
 d$Experimenter <- as.factor(d$Experimenter)
@@ -229,50 +231,98 @@ cor.test(d$tarsus,d$mass) # r = 0.75, p < 0.001
 cor.test(d$wing,d$mass) # r = 0.92, p < 0.001
 ### wing length will be the structural body measure that we use for SMI
 
-### Calculating SMI ###
+### Calculating SMI (scaled mass index) ###
 sma = sma(log(wing) ~ log(mass), data = d[-which(d$Aviary == "Aviary"),], method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d$wing) #calculate the population mean wing length
 d$Body = d$mass*(Lo/d$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
 
-#Data checking for GLMM
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(FatScore ~ Body + Season + Sex, random=~Experimenter, family="ordinal", data=d[-which(is.na(d$Body)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
-## Exclude two birds where we did not get their weights
-## Error = simulateREsiduals cannot handle ordinal regression? or mixed model...
+#factor all categorical variables in the model
+d$Sex = as.factor(d$Sex)
+d$Season = as.factor(d$Season)
 
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(Body, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-plotResiduals(Season, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+#Remove NAs from all variables so glmer will run
+d <- na.omit(d)
 
 
-#repeatability of structural body mass measurements (wing length was most correlated with mass and so used in the calculation of SMI)
+#DATA CHECKING for GLMM
+#Could only get dharma to run with glmer and not MCMCglmm
+simulationOutput <- simulateResiduals(fittedModel = glmer(FatScore ~ Body + Season + Sex + (1|Experimenter), family="poisson", data=d), n=250)
+
+plot(simulationOutput$scaledResiduals)
+#Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+#Distribution is flat and uniform
+
+testDispersion(simulationOutput) 
+#if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+#p<0.05, but model is zero inflated
+
+testZeroInflation(simulationOutput) 
+#compare expected vs observed zeros, not zero-inflated if p<0.05
+#ratioObsSim = 1.1056, p-value = 0.272 therefore it is zero inflated
+
+testUniformity(simulationOutput) 
+#check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+#D = 0.15895, p-value = 0.01215. It is heteroscedastic
+#Also...
+
+plot(simulationOutput) 
+#...there should be no pattern in the data points in the right panel
+#there is no pattern
+
+plotResiduals(simulationOutput$scaledResiduals, d$Body) 
+#plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
+
+plotResiduals(simulationOutput$scaledResiduals, d$Season) 
+#plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
+
+#Run zero inflation corrections
+par(mfrow = c(1,2))
+plot(d$Body, d$FatScore, xlab = "Body", ylab = "FatScore")
+hist(d$FatScore, xlab = "FatScore", main = "")
+#It's not zero inflated, there are lots of zeros (the most of these) and 1s
+
+#Run the model to address zero inflation
+library(TMB)
+library(glmmTMB)
+fittedmodel1 <- simulateResiduals(fittedModel = glmmTMB(FatScore ~ Body + Season + Sex + (1|Experimenter), family="poisson", data=d, ziformula = ~1), n=250)
+summary(fittedmodel1)
+
+simulationOutput1 <- simulateResiduals(fittedModel1 = fittedModel1)
+plot(simulationOutput1)
+#addressing the zero inflation makes it so the residuals are normally distributed on the QQ plot and there are no significant problems detected. Use the zipoisson family in the MCMCglmm below (it looks like the link for the whole poisson family is log https://stat.ethz.ch/R-manual/R-devel/library/stats/html/family.html)
+
+
+
+#REPEATABILITY of structural body mass measurements (wing length was most correlated with mass and so used in the calculation of SMI)
 rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular
 # R = 0.67, CI: 0.47 - 0.81, p = 0.002
 r_wing1 = glm(log(wing) ~ Sex, data = d)
 r_wing2 = glmer(log(wing) ~ Sex + (1|ID), data = d)
-anova(r_wing2,r_wing1) # random effect significantly adds to model X2 = 22.8, p << 0.01; indicates measures are clustered within individual and therefore repeatable.
+anova(r_wing2,r_wing1) 
+# random effect significantly adds to model X2 = 22.8, p << 0.01; indicates measures are clustered within individual and therefore repeatable.
 
 
+
+#GLMM 
 d$Body2 = scale(d$Body, center = T, scale = T) #must scale SMI variable to get models to fit
 h1 = d[-which(d$Aviary == "Aviary"),] # only want values of wild caught birds, not values after they've had aviary food
 
-#GLMM 
-m_condition <- MCMCglmm(FatScore ~ Body2 + as.factor(Sex) + as.factor(Season), random=~Experimenter, family="ordinal", data=h1[-which(is.na(h1$Body)),], verbose=F, prior=prior, nitt=2300000, thin=30, burnin=30000)
+m_condition <- MCMCglmm(FatScore ~ Body2 + as.factor(Sex) + as.factor(Season), random=~Experimenter, family="zipoisson", data=h1[-which(is.na(h1$Body)),], verbose=F, prior=prior, nitt=2300000, thin=30, burnin=30000)
 ## Exclude two birds where we did not get their weights
+#Error in MCMCglmm(FatScore ~ Body2 + as.factor(Sex) + as.factor(Season),  :   Mutivariate error structures (i.e. using the term 'trait') are required for multinomial data with more than 2 categories, or zero-infalted/altered/hurdle models.
 summary(m_condition)
 ## No relationship between FatScore and SMI, p = 0.99; No relationship between FatScore and Season, p = 0.997
 autocorr(m_condition$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.01. 
 # had to increase nitt and thin to converge
 autocorr(m_condition$VCV) #Did random effects converge?
 
+
+
+# UNREGISTERED ANALYSES
 m_condition1 = glm(Body2 ~ FatScore + Sex + Season, family=gaussian, data=h1[-which(is.na(h1$Body2)),])
 m_condition2 = glmer(Body2 ~ FatScore + Sex + Season + (1|Experimenter), family=gaussian, data=h1[-which(is.na(h1$Body2)),]) #fit is singular
 anova(m_condition2,m_condition1) #experimenter random effect does not add to model
-
 ```
 
 
@@ -317,10 +367,15 @@ library(MCMCglmm)
 library(MASS)
 library(psych)
 
-rs <- read.csv("data_ReproSuccess.csv", header=T, sep=",", stringsAsFactors=F) # from the "ReproSuccess" tab in the data_condition Google Sheet
+# from the "ReproSuccess" tab in the data_condition Google Sheet
+rs <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_datareprosuccess.csv"), header=T, sep=",", stringsAsFactors=F)
+rs <- data.frame(rs)
+
 rs$BirdID <- as.factor(rs$BirdID)
+
+#remove birds where condition was measured when juveniles
 rs = rs[-which(rs$BirdID == "Chilaquile" | rs$BirdID == "Roja" | rs$BirdID == "Becky" | rs$BirdID == "Pepino" | 
-               rs$BirdID == "Morada" | rs$BirdID == "Taco" | rs$BirdID == "Pan dulce"),] #remove birds where condition was measured when juveniles
+               rs$BirdID == "Morada" | rs$BirdID == "Taco" | rs$BirdID == "Pan dulce"),] 
 
 rs = rs[,-1] # we don't need the date column
 d2 = d[-which(d$Aviary == "Aviary"),-c(1,2,6:12)] # take relevant data from Condition data set
@@ -334,6 +389,7 @@ h2$FatScore = as.factor(h2$FatScore)
 #Change yes/no values to 1/0
 h2$Fledglings = ifelse(h2$Fledglings == "yes", 1, ifelse(h2$Fledglings == "no", 0, NA))
 h2$Territory = ifelse(h2$Territory == "yes", 1, ifelse(h2$Territory == "no", 0, NA))
+
 
 ## DATA CHECKING ##
 # Non-linear trends?
@@ -359,24 +415,36 @@ prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=lis
 #Fledglings 
 h2_f = h2[-which(is.na(h2$Fledglings)),] #full h2 data for females
 h2_f$ID = as.factor(as.character(h2_f$ID))
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_f[-which(is.na(h2_f$FatScore)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_f[-which(is.na(h2_f$FatScore)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) 
+#250 simulations, but if want higher precision change n>1000
 ## Error no applicable method for 'family' applied to an object of class "MCMCglmm". 
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+simulationOutput$scaledResiduals 
+#Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) 
+#if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) 
+#compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) 
+#check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) 
+#...there should be no pattern in the data points in the right panel
 
 
 #Territory holder
 h2_m = h2[-which(is.na(h2$Territory)),] #full h2 data for males
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_m[-which(is.na(h2_m$Body2) | is.na(h2_m$FatScore)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_m[-which(is.na(h2_m$Body2) | is.na(h2_m$FatScore)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) 
+#250 simulations, but if want higher precision change n>1000
 ## Error no applicable method for 'family' applied to an object of class "MCMCglmm"
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+simulationOutput$scaledResiduals 
+#Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) 
+#if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) 
+#compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) 
+#check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) 
+#...there should be no pattern in the data points in the right panel
 ```
 
 
@@ -449,7 +517,7 @@ anova(m_mrs1,m_mrs2,m_mrs3,m_mrs4) # fit is singular in all mixed models, so not
 
 
 
-Our measure of female nest success could be systematically biased against nests that failed early (@shaffer2004unified). Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
+UNREGISTERED ANALYSES: Our measure of female nest success could be systematically biased against nests that failed early (@shaffer2004unified). Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
 
 ```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
 #Logistic exposure model, where “Exposure” is the number of days between nest checks
@@ -543,7 +611,8 @@ summary(exp3)
 
 ```
 
-We compared a model with no random effects to a models with a random effect for female ID, and a models with a random effect for Year in addition to Female ID. The full model with both random effects was the best fit to our data. We found that the probability of daily nest survival decreased as day of the year increased, and this is common in bird species. We did not find any effect of time spent in the aviaries, season, or fat score. However, we found that higher SMI related to decreased probability of daily nest survival.
+
+UNREGISTERED ANALYSES: We compared a model with no random effects to a model with a random effect for female ID, and a model with a random effect for Year in addition to Female ID. The full model with both random effects was the best fit to our data. We found that the probability of daily nest survival decreased as day of the year increased, and this is common in bird species. We did not find any effect of time spent in the aviaries, season, or fat score. However, we found that higher SMI related to decreased probability of daily nest survival.
 
 
 
