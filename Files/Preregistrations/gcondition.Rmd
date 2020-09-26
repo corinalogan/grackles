@@ -210,7 +210,8 @@ library(MCMCglmm)
 library(smatr)
 library(rptR)
 
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+## UNREGISTERED ANALYSIS - had to tighten priors because random effect in H1 analysis was not converging
+prior = list(R=list(R1=list(V=1,nu=0.002),R2=list(V=1,nu=0.002),R3=list(V=1,nu=0.002)), G=list(G1=list(V=1,nu=0.002)))
 
 #change column names to match the models we preregistered
 colnames(d) = c("Date","Aviary","ID","Sex","FatScore","mass","Ltarsus","Rtarsus","tarsus","Lwing","Rwing","wing","Season","Experimenter")
@@ -218,110 +219,181 @@ colnames(d) = c("Date","Aviary","ID","Sex","FatScore","mass","Ltarsus","Rtarsus"
 #remove data from birds we caught as juveniles
 d = d[-which(d$ID == "Chilaquile" | d$ID == "Roja" | d$ID == "Becky" | d$ID == "Pepino" | 
                d$ID == "Morada" | d$ID == "Taco" | d$ID == "Pan Dulce"),] 
-#remove birds where condition was measured when juveniles
+#remove data from birds released from the aviaries
+d2 = d[-which(d$Aviary == "Aviary"),]
 
 #factor random effects and round fat score variables listed as x.5
-d$Experimenter <- as.factor(d$Experimenter)
-d$ID = as.factor(d$ID)
-d$FatScore = round(d$FatScore, digits =0)
+d2$Experimenter <- as.factor(d2$Experimenter)
+d2$ID = as.factor(d2$ID)
+#factor all categorical variables in the model
+d2$Sex = as.factor(d2$Sex)
+d2$Season = as.factor(d2$Season)
 
+d2$FatScore = round(d2$FatScore, digits =0)
+
+
+## UNREGISTERED ANALYSIS - Because SMI includes population mean structural body length need to calculate SMI separately for males and females
+d2_f = d2[which(d2$Sex == "F"),]
+d2_m = d2[which(d2$Sex == "M"),]
 ### Determine which measure will go into the calculation of SMI to be the "Body" variable ###
 #as the structural body size measure that shows a higher correlation with body mass
-cor.test(d$tarsus,d$mass) # r = 0.75, p < 0.001
-cor.test(d$wing,d$mass) # r = 0.92, p < 0.001
-### wing length will be the structural body measure that we use for SMI
+cor.test(d2_m$tarsus,d2_m$mass) #r = 0.21
+cor.test(d2_m$wing,d2_m$mass) #r = 0.35, p = 0.08 #use for SMI
+cor.test(d2_f$tarsus,d2_f$mass) #r = 0.09
+cor.test(d2_f$wing,d2_f$mass) #r = 0.26, p = 0.04 #use for SMI
+# Wing length more correlated with mass in males and females
 
 ### Calculating SMI (scaled mass index) ###
-sma = sma(log(wing) ~ log(mass), data = d[-which(d$Aviary == "Aviary"),], method = "SMA") #standard major axis regression
+#Males
+sma = sma(log(wing) ~ log(mass), data = d2_m, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
-Lo = mean(d$wing) #calculate the population mean wing length
-d$Body = d$mass*(Lo/d$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
+Lo = mean(d2_m$wing) #calculate the population mean wing length
+d2_m$Body = d2_m$wing*(Lo/d2_m$tarsus)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
+#Females
+sma = sma(log(wing) ~ log(mass), data = d2_f, method = "SMA") #standard major axis regression
+bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
+Lo = mean(d2_f$wing) #calculate the population mean wing length
+d2_f$Body = d2_f$mass*(Lo/d2_f$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
 
-#factor all categorical variables in the model
-d$Sex = as.factor(d$Sex)
-d$Season = as.factor(d$Season)
 
-#Remove NAs from all variables so glmer will run
-d <- na.omit(d)
-
+## UREGISTERED ANALYSIS - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Furthermore, the function simulateResiduals does not work with data in family "ordinal". Consequently, we used logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1+).
+## UNREGISTERED ANALYSIS - As above, need to run all models separately for males and females
+d2_m$Fatbin = ifelse(d2_m$FatScore > 0, 1, 0)
+d2_f$Fatbin = ifelse(d2_f$FatScore > 0, 1, 0)
 
 #DATA CHECKING for GLMM
-#Could only get dharma to run with glmer and not MCMCglmm
-simulationOutput <- simulateResiduals(fittedModel = glmer(FatScore ~ Body + Season + Sex + (1|Experimenter), family="poisson", data=d), n=250)
+#Could only get dharma to run with glm/glmer and not MCMCglmm
+#Remove NAs from all variables so glmer will run
+d2_m <- na.omit(d2_m)
+d2_f <- na.omit(d2_f)
+d2_m$Body2 = scale(d2_m$Body, center = T, scale = T) #must scale SMI variable to get models to fit
+d2_f$Body2 = scale(d2_f$Body, center = T, scale = T) #must scale SMI variable to get models to fit
 
-plot(simulationOutput$scaledResiduals)
+#Males
+simulationOutput_m <- simulateResiduals(fittedModel = glm(as.factor(Fatbin) ~ Body2 + Season, family=binomial(link = "logit"), data=d2_m), n=250) #fit is singular with random effect included
+
+plot(simulationOutput_m$scaledResiduals)
 #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 #Distribution is flat and uniform
 
-testDispersion(simulationOutput) 
+testDispersion(simulationOutput_m) 
 #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-#p<0.05, but model is zero inflated
+#p=0.82
 
-testZeroInflation(simulationOutput) 
-#compare expected vs observed zeros, not zero-inflated if p<0.05
-#ratioObsSim = 1.1056, p-value = 0.272 therefore it is zero inflated
+testZeroInflation(simulationOutput_m) 
+#compare expected vs observed zeros
+#ratioObsSim = 0.99, p-value = 1 so not significantly zero inflated
 
-testUniformity(simulationOutput) 
+testUniformity(simulationOutput_m) 
 #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-#D = 0.15895, p-value = 0.01215. It is heteroscedastic
-#Also...
+#D = 0.21, p-value = 0.29. # dots are on red line, p value > 0.05 so not heteroscedastic
 
-plot(simulationOutput) 
+plot(simulationOutput_m) 
 #...there should be no pattern in the data points in the right panel
 #there is no pattern
 
-plotResiduals(simulationOutput$scaledResiduals, d$Body) 
+plotResiduals(simulationOutput_m$scaledResiduals, d2_m$Body2) 
 #plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
 
-plotResiduals(simulationOutput$scaledResiduals, d$Season) 
+plotResiduals(simulationOutput_m$scaledResiduals, d2_m$Season) 
 #plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
 
 #Run zero inflation corrections
 par(mfrow = c(1,2))
-plot(d$Body, d$FatScore, xlab = "Body", ylab = "FatScore")
-hist(d$FatScore, xlab = "FatScore", main = "")
+plot(d2_m$Body2, d2_m$FatScore, xlab = "Body", ylab = "FatScore")
+hist(d2_m$FatScore, xlab = "FatScore", main = "")
 #It's not zero inflated, there are lots of zeros (the most of these) and 1s
 
-#Run the model to address zero inflation
-library(TMB)
-library(glmmTMB)
-fittedmodel1 <- simulateResiduals(fittedModel = glmmTMB(FatScore ~ Body + Season + Sex + (1|Experimenter), family="poisson", data=d, ziformula = ~1), n=250)
-summary(fittedmodel1)
+#Females
+simulationOutput_f <- simulateResiduals(fittedModel = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), family=binomial(link = "logit"), data=d2_f), n=250)
 
-simulationOutput1 <- simulateResiduals(fittedModel1 = fittedModel1)
-plot(simulationOutput1)
+plot(simulationOutput_f$scaledResiduals)
+#Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+#Distribution is flat and uniform
+
+testDispersion(simulationOutput_f) 
+#if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+#p=0.51
+
+testZeroInflation(simulationOutput_f) 
+#compare expected vs observed zeros
+#ratioObsSim = 1.1, p-value = 0.69 so not significantly zero inflated
+
+testUniformity(simulationOutput_f) 
+#check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+#D = 0.12, p-value = 0.47. # dots are almost on red line, p value > 0.05 so not heteroscedastic
+
+plot(simulationOutput_f) 
+#...there should be no pattern in the data points in the right panel
+#there is no pattern
+
+plotResiduals(simulationOutput_f$scaledResiduals, d2_f$Body2) 
+#plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
+
+plotResiduals(simulationOutput_f$scaledResiduals, d2_f$Season) 
+#plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
+
+#Run zero inflation corrections
+par(mfrow = c(1,2))
+plot(d2_f$Body, d2_f$FatScore, xlab = "Body", ylab = "FatScore")
+hist(d2_f$FatScore, xlab = "FatScore", main = "")
+
+
+
+#Run the model to address zero inflation - CODE NOT NEEDED#
+#library(TMB)
+#library(glmmTMB)
+#fittedmodel1 <- simulateResiduals(fittedModel = glmmTMB(FatScore ~ Body + Season + Sex + (1|Experimenter), family=poisson, data=d2, ziformula = ~1), n=250)
+#summary(fittedmodel1)
+
+#simulationOutput1 <- simulateResiduals(fittedModel1 = fittedModel1)
+#plot(simulationOutput1)
 #addressing the zero inflation makes it so the residuals are normally distributed on the QQ plot and there are no significant problems detected. Use the zipoisson family in the MCMCglmm below (it looks like the link for the whole poisson family is log https://stat.ethz.ch/R-manual/R-devel/library/stats/html/family.html)
 
 
 
 #REPEATABILITY of structural body mass measurements (wing length was most correlated with mass and so used in the calculation of SMI)
-rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular
-# R = 0.67, CI: 0.47 - 0.81, p = 0.002
-r_wing1 = glm(log(wing) ~ Sex, data = d)
-r_wing2 = glmer(log(wing) ~ Sex + (1|ID), data = d)
+# For this, need data set of birds with 2+ structural body measures from Wild & Aviary
+tmp = d
+tmp$count = 1
+tmp = aggregate(count ~ ID, data = tmp, FUN = "sum")
+d3 = merge(tmp, d, by = "ID")
+d3 = d3[which(d3$count > 1),] # 35 individuals
+# separate males and females
+d3_m = d3[which(d3$Sex == "M"),]
+d3_f = d3[which(d3$Sex == "F"),]
+
+rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d3, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular - try testing sexes separately?
+# R = 0.68, CI: 0.45 - 0.82, p = 0.002
+rpt(log(wing) ~ (1|ID), grname = "ID", data = d[which(d$Sex == "F"),], datatype = "Gaussian", nboot = 500, npermut = 500)
+rpt(log(wing) ~ (1|ID), grname = "ID", data = d[which(d$Sex == "M"),], datatype = "Gaussian", nboot = 500, npermut = 500)
+# No, fit still singular for both
+?isSingular
+
+
+## UNREGISTERED ANALYSIS - Because fit was singular in the repeatability analysis (indicating model is overfit and parameters and error might be poorly estimated). 
+r_wing1 = glm(log(wing) ~ Sex, data = d3)
+r_wing2 = glmer(log(wing) ~ Sex + (1|ID), data = d3)
 anova(r_wing2,r_wing1) 
-# random effect significantly adds to model X2 = 22.8, p << 0.01; indicates measures are clustered within individual and therefore repeatable.
+# random effect significantly adds to model X2 = 22.4, p << 0.01; indicates measures are clustered within individual and therefore repeatable.
 
 
 
 #GLMM 
-d$Body2 = scale(d$Body, center = T, scale = T) #must scale SMI variable to get models to fit
-h1 = d[-which(d$Aviary == "Aviary"),] # only want values of wild caught birds, not values after they've had aviary food
 
-m_condition <- MCMCglmm(FatScore ~ Body2 + as.factor(Sex) + as.factor(Season), random=~Experimenter, family="zipoisson", data=h1[-which(is.na(h1$Body)),], verbose=F, prior=prior, nitt=2300000, thin=30, burnin=30000)
-## Exclude two birds where we did not get their weights
-#Error in MCMCglmm(FatScore ~ Body2 + as.factor(Sex) + as.factor(Season),  :   Mutivariate error structures (i.e. using the term 'trait') are required for multinomial data with more than 2 categories, or zero-infalted/altered/hurdle models.
+## UNREGISTERED ANALYSES - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Consequently, we used logistic regression where the dependent variable Fatbin represents no fat (score = 0), or some fat (score = 1+).
+## UNREGISTERED ANALYSIS - models don't fit because Sex variable explains all of the variance Body2 and Sex effectively explain the same thing, multicollinearity.  Need to separate models for each sex.
+m_condition <- MCMCglmm(Fatbin ~ Body2 + as.factor(Sex) + as.factor(Season), family="categorical", data=d2, verbose=F, prior=prior, nitt=200000, thin=50, burnin=100000)
 summary(m_condition)
-## No relationship between FatScore and SMI, p = 0.99; No relationship between FatScore and Season, p = 0.997
+## No relationship between Fatbin and SMI p = 0.92; No relationship between Fatbin and Season p = 0.44 or Sex p = 0.69
 autocorr(m_condition$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.01. 
-# had to increase nitt and thin to converge
-autocorr(m_condition$VCV) #Did random effects converge?
+# Fixed effects basically converge
+#autocorr(m_condition$VCV) # Random effect looks bad when plot model
 
 
-
-# UNREGISTERED ANALYSES
-m_condition1 = glm(Body2 ~ FatScore + Sex + Season, family=gaussian, data=h1[-which(is.na(h1$Body2)),])
-m_condition2 = glmer(Body2 ~ FatScore + Sex + Season + (1|Experimenter), family=gaussian, data=h1[-which(is.na(h1$Body2)),]) #fit is singular
+## UNREGISTERED ANALYSES
+m_condition1 = glm(Body2 ~ FatScore + Sex + Season, family=gaussian, data=d2)
+m_condition2 = glmer(Body2 ~ FatScore + Sex + Season + (1|Experimenter), family=gaussian, data=d2) #fit is singular
 anova(m_condition2,m_condition1) #experimenter random effect does not add to model
 ```
 
