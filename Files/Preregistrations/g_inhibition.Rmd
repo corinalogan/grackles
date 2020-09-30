@@ -93,7 +93,7 @@ As we conducted this experiment, we realized that setting an **arbitrary thresho
 **Table 1.** Summarized results per bird in the go/no go and detour behavioral inhibition experiments, and the reversal and multi-access box (MAB) flexibility experiments. **Detour proportion correct modified** accounts for the grackle-specific behavior of standing at the opening of the tube where they are about to reach their head inside the tube to get the food, but they appear frustrated and bite the edge of the plastic tube. These bites do not count as first touch to the plastic when the bird obtains the food immediately after the bite.
 
 ```{r summary, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
 colnames(d) <- c("Bird","Go/no go trials to 85% correct after 150 trials","Go/no go trials to 85% correct","Detour proportion correct","Detour proportion correct modified","Detour pre- or post-reversal","Trials to reverse in first reversal","Trials to reverse in last reversal","Average latency to attempt new solution (MAB)")
@@ -131,7 +131,7 @@ u1 <- glm(Gonogo150 ~ TrialsFirst, family="poisson", data=d)
 
 u2 <- glm(Gonogo85 ~ TrialsFirst, family="poisson", data=d)
 #su2 <- summary(u2) 
-#there is no relationship between the number of trials to pass criterion in go/no go and the number of trials to reverse a preference (in the first reversal) (though the estimate 0.008 and the standard error is lower than the estimate so it doesn't cross zero, it is is significant: p<2e-16)
+#there is a relationship between the number of trials to pass criterion in go/no go and the number of trials to reverse a preference (in the first reversal) (though the estimate 0.008 and the standard error is lower than the estimate so it doesn't cross zero, it is significant: p<2e-16)
 
 
 #load packages for the output table
@@ -232,26 +232,26 @@ There was no correlation between behavioral inhibition tasks, go/no go and detou
 
 #### Prediction 3: does training improve detour performance?
 
-There was no difference in the percent correct on the detour task and whether the individual received the detour experiment before or after their reversal learning experiment (which also involved obtaining food from tubes; Table 5).
+There was no difference in the percent correct on the detour task and whether the individual received the detour experiment before or after their reversal learning experiment (which also involved obtaining food from tubes; Table 4).
 
 ##### Unregistered analysis
 
 We conducted a post-hoc analysis using the grackle-specific percent of correct responses (see full explanation in P1: detour > Unregistered analyses) and found that the result is the same as above: there is no difference in detour performance relative to their experience with reversal tubes.
 
-**Table 5.** Results from the GLMs: **Detour standard** shows GLM outputs using the  @maclean2014evolution method of scoring, and **Detour grackle-specific** shows GLM outputs using the grackle-specific scoring method.
+**Table 4.** Results from the GLMs: **Detour standard** shows GLM outputs using the  @maclean2014evolution method of scoring, and **Detour grackle-specific** shows GLM outputs using the grackle-specific scoring method.
 
 ```{r detour2Results, eval=T, warning=F, results='asis', echo=T, include=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
-colnames(d) <- c("Bird","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost","TrialsFirst","TrialsLast","AvgLatency")
+colnames(d) <- c("Bird","Gonogo150","Gonogo85","Detour","DetourA","Condition","TrialsFirst","TrialsLast","AvgLatency")
 
 #GLM - detour standard correct choice scoring
-de <- glm(Detour ~ Detourprepost, family="binomial", data=d)
+de <- glm(Detour ~ Condition, family="binomial", data=d)
 sde <- summary(de)
 #no difference between detour percent correct and whether they received detour before or after reversal tubes
 
 #GLM - detour grackle-specific correct choice scoring - UNREGISTERED ANALYSIS
-de2 <- glm(DetourA ~ Detourprepost, family="binomial", data=d)
+de2 <- glm(DetourA ~ Condition, family="binomial", data=d)
 sde2 <- summary(de2)
 #no difference between detour percent correct and whether they received detour before or after reversal tubes
 
