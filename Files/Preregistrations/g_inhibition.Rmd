@@ -701,6 +701,28 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 ```
 
 
+**Flexibility comprehensive:** In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. 
+
+There are two basic components: 
+
+First, we have an updating or learning equation that tells us how attractions to different behavioral options $A_{i,j, t+1}$ (i.e., how preferable option $i$ is to the bird $j$ at time $t+1$) change over time as a function of previous attractions $A_{i ,j, t}$ and recently experienced payoffs $\pi_{i,j,t}$ (i.e., whether they received a reward in a given trial or not). Attraction scores thus reflect the accumulated learning history up to this point. 
+
+$A_{i,j, t+1} = (1-\phi_j) A_{i,j,t} + \phi_j \pi_{i,j,t}$. 
+
+The (bird-specific) parameter $\phi_j$ describes the weight of recent experience. The higher the value of $\phi_j$, the faster the bird updates their attraction. It thus can be interpreted as the *learning or updating rate of an individual*. This corresponds to the first and third connotation of behavioral flexibility as defined by [@bond_serial_2007], the ability to rapidly and adaptively change behavior in light of new experiences. 
+
+The second major part of the model expresses the probability an individual $j$ chooses option $i$ in the next round, $t+1$, based on the latent attractions:
+ 
+ $P(i)_{t+1} = \frac{\exp(\lambda_j A_{i, j, t})}{\sum\limits_{m=1}^{2}\exp(\lambda_j A_{m, j, t})}.$
+ 
+The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). This closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. To account for potential differences between experimenters, we also included experimenter ID as a random effect (omitted from previous equations to enhance readability, but available in the code below). 
+
+This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM that predicts their causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on the number of trials to pass criterion in go/no go as well as an interaction term. To model the number of trials to pass criterion, we used a Poisson likelihood and a standard log link function as appropriate for count data with an unknown maximum. 
+
+
+
+
+
 **Model 2b: latency to respond in the go/no go experiment** A Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01 after lag 0; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 NOTE (Sep 2020): we changed the distribution to Gaussian (with an identity link) because MCMCglmm would not run on a Poisson (it kept saying there were negative integers even after we removed them). A Gaussian distribution also works for this kind of data because the response variable is a latency in seconds.
@@ -789,6 +811,11 @@ base::suppressMessages(jtools::export_summs(m4, m5, model.names=c("last reversal
 knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) 
 #this prevents an issue with xcolor package when rendering to PDF
 ```
+
+**Flexibility comprehensive:** We again repeat the analyses for the detour task with the more comprehensive computational measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. We include both parameters ($\phi_j$ and $\lambda_j$) as well as their interaction to predict whether birds make correct choices in each trial of the detour task. We use a binomial likelihood as the outcome distribution and a logit link function.
+
+
+
 
 #### P1 alternative 2: are behavioral inhibition results reliable?
 
@@ -953,7 +980,7 @@ This research is carried out in accordance with permits from the:
 
 **Folsom:** Data collection, data interpretation, revising/editing.
 
-**Deffner:** Data analysis (Flexibilitx 4 model), revising/editing.
+**Deffner:** Data analysis (Flexibility 4 model), revising/editing.
 
 **Wascher:** Hypothesis development, experimental design (delayed gratification and detour tasks), data analysis and interpretation, write up, revising/editing.
 
