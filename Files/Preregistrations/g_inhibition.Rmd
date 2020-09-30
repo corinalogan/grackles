@@ -719,7 +719,350 @@ The parameter $\lambda_j$ represents the *random choice rate* of an individual (
 
 This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM that predicts their causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on the number of trials to pass criterion in go/no go as well as an interaction term. To model the number of trials to pass criterion, we used a Poisson likelihood and a standard log link function as appropriate for count data with an unknown maximum. 
 
+```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
+# Load data
+d_flex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+d_inhibit <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
+d_detour <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_detour.csv"), header=F, sep=",", stringsAsFactors=F) 
+
+library(rstan)
+
+# Prepare Reversal learning data
+d_flex <- subset(d_flex, d_flex$Reversal != "Control: Yellow Tube")
+d_flex <- subset(d_flex, d_flex$CorrectChoice != -1)
+d_flex$Reversal <- as.integer(d_flex$Reversal)
+d_flex$Correct <- as.integer(d_flex$CorrectChoice)
+d_flex$Trial <- as.integer(d_flex$Trial)
+d_flex <- subset(d_flex, is.na(d_flex$Correct) == FALSE)
+
+#Construct choice variable
+d_flex$Choice <- NA
+for (i in 1: nrow(d_flex)) {
+  if (d_flex$Reversal[i] %in% seq(0, max(unique(d_flex$Reversal)), by = 2)){
+    
+    if (d_flex$Correct[i] == 1){
+      d_flex$Choice[i] <- 1
+    } else {
+      d_flex$Choice[i] <- 2
+    } 
+  } else {
+    if (d_flex$Correct[i] == 1){
+      d_flex$Choice[i] <- 2
+    } else {
+      d_flex$Choice[i] <- 1
+    } 
+  }
+}
+d_flex <- d_flex[with(d_flex, order(d_flex$ID)), ]
+
+
+# Go no go models
+colnames(d_inhibit)[c(1,2,3)] <- c("ID", "GNG", "GNG85")
+d_inhibit <- subset(d_inhibit, select = c(ID, GNG, GNG85))
+
+# Keep only birds who finished the task
+d_inhibit <- subset(d_inhibit, is.na(d_inhibit$GNG) == FALSE)
+
+#Flexibility data for birds with inhibition score
+d <- subset(d_flex, d_flex$ID %in% d_inhibit$ID)
+
+# Sort birds alphabetically
+d <- d[with(d, order(d$ID)), ]
+d_inhibit   <- d_inhibit[with(d_inhibit, order(d_inhibit$ID)), ]
+
+d$id <- sapply(1:nrow(d), function (i) which(unique(d$ID) == d$ID[i]) )
+d$Expid <-  sapply(1:nrow(d), function (i) which(unique(d$Experimenter) == d$Experimenter[i]) )
+d <- subset(d, select = c(id, Expid, Choice, Correct))
+
+#Prepare data list for stan
+dat <- as.list(d)
+dat$N <- nrow(d)
+dat$N_id <- length(unique(d$id))
+dat$N_exp <- length(unique(d$Expid))
+dat$z <- d_inhibit$GNG
+
+
+reinforcement_poisson <- "
+
+data{
+   int N;
+   int N_id;
+   int N_exp;
+   int id[N];
+   int Expid[N];
+   int Choice[N];
+   int Correct[N];
+   int z[N_id];
+}
+
+parameters{
+
+  // Learning model
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;
+  cholesky_factor_corr[2] Rho_ID;
+
+  // Varying effects clustered on experimenter
+  matrix[2,N_exp] z_EXP;
+  vector<lower=0>[2] sigma_EXP;
+  cholesky_factor_corr[2] Rho_EXP;
+
+  // GLM
+  real alpha;
+  real b_phi;
+  real b_lambda;
+  real b_int;
+}
+
+transformed parameters{
+
+matrix[N_id,2] v_ID; // varying effects on individuals
+matrix[N_exp,2] v_EXP; // varying effects on experimenter
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+}
+
+model{
+
+matrix[N_id,2] A; // attraction matrix
+vector[N_id] phi_i;
+vector[N_id] lambda_i;
+
+vector[N_id] phi_i_s ;
+vector[N_id] lambda_i_s ;
+vector[N_id] lambda;
+
+alpha ~ normal(5,0.5);
+b_phi ~ normal(0,0.3);
+b_lambda ~ normal(0,0.3);
+b_int ~ normal(0,0.3);
+
+logit_phi ~  normal(0,2);
+log_L ~  normal(0,2);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(3);
+Rho_ID ~ lkj_corr_cholesky(3);
+
+to_vector(z_EXP) ~ normal(0,1);
+sigma_EXP ~ exponential(3);
+Rho_EXP ~ lkj_corr_cholesky(3);
+
+
+// initialize attraction scores
+for ( i in 1:N_id ) A[i,1:2] = rep_vector(0,2)';
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1] + v_EXP[Expid[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi +  v_ID[id[i],2] + v_EXP[Expid[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , 1:2 ] = ( (1-phi)*to_vector(A[ id[i] , 1:2 ]) + phi*pay)';
+
+}//i
+
+// Define bird specific values on the outcome scale and standardize
+
+lambda_i = exp(log_L + v_ID[,1]);
+phi_i = inv_logit(logit_phi + v_ID[,2]);
+
+lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
+phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
+
+
+lambda = alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s .* phi_i_s;
+z ~ poisson(exp(lambda));
+}
+
+"
+
+m_gonogo <- stan( model_code  = reinforcement_poisson , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9999, max_treedepth = 13))  
+
+# Set outcome to 85% criterion
+dat$z <- d_inhibit$GNG85
+
+m_gonogo85 <- stan( model_code  = reinforcement_poisson , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9999, max_treedepth = 13))  
+
+
+#Detour models
+
+d_detour <- subset(d_detour, d_detour$ID != "Pizza" & d_detour$FirstTouch != -1)
+d_detour$AdaptedFirstTouch[which(d_detour$AdaptedFirstTouch == 2)] <- 1
+
+#Keep learning data only from birds with inhibition score
+
+d <- subset(d_flex, d_flex$ID %in% d_detour$ID)
+d_detour <- subset(d_detour, d_detour$ID %in% d$ID)
+
+# Sort birds alphabetically
+d          <- d[with(d, order(d$ID)), ]
+d_detour   <- d_detour[with(d_detour, order(d_detour$ID)), ]
+d$id        <- sapply(1:nrow(d), function (i) which(unique(d$ID) == d$ID[i]) )
+d_detour$id <- sapply(1:nrow(d_detour), function (i) which(unique(d_detour$ID) == d_detour$ID[i]) )
+d$Expid <-  sapply(1:nrow(d), function (i) which(unique(d$Experimenter) == d$Experimenter[i]) )
+dat <- as.list(subset(d, select = c(id, Expid, Choice, Correct)))
+dat$N <- nrow(d)
+dat$N_detour <- nrow(d_detour)
+dat$N_id <- length(unique(d$id))
+dat$N_exp <- length(unique(d$Expid))
+dat$id_detour <- d_detour$id
+dat$y <- d_detour$FirstTouch
+
+
+reinforcement_binomial <- "
+
+data{
+   int N;
+   int N_detour;
+   int N_id;
+   int N_exp;
+   int id[N];
+   int id_detour[N_detour];
+   int Expid[N];
+   int Choice[N];
+   int Correct[N];
+   int y[N_detour];
+}
+
+parameters{
+
+  // Learning model
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;
+  cholesky_factor_corr[2] Rho_ID;
+
+  // Varying effects clustered on experimenter
+  matrix[2,N_exp] z_EXP;
+  vector<lower=0>[2] sigma_EXP;
+  cholesky_factor_corr[2] Rho_EXP;
+
+  // GLM
+  real alpha;
+  real b_phi;
+  real b_lambda;
+  real b_int;
+}
+
+transformed parameters{
+
+matrix[N_id,2] v_ID; // varying effects on individuals
+matrix[N_exp,2] v_EXP; // varying effects on experimenter
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+}
+
+model{
+
+matrix[N_id,2] A; // attraction matrix
+vector[N_id] phi_i;
+vector[N_id] lambda_i;
+
+vector[N_id] phi_i_s ;
+vector[N_id] lambda_i_s ;
+vector[N_detour] prob;
+
+alpha ~ normal(0,1.5);
+b_phi ~ normal(0,0.2);
+b_lambda ~ normal(0,0.2);
+b_int ~ normal(0,0.2);
+
+logit_phi ~  normal(0,2);
+log_L ~  normal(0,2);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(3);
+Rho_ID ~ lkj_corr_cholesky(3);
+
+to_vector(z_EXP) ~ normal(0,1);
+sigma_EXP ~ exponential(3);
+Rho_EXP ~ lkj_corr_cholesky(3);
+
+
+// initialize attraction scores
+for ( i in 1:N_id ) A[i,1:2] = rep_vector(0,2)';
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1] + v_EXP[Expid[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi +  v_ID[id[i],2] + v_EXP[Expid[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , 1:2 ] = ( (1-phi)*to_vector(A[ id[i] , 1:2 ]) + phi*pay)';
+
+}//i
+
+// Define bird specific values on the outcome scale
+
+for ( i in 1:N_id ) {
+ lambda_i[i] = exp(log_L + v_ID[i,1]);
+ phi_i[i] = inv_logit(logit_phi + v_ID[i,2]);
+}
+
+// Standardize predictors
+
+lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
+phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
+
+// Binomial model
+for ( i in 1:N_detour ) {
+  prob[i] = alpha + b_lambda * lambda_i_s[id_detour[i]] + b_phi * phi_i_s[id_detour[i]]  + b_int * lambda_i_s[id_detour[i]] * phi_i_s[id_detour[i]];
+  prob[i] = inv_logit(prob[i]);
+}
+y ~ binomial(1, prob);
+}
+
+"
+
+m_detour <- stan( model_code  = reinforcement_binomial , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9999, max_treedepth = 10))  
+
+# Grackle-specific scoring method
+dat$y <- d_detour$AdaptedFirstTouch
+
+m_detour_adapted <- stan( model_code  = reinforcement_binomial , data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9999, max_treedepth = 10))  
+
+### NOTE: To make the model work, you need to set up a few things... (this took Logan a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next). It's best to go to https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started for instructions on how to install stan (and other dependencies) on your computer and get started. There are also plenty of stan fora where you can find answers to most common problems at https://discourse.mc-stan.org/. 
+
+```
 
 
 
@@ -812,7 +1155,7 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #this prevents an issue with xcolor package when rendering to PDF
 ```
 
-**Flexibility comprehensive:** We again repeat the analyses for the detour task with the more comprehensive computational measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. We include both parameters ($\phi_j$ and $\lambda_j$) as well as their interaction to predict whether birds make correct choices in each trial of the detour task. We use a binomial likelihood as the outcome distribution and a logit link function.
+**Flexibility comprehensive:** We again repeat the analyses for the detour task with the more comprehensive computational measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. We include both parameters ($\phi_j$ and $\lambda_j$) as well as their interaction to predict whether birds make correct choices in each trial of the detour task. We use a binomial likelihood as the outcome distribution and a logit link function (see section 2a for full data preparation and analysis script).
 
 
 
