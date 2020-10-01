@@ -177,6 +177,56 @@ mtext("Correct choice: Go trials",side=3,line=0,cex=1.5)
 plot(nogo$Trial,nogo$LatencyFirstPeckToScreen, ylab="Latency first peck (s)", xlab="Trial number", ylim=c(0,10), xlim=c(0,300), cex=2)
 mtext("Correct choice: No Go trials",side=3,line=0,cex=1.5)
 par(op)
+
+###FIXING THE FIGURE
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_data_gonogoPsychopy.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- data.frame(d)
+
+#Remove Queso (bird 31) who didn't complete this experiment
+d1 <- d[!d$bird==31,] 
+
+#Set numeric and factors so MCMCglmm will run
+d1$Latency <- as.numeric(d1$Latency)
+d1$TrialThisSession <- as.numeric(d1$TrialThisSession)
+d1$session <- as.factor(d1$session)
+d1$bird <- as.factor(d1$bird)
+d1$rewarded <- as.factor(d1$rewarded)
+
+#Get rid of rows where rewarded=NA because we won't know whether it was a go or a no go trial
+d1 <- subset(d1,!(is.na(d1["rewarded"])))
+
+#Separate the data frame into go trials and no go trials
+go <- d1[d1$rewarded=="yes",]
+no <- d1[d1$rewarded=="no",]
+
+#FIGURE mean latency of first peck to screen ALL BIRDS by go or no go: x=trial number,  y=latency to first peck to screen/trial, by go (filled circles) or no go (open circles)
+
+#for loops to scroll through the Latency column and only select the first latency to peck/trial
+
+#plot
+op <- par(mfrow=c(3,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(go$Trial,go$LatencyFirst, ylab="Latency first peck/trial (s)", xlab="", ylim=c(0,10), xlim=c(0,300), cex=2)
+abline(lm(go$LatencyFirst~go$Trial))
+plot(no$Trial,no$LatencyFirst, ylab="Latency first peck/trial (s)", xlab="", ylim=c(0,10), xlim=c(0,300), cex=2)
+abline(lm(no$LatencyFirst~no$Trial))
+legend(x="topleft", y=8, legend=c(pch19="PC: high", pch1="MC: low", pch4="SC: med"), pch=c(19,1,4), box.lty=0, cex=1)
+par(op)
+
+
+#FIGURE mean latency of first peck to screen/SESSION/BIRD by go or no go: x=trial number,  y=latency to first peck to screen/trial, by go (closed) or no go (filled) and by bird (triangles point up:17=closed, 2=open; triangles point down:25=closed, 6=open; circles:16=closed, 1=open; diamonds: 18=closed, 5=open; squares:15=closed, 0=open; +=3, X=4; box w x=7, box w +=12; circle w +=10, box w V=14; asterisk=8, double triangle=11)
+
+#for loops to scroll through the Latency column and only select the first latency to peck/trial/session/bird
+
+#plot
+op <- par(mfrow=c(3,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(go$Trial,go$LatencyFirst, ylab="Latency first peck/trial (s)", xlab="", ylim=c(0,10), xlim=c(0,300), cex=2)
+points(go$LatencyFirst~go$Trial, pch=1, cex=2)
+abline(lm(go$LatencyFirst~go$Trial))
+plot(no$Trial,no$LatencyFirst, ylab="Latency first peck/trial (s)", xlab="", ylim=c(0,10), xlim=c(0,300), cex=2)
+points(go$LatencyFirst~go$Trial, pch=1, cex=2)
+abline(lm(no$LatencyFirst~no$Trial))
+legend(x="topleft", y=8, legend=c(pch19="PC: high", pch1="MC: low", pch4="SC: med"), pch=c(19,1,4), box.lty=0, cex=1)
+par(op)
 ```
 
 **Figure 1.** The latency to the first peck on the screen per trial across trials according to whether they made the incorrect choice by pecking during the no go trials or not pecking during the go trials (top), the correct choice on the Go trials by pecking the rewarded stimulus (middle), or the correct choice on the No Go trials by not pecking the unrewarded stimulus (bottom). For the latter, although these trials were coded as the bird making the correct choice by not pecking the screen, due to issues in combining the two data sheets (noted above), there were sometimes screen pecks listed for these trials.
