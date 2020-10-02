@@ -210,8 +210,6 @@ library(MCMCglmm)
 library(smatr)
 library(rptR)
 
-## UNREGISTERED ANALYSIS - had to tighten priors because random effect in H1 analysis was not converging
-prior = list(R=list(R1=list(V=1,nu=0.002),R2=list(V=1,nu=0.002),R3=list(V=1,nu=0.002)), G=list(G1=list(V=1,nu=0.002)))
 
 #change column names to match the models we preregistered
 colnames(d) = c("Date","Aviary","ID","Sex","FatScore","mass","Ltarsus","Rtarsus","tarsus","Lwing","Rwing","wing","Season","Experimenter")
@@ -255,6 +253,47 @@ bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d2_f$wing) #calculate the population mean wing length
 d2_f$Body = d2_f$mass*(Lo/d2_f$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
 
+#REPEATABILITY of structural body mass measurements (wing length was most correlated with mass and so used in the calculation of SMI)
+# For this, need data set of birds with 2+ structural body measures from Wild & Aviary
+tmp = d
+tmp$count = 1
+tmp = aggregate(count ~ ID, data = tmp, FUN = "sum")
+d3 = merge(tmp, d, by = "ID")
+d3 = d3[which(d3$count > 1),] # 35 individuals
+# separate males and females
+d3_m = d3[which(d3$Sex == "M"),]
+d3_f = d3[which(d3$Sex == "F"),]
+
+rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d3, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular 
+# R = 0.68, CI: 0.45 - 0.82, p = 0.002
+
+## UNREGISTERED ANALYSIS - because males and females are sexually dimorphic, run separate models.
+rpt(log(wing) ~ (1|ID), grname = "ID", data = d3_f, datatype = "Gaussian", ratio = F, nboot = 500, npermut = 500)
+# Fit is singular, meaning variance of ID is very close to 0
+# R = 0.52, p_LRT = 0.01, p_perm = 0.01
+rpt(log(wing) ~ (1|ID), grname = "ID", data = d3_m, datatype = "Gaussian", nboot = 500, npermut = 500)
+# Fit is singular, variance of ID is very close to 0
+# R = 0.75, p_LRT << 0.01, p_perm = 0.004
+?isSingular
+
+
+## UNREGISTERED ANALYSIS - Because fit was singular in the repeatability analysis (indicating the variance of random effect is very close to zero) we wanted to double check our results by hand calculating repeatability following [@nakagawa2010repeatability]. 
+r_wing_m = glmer(log(wing) ~ 1 + (1|ID), data = d3_m)
+summary(r_wing_m)
+# variance of ID = 0.001
+# varance of residual = 0.0005
+R = 0.001/(0.001+0.0004)
+# R = 0.71
+
+r_wing_f = glmer(log(wing) ~ 1 + (1|ID), data = d3_f)
+summary(r_wing_f)
+# variance of ID = 0.001
+# varance of residual = 0.001
+R = 0.001/(0.001+0.001)
+# R = 0.5
+
+
+### H1 - data checking
 
 ## UREGISTERED ANALYSIS - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Furthermore, the function simulateResiduals does not work with data in family "ordinal". Consequently, we used logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1+).
 ## UNREGISTERED ANALYSIS - As above, need to run all models separately for males and females
@@ -264,13 +303,13 @@ d2_f$Fatbin = ifelse(d2_f$FatScore > 0, 1, 0)
 #DATA CHECKING for GLMM
 #Could only get dharma to run with glm/glmer and not MCMCglmm
 #Remove NAs from all variables so glmer will run
-d2_m <- na.omit(d2_m)
-d2_f <- na.omit(d2_f)
+#d2_m <- na.omit(d2_m)
+#d2_f <- na.omit(d2_f)
 d2_m$Body2 = scale(d2_m$Body, center = T, scale = T) #must scale SMI variable to get models to fit
 d2_f$Body2 = scale(d2_f$Body, center = T, scale = T) #must scale SMI variable to get models to fit
 
 #Males
-simulationOutput_m <- simulateResiduals(fittedModel = glm(as.factor(Fatbin) ~ Body2 + Season, family=binomial(link = "logit"), data=d2_m), n=250) #fit is singular with random effect included
+simulationOutput_m <- simulateResiduals(fittedModel = glm(as.factor(Fatbin) ~ Body2 + Season, family=binomial(link = "logit"), data=d2_m), n=250) 
 
 plot(simulationOutput_m$scaledResiduals)
 #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
@@ -352,55 +391,55 @@ hist(d2_f$FatScore, xlab = "FatScore", main = "")
 
 
 
-#REPEATABILITY of structural body mass measurements (wing length was most correlated with mass and so used in the calculation of SMI)
-# For this, need data set of birds with 2+ structural body measures from Wild & Aviary
-tmp = d
-tmp$count = 1
-tmp = aggregate(count ~ ID, data = tmp, FUN = "sum")
-d3 = merge(tmp, d, by = "ID")
-d3 = d3[which(d3$count > 1),] # 35 individuals
-# separate males and females
-d3_m = d3[which(d3$Sex == "M"),]
-d3_f = d3[which(d3$Sex == "F"),]
+prior = list(R=list(R1=list(V=0.001,nu=0.002),R2=list(V=0.001,nu=0.002))) #This prior specification appears to be wrong for logistic models: http://www.natalialevshina.com/Documents/MCMCglmm_Tutorial.pdf
 
-rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d3, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular - try testing sexes separately?
-# R = 0.68, CI: 0.45 - 0.82, p = 0.002
-rpt(log(wing) ~ (1|ID), grname = "ID", data = d[which(d$Sex == "F"),], datatype = "Gaussian", nboot = 500, npermut = 500)
-rpt(log(wing) ~ (1|ID), grname = "ID", data = d[which(d$Sex == "M"),], datatype = "Gaussian", nboot = 500, npermut = 500)
-# No, fit still singular for both
-?isSingular
+### GLMM 
 
-
-## UNREGISTERED ANALYSIS - Because fit was singular in the repeatability analysis (indicating model is overfit and parameters and error might be poorly estimated). 
-r_wing1 = glm(log(wing) ~ Sex, data = d3)
-r_wing2 = glmer(log(wing) ~ Sex + (1|ID), data = d3)
-anova(r_wing2,r_wing1) 
-# random effect significantly adds to model X2 = 22.4, p << 0.01; indicates measures are clustered within individual and therefore repeatable.
-
-
-
-#GLMM 
-
-## UNREGISTERED ANALYSES - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Consequently, we used logistic regression where the dependent variable Fatbin represents no fat (score = 0), or some fat (score = 1+).
-## UNREGISTERED ANALYSIS - models don't fit because Sex variable explains all of the variance Body2 and Sex effectively explain the same thing, multicollinearity.  Need to separate models for each sex.
-m_condition <- MCMCglmm(Fatbin ~ Body2 + as.factor(Sex) + as.factor(Season), family="categorical", data=d2, verbose=F, prior=prior, nitt=200000, thin=50, burnin=100000)
+# Males
+m_condition <- MCMCglmm(Fatbin ~ Body2 + Season, family="categorical", data=d2_m, verbose=F, prior=prior, nitt=20000000, thin=5000, burnin=1000000)
 summary(m_condition)
-## No relationship between Fatbin and SMI p = 0.92; No relationship between Fatbin and Season p = 0.44 or Sex p = 0.69
-autocorr(m_condition$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.01. 
-# Fixed effects basically converge
-#autocorr(m_condition$VCV) # Random effect looks bad when plot model
+## Cannot get model to converge
+autocorr(m_condition$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. 
+autocorr(m_condition$VCV) # 
+
+## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+m1 = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), family = binomial(link = "logit"), data = d2_m)
+summary(m1) # but the estimates for this also look bad, specifically the intercept and Season
+## In the season variable we only have 2 breeding males - sample size too small to give good estimates.
+
+## UNREGISTERED ANALYSIS - Because the Season variable only includes 2 males in the breeding category we don't have a large enough sample to produce reliable estimates. Therefore we must drop Season from the model.
+m3 = glmer(Fatbin ~ Body2 + (1|Experimenter), data = d2_m, family = binomial(link = "logit"))
+summary(m3)
+
+# Females
+prior = list(R=list(R1=list(V=0.001,nu=0.002),R2=list(V=0.001,nu=0.002))) #This prior specification appears to be wrong for logistic models: http://www.natalialevshina.com/Documents/MCMCglmm_Tutorial.pdf
+f_condition <- MCMCglmm(Fatbin ~ Body2 + Season, random = ~Experimenter, family="categorical", data=d2_f, verbose=F, prior=prior, nitt=20000000, thin=5000, burnin=10000000)
+summary(f_condition)
+## No relationship between fat score and SMI or fat score and season
+autocorr(f_condition$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.01. Yes converged, but estimates and errors are extremely large
+autocorr(m_condition$VCV) # Yes converged, but estimates and errors are extremely large
+
+# Do we have an equal sample for the Season categories for females?
+table(d2_f$Fatbin)
+
+summary(d2_f$Body2)
+table(d2_f$Season)
+
+ggplot(d2_f, aes(x=Season, y=Body2))+
+  theme_bw()+theme(panel.grid=element_blank())+
+  geom_boxplot()
+
+## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+f1 = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), data = d2_f, family = binomial(link = "logit"))
+summary(f1)
 
 
-## UNREGISTERED ANALYSES
-m_condition1 = glm(Body2 ~ FatScore + Sex + Season, family=gaussian, data=d2)
-m_condition2 = glmer(Body2 ~ FatScore + Sex + Season + (1|Experimenter), family=gaussian, data=d2) #fit is singular
-anova(m_condition2,m_condition1) #experimenter random effect does not add to model
 ```
 
 
 #### *P2 analysis: condition and reproductive success*
 
-To model the effect of body condition on reproductive success, we will use two types of logistic mixed-effect models. Both types are supported in the literature, but are slightly different in the way in which the link function is specified. First, we will model reproductive success using a generalized linear mixed model framework with a logit link function (i.e. @milenkaya2015body). We will also use a logistic exposure model that has a link function which accounts for the time interval between nest checks when estimating the probability of daily nest survival (@shaffer2004unified). If fat score and the scaled mass index are positively correlated in P1, then we will use only fat score as the independent variable in this GLMM. If they are not positively correlated, we will include both as independent variables.
+To model the effect of body condition on reproductive success, we will use two types of logistic mixed-effect models. Both types are supported in the literature, but are slightly different in the way in which the link function is specified. First, we will model reproductive success using a generalized linear mixed model framework with a logit link function (i.e. @milenkaya2015body). We will also use a logistic exposure model that has a link function which accounts for the time interval between nest checks when estimating the probability of daily nest survival (@shaffer2004unified; @bolker2014logistic). If fat score and the scaled mass index are positively correlated in P1, then we will use only fat score as the independent variable in this GLMM. If they are not positively correlated, we will include both as independent variables.
 
 Previous research found a non-linear relationship between reproductive success and body condition variables (@milenkaya2015body). To check whether this is occurring in our data, we will first plot our raw data to determine if we need to include a non-linear body condition independent variable into our model (i.e. FatScore^2^). Our dependent variable is binary, so to more clearly see the trends in the data, on the x-axis we will bin our condition scores into 5 categories based on standard deviations (sd) around the mean (low = < 2 sd, moderately low = -2 sd to -1 sd, moderate = -1 sd to +1 sd, moderately high = +1 sd to +2 sd, high = > 2 sd). Then on the y-axis we will use the proportion of individuals in each category that had successful nests.
 
@@ -450,73 +489,126 @@ rs = rs[-which(rs$BirdID == "Chilaquile" | rs$BirdID == "Roja" | rs$BirdID == "B
                rs$BirdID == "Morada" | rs$BirdID == "Taco" | rs$BirdID == "Pan dulce"),] 
 
 rs = rs[,-1] # we don't need the date column
-d2 = d[-which(d$Aviary == "Aviary"),-c(1,2,6:12)] # take relevant data from Condition data set
 colnames(rs)[1] = "ID"
-h2 = merge(rs, d2, by ="ID", all = T) # create h2 dataset with reproductive success and body condition variables
-h2 = h2[-c(20,21,94,95),] # Chile and Taquito have duplicate rows for some reason
+rs_f = rs[which(rs$Fledglings == "yes" | rs$Fledglings == "no"),]
+rs_m = rs[which(rs$Territory == "yes" | rs$Territory == "no"),]
+
+# Need reproductive success and body condition variables together, for all birds that didn't have Fat Scores
+#Females
+d_f = d[which(d$Sex == "F"),] #biometrics data
+d_f = d_f[-which(d_f$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
+d_f$Fatbin = ifelse(d_f$FatScore > 0, 1, 0)
+sma = sma(log(wing) ~ log(mass), data = d_f, method = "SMA") #standard major axis regression
+bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
+Lo = mean(d_f$wing) #calculate the population mean wing length
+d_f$Body = d_f$mass*(Lo/d_f$wing)^bsma
+d_f$Body2 = scale(d_f$Body, center = T, scale = T)
+h2_f = merge(rs_f, d_f, by ="ID", all = T) # create h2 data set with reproductive success and body condition variables
+
+#Males
+d_m = d[which(d$Sex == "M"),] #biometrics data
+d_m = d_m[-which(d_m$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
+d_m$Fatbin = ifelse(d_m$FatScore > 0, 1, 0)
+sma = sma(log(wing) ~ log(mass), data = d_m, method = "SMA") #standard major axis regression
+bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
+Lo = mean(d_m$wing) #calculate the population mean wing length
+d_m$Body = d_m$mass*(Lo/d_m$wing)^bsma
+d_m$Body2 = scale(d_m$Body, center = T, scale = T)
+h2_m = merge(rs_m, d_m, by = "ID", all = T)
+
 
 #Factor the random effect variables
-h2$Year <- as.factor(h2$Year)
-h2$FatScore = as.factor(h2$FatScore)
+h2_m$Year <- as.factor(h2_m$Year)
+h2_f$Year <- as.factor(h2_f$Year)
 #Change yes/no values to 1/0
-h2$Fledglings = ifelse(h2$Fledglings == "yes", 1, ifelse(h2$Fledglings == "no", 0, NA))
-h2$Territory = ifelse(h2$Territory == "yes", 1, ifelse(h2$Territory == "no", 0, NA))
+h2_f$Fledglings = ifelse(h2_f$Fledglings == "yes", 1, ifelse(h2_f$Fledglings == "no", 0, NA))
+h2_m$Territory = ifelse(h2_m$Territory == "yes", 1, ifelse(h2_m$Territory == "no", 0, NA))
 
 
 ## DATA CHECKING ##
 # Non-linear trends?
-plot = h2[,c(1:3,6,7,11)] #simplify dataframe for plotting
-plotf = plot[-which(is.na(plot$Fledglings)),] #separate data from males and females
-plotm = plot[-which(is.na(plot$Territory)),]
-describe(plotf$Body2) # find the mean and standard deviation for categorizing the SMI scores
+
 #first females
-plotf$SMI_cat = ifelse(plotf$Body2 > -0.69+0.25, "high", ifelse(plotf$Body2 < -0.69-0.25, "low", "medium")) # create SMI categories
-plotf$SMI_cat = factor(plotf$SMI_cat, levels = c("low", "medium", "high")) # change order of variable levels to be increasing rather than alphabetical
-plot(plotf$Body2,plotf$Fledglings) # continuous data does not look curvilinear
-boxplot(plotf$Fledglings ~ plotf$SMI_cat) # categorized data looks more linear than curvilinear
+describe(h2_f$Body2) # find the mean and standard deviation for categorizing the SMI scores
+
+#UNREGISTERED ANALYSIS - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
+h2_f$SMI_cat = ifelse(h2_f$Body2 > 0.04+0.97, "high", NA) # greater than 1 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body2 > 0.53 & h2_f$Body2 < 1.01, "moderately high", h2_f$SMI_cat) # between 0.5 and 1 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body2 < 0.04-0.97, "low", h2_f$SMI_cat) # less than 1 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body2 > -0.93 & h2_f$Body2 < -0.45, "moderately low", h2_f$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
+h2_f$SMI_cat[which(is.na(h2_f$SMI_cat))] <- "moderate" 
+h2_f$SMI_cat = factor(h2_f$SMI_cat, levels = c("low","moderately low", "moderate","moderately high", "high"))
+
+table(h2_f$Fatbin, h2_f$Fledglings) #equal proportions in each category
+table(h2_f$SMI_cat, h2_f$Fledglings) # still a lot of data in the moderate category
+
+tmp_f = data.frame("Proportion_successful" = c(0.75,0.20,0.6,0.63,0.25), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
+tmp_f$SMI_category = factor(tmp_f$SMI_category, levels = c("low","moderately low", "moderate","moderately high", "high"))
+
 #repeat for males
-describe(plotm$Body2)
-plotm$SMI_cat = ifelse(plotm$Body2 > 1.14+0.32, "high", ifelse(plotm$Body2 < 1.14-0.32, "low", "medium"))
-plotm$SMI_cat = factor(plotm$SMI_cat, levels = c("low", "medium", "high"))
-plot(plotm$Body2,plotm$Territory) #continuous data does not look curvilinear
-boxplot(plotm$Territory ~ plotm$SMI_cat) #categorized data looks more linear than curvilinear
+describe(h2_m$Body2) # find the mean and standard deviation for categorizing the SMI scores
+
+#UNREGISTERED ANALYSIS - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
+h2_m$SMI_cat = ifelse(h2_m$Body2 > 0.03+0.97, "high", NA) # greater than 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body2 > 0.52 & h2_m$Body2 < 1, "moderately high", h2_m$SMI_cat) # between 0.5 and 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body2 < 0.03-0.97, "low", h2_m$SMI_cat) # less than 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body2 > -0.94 & h2_m$Body2 < -0.46, "moderately low", h2_m$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
+h2_m$SMI_cat[which(is.na(h2_m$SMI_cat))] <- "moderate" 
+h2_m$SMI_cat = factor(h2_m$SMI_cat, levels = c("low","moderately low", "moderate","moderately high", "high"))
+
+table(h2_m$SMI_cat, h2_m$Territory)
+tmp_m = data.frame("Proportion_successful" = c(0.67,0,0.69,0.67,1), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
+tmp_m$SMI_category = factor(tmp_m$SMI_category, levels = c("low","moderately low", "moderate","moderately high", "high"))
+
+
+par(mfrow=c(1,2))
+boxplot(tmp_f$Proportion_successful ~ tmp_f$SMI_category, main = "Females", ylab = "Proportion successful", xlab = "SMI category")
+boxplot(tmp_m$Proportion_successful ~ tmp_m$SMI_category, main = "Males", ylab = "Proportion successful", xlab = "SMI category")
+
 
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 # Over or underdispersion?
 #Fledglings 
-h2_f = h2[-which(is.na(h2$Fledglings)),] #full h2 data for females
 h2_f$ID = as.factor(as.character(h2_f$ID))
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_f[-which(is.na(h2_f$FatScore)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) 
-#250 simulations, but if want higher precision change n>1000
+h2_f <- na.omit(h2_f)
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_f, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250)
 ## Error no applicable method for 'family' applied to an object of class "MCMCglmm". 
-simulationOutput$scaledResiduals 
-#Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+
+## UNREGISTERED ANALYSIS - Due to the error above, we use glmer in this simulation function
+simulationOutput <- simulateResiduals(fittedModel = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family=binomial(link ="logit"), data=h2_f), n=250) 
+#250 simulations, but if want higher precision change n>1000
+## Error fit is singular. Both random effects explain essentially 0 variance.
+
+## UNREGISTERED ANALYSIS - Due to the error above, we dropped the random effect of Year from the model. The ID random effect needs to be kept in to account for multiple observations on the same individuals.
+simulationOutput <- simulateResiduals(fittedModel = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|ID), family=binomial(link ="logit"), data=h2_f), n=250) # fit is still singular though
+
+plot(simulationOutput$scaledResiduals)
 testDispersion(simulationOutput) 
-#if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) 
-#compare expected vs observed zeros, not zero-inflated if p<0.05
 testUniformity(simulationOutput) 
-#check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
 plot(simulationOutput) 
-#...there should be no pattern in the data points in the right panel
+# no evidence of overdispersion or zero inflation
 
 
 #Territory holder
-h2_m = h2[-which(is.na(h2$Territory)),] #full h2 data for males
-simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_m[-which(is.na(h2_m$Body2) | is.na(h2_m$FatScore)),], verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) 
-#250 simulations, but if want higher precision change n>1000
+h2_m = na.omit(h2_m)
+simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_m, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) 
 ## Error no applicable method for 'family' applied to an object of class "MCMCglmm"
-simulationOutput$scaledResiduals 
-#Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+
+## UNREGISTERED ANALYSIS - Due to the error above, we use glmer in this simulation function
+simulationOutput <- simulateResiduals(fittedModel = glmer(Territory ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family=binomial(link ="logit"), data=h2_m), n=250) 
+## Error fit is singular. Both random effects explain 0 variance.
+
+## UNREGISTERED ANALYSIS - Due to the error above, we dropped the random effect of Year from the model. The ID random effect needs to be kept in to account for multiple observations on the same individuals.
+simulationOutput <- simulateResiduals(fittedModel = glmer(Territory ~ FatScore + Body2 + Aviary + (1|ID), family=binomial(link ="logit"), data=h2_m), n=250) # fit is still singular though
+
+plot(simulationOutput$scaledResiduals)
 testDispersion(simulationOutput) 
-#if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) 
-#compare expected vs observed zeros, not zero-inflated if p<0.05
 testUniformity(simulationOutput) 
-#check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
 plot(simulationOutput) 
-#...there should be no pattern in the data points in the right panel
+# no evidence of overdispersion or zero inflation
 ```
 
 
@@ -524,24 +616,33 @@ plot(simulationOutput)
 
 ```{r p2pt1, echo=FALSE, warning=FALSE, results='asis'}
 library(MASS)
-fs <- polr(as.factor(FatScore) ~ Season + Sex, data = h2, Hess = T, na.action = na.omit) ## No ordinal family in glm? So use this function for ordered logistic regression
-summary(fs) 
-# no p-values in summary, use code below for p-values and CIs
-(ctable <- coef(summary(fs)))
-p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-(ctable <- cbind(ctable, "p value" = p))
-(ci <- confint(fs,level =0.95))
-# Season p-value = 0.40; CIs = -0.64 - 1.80
-# Fat score does not vary with season
+## UREGISTERED ANALYSIS - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Furthermore, the function simulateResiduals does not work with data in family "ordinal". Consequently, we used logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1+).
 
-bs <- glm(Body2 ~ Season + Sex, family = "gaussian", data = unique(h2[-which(is.na(h2$Body)),])) # only need one row per bird
-hist(bs$residuals) #Looks normal when Sex IV is included.
-summary(bs) 
-# Season p-value = 0.04; Sex p << 0.01
-#SMI varies by Season, so must include in H2 analyses  
+# Females
+bs_f <- lm(Body2 ~ Season,  data = d_f) # only need one row per bird
+plot(bs_f) 
+hist(resid(bs_f)) #Looks normal
+summary(bs_f) # SMI does not vary with season - do NOT need to include Season in H2 analyses
+
+d_f2 = na.omit(d_f)
+fs_f <- glm(Fatbin ~ Season, data = d_f2, family = binomial(link = "logit"))
+summary(fs_f) # Fat score does not vary with season
+
+
+# Males
+bs_m <- lm(Body2 ~ Season,  data = d_m[-which(is.na(d_m$Body2)),]) 
+plot(bs_m) 
+hist(resid(bs_m)) #Looks mostly normal, a little uniform
+summary(bs_m) # SMI does not vary with season - do NOT need to include Season in H2 analyses
+
+d_m2 = na.omit(d_m)
+fs_m <- glm(Fatbin ~ Season, data = d_m2, family = binomial(link = "logit"))
+summary(fs_m) # Just like in H1, not enough Fat score data on males in the breeding season to reliably estimate a relationship. 
+
+
 par(mfrow = c(1,2))
-boxplot(Body2 ~ Season, data = h2[which(h2$Sex == "F"),],main = "Female SMI")
-boxplot(Body2 ~ Season, data = h2[which(h2$Sex == "M"),],main = "Male SMI")
+boxplot(Body2 ~ Season, data = d_f,main = "Females", ylab = "SMI")
+boxplot(Body2 ~ Season, data = d_m,main = "Males", ylab = "SMI")
 
 ```
 
@@ -553,48 +654,78 @@ boxplot(Body2 ~ Season, data = h2[which(h2$Sex == "M"),],main = "Male SMI")
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #Mixed-effect logistic regression
-# 16 Females with RS, fat score and SMI data
-m_frs <- MCMCglmm(Fledglings ~ as.numeric(FatScore) + Body2 + Aviary + Season, random = ~Year + ID, 
-    family = "categorical", data = h2_f[-which(is.na(h2_f$FatScore)),], verbose = F, prior = prior, 
-    nitt = 62000000, thin = 200, burnin = 50000)
-summary(m_frs) # Cannot get model to converge. Even if I increase nitt, thin and burnin I get Error: Mixed model equations singular: use a (stronger) prior
+h2_f = na.omit(h2_f)
+# 20 Females with RS, fat score and SMI data
+
+m_frs <- MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random = ~Year + ID, 
+    family = "categorical", data = h2_f, verbose = F, prior = prior, 
+    nitt = 2000000, thin = 2000, burnin = 50000)
+summary(m_frs) # Cannot get model to converge. Even if we increase nitt, thin and burnin we get the Error: Mixed model equations singular: use a (stronger) prior
+
+## UNREGISTERED ANALYSIS - Due to the error above, we dropped the Year random effect to try to get the model to converge.
+m_frs <- MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random = ~ID, 
+    family = "categorical", data = h2_f, verbose = F, prior = prior, 
+    nitt = 20000000, thin = 2000, burnin = 500000)
+summary(m_frs)# Cannot get model to converge. Even if we increase nitt, thin and burnin we get Error: Mixed model equations singular: use a (stronger) prior
 autocorr(m_frs$Sol) #Did fixed effects converge?
 autocorr(m_frs$VCV) #Did random effects converge?
 
-## Does random effect improve fit of model?
-m_frs1 = glmer(Fledglings ~ FatScore + Body2 + Aviary + Season + (1|Year) + (1|ID), family = binomial(link="logit"), data = h2_f[-which(is.na(h2_f$FatScore)),])
-m_frs2 = glmer(Fledglings ~ FatScore + Body2 + Aviary + Season + (1|Year), family = binomial(link="logit"), data = h2_f[-which(is.na(h2_f$FatScore)),])
-m_frs3 = glmer(Fledglings ~ FatScore + Body2 + Aviary + Season + (1|ID), family = binomial(link="logit"), data = h2_f[-which(is.na(h2_f$FatScore)),])
-m_frs4 = glm(Fledglings ~ FatScore + Body2 + Aviary + Season, family = binomial(link="logit"), data = h2_f[-which(is.na(h2_f$FatScore)),])
-anova(m_frs1,m_frs2,m_frs3,m_frs4)
-### No significant differences in fit among models
-summary(m_frs1) #no significant effects
+## UNREGISTERED ANALYSIS - Due to the error above, we instead analyse these data using a frequentist method.
+m_frs1 = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family = binomial(link="logit"), data = h2_f) # Yes, fit is still singular and variance of random effects is close to 0
+m_frs2 = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|ID), family = binomial(link="logit"), data = h2_f) # Yes, fit is still singular and variance of random effects is close to 0
+
+##  UNREGISTERED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are only 2 females with data from 2019 and 2020.  Remove reproductive success data of these females from 2020 because condition data were collected in 2019 so it is more likely to impact their reproductive success that year.
+h2_f2 = h2_f[-which(h2_f$ID == "Chalupa" & h2_f$Year == "2020" | h2_f$ID == "Memela" & h2_f$Year == "2020"),]
+
+m_frs3 = glm(Fledglings ~ FatScore + Body2 + Aviary, family = binomial(link="logit"), data = h2_f2)
+summary(m_frs3) #no significant effects
 
 
 
-h2_m = h2_m[-which(is.na(h2_m$FatScore) | is.na(h2_m$Body2)),]
+h2_m = na.omit(h2_m)
 # 20 Males with RS, Fat score and SMI data
-m_mrs <- MCMCglmm(Territory ~ FatScore + Body2 + Aviary + Season, random = ~Year + ID, 
+m_mrs <- MCMCglmm(Territory ~ Fatbin + Body2 + Aviary, random = ~Year + ID, 
                   family = "categorical", data = h2_m, verbose = F, prior = prior, 
-    nitt = 8000000, thin = 300, burnin = 300000)
-summary(m_mrs) # No significant effects
-autocorr(m_mrs$Sol) #Did fixed effects converge?
-autocorr(m_mrs$VCV) #Did random effects converge?
+    nitt = 200000, thin = 200, burnin = 5000)
+summary(m_mrs) # Estimates and CIs are abnormally large.
+autocorr(m_mrs$Sol) # Looks like it converges, but estimates and CIs remain abnormally large
+autocorr(m_mrs$VCV) # Cannot get this to converge
 
-m_mrs1 = glmer(Territory ~ as.numeric(FatScore) + Body2 + Aviary + Season + (1|Year) + (1|ID), family = binomial(link="logit"), data = h2_m)
-m_mrs2 = glmer(Territory ~ as.numeric(FatScore) + Body2 + Aviary + Season+ (1|Year) , family = binomial(link="logit"), data = h2_m)
-m_mrs3 = glmer(Territory ~ as.numeric(FatScore) + Body2 + Aviary + Season  + (1|ID), family = binomial(link="logit"), data = h2_m)
-m_mrs4 = glm(Territory ~ as.numeric(FatScore) + Body2 + Aviary + Season, family = binomial(link="logit"), data = h2_m)
-anova(m_mrs1,m_mrs2,m_mrs3,m_mrs4) # fit is singular in all mixed models, so not able to compare them I think.
+## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+m_mrs1 = glmer(Territory ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family = binomial(link="logit"), data = h2_m) # fit is singular - random effects accounts for 0 variance
+m_mrs2 = glmer(Territory ~ FatScore + Body2 + Aviary + (1|ID), family = binomial(link="logit"), data = h2_m) # fit is still singular. ID random effect accounts for 0 variance - but need to keep because 25% of data are repeated males.
+summary(m_mrs2) ## Is this still okay to present?
+
+
+
+
+
+
+## UNREGISTERED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are 5 males with data from 2019 and 2020 (25%).  Only keep reproductive success data of these males in the year condition data were collected so it is more likely to impact their reproductive success that year.
+
+h2_m2 = h2_m[-which(h2_m$ID == "Taquito" & h2_m$Year == "2019" | h2_m$ID == "Queso" & h2_m$Year == "2020" |
+                    h2_m$ID == "Picante" & h2_m$Year == "2020" |h2_m$ID == "Mixiote" & h2_m$Year == "2020" |
+                    h2_m$ID == "Fideo" & h2_m$Year == "2020"),]
+m_mrs3 = glm(Territory ~ FatScore + Body2 + Aviary, family = binomial(link="logit"), data = h2_m2)
+summary(m_mrs3) # Estimate and CI for Intercept and Aviary are still huge.
+table(h2_m2$Territory, h2_m2$Aviary) # That is likely because in our sample there are no males that failed to defend a territory and were not in the aviaries.  So there is not enough variance in this variable to get a reliable estimate.
+
+## UNREGISTERED ANALYSIS - Due to the problem discovered above, we dropped the Aviary covariate from the model.
+m_mrs4 = glm(Territory ~ FatScore + Body2, family = binomial(link="logit"), data = h2_m2)
+summary(m_mrs4) # No significant effects
+plot(m_mrs4)
+
 
 ```
 
 
 
-Our measure of female nest success could be systematically biased against nests that failed early (@shaffer2004unified). Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
+Our measure of female nest success could be systematically biased against nests that failed early [@shaffer2004unified). Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
 
 ```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
 #Logistic exposure model, where “Exposure” is the number of days between nest checks
+#Created by Ben Bolker: https://rpubs.com/bbolker/logregexp
+
 ## First run code for the exposure link function
 library(MASS)
 logexp <- function(exposure = 1) {
@@ -626,7 +757,7 @@ logexp <- function(exposure = 1) {
 }
 
 
-
+setwd("~/Documents/Grackle project")
 rs20 <- read.csv("2020nests.csv",header=T, sep=",", stringsAsFactors=F) # from "2020 Nests" tab on data_NestsNestlings Google sheet
 rs19 <- read.csv("2019nests.csv",header=T, sep=",", stringsAsFactors=F) # from "2019 Nests_combined" tab on data_NestsNestlings Google sheet
 
@@ -642,51 +773,116 @@ rs20$Year = "2020"
 
 rs_exp = rbind(rs19,rs20) # combine reproductive success data from both years
 colnames(rs_exp)[1] = "DayofYear" #turns out Day of Year is a more accurate variable name than Julian Date
-
-
-
-# Females
 rs_expf = rs_exp[-which(rs_exp$MothersID=="UB"),] # subset to just female data
-h2_f2 = h2_f[,-c(2:4,6)]
-colnames(h2_f2)[1] = "MothersID"
-h2_f2$MothersID = as.character(h2_f2$MothersID)
-# need to add Sofrita, Pan Dulce, Torta to h2_f2. h2_f2 has Concha and she is not in rs_expf
-tmp = d[which(d$ID == "Sofrita"|d$ID == "Pan dulce"| d$ID == "Torta"),c(2,3,5,13:16)]
-tmp$Aviary = c("no","no","no")
-tmp$ID = as.character(tmp$ID)
-tmp$ID[which(tmp$ID == "Pan dulce")]<- "Pan Dulce"
-colnames(tmp)[2] = "MothersID"
-h2_f2 = unique(rbind(h2_f2,tmp))
+
+## Combine RS data with condition data
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_datacondition.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- data.frame(d)
+#change column names to match the models we preregistered
+colnames(d) = c("Date","Aviary","ID","Sex","FatScore","mass","Ltarsus","Rtarsus","tarsus","Lwing","Rwing","wing","Season","Experimenter")
+#remove data from birds we caught as juveniles
+d = d[-which(d$ID == "Chilaquile" | d$ID == "Roja" | d$ID == "Becky" | d$ID == "Pepino" | 
+               d$ID == "Morada" | d$ID == "Taco" | d$ID == "Pan Dulce"),] 
+#remove data from birds released from the aviaries
+d2 = d[-which(d$Aviary == "Aviary"),]
+
+#factor random effects and round fat score variables listed as x.5
+d2$Experimenter <- as.factor(d2$Experimenter)
+d2$ID = as.factor(d2$ID)
+d2$FatScore = round(d2$FatScore, digits =0)
+d2_f = d2[which(d2$Sex == "F"),]
+### Calculating SMI (scaled mass index) ###
+#Females
+sma = sma(log(wing) ~ log(mass), data = d2_f, method = "SMA") #standard major axis regression
+bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
+Lo = mean(d2_f$wing) #calculate the population mean wing length
+d2_f$Body = d2_f$mass*(Lo/d2_f$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
+d2_f$Body2 = scale(d2_f$Body, center = T, scale = T)
+d2_f$Fatbin = ifelse(d2_f$FatScore >0, 1, 0)
+
+rs = d2_f[,c(3,5,14:17)]
+colnames(rs)[1] = "MothersID"
+rs$MothersID = as.factor(as.character(rs$MothersID))
 
 rs_expf$Year = as.factor(rs_expf$Year)
 rs_expf$Fate = as.numeric(rs_expf$Fate)
 rs_expf$DayofYear2 = scale(rs_expf$DayofYear, scale = T, center = T)
-rs_expf = unique(merge(rs_expf,h2_f2, by = "MothersID")) #combine condition data with reproductive success data
+rs2 = unique(merge(rs_expf,rs, by = "MothersID")) #combine condition data with reproductive success data
 
-rs_expf2 = rs_expf[-which(rs_expf$Interval == 0),] #don't need rows for first nest observation
-rs_expf2 = rs_expf2[-which(is.na(rs_expf2$FatScore)),] 
-# 22 females
+## Add Aviary variable
+rs2$Aviary = "no"
+rs2$Aviary[which(rs2$MothersID == "Avocada" | rs2$MothersID == "Chalupa" | rs2$MothersID == "Chimichanga" | 
+                   rs2$MothersID == "Memela" | rs2$MothersID == "Paella" | rs2$MothersID == "Tapa" | 
+                   rs2$MothersID == "Yuca")] <- "yes"
 
-exp1 <- glm(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + Season,
-         family=binomial(link=logexp(rs_expf2$Interval)),
-         data = rs_expf2)
-exp2 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + Season + (1|MothersID),
-         family=binomial(link=logexp(rs_expf2$Interval)),
-         data = rs_expf2)
-exp3 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + Season + (1|MothersID) + (1|Year),
-         family=binomial(link=logexp(rs_expf2$Interval)),
-         data = rs_expf2)
-anova(exp3,exp2,exp1) #model with 2 random effects significantly better fit to the data than other 2 models. 
+rs2 = rs2[-which(rs2$Interval == 0),] #don't need rows for first nest observation
+# 27 females
+
+exp1 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + (1|MothersID) + (1|Year),
+         family=binomial(link=logexp(rs2$Interval)),
+         data = rs2)
+
+summary(exp1) # Warning - model is singular. Also warning - longer object length is not a multiple of shorter object length (maybe because there are NAs for Fatscore?)
+
+## UNREGISTERED ANALYSIS - Model including the Year random effect is singular because Year accounts for essentially zero variance. Removed year from the model for subsequent analysis.
+
+exp2 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
+         family=binomial(link=logexp(rs2$Interval)),
+         data = rs2)
+
+summary(exp2) # Still get warning - longer object length is not a multiple of shorter object length. Try removing fat score NAs
+
+rs3 = na.omit(rs2)
+exp3 <- glmer(Fate ~ FatScore + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
+         family=binomial(link=logexp(rs3$Interval)),
+         data = rs3)
 
 summary(exp3)
 # As SMI increases, probability of nest success decreases p = 0.02
-# As Day of Year increases, probability of nest success decreases p << 0.01
-# No effect of Fat Score, Time spent in the aviaries, or Season
+# No effect of Fat Score, Time spent in the aviaries, day of the year
+
+library(ggplot2)
+pred = predict(exp3, newdata = rs3, se.fit = TRUE)
+pred = as.data.frame(pred)
+rs3 = cbind(rs3,pred)
+
+ggplot(rs3, aes(x = Body2, y = pred)) + 
+  geom_smooth(model=exp3) +
+  theme_bw() +
+  labs(x = "SMI", y = "Probability of daily nest survival", title = "Body Condition and nest survival")
+
+
+library(visreg)
+library(sjPlot)
+library(bayestestR)
+
+..exposure <- mean(rs3$Interval)
+visreg(exp3, "Body2", scale="response")
+
+
+set_theme(
+  base = theme_bw(),
+  axis.title.size = 1.3,
+  axis.textsize = 0.9)
+p = plot_model(exp3, terms = "Body2",type="pred")
+p + labs(y="Probability of nest survival", x = "SMI", title = "Relationship of body condition and nest survival") #+
+  scale_y_discrete(labels = "")
+                     
+set_theme(
+  base = theme_bw(),
+  axis.title.size = 1.3,
+  axis.textsize = 0.9)
+p2 = plot_model(exp3, terms = "FatScore",type="pred")
+p2 + labs(y="Probability of nest survival", x = "Fat score", title = "Relationship of body condition and nest survival") 
+                     
+
+
+rm(..exposure)
+
 
 ```
 
-
-UNREGISTERED ANALYSES: We compared a model with no random effects to a model with a random effect for female ID, and a model with a random effect for Year in addition to Female ID. The full model with both random effects was the best fit to our data. We found that the probability of daily nest survival decreased as day of the year increased, and this is common in bird species. We did not find any effect of time spent in the aviaries, season, or fat score. However, we found that higher SMI related to decreased probability of daily nest survival.
+We did not find any effect of time spent in the aviaries, day of the year, or fat score. However, we found that higher SMI related to decreased probability of daily nest survival.
 
 
 
