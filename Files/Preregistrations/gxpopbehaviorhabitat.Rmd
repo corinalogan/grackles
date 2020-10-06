@@ -78,7 +78,7 @@ There could be multiple mechanisms underpinning the results we find, however our
 
 ### A. STATE OF THE DATA
 
-This preregistration was written (Mar 2020) prior to collecting any data from the edge and core populations, therefore we were blind to these data. However, we were not blind to some of the data from the Arizona population: some of the relatedness data (SNPs used for Hypothesis 2 to quantify relatedness to infer whether individuals disperse away from relatives) from the middle population (Arizona) has already been analyzed for other purposes (n=57 individuals, [see](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html) @sevchik2019dispersal). Therefore, it will be considered secondary data: data that are in the process of being collected for other investigations. We have now collected blood samples from many more grackles in Arizona, therefore we will redo the analyses from the Arizona population in the analyses involved in the current preregistration. In May 2020, we completed data collection for other variables at the Arizona field site: [flexibility and innovation](http://corinalogan.com/Preregistrations/g_flexmanip.html) [@logan2019flexmanip], and  [exploration](http://corinalogan.com/Preregistrations/g_exploration.html) [@mccune2019exploration], and we will soon analyze this data, therefore it will also be considered secondary data. This preregistration was submitted in May 2020 to PCI Ecology for pre-study peer review. We received the reviews, and revised and resubmitted in Aug 2020.
+This preregistration was written (Mar 2020) prior to collecting any data from the edge and core populations, therefore we were blind to these data. However, we were not blind to some of the data from the Arizona population: some of the relatedness data (SNPs used for Hypothesis 2 to quantify relatedness to infer whether individuals disperse away from relatives) from the middle population (Arizona) has already been analyzed for other purposes (n=57 individuals, [see](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html) @sevchik2019dispersal). Therefore, it will be considered secondary data: data that are in the process of being collected for other investigations. We have now collected blood samples from many more grackles in Arizona, therefore we will redo the analyses from the Arizona population in the analyses involved in the current preregistration. In May 2020, we completed data collection for other variables at the Arizona field site: [flexibility and innovation](http://corinalogan.com/Preregistrations/g_flexmanip.html) [@logan2019flexmanip], and  [exploration](http://corinalogan.com/Preregistrations/g_exploration.html) [@mccune2019exploration], and we will soon analyze this data, therefore it will also be considered secondary data. This preregistration was submitted in May 2020 to PCI Ecology for pre-study peer review. We received the reviews, and revised and resubmitted in Aug 2020, and it passed pre-study peer review in Oct 2020.
 
 **Level of data blindness:** Logan and McCune collect the behavioral data (Q1) and therefore have seen this data for the Arizona population. Lukas has access to the Arizona data and has seen some of the summaries in presentations. Chen has not seen any data.
 
@@ -109,16 +109,11 @@ We may decide to present the results from different hypotheses in separate artic
 ```{r table1, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table1.csv"), header=F, sep=",", stringsAsFactors=F) 
 
-library(reactable)
-reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
-          columns = list(
-            V1 = colDef(name="Site"),
-            V2 = colDef(name="Range position"),
-            V3 = colDef(name="Breeding since"),
-            V4 = colDef(name="Number of years breeding"),
-            V5 = colDef(name="Average number of generations"),
-            V6 = colDef(name="Citation")
-          ))
+colnames(d) <- c("Site","Range position","Breeding since","Number of years breeding","Average number of generations","Citation")
+
+library(kableExtra)
+knitr::kable(d) %>%
+kable_styling(full_width = T, position = "left")
 ```
 
 #### Q3 (habitat GTGR & BTGR): Are there differences in the availability of habitat between great-tailed grackles (GTGR) and boat-tailed grackles (BTGR)? (Fig. 3; @wehtje2003range, @selander1961analysis)
@@ -510,22 +505,11 @@ We then ran the **mathematical model** and performed pairwise contrasts and dete
 ```{r tableparam, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table2.csv"), header=F, sep=",", stringsAsFactors=F) 
 
-library(reactable)
-reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
-          columns = list(
-            V1 = colDef(name="Response variable"),
-            V2 = colDef(name="n"),
-            V3 = colDef(name="mu1"),
-            V4 = colDef(name="mu2"),
-            V5 = colDef(name="mu3"),
-            V6 = colDef(name="mu1_sd"),
-            V7 = colDef(name="mu2_sd"),
-            V8 = colDef(name="mu3_sd"),
-            V9 = colDef(name="Difference crosses zero? S1-S2"),
-            V10 = colDef(name="Difference crosses zero? S1-S3"),
-            V11 = colDef(name="Difference crosses zero? S2-S3"),
-            V12 = colDef(name="Notes")
-          ))
+colnames(d) <- c("Response variable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","Difference crosses zero? S1-S2","Difference crosses zero? S1-S3","Difference crosses zero? S2-S3","Notes")
+
+library(kableExtra)
+knitr::kable(d) %>%
+kable_styling(full_width = T, position = "left")
 ```
 
 To investigate the degree to which we can detect differences in the variances between sites, we ran another version of the **mathematical model** using a sample size of 15 per site and we held the mean number of trials to reverse a preference constant between all populations. We reduced the $\sigma$ standard deviation to 10 (from 40) to reduce the expectation of measurement error, which would overshadow any actual site differences attributable to variation in the standard deviation. We then changed the $\alpha$ standard deviations and performed pairwise site contrasts. We determined that it will be difficult to detect meaningful differences in variances in the number of trials to reverse a preference between sites (Table 3). 
@@ -533,23 +517,13 @@ To investigate the degree to which we can detect differences in the variances be
 **Table 3.** Simulation outputs from **varying the $\alpha$ standard deviations (the variance)**, while holding sample size (n) and site means ($\mu$) constant. We calculate pairwise contrasts between the estimated standard deviations from the posterior distribution: if for a large sample the difference is both positive and negative and crosses zero (yes), then we are not able to detect differences between the two sites. If the differences between the means are all on one side of zero for 89% of the posterior samples (no), then we are able to detect differences between the two sites. We chose the 89% interval based on [@statrethinkingbook]. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites.
 
 ```{r tablevariance, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table3.csv"), header=F, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table3.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-library(reactable)
-reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
-          columns = list(
-            V1 = colDef(name="Response variable"),
-            V2 = colDef(name="n"),
-            V3 = colDef(name="mu1"),
-            V4 = colDef(name="mu2"),
-            V5 = colDef(name="mu3"),
-            V6 = colDef(name="mu1_sd"),
-            V7 = colDef(name="mu2_sd"),
-            V8 = colDef(name="mu3_sd"),
-            V9 = colDef(name="Difference crosses zero? S1-S2"),
-            V10 = colDef(name="Difference crosses zero? S1-S3"),
-            V11 = colDef(name="Difference crosses zero? S2-S3")
-          ))
+colnames(d) <- c("Response variable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","Difference crosses zero? S1-S2","Difference crosses zero? S1-S3","Difference crosses zero? S2-S3")
+
+library(kableExtra)
+knitr::kable(d) %>%
+kable_styling(full_width = T, position = "left")
 ```
 
 
