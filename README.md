@@ -28,6 +28,11 @@
 
  - H) Folsom MA, MacPherson M, Lukas D, McCune KB, Bergeron L, Bond A, Blackwell A, Rowney C, Logan CJ. 2020. **[Repeated parental care by adult male great-tailed grackles and its association with hormones, fitness, specific populations, and mating strategies](http://corinalogan.com/Preregistrations/gmalecare.html)**. (http://corinalogan.com/Preregistrations/gmalecare.html) In principle acceptance by *PCI Ecology* of the version on 15 Jun 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gmalecare.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gmalecare.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100054) peer review history.
  
+ - E) McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2020. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** In principle acceptance by *PCI Ecology* of the version on 23 Sep 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=75&reviews=True) peer review history.
+ 
+ - I) Logan CJ, McCune KB, Breen A, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. In principle acceptance by *PCI Ecology* of the version on 6 Oct 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100062) peer review history.
+
+ 
 ### Preregistrations
 
 *(Note: preregistrations A-C were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
@@ -37,10 +42,6 @@
  - B) Logan CJ, Rowney C, Bergeron L, McCune K, MacPherson M, Bond A, Blackwell A, Escalante A, Pacheco M. 2018. **[How and why does behavioral flexibility vary across the range of a rapidly expanding species?](http://corinalogan.com/Preregistrations/g_expansion.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_expansion.Rmd) version). 
 
  - C) Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. **[The genetics of behavioral flexibility across the range of a rapidly expanding species](http://corinalogan.com/Preregistrations/g_flexgenes.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexgenes.Rmd) version). 
- 
- - E) McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2019. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd) version)
- 
- - I) Logan CJ, McCune KB, Breen A, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd) version)
 
 *Preregistrations are study plans that are written before the data are collected (or before analyzing the data when using data that already exist). We get them peer reviewed before we conduct the study to ensure that we get the most out of the resources we invest by correcting any issues before they arise. Additionally, once a preregistration has passed pre-study peer review, it is almost guaranteed to be published upon a quick post-study peer review, which checks to make sure we did what we said we were going to do and if there were any deviations, that these deviations maintain the scientific validity of the work.*
 
