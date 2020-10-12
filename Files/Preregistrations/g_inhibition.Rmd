@@ -297,6 +297,19 @@ points(no$session,no$avgfirstlatency, ylab="Average latency first peck (s)", xla
 abline(lm(no$avgfirstlatency~as.numeric(no$session)),lty=2)
 legend(x="topright", y=8, legend=c(pch19="go", pch1="no go"), pch=c(19,1), box.lty=1, cex=2)
 par(op)
+
+
+#GLMM on raw data, not averages
+library(MCMCglmm)
+prior2 = list(G=list(G1=list(V=1,nu=0)))
+
+m1 <- MCMCglmm(firstlatency ~ trialtype * trial, random=~bird, family="gaussian", data=d2, verbose=F, prior=prior2, nitt=300000, thin=1000, burnin=200000)
+#gaussian = identity link for mcmcglmm https://cran.r-project.org/web/packages/MCMCglmm/vignettes/Overview.pdf
+summary(m1)
+autocorr(m1$Sol) 
+#Did fixed effects converge? No, changed nitt and burnin from 13000 and 3000 respectively but nothing is getting it to converge
+autocorr(m1$VCV) 
+#Did random effects converge? No, changed nitt and burnin from 13000 and 3000 respectively but nothing is getting it to converge
 ```
 
 **Figure 1.** The latency to the first peck on the screen per trial across trials according to whether they made the incorrect choice by pecking during the no go trials or not pecking during the go trials (top), the correct choice on the Go trials by pecking the rewarded stimulus (middle), or the correct choice on the No Go trials by not pecking the unrewarded stimulus (bottom). For the latter, although these trials were coded as the bird making the correct choice by not pecking the screen, due to issues in combining the two data sheets (noted above), there were sometimes screen pecks listed for these trials.
@@ -1241,9 +1254,9 @@ go <- MCMCglmm(LatencyFirstPeckToScreen ~ CorrectChoice * Trial, random=~ID, fam
 #gaussian = identity link for mcmcglmm https://cran.r-project.org/web/packages/MCMCglmm/vignettes/Overview.pdf
 summary(go)
 autocorr(go$Sol) 
-#Did fixed effects converge? No, changed nitt and burning from 13000 and 3000 respectively but nothing is getting it to converge
+#Did fixed effects converge? No, changed nitt and burnin from 13000 and 3000 respectively but nothing is getting it to converge
 autocorr(go$VCV) 
-#Did random effects converge? No, changed nitt and burning from 13000 and 3000 respectively but nothing is getting it to converge
+#Did random effects converge? No, changed nitt and burnin from 13000 and 3000 respectively but nothing is getting it to converge
 #The model did not converge so cannot include it in the results section
 ```
 
