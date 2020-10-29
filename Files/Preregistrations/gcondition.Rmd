@@ -241,6 +241,8 @@ d = d[-which(d$ID == "Chilaquile" | d$ID == "Roja" | d$ID == "Becky" | d$ID == "
                d$ID == "Morada" | d$ID == "Taco" | d$ID == "Pan Dulce"),] 
 #remove data from birds released from the aviaries
 d2 = d[-which(d$Aviary == "Aviary"),]
+#remove data from males with no weight values
+d2 = d2[-which(d2$ID == "Pico" | d2$ID == "Tomatillo"),]
 
 #factor random effects and round fat score variables listed as x.5
 d2$Experimenter <- as.factor(d2$Experimenter)
@@ -255,6 +257,7 @@ d2$FatScore = round(d2$FatScore, digits =0)
 ## UNREGISTERED ANALYSIS - Because SMI includes population mean structural body length need to calculate SMI separately for males and females
 d2_f = d2[which(d2$Sex == "F"),]
 d2_m = d2[which(d2$Sex == "M"),]
+
 ### Determine which measure will go into the calculation of SMI to be the "Body" variable ###
 #as the structural body size measure that shows a higher correlation with body mass
 cor.test(d2_m$tarsus,d2_m$mass) #r = 0.21
@@ -286,7 +289,7 @@ d3 = d3[which(d3$count > 1),] # 35 individuals
 d3_m = d3[which(d3$Sex == "M"),]
 d3_f = d3[which(d3$Sex == "F"),]
 
-rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d3, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular 
+#rpt(log(wing) ~ Sex + (1|ID), grname = "ID", data = d3, datatype = "Gaussian", nboot = 500, npermut = 500) # WARNING - fit is singular 
 # R = 0.68, CI: 0.45 - 0.82, p = 0.002
 
 ## UNREGISTERED ANALYSIS - because males and females are sexually dimorphic, run separate models.
@@ -564,7 +567,7 @@ h2_f$SMI_cat = factor(h2_f$SMI_cat, levels = c("low","moderately low", "moderate
 table(h2_f$Fatbin, h2_f$Fledglings) #equal proportions in each category
 table(h2_f$SMI_cat, h2_f$Fledglings) # still a lot of data in the moderate category
 
-tmp_f = data.frame("Proportion_successful" = c(0.75,0.20,0.6,0.63,0.25), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
+tmp_f = data.frame("Proportion_successful" = c(0.75,0.2,0.6,0.625,0.25), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
 tmp_f$SMI_category = factor(tmp_f$SMI_category, levels = c("low","moderately low", "moderate","moderately high", "high"))
 
 #repeat for males
@@ -581,12 +584,26 @@ h2_m$SMI_cat = factor(h2_m$SMI_cat, levels = c("low","moderately low", "moderate
 table(h2_m$SMI_cat, h2_m$Territory)
 tmp_m = data.frame("Proportion_successful" = c(0.67,0,0.69,0.67,1), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
 tmp_m$SMI_category = factor(tmp_m$SMI_category, levels = c("low","moderately low", "moderate","moderately high", "high"))
+tmp_m$n = c(7, 4, 16, 7, 4)
+tmp_f$n = c(4, 5, 10, 8, 4)
 
+tmp_m$Sex = "Male"
+tmp_f$Sex = "Female"
 
-par(mfrow=c(1,2))
-boxplot(tmp_f$Proportion_successful ~ tmp_f$SMI_category, main = "Females", ylab = "Proportion successful", xlab = "SMI category")
-boxplot(tmp_m$Proportion_successful ~ tmp_m$SMI_category, main = "Males", ylab = "Proportion successful", xlab = "SMI category")
+tmp = rbind(tmp_f, tmp_m)
 
+library(tidyverse)
+
+table(h2_m$SMI_cat)
+
+ggplot(tmp, aes(x=SMI_category, y=Proportion_successful, size=n))+
+  facet_wrap(.~Sex) +
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid=element_blank())+
+  xlab('SIM category')+
+  ylab('Proportion successful')
+  #ggtitle('Males')
 
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
