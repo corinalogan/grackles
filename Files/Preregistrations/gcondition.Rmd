@@ -85,7 +85,47 @@ To validate that we were measuring structural body size consistently across expe
 ##### Unregistered analysis
 Warning messages occurred during the repeatability analysis using the rptR package in R [@stoffel2017rptr] indicating that the fit was singular, likely because the variance for the Experimenter random effect in the model for both female and male wing length was 0.001. We thus conducted an unregistered analysis where we confirmed that our repeatability values from the repeatability models were valid despite the warning by hand calculating repeatability following @nakagawa2010repeatability. The hand-calculated repeatabilities were nearly identical (female R = 0.5, male R = 0.71).
 
-We found that fat score was not correlated with SMI, which indicates that they are not measuring the same trait (female  p = 0.81; male p = 0.46; Table 1).  There was also no effect of season (breeding or non-breeding) on female fat score (p = 0.71). Only 2 males were measured during the breeding season, therefore we omitted season as an independent variable in the male model. 
+We found that fat score was not correlated with SMI, which indicates that they are not measuring the same trait (female  p = 0.81; male p = 0.50; Table 1).  There was also no effect of season (breeding or non-breeding) on female fat score (p = 0.71). Only 2 males were measured during the breeding season, therefore we omitted season as an independent variable in the male model. 
+
+
+```{r p1 results, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+d2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/condition_p1model_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
+d2_m <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/condition_p1model_mdata.csv"), header=T, sep=",", stringsAsFactors=F)
+
+d2_f <- data.frame(d2_f)
+d2_m <- data.frame(d2_m)
+
+library(lme4)
+library(knitr)
+library(kableExtra)
+##females
+f1 = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), data = d2_f, family = binomial(link = "logit"))
+summary(f1)
+##males
+m1 = glmer(Fatbin ~ Body2 + (1|Experimenter), data = d2_m, family = binomial(link = "logit"))
+summary(m1)
+
+p1_f = data.frame("Parameter" = c("Intercept","SMI","Season"),"Females" = c("-0.20 (0.74)","0.07 (0.30)","0.27 (0.71)"), 
+                "p-value" = c(0.79,0.81,0.70))
+p1_m = data.frame("Males" = c("-0.82 (0.64)","0.46 (0.62)"), "p-value" = c(0.21,0.46))
+
+p1 = data.frame("Parameter" = c("Intercept","SMI","Season"),"Estimate (SE)" = c("-0.20 (0.74)","0.07 (0.30)","0.27 (0.71)"), 
+                "p-value" = c(0.79,0.81,0.70), "Estimate (SE)" = c("-0.82 (0.64)","0.46 (0.62)",NA), "p-value" = c(0.21,0.46,NA))
+
+kables(list(kable(p1_f,align=c("l","l", "r"),valign="t",booktabs = TRUE),kable(p1_m,align=c("l","r"),valign="t",booktabs = TRUE,position ="float_right")),caption="Table 1: Results from the logistic mixed-effect regression for females and fixed-effect regression for males to determine whether fat score and scaled mass index (SMI) are correlated. Estimates are presented with the standard error in parentheses")
+
+
+p1 %>%
+ kbl() %>%
+  kable_styling() %>%
+   add_header_above(c(" " = 1, "Females" = 2, "Males" = 2)) #%>%
+    #col.names = c("Parameter", "Estimate (SE)","p-value","Estimate (SE)","p-value")
+
+```
+
+
+#### P2: body condition and reproductive success
+
 
 ### STATE OF THE DATA
 
@@ -95,9 +135,11 @@ This preregistration uses secondary data that are collected as part of other ong
 #### NOTE (Oct 2020): 
 1) We realized that the sexual dimorphism of male and female body sizes necessitates separate analyses.  Therefore, we calculated SMI for males and females separately, ran separate models for each sex for the repeatibility analysis, P1 and P2.
 2) Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using an ordinal regression.  The function simulateResiduals, which we used to check our data, does not work with data in the ordinal family. Consequently, we used logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1).
-##### P1: Fat score and SMI are correlated
+##### P1: correlation between SMI and Fat score
 3) Despite the data checking which indicated our model was not overdispersed or zero inflated, we could not get the fixed effects or random effect to converge using the Bayesian MCMCglmm. We found no improvement in model fit by tweaking the priors or iterations/burnin/thin options. Therefore, we fit these models using the function glmer, a frequentist framework.
 4) The Season variable only includes 2 males in the breeding season category, thus we do not have a large enough sample to produce reliable estimates. We removed the Season variable from the model for males.
+##### P2: body condition and reproductive success
+
 
 
 ### HYPOTHESES
