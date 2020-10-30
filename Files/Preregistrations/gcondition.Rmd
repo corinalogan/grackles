@@ -155,16 +155,7 @@ kbl(p1, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 1: Re
 
 #### P2: body condition and reproductive success
 
-We found no relationship between energetic condition and a female’s ability to produce fledglings or a male’s ability to defend a territory containing nests. Because fat score and SMI did not correlate with each other, we included both as independent variables in these models. In some cases body condition shows a non-linear relationship with reproductive success [@milenkaya2015body]. 
-
-```{r p2 main results, eval=TRUE, echo=TRUE, warning=FALSE, include=TRUE, results='asis'}
-d2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p1model_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
-d2_m <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p1model_mdata.csv"), header=T, sep=",", stringsAsFactors=F)
-
-
-```
-
-We calculated the SMI categories using 0.5 standard deviation increments around the mean to determine if individuals in some categories were more likely to be reproductively successful.  However, we found no evidence for a non-linear relationship between reproductive success and SMI for males or females (Fig. 3). Neither SMI nor fat score differed by season in males or females (Fig. 4) so we did not include season as an independent variable in the final models.
+In some cases body condition shows a non-linear relationship with reproductive success [@milenkaya2015body]. To test for this we calculated the SMI categories using 0.5 standard deviation increments around the mean to determine if individuals in some categories were more likely to be reproductively successful.  However, we found no evidence for a non-linear relationship between reproductive success and SMI for males or females (Fig. 3). 
 
 ```{r p2 non-linear trend results, eval=TRUE, echo=TRUE, fig.height=2.5, fig.width=7, warning=FALSE, include=TRUE, results='asis'}
 h2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -201,6 +192,68 @@ ggplot(tmp, aes(x=SMI_category, y=Proportion_successful, size=n))+
 
 ```
 
+
+Neither SMI nor fat score differed by season in males or females (Fig. 4) so we did not include season as an independent variable in the final models.
+
+```{r p2 condition and season, eval=TRUE, echo=TRUE, fig.height=2, fig.width=5, warning=FALSE, include=TRUE, results='asis'}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_datacondition.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- data.frame(d)
+
+#change column names to match the models we preregistered
+colnames(d) = c("Date","Aviary","ID","Sex","FatScore","mass","Ltarsus","Rtarsus","tarsus","Lwing","Rwing","wing","Season","Experimenter")
+#remove data from birds we caught as juveniles
+d = d[-which(d$ID == "Chilaquile" | d$ID == "Roja" | d$ID == "Becky" | d$ID == "Pepino" | 
+               d$ID == "Morada" | d$ID == "Taco" | d$ID == "Pan Dulce"),] 
+d_f = d[which(d$Sex == "F"),] #biometrics data
+d_f = d_f[-which(d_f$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
+d_f$Fatbin = ifelse(d_f$FatScore > 0, 1, 0)
+sma = sma(log(wing) ~ log(mass), data = d_f, method = "SMA") #standard major axis regression
+bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
+Lo = mean(d_f$wing) #calculate the population mean wing length
+d_f$Body = d_f$mass*(Lo/d_f$wing)^bsma
+d_f$Body2 = scale(d_f$Body, center = T, scale = T)
+
+#Males
+d_m = d[which(d$Sex == "M"),] #biometrics data
+d_m = d_m[-which(d_m$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
+d_m$Fatbin = ifelse(d_m$FatScore > 0, 1, 0)
+sma = sma(log(wing) ~ log(mass), data = d_m, method = "SMA") #standard major axis regression
+bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
+Lo = mean(d_m$wing) #calculate the population mean wing length
+d_m$Body = d_m$mass*(Lo/d_m$wing)^bsma
+d_m$Body2 = scale(d_m$Body, center = T, scale = T)
+
+# Females
+bs_f <- lm(Body2 ~ Season,  data = d_f)
+# SMI does not vary with season
+d_f2 = na.omit(d_f)
+fs_f <- glm(Fatbin ~ Season, data = d_f2, family = binomial(link = "logit"))
+# Fat score does not vary with season
+
+
+# Males
+bs_m <- lm(Body2 ~ Season,  data = d_m[-which(is.na(d_m$Body2)),]) 
+# SMI does not vary with season - do NOT need to include Season in H2 analyses
+d_m2 = na.omit(d_m)
+fs_m <- glm(Fatbin ~ Season, data = d_m2, family = binomial(link = "logit"))
+# Just like in H1, not enough Fat score data on males in the breeding season to reliably estimate a relationship. 
+
+
+par(mfrow = c(1,2))
+boxplot(Body2 ~ Season, data = d_f,main = "Females", ylab = "SMI")
+boxplot(Body2 ~ Season, data = d_m,main = "Males", ylab = "SMI")
+```
+Figure 4: Scaled mass index (SMI) was not significantly different between the breeding and non-breeding seasons for either sex.
+
+
+Because fat score and SMI did not correlate with each other, we included both as independent variables in our models testing prediction 2. We found that neither SMI (p = 0.13), nor fat score (p = 0.82) was associated with a female’s ability to produce fledglings (Table 2). There was also no evidence of an effect on the ability of a female to produce fledglings after having spent time in the aviaries (p = 0.22). For males, the ability to defend a territory was also unrelated to either SMI (p = 0.13) or fat score (p = 0.76). Additionally, we found that those males who spent more time in the aviaries were less likely to hold a territory compared with males who were never in the aviaries or who spent less time in the aviaries (p = 0.02). However, we stress that our sample size was relatively small (20 males), and we did not have a balanced sample because there were no males that failed to defend a territory and were never in the aviaries. Additionally, only five males had data from more than one breeding season, which resulted in our model fit being singular because the random effect for bird ID accounted for essentially zero variance. However, we kept ID in the model to account for the repeated samples.  
+
+```{r p2 main results, eval=TRUE, echo=TRUE, warning=FALSE, include=TRUE, results='asis'}
+h2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p1model_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
+h2_m <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p1model_mdata.csv"), header=T, sep=",", stringsAsFactors=F)
+
+
+```
 
 
 ### C. METHODS
@@ -607,7 +660,7 @@ Actual power                  	=	0.9020264
 
 This means that, with a sample size of 88, we would have a 90% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
 
-```{r p2, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt1, echo=FALSE, warning=FALSE, results='asis'}
 library(DHARMa)
 library(lme4)
 library(MCMCglmm)
@@ -764,7 +817,7 @@ plot(simulationOutput)
 
 ####Do body condition variables vary by season?
 
-```{r p2pt1, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt2, echo=FALSE, warning=FALSE, results='asis'}
 library(MASS)
 
 # Females
@@ -799,7 +852,7 @@ boxplot(Body2 ~ Season, data = d_m,main = "Males", ylab = "SMI")
 
 ####Does body condition relate to reproductive success?
 
-```{r p2pt2, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #Mixed-effect logistic regression
