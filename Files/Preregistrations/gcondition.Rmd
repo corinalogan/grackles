@@ -107,6 +107,7 @@ This preregistration used secondary data that were collected as part of other on
 5) The Season variable only includes 2 males in the breeding season category, thus we do not have a large enough sample to produce reliable estimates. We removed the Season variable from the model for males.
 ##### P2: body condition and reproductive success
 6) Only two females had reproductive success data from more than one year in our study (2019 and 2020). Consequently, there were very few repeated measures in this sample and our random effect of bird ID accounted for zero variance.  This led to a warning that our model fit was singular.  Therefore, we removed the data for these females for 2020 so we could remove ID as a random effect from the model, which resulted in the model running without warnings.  We removed the 2020 data for these females because their condition data was collected in 2019 and these measures were more likely to relate to their 2019 reproductive success data than to their reproductive success in 2020.
+7) The fit of the model analyzing the effect of body condition on male reproductive success (ability to hold a territory containing female nests) was singular. The Year random effect accounted for zero variance in the data, so we removed it. The fit was still singular, but we retained the ID random effect (although it also explained zero variance) to account for repeated measures in this sample.
 
 
 
@@ -154,6 +155,7 @@ kbl(p1, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 1: Re
 
 
 #### P2: body condition and reproductive success
+Our sample size for P2, where individuals had measures of reproductive success, SMI and fat scores, was 20 for females and 20 for males.
 
 In some cases body condition shows a non-linear relationship with reproductive success [@milenkaya2015body]. To test for this we calculated the SMI categories using 0.5 standard deviation increments around the mean to determine if individuals in some categories were more likely to be reproductively successful.  However, we found no evidence for a non-linear relationship between reproductive success and SMI for males or females (Fig. 3). 
 
@@ -246,14 +248,44 @@ boxplot(Body2 ~ Season, data = d_m,main = "Males", ylab = "SMI")
 Figure 4: Scaled mass index (SMI) was not significantly different between the breeding and non-breeding seasons for either sex.
 
 
+
 Because fat score and SMI did not correlate with each other, we included both as independent variables in our models testing prediction 2. We found that neither SMI (p = 0.13), nor fat score (p = 0.82) was associated with a female’s ability to produce fledglings (Table 2). There was also no evidence of an effect on the ability of a female to produce fledglings after having spent time in the aviaries (p = 0.22). For males, the ability to defend a territory was also unrelated to either SMI (p = 0.13) or fat score (p = 0.76). Additionally, we found that those males who spent more time in the aviaries were less likely to hold a territory compared with males who were never in the aviaries or who spent less time in the aviaries (p = 0.02). However, we stress that our sample size was relatively small (20 males), and we did not have a balanced sample because there were no males that failed to defend a territory and were never in the aviaries. Additionally, only five males had data from more than one breeding season, which resulted in our model fit being singular because the random effect for bird ID accounted for essentially zero variance. However, we kept ID in the model to account for the repeated samples.  
 
 ```{r p2 main results, eval=TRUE, echo=TRUE, warning=FALSE, include=TRUE, results='asis'}
-h2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p1model_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
-h2_m <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p1model_mdata.csv"), header=T, sep=",", stringsAsFactors=F)
+h2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
+h2_m <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_mdata.csv"), header=T, sep=",", stringsAsFactors=F)
 
+h2_f = h2_f[-which(is.na(h2_f$Fledglings)),]
+h2_f = h2_f[-which(is.na(h2_f$Fatbin)),]
+# 20 Females with RS, fat score and SMI data
 
+m_frs2 = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|ID), family = binomial(link="logit"), data = h2_f) # Yes, fit is still singular and variance of random effects is close to 0
+
+##  UNREGISTERED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are only 2 females with data from 2019 and 2020.  Remove reproductive success data of these females from 2020 because condition data were collected in 2019 so it is more likely to impact their reproductive success that year.
+h2_f2 = h2_f[-which(h2_f$ID == "Chalupa" & h2_f$Year == "2020" | h2_f$ID == "Memela" & h2_f$Year == "2020"),]
+m_frs3 = glm(Fledglings ~ FatScore + Body2 + Aviary, family = binomial(link="logit"), data = h2_f2)
+#summary(m_frs3) #no significant effects
+
+h2_m = h2_m[-which(is.na(h2_m$Territory)),]
+h2_m = h2_m[-which(is.na(h2_m$Fatbin)),]
+# 20 Males with RS, Fat score and SMI data
+
+## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+m_mrs2 = glmer(Territory ~ FatScore + Body2 + Aviary + (1|ID), family = binomial(link="logit"), data = h2_m) # fit is still singular. ID random effect accounts for 0 variance - but need to keep because 25% of data are repeated males.
+#summary(m_mrs2) ## Is this still okay to present?
+
+p2 = data.frame("Parameter" = c("Intercept","FatScore", "SMI","Aviary"),"Estimate (SE)" = c("-0.02 (0.73)","0.15 (1.02)","-0.92 (0.61)","-1.38 (1.14)"), 
+                "p-value" = c(0.98,0.89,0.13,0.23), "Estimate (SE)" = c("3.05 (1.40)","-0.33 (1.10)","1.18 (0.78)","-3.62 (1.56)"), "p-value" = c(0.03,0.77,0.13,0.02))
+
+colnames<- c("Parameter", "Estimate (SE)", "p-value", "Estimate (SE)", "p-value")
+kbl(p2, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 2: Results from the logistic regression for females and males to test whether condition relates to reproductive success. Estimates are presented with the standard error in parentheses.") %>% 
+  add_header_above(c(" " = 1, "Females" = 2, "Males" = 2)) %>% 
+  kable_styling()
 ```
+
+
+
+Logistic regression analyses to determine reproductive success from nests discovered in different stages will be  systematically biased [@shaffer2004unified]. Nests discovered at a more progressed stage (i.e. nestling stage compared to building stage) are statistically more likely to succeed and nests with frequent and prolonged adult visits (such as those that occur when nests survive longer) are more likely to be discovered. Therefore, nests that fail early are less likely to be detected[@shaffer2004unified]. Consequently, we also analyzed female reproductive success using a logistic exposure model [@bolker2014logistic], which uses survival analysis to determine the factors affecting the probability of daily nest survival, while accounting for incomplete nest observations.  We found that the probability of daily nest survival was significantly negatively related to SMI (p = 0.03; Table 3), where for every unit increase in SMI, the odds of daily nest survival decreases by half. This indicates that a female with a larger SMI (more mass for her structural body size) was less likely to have her nest survive each day (Fig. 5). There was no statistically significant relationship between the probability of daily nest survival and fat score, day of the year, or time spent in the aviaries (Table 3). 
 
 
 ### C. METHODS
@@ -471,8 +503,8 @@ r_wing_m = glmer(log(wing) ~ 1 + (1|ID), data = d3_m)
 summary(r_wing_m)
 # variance of ID = 0.001
 # varance of residual = 0.0005
-R = 0.001/(0.001+0.0004)
-# R = 0.71
+R = 0.001/(0.001+0.0005)
+# R = 0.67
 
 r_wing_f = glmer(log(wing) ~ 1 + (1|ID), data = d3_f)
 summary(r_wing_f)
