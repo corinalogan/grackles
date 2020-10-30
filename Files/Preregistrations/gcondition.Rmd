@@ -108,7 +108,7 @@ This preregistration used secondary data that were collected as part of other on
 ##### P2: body condition and reproductive success
 6) Only two females had reproductive success data from more than one year in our study (2019 and 2020). Consequently, there were very few repeated measures in this sample and our random effect of bird ID accounted for zero variance.  This led to a warning that our model fit was singular.  Therefore, we removed the data for these females for 2020 so we could remove ID as a random effect from the model, which resulted in the model running without warnings.  We removed the 2020 data for these females because their condition data was collected in 2019 and these measures were more likely to relate to their 2019 reproductive success data than to their reproductive success in 2020.
 7) The fit of the model analyzing the effect of body condition on male reproductive success (ability to hold a territory containing female nests) was singular. The Year random effect accounted for zero variance in the data, so we removed it. The fit was still singular, but we retained the ID random effect (although it also explained zero variance) to account for repeated measures in this sample.
-
+8) The model fit was again singular in our logistic exposure model because the Year random effect explained zero variance in the data. We removed this random effect from the analysis.
 
 
 ### RESULTS
@@ -287,6 +287,88 @@ kbl(p2, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 2: Re
 
 Logistic regression analyses to determine reproductive success from nests discovered in different stages will be  systematically biased [@shaffer2004unified]. Nests discovered at a more progressed stage (i.e. nestling stage compared to building stage) are statistically more likely to succeed and nests with frequent and prolonged adult visits (such as those that occur when nests survive longer) are more likely to be discovered. Therefore, nests that fail early are less likely to be detected[@shaffer2004unified]. Consequently, we also analyzed female reproductive success using a logistic exposure model [@bolker2014logistic], which uses survival analysis to determine the factors affecting the probability of daily nest survival, while accounting for incomplete nest observations.  We found that the probability of daily nest survival was significantly negatively related to SMI (p = 0.03; Table 3), where for every unit increase in SMI, the odds of daily nest survival decreases by half. This indicates that a female with a larger SMI (more mass for her structural body size) was less likely to have her nest survive each day (Fig. 5). There was no statistically significant relationship between the probability of daily nest survival and fat score, day of the year, or time spent in the aviaries (Table 3). 
 
+
+```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
+#Logistic exposure model, where “Exposure” is the number of days between nest checks
+#Created by Ben Bolker: https://rpubs.com/bbolker/logregexp
+
+## First run code for the exposure link function
+library(MASS)
+logexp <- function(exposure = 1) {
+  ## hack to help with visualization, post-prediction etc etc
+  get_exposure <- function() {
+    if (exists("..exposure", env=.GlobalEnv))
+      return(get("..exposure", envir=.GlobalEnv))
+    exposure
+  }
+  linkfun <- function(mu) qlogis(mu^(1/get_exposure()))
+  ## FIXME: is there some trick we can play here to allow
+  ##   evaluation in the context of the 'data' argument?
+  linkinv <- function(eta) plogis(eta)^get_exposure()
+  logit_mu_eta <- function(eta) {
+    ifelse(abs(eta)>30,.Machine$double.eps,
+           exp(eta)/(1+exp(eta))^2)
+  }
+  mu.eta <- function(eta) {       
+    get_exposure() * plogis(eta)^(get_exposure()-1) *
+      logit_mu_eta(eta)
+  }
+  valideta <- function(eta) TRUE
+  link <- paste("logexp(", deparse(substitute(exposure)), ")",
+                sep="")
+  structure(list(linkfun = linkfun, linkinv = linkinv,
+                 mu.eta = mu.eta, valideta = valideta, 
+                 name = link),
+            class = "link-glm")
+}
+
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_logexpdata.csv"), header=T, sep=",", stringsAsFactors=F)
+rs3 = na.omit(d) # remove NAs in fat score values
+
+exp3 <- glmer(Fate ~ FatScore + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
+         family=binomial(link=logexp(rs3$Interval)),
+         data = rs3)
+
+#summary(exp3)
+ple = data.frame("Parameter" = c("Intercept","FatScore", "SMI","DayOfYear","Aviary"),"Estimate (SE)" = c("1.99 (0.40)","0.91 (0.49)","-0.69 (0.31)","-0.21 (0.15)","-0.47 (0.61)"), "p-value" = c("<0.001",0.06,0.03,0.16,0.44))
+colnames<- c("Parameter", "Estimate (SE)", "p-value")
+kbl(ple, col.names = colnames,align = c("l","c","c"),caption="Table 3: Results on the relationship between female reproductive success (logistic exposure model) and scaled mass index (SMI), fat score, the amount of time spent in the aviaries, and the day of the year. Odds ratios (OR) are the exponentiated estimates to transform them from the log scale to increase interpretability.") %>% 
+  kable_styling()
+
+library(ggplot2)
+library(visreg)
+library(sjPlot)
+library(bayestestR)
+pred = predict(exp3, newdata = rs3, se.fit = TRUE)
+pred = as.data.frame(pred)
+rs3 = cbind(rs3,pred)
+
+
+..exposure <- mean(rs3$Interval)
+visreg(exp3, "Body2", scale="response")
+
+
+set_theme(
+  base = theme_bw(),
+  axis.title.size = 1.3,
+  axis.textsize = 0.9)
+p = plot_model(exp3, terms = "Body2",type="pred")
+p + labs(y="Probability of nest survival", x = "SMI", title = "Relationship of body condition and nest survival") #+
+  scale_y_discrete(labels = "")
+                     
+set_theme(
+  base = theme_bw(),
+  axis.title.size = 1.3,
+  axis.textsize = 0.9)
+p2 = plot_model(exp3, terms = "FatScore",type="pred")
+p2 + labs(y="Probability of nest survival", x = "Fat score", title = "Relationship of body condition and nest survival") 
+                     
+
+
+rm(..exposure)
+
+
+```
 
 ### C. METHODS
 
