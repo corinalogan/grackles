@@ -6,7 +6,7 @@
 
 ### Post-study articles: passed pre-study peer review at PCI Ecology & currently in post-study peer review at PCI Ecology
 
-  - &ast;Sevchik A, Logan CJ, Folsom M, Bergeron L, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html)**. (http://corinalogan.com/Preregistrations/gdispersal_manuscript.html) In principle acceptance by *PCI Ecology* of the version on 29 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd). [EcoEvoRxiv](https://ecoevorxiv.org/t6beh/). [Pre-study](https://doi.org/10.24072/pci.ecology.100036) peer review history.
+  - &ast;Sevchik A, Logan CJ, McCune KB, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html)**. (http://corinalogan.com/Preregistrations/gdispersal_manuscript.html) In principle acceptance by *PCI Ecology* of the version on 29 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd). [EcoEvoRxiv](https://ecoevorxiv.org/t6beh/). [Pre-study](https://doi.org/10.24072/pci.ecology.100036) peer review history.
 
 
 ### Preregistrations: passed pre-study peer review at PCI Ecology
