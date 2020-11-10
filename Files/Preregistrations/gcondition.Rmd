@@ -7,12 +7,9 @@ author: Berens JM (Arizona State University), [Logan CJ](http://CorinaLogan.com)
   KB (UCSB, kelseybmccune@gmail.com)
 date: "`r Sys.Date()`"
 output:
-  html_document:
-    toc: yes
-    toc_depth: 4
-    toc_float:
-      collapsed: no
-    code_folding: hide
+  pdf_document:
+    keep_tex: yes
+    latex_engine: null
   md_document:
     toc: yes
   word_document:
@@ -20,9 +17,12 @@ output:
     toc_depth: '4'
   github_document:
     toc: yes
-  pdf_document:
-    keep_tex: yes
-    latex_engine: null
+  html_document:
+    toc: yes
+    toc_depth: 4
+    toc_float:
+      collapsed: no
+    code_folding: hide
 bibliography: MyLibrary.bib
 csl: https://raw.githubusercontent.com/corinalogan/grackles/master/Files/behavioral-ecology.csl
 header-includes:
@@ -133,6 +133,7 @@ d2_m <- data.frame(d2_m)
 library(lme4)
 library(knitr)
 library(kableExtra)
+library(smatr)
 ##females
 f1 = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), data = d2_f, family = binomial(link = "logit"))
 #summary(f1)
@@ -179,6 +180,7 @@ tmp_f$Sex = "Female"
 
 tmp = rbind(tmp_f, tmp_m)
 
+library(ggplot2)
 ggplot(tmp, aes(x=SMI_category, y=Proportion_successful, size=n))+
   facet_wrap(.~Sex) +
   geom_point()+
@@ -288,7 +290,7 @@ kbl(p2, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 2: Re
 Logistic regression analyses to determine reproductive success from nests discovered in different stages will be  systematically biased [@shaffer2004unified]. Nests discovered at a more progressed stage (i.e. nestling stage compared to building stage) are statistically more likely to succeed and nests with frequent and prolonged adult visits (such as those that occur when nests survive longer) are more likely to be discovered. Therefore, nests that fail early are less likely to be detected [@shaffer2004unified]. Consequently, we also analyzed female reproductive success using a logistic exposure model [@bolker2014logistic], which uses survival analysis to determine the factors affecting the probability of daily nest survival, while accounting for incomplete nest observations.  We found that the probability of daily nest survival was significantly negatively related to SMI (p = 0.03; Table 3), where for every unit increase in SMI, the odds of daily nest survival decreased by half. This indicates that a female with a larger SMI (more mass for her structural body size) was less likely to have her nest survive each day (Fig. 5). There was no statistically significant relationship between the probability of daily nest survival and fat score, day of the year, or time spent in the aviaries (Table 3). Although not statistically significant, the effect size for the relationship between fat score and daily nest survival is large and potentially biologically meaningful. The odds of a nest surviving on a given day are almost 2.5 times greater for birds with some fat (a score of 1) compared to no fat (a score of 0).
 
 
-```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
+```{r logexp, echo=FALSE, warning=FALSE, results='asis'}
 #Logistic exposure model, where “Exposure” is the number of days between nest checks
 #Created by Ben Bolker: https://rpubs.com/bbolker/logregexp
 
@@ -350,15 +352,15 @@ set_theme(
   axis.title.size = 1.3,
   axis.textsize = 0.9)
 p = plot_model(exp3, terms = "Body2",type="pred")
-p + labs(y="Probability of nest survival", x = "SMI", title = "Relationship of body condition and nest survival") #+
-  scale_y_discrete(labels = "")
+p + labs(y="Probability of daily nest survival", x = "SMI", title = "") #+
+  #scale_y_discrete(labels = "")
                      
 set_theme(
   base = theme_bw(),
   axis.title.size = 1.3,
   axis.textsize = 0.9)
 p2 = plot_model(exp3, terms = "FatScore",type="pred")
-p2 + labs(y="Probability of nest survival", x = "Fat score", title = "Relationship of body condition and nest survival") 
+p2 + labs(y="Probability of daily nest survival", x = "Fat score", title = "") 
                      
 sink(); 
 ```
@@ -1046,7 +1048,7 @@ plot(m_mrs4)
 
 Our measure of female nest success could be systematically biased against nests that failed early [@shaffer2004unified]. Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
 
-```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt4, echo=FALSE, warning=FALSE, results='asis'}
 #Logistic exposure model, where “Exposure” is the number of days between nest checks
 #Created by Ben Bolker: https://rpubs.com/bbolker/logregexp
 
