@@ -330,7 +330,7 @@ rs3 = na.omit(d) # remove NAs in fat score values
 exp3 <- glmer(Fate ~ FatScore + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
          family=binomial(link=logexp(rs3$Interval)),
          data = rs3)
-
+closeAllConnections()
 #summary(exp3)
 ple = data.frame("Parameter" = c("Intercept","FatScore", "SMI","DayOfYear","Aviary"),"Estimate (SE)" = c("1.99 (0.40)","0.91 (0.49)","-0.69 (0.31)","-0.21 (0.15)","-0.47 (0.61)"), "p-value" = c("<0.001",0.06,0.03,0.16,0.44))
 colnames<- c("Parameter", "Estimate (SE)", "p-value")
@@ -341,28 +341,16 @@ library(ggplot2)
 library(visreg)
 library(sjPlot)
 library(bayestestR)
-pred = predict(exp3, newdata = rs3, se.fit = TRUE)
-pred = as.data.frame(pred)
-rs3 = cbind(rs3,pred)
+#pred = predict(exp3, newdata = rs3, se.fit = TRUE)
+#pred = as.data.frame(pred)
+#rs3 = cbind(rs3,pred)
 
-sink("/dev/null")
 
-set_theme(
-  base = theme_bw(),
-  axis.title.size = 1.3,
-  axis.textsize = 0.9)
-p = plot_model(exp3, terms = "Body2",type="pred")
-p + labs(y="Probability of daily nest survival", x = "SMI", title = "") #+
-  #scale_y_discrete(labels = "")
+p = plot_model(exp3, show.values = T, title = "Probability of daily nest survival",axis.title = "Odds Ratio",
+           axis.labels = c("Aviary","Day of Year","SMI","Fat score"),
+           dot.size = 3,line.size = 1.5)
+p + font_size(title =  22, axis_title.x = 22, labels.x = 18, labels.y= 18)
                      
-set_theme(
-  base = theme_bw(),
-  axis.title.size = 1.3,
-  axis.textsize = 0.9)
-p2 = plot_model(exp3, terms = "FatScore",type="pred")
-p2 + labs(y="Probability of daily nest survival", x = "Fat score", title = "") 
-                     
-sink(); 
 ```
 
 ### DISCUSSION
@@ -1147,7 +1135,7 @@ rs2 = rs2[-which(rs2$Interval == 0),] #don't need rows for first nest observatio
 exp1 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + (1|MothersID) + (1|Year),
          family=binomial(link=logexp(rs2$Interval)),
          data = rs2)
-
+closeAllConnections()
 summary(exp1) # Warning - model is singular. Also warning - longer object length is not a multiple of shorter object length (maybe because there are NAs for Fatscore?)
 
 ## MODIFIED ANALYSIS - Model including the Year random effect is singular because Year accounts for essentially zero variance. Removed year from the model for subsequent analysis.
