@@ -374,7 +374,6 @@ Although our first analysis of reproductive success, measured as the ability to 
 Measurements of energetic condition are important for understanding variation in life history characteristics in studies from across the animal kingdom. However, the results of this study highlight the need to better understand proxy measures of condition, not only in grackles but for birds in general. Most studies on avian energetic condition only use one proxy for condition, but because energetic condition is difficult to measure directly, it is important to compare multiple proxy variables to ensure each proxy is measuring the intended trait [the jingle-jangle fallacy; @block1995contrarian; @carter2013animal]. Future research could add to this work by incorporating additional methods to measure energetic condition, for example, blood hematocrit levels [@dawson1997avian], or protein storage [@houston1995changes], or by studying additional traits that could be affected by variation in energy stores, like dispersal [@ellers1998field] or survival [@liao2011fat]. Furthermore, future research would benefit from using logistic exposure models to examine the relationship between body condition and reproductive success, as it controls for the bias that arises when early nest failures are not detected, which is not possible in logistic regression models, and it is more sensitive to changes in the nest statuses of birds [@shaffer2004unified]. 
 
 
-
 ### C. METHODS
 
 The methods below are based on the preregistration, with small changes as described in the [Deviations from the preregistration](#deviations-from-the-preregistration) section above.
@@ -385,11 +384,11 @@ Great-tailed grackles are caught in the wild in Tempe, Arizona using a variety o
 
 From March - August, we monitor the behavior of all color-marked grackles to determine their nesting status. We follow females carrying nesting materials to find their nest. We determine whether the male territory owner is color-marked as well. Then we check each nest approximately every day to determine the status based on the female’s behavior (building, incubation, feeding nestlings, feeding fledglings, failed).
 
-Individuals included in this sample will be those for which we have measures of condition when they were adults. We will not include individuals whose data were collected as juveniles. As of 30 July 2019, we have fledgling data for 14 females that exhibited breeding behavior (5 had 1+ fledgling, 9 had no fledglings) and breeding territory status for 10 males (7 territory holders, 3 non-territory holders, 2 not observed so not part of this sample). Therefore, the minimum sample size for H2 will be 24. The minimum sample size for H1 will be 72, because that is how many marked individuals we have biometric data for so far. However, we expect to be able to add to the sample size for both H1 and H2 before the end of this investigation in Tempe, Arizona.
+Individuals included in this sample will be those for which we have measures of condition when they were adults. We will not include individuals whose data were collected as juveniles. As of 30 July 2019, we have fledgling data for 14 females that exhibited breeding behavior (5 had 1+ fledgling, 9 had no fledglings) and breeding territory status for 10 males (7 territory holders, 3 non-territory holders, 2 not observed so not part of this sample). Therefore, the minimum sample size for H2 will be 24. The minimum sample size for H1 will be 72, because that is how many marked individuals we have biometric data for so far. However, we expect to be able to add to the sample size for both H1 and H2 before the end of this investigation in Tempe, Arizona. *UPDATE Oct 2020: In the second breeding season we had 20 females and 20 males with reproductive success and body condition data*
 
 #### **Sample size rationale**
 
-We will continue to color mark as many grackles as possible, and collect biometric data and fat scores. Our current sample of reproductive success is small because the grackles in Tempe nest in very tall palms, making it difficult to determine nest status. However, we plan to collect additional reproductive success data during the breeding season in summer 2020. 
+We will continue to color mark as many grackles as possible, and collect biometric data and fat scores. Our current sample of reproductive success is small because the grackles in Tempe nest in very tall palms, making it difficult to determine nest status. However, we plan to collect additional reproductive success data during the breeding season in summer 2020. *UPDATE Oct 2020: In the second breeding season we had 20 females and 20 males with reproductive success and body condition data*
 
 #### **Data collection stopping rule**
 
@@ -409,7 +408,6 @@ https://gitlab.com/corinalogan/the-grackle-project/blob/master/protocolNestCheck
 
 All data necessary for the analyses are available at https://knb.ecoinformatics.org/view/doi:10.5063/F1NZ862D and at github (the provided code will load these files directly from github).
 
-
 #### **Randomization and counterbalancing**
 
 There is no randomization or counterbalancing in this investigation. 
@@ -422,7 +420,7 @@ No blinding is involved in this investigation.
 
 **P1: correlation between fat and the scaled mass index**
 
-1) Fat score [the amount of visible fat under the skin in the clavicle and abdomen reported as a score from 0 (no fat) to 8 (fat completely covers muscles and underside of the bird); @kaiser1993new]
+1) Fat score [the amount of visible fat under the skin in the clavicle and abdomen reported as a score from 0 (no fat) to 8 (fat completely covers muscles and underside of the bird); @kaiser1993new] *UPDATE Oct 2020: Fat score was heavily 0 skewed with few scores greater than one. To increase model fit we used a binomial response variable instead, where 0 is no fat and 1 is some fat observed undert the skin.*
 
 **P2: condition and reproductive success**
 
@@ -437,7 +435,7 @@ No blinding is involved in this investigation.
 
 1) Scaled mass index using measures of body weight and tarsus length or flattened wing length [average of left and right as in @bleeker2005body]. We will choose the measure that is most correlated with body weight [@peig2009new].
 
-2) Season (non-breeding [Sep-Feb], breeding [Mar-Aug]). NOTE (Oct 2020): The Season variable only includes 2 males in the breeding season category, thus we do not have a large enough sample to produce reliable estimates. We removed the Season variable from the model for males.
+2) Season (non-breeding [Sep-Feb], breeding [Mar-Aug]). *UPDATE Oct 2020: The Season variable only includes 2 males in the breeding season category, thus we do not have a large enough sample to produce reliable estimates. We removed the Season variable from the model for males.*
 
 3) Random effect: Experimenter (because several different experimenters measure dependent variables on multiple different birds)
 
@@ -608,7 +606,7 @@ R = 0.001/(0.001+0.001)
 
 ### H1 - data checking
 
-## UREGISTERED ANALYSIS - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Furthermore, the function simulateResiduals does not work with data in family "ordinal". Consequently, we used logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1+).
+## MODIFIED ANALYSIS - Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This made it difficult to fit models using ordinal regression.  Furthermore, the function simulateResiduals does not work with data in family "ordinal". Consequently, we used logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1+).
 ## UNREGISTERED ANALYSIS - As above, need to run all models separately for males and females
 d2_m$Fatbin = ifelse(d2_m$FatScore > 0, 1, 0)
 d2_f$Fatbin = ifelse(d2_f$FatScore > 0, 1, 0)
@@ -715,12 +713,12 @@ summary(m_condition)
 autocorr(m_condition$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. 
 autocorr(m_condition$VCV) # 
 
-## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+## MODIFIED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
 m1 = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), family = binomial(link = "logit"), data = d2_m)
 summary(m1) # but the estimates for this also look bad, specifically the intercept and Season
 ## In the season variable we only have 2 breeding males - sample size too small to give good estimates.
 
-## UNREGISTERED ANALYSIS - Because the Season variable only includes 2 males in the breeding category we don't have a large enough sample to produce reliable estimates. Therefore we must drop Season from the model.
+## MODIFIED ANALYSIS - Because the Season variable only includes 2 males in the breeding category we don't have a large enough sample to produce reliable estimates. Therefore we must drop Season from the model.
 m3 = glmer(Fatbin ~ Body2 + (1|Experimenter), data = d2_m, family = binomial(link = "logit"))
 summary(m3)
 
@@ -742,7 +740,7 @@ ggplot(d2_f, aes(x=Season, y=Body2))+
   theme_bw()+theme(panel.grid=element_blank())+
   geom_boxplot()
 
-## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+## MODIFIED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
 f1 = glmer(Fatbin ~ Body2 + Season + (1|Experimenter), data = d2_f, family = binomial(link = "logit"))
 summary(f1)
 
@@ -754,7 +752,7 @@ summary(f1)
 
 To model the effect of body condition on reproductive success, we will use two types of logistic mixed-effect models. Both types are supported in the literature, but are slightly different in the way in which the link function is specified. First, we will model reproductive success using a generalized linear mixed model framework with a logit link function (i.e. @milenkaya2015body). We will also use a logistic exposure model that has a link function which accounts for the time interval between nest checks when estimating the probability of daily nest survival (@shaffer2004unified; @bolker2014logistic). If fat score and the scaled mass index are positively correlated in P1, then we will use only fat score as the independent variable in this GLMM. If they are not positively correlated, we will include both as independent variables.
 
-Previous research found a non-linear relationship between reproductive success and body condition variables (@milenkaya2015body). To check whether this is occurring in our data, we will first plot our raw data to determine if we need to include a non-linear body condition independent variable into our model (i.e. FatScore^2^). Our dependent variable is binary, so to more clearly see the trends in the data, on the x-axis we will bin our condition scores into 5 categories based on standard deviations (sd) around the mean (low = < 2 sd, moderately low = -2 sd to -1 sd, moderate = -1 sd to +1 sd, moderately high = +1 sd to +2 sd, high = > 2 sd). Then on the y-axis we will use the proportion of individuals in each category that had successful nests. **NOTE (Oct 2020) - Because most individuals fell within the medium category when we grouped data using 1 standard deviation around the mean, we switched to using half standard deviation increments around the mean.**
+Previous research found a non-linear relationship between reproductive success and body condition variables (@milenkaya2015body). To check whether this is occurring in our data, we will first plot our raw data to determine if we need to include a non-linear body condition independent variable into our model (i.e. FatScore^2^). Our dependent variable is binary, so to more clearly see the trends in the data, on the x-axis we will bin our condition scores into 5 categories based on standard deviations (sd) around the mean (low = < 2 sd, moderately low = -2 sd to -1 sd, moderate = -1 sd to +1 sd, moderately high = +1 sd to +2 sd, high = > 2 sd). Then on the y-axis we will use the proportion of individuals in each category that had successful nests. *UPDATE Oct 2020: Because most individuals fell within the medium category when we grouped data using 1 standard deviation around the mean, we switched to using half standard deviation increments around the mean.*
 
 A power analysis was conducted as above for P1 and the protocol reported here:
 
@@ -844,7 +842,7 @@ h2_m$Territory = ifelse(h2_m$Territory == "yes", 1, ifelse(h2_m$Territory == "no
 #first females
 describe(h2_f$Body2) # find the mean and standard deviation for categorizing the SMI scores
 
-## NOTE (Oct 2020) - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
+## MODIFIED ANALYSIS - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
 h2_f$SMI_cat = ifelse(h2_f$Body2 > 0.04+0.97, "high", NA) # greater than 1 sd from the mean
 h2_f$SMI_cat = ifelse(h2_f$Body2 > 0.53 & h2_f$Body2 < 1.01, "moderately high", h2_f$SMI_cat) # between 0.5 and 1 sd from the mean
 h2_f$SMI_cat = ifelse(h2_f$Body2 < 0.04-0.97, "low", h2_f$SMI_cat) # less than 1 sd from the mean
@@ -861,7 +859,7 @@ tmp_f$SMI_category = factor(tmp_f$SMI_category, levels = c("low","moderately low
 #repeat for males
 describe(h2_m$Body2) # find the mean and standard deviation for categorizing the SMI scores
 
-## NOTE (Oct 2020) - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
+## MODIFIED ANALYSIS - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
 h2_m$SMI_cat = ifelse(h2_m$Body2 > 0.03+0.97, "high", NA) # greater than 1 sd from the mean
 h2_m$SMI_cat = ifelse(h2_m$Body2 > 0.52 & h2_m$Body2 < 1, "moderately high", h2_m$SMI_cat) # between 0.5 and 1 sd from the mean
 h2_m$SMI_cat = ifelse(h2_m$Body2 < 0.03-0.97, "low", h2_m$SMI_cat) # less than 1 sd from the mean
@@ -902,12 +900,12 @@ h2_f <- na.omit(h2_f)
 simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_f, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250)
 ## Error no applicable method for 'family' applied to an object of class "MCMCglmm". 
 
-## UNREGISTERED ANALYSIS - Due to the error above, we use glmer in this simulation function
+## MODIFIED ANALYSIS - Due to the error above, we use glmer in this simulation function
 simulationOutput <- simulateResiduals(fittedModel = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family=binomial(link ="logit"), data=h2_f), n=250) 
 #250 simulations, but if want higher precision change n>1000
 ## Error fit is singular. Both random effects explain essentially 0 variance.
 
-## UNREGISTERED ANALYSIS - Due to the error above, we dropped the random effect of Year from the model. The ID random effect needs to be kept in to account for multiple observations on the same individuals.
+## MODIFIED ANALYSIS - Due to the error above, we dropped the random effect of Year from the model. The ID random effect needs to be kept in to account for multiple observations on the same individuals.
 simulationOutput <- simulateResiduals(fittedModel = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|ID), family=binomial(link ="logit"), data=h2_f), n=250) # fit is still singular though
 
 plot(simulationOutput$scaledResiduals)
@@ -923,11 +921,11 @@ h2_m = na.omit(h2_m)
 simulationOutput <- simulateResiduals(fittedModel = MCMCglmm(Territory ~ FatScore + Body2 + Aviary, random=~Year + ID, family="categorical", data=h2_m, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000), n=250) 
 ## Error no applicable method for 'family' applied to an object of class "MCMCglmm"
 
-## UNREGISTERED ANALYSIS - Due to the error above, we use glmer in this simulation function
+## MODIFIED ANALYSIS - Due to the error above, we use glmer in this simulation function
 simulationOutput <- simulateResiduals(fittedModel = glmer(Territory ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family=binomial(link ="logit"), data=h2_m), n=250) 
 ## Error fit is singular. Both random effects explain 0 variance.
 
-## UNREGISTERED ANALYSIS - Due to the error above, we dropped the random effect of Year from the model. The ID random effect needs to be kept in to account for multiple observations on the same individuals.
+## MODIFIED ANALYSIS - Due to the error above, we dropped the random effect of Year from the model. The ID random effect needs to be kept in to account for multiple observations on the same individuals.
 simulationOutput <- simulateResiduals(fittedModel = glmer(Territory ~ FatScore + Body2 + Aviary + (1|ID), family=binomial(link ="logit"), data=h2_m), n=250) # fit is still singular though
 
 plot(simulationOutput$scaledResiduals)
@@ -988,7 +986,7 @@ m_frs <- MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random = ~Year + ID,
     nitt = 2000000, thin = 2000, burnin = 50000)
 summary(m_frs) # Cannot get model to converge. Even if we increase nitt, thin and burnin we get the Error: Mixed model equations singular: use a (stronger) prior
 
-## UNREGISTERED ANALYSIS - Due to the error above, we dropped the Year random effect to try to get the model to converge.
+## MODIFIED ANALYSIS - Due to the error above, we dropped the Year random effect to try to get the model to converge.
 m_frs <- MCMCglmm(Fledglings ~ FatScore + Body2 + Aviary, random = ~ID, 
     family = "categorical", data = h2_f, verbose = F, prior = prior, 
     nitt = 20000000, thin = 2000, burnin = 500000)
@@ -996,11 +994,11 @@ summary(m_frs)# Cannot get model to converge. Even if we increase nitt, thin and
 autocorr(m_frs$Sol) #Did fixed effects converge?
 autocorr(m_frs$VCV) #Did random effects converge?
 
-## UNREGISTERED ANALYSIS - Due to the error above, we instead analyse these data using a frequentist method.
+## MODIFIED ANALYSIS - Due to the error above, we instead analyze these data using a frequentist method.
 m_frs1 = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family = binomial(link="logit"), data = h2_f) # Yes, fit is still singular and variance of random effects is close to 0
 m_frs2 = glmer(Fledglings ~ FatScore + Body2 + Aviary + (1|ID), family = binomial(link="logit"), data = h2_f) # Yes, fit is still singular and variance of random effects is close to 0
 
-##  UNREGISTERED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are only 2 females with data from 2019 and 2020.  Remove reproductive success data of these females from 2020 because condition data were collected in 2019 so it is more likely to impact their reproductive success that year.
+##  MODIFIED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are only 2 females with data from 2019 and 2020.  Remove reproductive success data of these females from 2020 because condition data were collected in 2019 so it is more likely to impact their reproductive success that year.
 h2_f2 = h2_f[-which(h2_f$ID == "Chalupa" & h2_f$Year == "2020" | h2_f$ID == "Memela" & h2_f$Year == "2020"),]
 
 m_frs3 = glm(Fledglings ~ FatScore + Body2 + Aviary, family = binomial(link="logit"), data = h2_f2)
@@ -1017,7 +1015,7 @@ summary(m_mrs) # Estimates and CIs are abnormally large.
 autocorr(m_mrs$Sol) # Looks like it converges, but estimates and CIs remain abnormally large
 autocorr(m_mrs$VCV) # Cannot get this to converge
 
-## UNREGISTERED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
+## MODIFIED ANALYSIS - We could not get the MCMCglmm to fit by tweaking the priors or iterations/burnin/thin options.  We therefore cannot rely on the results from those models and we switched to using a frequentist logistic regression model.
 m_mrs1 = glmer(Territory ~ FatScore + Body2 + Aviary + (1|Year) + (1|ID), family = binomial(link="logit"), data = h2_m) # fit is singular - random effects accounts for 0 variance
 m_mrs2 = glmer(Territory ~ FatScore + Body2 + Aviary + (1|ID), family = binomial(link="logit"), data = h2_m) # fit is still singular. ID random effect accounts for 0 variance - but need to keep because 25% of data are repeated males.
 summary(m_mrs2) ## Is this still okay to present?
@@ -1027,7 +1025,7 @@ summary(m_mrs2) ## Is this still okay to present?
 
 
 
-## UNREGISTERED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are 5 males with data from 2019 and 2020 (25%).  Only keep reproductive success data of these males in the year condition data were collected so it is more likely to impact their reproductive success that year.
+## MODIFIED ANALYSIS - The variance of the ID random effect is essentially 0, so the model fit is singular.  There are 5 males with data from 2019 and 2020 (25%).  Only keep reproductive success data of these males in the year condition data were collected so it is more likely to impact their reproductive success that year.
 
 h2_m2 = h2_m[-which(h2_m$ID == "Taquito" & h2_m$Year == "2019" | h2_m$ID == "Queso" & h2_m$Year == "2020" |
                     h2_m$ID == "Picante" & h2_m$Year == "2020" |h2_m$ID == "Mixiote" & h2_m$Year == "2020" |
@@ -1036,7 +1034,7 @@ m_mrs3 = glm(Territory ~ FatScore + Body2 + Aviary, family = binomial(link="logi
 summary(m_mrs3) # Estimate and CI for Intercept and Aviary are still huge.
 table(h2_m2$Territory, h2_m2$Aviary) # That is likely because in our sample there are no males that failed to defend a territory and were not in the aviaries.  So there is not enough variance in this variable to get a reliable estimate.
 
-## UNREGISTERED ANALYSIS - Due to the problem discovered above, we dropped the Aviary covariate from the model.
+## MODIFIED ANALYSIS - Due to the problem discovered above, we dropped the Aviary covariate from the model.
 m_mrs4 = glm(Territory ~ FatScore + Body2, family = binomial(link="logit"), data = h2_m2)
 summary(m_mrs4) # No significant effects
 plot(m_mrs4)
@@ -1046,7 +1044,7 @@ plot(m_mrs4)
 
 
 
-Our measure of female nest success could be systematically biased against nests that failed early [@shaffer2004unified). Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
+Our measure of female nest success could be systematically biased against nests that failed early [@shaffer2004unified]. Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
 
 ```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
 #Logistic exposure model, where “Exposure” is the number of days between nest checks
@@ -1150,7 +1148,7 @@ exp1 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + (1|Mot
 
 summary(exp1) # Warning - model is singular. Also warning - longer object length is not a multiple of shorter object length (maybe because there are NAs for Fatscore?)
 
-## UNREGISTERED ANALYSIS - Model including the Year random effect is singular because Year accounts for essentially zero variance. Removed year from the model for subsequent analysis.
+## MODIFIED ANALYSIS - Model including the Year random effect is singular because Year accounts for essentially zero variance. Removed year from the model for subsequent analysis.
 
 exp2 <- glmer(Fate ~ as.numeric(FatScore) + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
          family=binomial(link=logexp(rs2$Interval)),
