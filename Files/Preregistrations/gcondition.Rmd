@@ -9,7 +9,7 @@ date: "`r Sys.Date()`"
 output:
   pdf_document:
     keep_tex: yes
-    latex_engine: null
+    latex_engine: xelatex
   md_document:
     toc: yes
   word_document:
@@ -330,7 +330,7 @@ rs3 = na.omit(d) # remove NAs in fat score values
 exp3 <- glmer(Fate ~ FatScore + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
          family=binomial(link=logexp(rs3$Interval)),
          data = rs3)
-closeAllConnections()
+
 #summary(exp3)
 ple = data.frame("Parameter" = c("Intercept","FatScore", "SMI","DayOfYear","Aviary"),"Estimate (SE)" = c("1.99 (0.40)","0.91 (0.49)","-0.69 (0.31)","-0.21 (0.15)","-0.47 (0.61)"), "p-value" = c("<0.001",0.06,0.03,0.16,0.44))
 colnames<- c("Parameter", "Estimate (SE)", "p-value")
@@ -498,7 +498,7 @@ Actual power                  	=	0.8635760
 This means that, with a sample size of 89, we would have an 86% chance of detecting a medium effect (approximated at f^2^=0.15 by @cohen1988statistical). 
 
 
-```{r p1, echo=FALSE, warning=FALSE, results='asis', eval=T, echo=T, include=T}
+```{r p1, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 
 # the "Condition" tab from the Google sheet data_condition
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_datacondition.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -582,14 +582,14 @@ rpt(log(wing) ~ (1|ID), grname = "ID", data = d3_m, datatype = "Gaussian", nboot
 
 
 ## UNREGISTERED ANALYSIS - Because fit was singular in the repeatability analysis (indicating the variance of random effect is very close to zero) we wanted to double check our results by hand calculating repeatability following [@nakagawa2010repeatability]. 
-r_wing_m = glmer(log(wing) ~ 1 + (1|ID), data = d3_m)
+r_wing_m = lmer(log(wing) ~ 1 + (1|ID), data = d3_m)
 summary(r_wing_m)
 # variance of ID = 0.001
 # varance of residual = 0.0005
 R = 0.001/(0.001+0.0005)
 # R = 0.67
 
-r_wing_f = glmer(log(wing) ~ 1 + (1|ID), data = d3_f)
+r_wing_f = lmer(log(wing) ~ 1 + (1|ID), data = d3_f)
 summary(r_wing_f)
 # variance of ID = 0.001
 # varance of residual = 0.001
@@ -775,7 +775,7 @@ Actual power                  	=	0.9020264
 
 This means that, with a sample size of 88, we would have a 90% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
 
-```{r p2pt1, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt1, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 library(DHARMa)
 library(lme4)
 library(MCMCglmm)
@@ -932,7 +932,7 @@ plot(simulationOutput)
 
 ####Do body condition variables vary by season?
 
-```{r p2pt2, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt2, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 library(MASS)
 
 # Females
@@ -967,7 +967,7 @@ boxplot(Body2 ~ Season, data = d_m,main = "Males", ylab = "SMI")
 
 ####Does body condition relate to reproductive success?
 
-```{r p2pt3, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt3, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #Mixed-effect logistic regression
@@ -1039,7 +1039,7 @@ plot(m_mrs4)
 
 Our measure of female nest success could be systematically biased against nests that failed early [@shaffer2004unified]. Consequently, we also analyzed female reproductive success using a logistic exposure model. This type of model determines the factors affecting daily nest survivial probability.
 
-```{r p2pt4, echo=FALSE, warning=FALSE, results='asis'}
+```{r p2pt4, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Logistic exposure model, where “Exposure” is the number of days between nest checks
 #Created by Ben Bolker: https://rpubs.com/bbolker/logregexp
 
