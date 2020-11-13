@@ -116,7 +116,7 @@ This preregistration used secondary data that were collected as part of other on
 
 1) We realized that the sexual dimorphism of male and female body sizes necessitates separate analyses. Therefore, we calculated SMI for males and females separately, and ran separate models for each sex for the repeatibility analysis (P1 and P2).
 
-2) Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This zero inflation led to problems when we ran the models: it was difficult to fit models using an ordinal regression. The function "simulateResiduals", which we used to check our data, does not work with data in the ordinal family. Consequently, we modified the model to use a logistic regression where the dependent variable FatScore represents no fat (score = 0), or some fat (score = 1).
+2) Fat score data were distributed such that the majority of scores were 0, with some 1's and very few higher numbers. This lack of variance in the response variable led to problems when we ran the models: it was difficult to fit models using an ordinal regression. The function "simulateResiduals", which we used to check our data, does not work with data in the ordinal family. Consequently, we modified the model to use a logistic regression where the dependent variable FatScore is categorized as individuals that showed no visible fat (y = 0), or some fat was present (y = 1) where we combined all individuals that had fat score values of 1 or greater. Subsequent data checking indicated that these data were not zero-inflated or overdispersed.
 
 
 ##### P1: correlation between SMI and Fat score
@@ -580,12 +580,12 @@ cor.test(d2_f$wing,d2_f$mass) #r = 0.26, p = 0.04 #use for SMI
 
 ### Calculating SMI (scaled mass index) ###
 #Males
-sma = sma(log(wing) ~ log(mass), data = d2_m, method = "SMA") #standard major axis regression
+sma = sma(log(mass) ~ log(wing), data = d2_m, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d2_m$wing) #calculate the population mean wing length
 d2_m$Body = d2_m$wing*(Lo/d2_m$tarsus)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
 #Females
-sma = sma(log(wing) ~ log(mass), data = d2_f, method = "SMA") #standard major axis regression
+sma = sma(log(mass) ~ log(wing), data = d2_f, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d2_f$wing) #calculate the population mean wing length
 d2_f$Body = d2_f$mass*(Lo/d2_f$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
@@ -836,7 +836,7 @@ rs_m = rs[which(rs$Territory == "yes" | rs$Territory == "no"),]
 d_f = d[which(d$Sex == "F"),] #biometrics data
 d_f = d_f[-which(d_f$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
 d_f$Fatbin = ifelse(d_f$FatScore > 0, 1, 0)
-sma = sma(log(wing) ~ log(mass), data = d_f, method = "SMA") #standard major axis regression
+sma = sma(log(mass) ~ log(wing), data = d_f, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d_f$wing) #calculate the population mean wing length
 d_f$Body = d_f$mass*(Lo/d_f$wing)^bsma
@@ -847,7 +847,7 @@ h2_f = merge(rs_f, d_f, by ="ID", all = T) # create h2 data set with reproductiv
 d_m = d[which(d$Sex == "M"),] #biometrics data
 d_m = d_m[-which(d_m$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
 d_m$Fatbin = ifelse(d_m$FatScore > 0, 1, 0)
-sma = sma(log(wing) ~ log(mass), data = d_m, method = "SMA") #standard major axis regression
+sma = sma(log(mass) ~ log(wing), data = d_m, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d_m$wing) #calculate the population mean wing length
 d_m$Body = d_m$mass*(Lo/d_m$wing)^bsma
