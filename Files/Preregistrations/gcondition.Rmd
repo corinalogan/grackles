@@ -140,7 +140,7 @@ This preregistration used secondary data that were collected as part of other on
 
 We were able to calculate SMI for 24 males and 62 females, and fat score values were available for 21 males and 47 females. 
 
-We found that wing length was more tightly correlated with body mass than tarsus length in both sexes, therefore we used wing length in our SMI calculations (female n = 62, r = 0.26, *p = 0.03*; male n = 24, r = 0.35, *p = 0.08*).   This allows us to account for as much variation in body mass as possible that is associated with skeletal body size because leftover variation in body mass is more likely to relate to energetic condition. Consequently, we used wing length in our calculation of SMI as: $Mass_i\left[ \frac{AvgWing_p}{AvgWing_i} \right]^{slope_p}$.  $Mass_i$ is each individual’s weight in grams, $AvgWing_i$ is the average value of the measures of the left and right wing lengths of each bird, $AvgWing_p$ is the average wing length in the population, and $slope_p$ is the value of the slope from a standard major axis regression of the population's wing length on the population's mass [@peig2009new].
+We found that wing length was more tightly correlated with body mass than tarsus length in both sexes, therefore we used wing length in our SMI calculations (female n = 62, r = 0.26, *p = 0.03*; male n = 24, r = 0.35, *p = 0.08*). This allows us to account for as much variation in body mass as possible that is associated with skeletal body size because leftover variation in body mass is more likely to relate to energetic condition. Consequently, we used wing length in our calculation of SMI as: $Mass_i\left[ \frac{AvgWing_p}{AvgWing_i} \right]^{slope_p}$.  $Mass_i$ is each individual’s weight in grams, $AvgWing_i$ is the average value of the measures of the left and right wing lengths of each bird, $AvgWing_p$ is the average wing length in the population, and $slope_p$ is the value of the slope from a standard major axis regression of the population's wing length on the population's mass [@peig2009new].
 
 To validate that we were measuring structural body size consistently across experimenters, we analyzed the repeatability of wing length in the birds in our sample that were measured more than once. We found that average wing length was repeatable (n = 17 females, Repeatability ± standard error = 0.53 ± 0.18; n = 18 males, Repeatability ± SE = 0.75 ± 0.11). Data permutations and a likelihood ratio test both confirmed that these repeatability values were statistically significant at p < 0.01. 
 
@@ -183,7 +183,7 @@ kbl(p1, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 1. Re
 
 Our sample size for P2, where individuals had measures of reproductive success, SMI, and fat scores, was 20 for females and 20 for males.
 
-In some investigations, body condition shows a non-linear relationship with reproductive success [@milenkaya2015body]. To test for this, we calculated the SMI categories using 0.5 standard deviation increments around the mean (with category 1 being closer to the mean and category 5 being the farthest from the mean) to determine whether individuals in some categories were more likely to be reproductively successful.  However, we found no evidence for a non-linear relationship between reproductive success and SMI for males or females (Fig. 2). 
+In some investigations, body condition shows a non-linear relationship with reproductive success [@milenkaya2015body]. To test for this, we calculated the SMI categories using 0.5 standard deviation (sd) increments around the mean to determine whether individuals in some categories were more likely to be reproductively successful. Category 1 is "low" SMI and includes birds with SMI values that are more than 1 sd less than the mean, category 2 is "moderately low and ranges from 0.5 sd to 1 sd less than the mean, category 3 is "moderate" and includes individuals with SMI values between 0.5 less than the mean and 0.5 sd greater than the mean, category 4 includes individuals with SMI values between 0.5 and 1 sd greater than the mean and category 5 includes individuals with SMI values that are more than 1 sd greater than the mean. However, we found no evidence for a non-linear relationship between reproductive success and SMI for males or females (Fig. 2). 
 
 ```{r p2 non-linear trend results, echo=FALSE, fig.height=2.5, fig.width=7, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis', hold = TRUE}
 h2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -580,12 +580,12 @@ cor.test(d2_f$wing,d2_f$mass) #r = 0.26, p = 0.04 #use for SMI
 
 ### Calculating SMI (scaled mass index) ###
 #Males
-sma = sma(log(mass) ~ log(wing), data = d2_m, method = "SMA") #standard major axis regression
+sma = sma(log(wing) ~ log(mass), data = d2_m, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d2_m$wing) #calculate the population mean wing length
 d2_m$Body = d2_m$wing*(Lo/d2_m$tarsus)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
 #Females
-sma = sma(log(mass) ~ log(wing), data = d2_f, method = "SMA") #standard major axis regression
+sma = sma(log(wing) ~ log(mass), data = d2_f, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d2_f$wing) #calculate the population mean wing length
 d2_f$Body = d2_f$mass*(Lo/d2_f$wing)^bsma #equation to calculate SMI from Pieg & Green 2009 for each bird
@@ -836,7 +836,7 @@ rs_m = rs[which(rs$Territory == "yes" | rs$Territory == "no"),]
 d_f = d[which(d$Sex == "F"),] #biometrics data
 d_f = d_f[-which(d_f$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
 d_f$Fatbin = ifelse(d_f$FatScore > 0, 1, 0)
-sma = sma(log(mass) ~ log(wing), data = d_f, method = "SMA") #standard major axis regression
+sma = sma(log(wing) ~ log(mass), data = d_f, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d_f$wing) #calculate the population mean wing length
 d_f$Body = d_f$mass*(Lo/d_f$wing)^bsma
@@ -847,7 +847,7 @@ h2_f = merge(rs_f, d_f, by ="ID", all = T) # create h2 data set with reproductiv
 d_m = d[which(d$Sex == "M"),] #biometrics data
 d_m = d_m[-which(d_m$Aviary == "Aviary"),-2] #remove data from birds when released from aviaries
 d_m$Fatbin = ifelse(d_m$FatScore > 0, 1, 0)
-sma = sma(log(mass) ~ log(wing), data = d_m, method = "SMA") #standard major axis regression
+sma = sma(log(wing) ~ log(mass), data = d_m, method = "SMA") #standard major axis regression
 bsma = (as.data.frame(sma$coef))[2,1] #extract slope from sma regression
 Lo = mean(d_m$wing) #calculate the population mean wing length
 d_m$Body = d_m$mass*(Lo/d_m$wing)^bsma
