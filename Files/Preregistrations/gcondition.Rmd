@@ -188,6 +188,7 @@ Our sample size for P2, where individuals had measures of reproductive success, 
 In some investigations, body condition shows a non-linear relationship with reproductive success [@milenkaya2015body]. To test for this, we calculated the SMI categories using 0.5 standard deviation (sd) increments around the mean to determine whether individuals in some categories were more likely to be reproductively successful (Fig. 2). Category 1 includes "low" SMI values that are more than 1 sd less than the mean, category 2 is "moderately low" SMI values and ranges from 0.5 sd to 1 sd less than the mean, category 3 includes "moderate" SMI values between 0.5 less than the mean and 0.5 sd greater than the mean, category 4 includes "moderately high" individual SMI values between 0.5 and 1 sd greater than the mean, and category 5 includes "high" SMI values that are more than 1 sd greater than the mean. However, we found no evidence for a non-linear relationship between reproductive success and SMI for males or females (Fig. 3). 
 
 ![](gconditionfig2.jpg){width=75%}
+
 Figure 2: Frequency histogram of SMI scores for males and females. The mean SMI value is indicated by a red vertical line. The values for the cutpoints between SMI categories are indicated in red. Category 3 indicates the SMI value is close to the population mean value. Categories 1 and 2 are individuals that have SMI scores that are low, and moderately low, respectively, compared to the population mean value. Similarly, categories 4 and 5 contain individuals that have SMI scores that are moderately high and high, respectively, compared to the population mean value.
 
 ```{r p2 non-linear trend results, echo=FALSE, fig.height=2.5, fig.width=7, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis', hold = TRUE}
@@ -324,7 +325,7 @@ m_mrs2 = glmer(Territory ~ FatScore + Body2 + Aviary + (1|ID), family = binomial
 #summary(m_mrs2) ## Is this still okay to present?
 
 p2 = data.frame("Parameter" = c("Intercept","FatScore", "SMI","Aviary"),"Estimate (SE)" = c("-0.02 (0.73)","0.15 (1.02)","-0.92 (0.61)","-1.38 (1.14)"), 
-                "p-value" = c(0.98,0.89,0.13,0.23), "Estimate (SE)" = c("3.05 (1.40)","-0.33 (1.10)","1.18 (0.78)","-3.62 (1.56)"), "p-value" = c(0.03,0.77,0.13,0.02))
+                "p-value" = c(0.98,0.89,0.13,0.23), "Estimate (SE)" = c("3.05 (1.40)","-0.33 (1.10)","1.18 (0.78)","-3.62 (1.56)"), "p-value" = c(0.03,0.77,0.13,"0.02*"))
 
 colnames<- c("Parameter", "Estimate (SE)", "p-value", "Estimate (SE)", "p-value")
 kbl(p2, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 2. Results from the logistic regression for females and males to test whether reproductive success relates to condition. Estimates are presented with the standard error in parentheses.") %>% 
@@ -384,7 +385,7 @@ exp3 <- glmer(Fate ~ FatScore + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ 
 library(kableExtra)
 ple = data.frame("Parameter" = c("Intercept","Fat score", "SMI","Day of year","Aviary"),"Estimate (SE)" = c("1.99 (0.40)","0.91 (0.49)","-0.69 (0.31)","-0.21 (0.15)","-0.47 (0.61)"), "OR (CI)" = c("7.32 (3.3-16.0)","0.50 (0.27-0.92)","2.48 (0.95-6.49)","0.63 (0.19-2.10)","0.81 (0.60-1.10)"), "p-value" = c("<0.001",0.06,"0.03*",0.16,0.44))
 colnames<- c("Parameter", "Estimate (SE)", "OR (CI)", "p-value")
-kbl(ple, col.names = colnames,align = c("l","c","c","c"),caption="Table 3. Results of the logistic exposure model showing the relationship between the probability of daily nest survival and scaled mass index (SMI), fat score, the amount of time spent in the aviaries, and the day of the year. Odds ratios (OR) are the exponentiated estimates to increase interpretability. SE=Standard Error, CI=95% Confidence Interval") %>% 
+kbl(ple, col.names = colnames,align = c("l","c","c","c"),caption="Table 3. Results of the logistic exposure model showing the relationship between the probability of daily nest survival and scaled mass index (SMI), fat score, the amount of time spent in the aviaries, and the day of the year. Parameter estimates are presented with the standard error in parentheses. Odds ratios (OR) represent the exponentiated estimates, and are presented to increase interpretability with 95% confidence intervals in parentheses.") %>% 
   kable_styling()
 
 library(ggplot2)
