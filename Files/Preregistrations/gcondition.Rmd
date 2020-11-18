@@ -191,35 +191,76 @@ In some investigations, body condition shows a non-linear relationship with repr
 
 Figure 2: Frequency histogram of SMI scores for males and females. The mean SMI value is indicated by a red vertical line. The values for the cutpoints between SMI categories are indicated in red. Category 3 indicates the SMI value is close to the population mean value. Categories 1 and 2 are individuals that have SMI scores that are low, and moderately low, respectively, compared to the population mean value. Similarly, categories 4 and 5 contain individuals that have SMI scores that are moderately high and high, respectively, compared to the population mean value.
 
-```{r p2 non-linear trend results, echo=FALSE, fig.height=2.5, fig.width=7, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis', hold = TRUE}
+```{r p2 non-linear trend results, echo=FALSE, fig.height=3, fig.width=7, message=FALSE, warning=FALSE, paged.print=FALSE, results='asis', hold = TRUE}
 h2_f <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_fdata.csv"), header=T, sep=",", stringsAsFactors=F)
 h2_m <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_mdata.csv"), header=T, sep=",", stringsAsFactors=F)
 
-# describe(h2_f$Body)
-# describe(h2_m$Body)
-# par(mfrow = c(1,2))
-# hist(h2_m$Body, main = "Male SMI category cutpoints", xlab = "SMI score")
-# abline(v = c(159.5,170.3,154.1,175.7),col="blue")
-# abline(v=164.9, col="red")
-# hist(h2_f$Body, main = "Female SMI category cutpoints",xlab = "SMI score")
-# abline(v = c(98.3,90.5,102.1,86.7),col="blue")
-# abline(v=94.4, col="red")
+#first females
+# describe(h2_f$Body) # find the mean and standard deviation for categorizing the SMI scores
+# #moderate category = mean +/- 0.5 sd = 90.6-98.2
+# 94.4+3.8 #98.2
+# 94.4-3.8 #90.6 
+# #moderately high = mean + 0.5 sd to mean + 1.5 sd = 98.2-105.9
+# 94.4+11.5 #105.9
+# #high = mean + 1.5 sd = >105.9
+# #moderately low = mean - 0.5 sd to mean - 1.5 sd = 82.9-90.6
+# 94.4-3.8 #90.6 
+# 94.4-11.5 #82.9
+#low = mean - 1.5 sd = <82.9
+h2_f$SMI_cat = ifelse(h2_f$Body > 105.9, "high", NA) # 2 sd more than moderate category
+h2_f$SMI_cat = ifelse(h2_f$Body > 98.2 & h2_f$Body < 105.9, "moderately high", h2_f$SMI_cat) # between 0.5 and 1.5 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body < 82.9, "low", h2_f$SMI_cat) # less than 1 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body > 82.9 & h2_f$Body < 90.6, "moderately low", h2_f$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
+h2_f$SMI_cat[which(is.na(h2_f$SMI_cat))] <- "moderate" 
+h2_f$SMI_cat = factor(h2_f$SMI_cat, levels = c("low","moderately low", "moderate","moderately high", "high"))
+h2_f = h2_f[-which(is.na(h2_f$Fledglings)),]
 
-# get proportion successful in each sex to make table
-#table(h2_f$SMI_cat, h2_f$Fledglings) 
-tmp_f = data.frame("Proportion_successful" = c(0.75,0.2,0.6,0.625,0.25), "SMI_category" = c("1","2", "3","4","5"))
+#table(h2_f$Fatbin, h2_f$Fledglings) #relativley equal proportions in each category
+#table(h2_f$SMI_cat, h2_f$Fledglings) # few birds in high and low category
+
+tmp_f = data.frame("Proportion_successful" = c(0.50,0.43,0.6,0.55,0), "SMI_category" = c("1","2", "3","4","5"))
 tmp_f$SMI_category = factor(tmp_f$SMI_category, levels = c("1","2", "3","4","5"))
 
+#repeat for males
+#describe(h2_m$Body) # find the mean and standard deviation for categorizing the SMI scores
+#moderate category = mean +/- 0.5 sd = 159.5-170.3
+#164.9+5.4 #170.3
+#164.9-5.4 #159.5 
+#moderately high = mean + 0.5 sd to mean + 1.5 sd = 170.3-181.1
+#164.9+16.2 #181.1
+#high = mean + 1.5 sd = >181.1
+#moderately low = mean - 0.5 sd to mean - 1.5 sd = 159.5-148.7
+#164.9-5.4 #159.5 
+#164.9-16.2 #148.7
+#low = mean - 1.5 sd = <148.7
+h2_m$SMI_cat = ifelse(h2_m$Body > 181.1, "high", NA) # greater than 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body > 170.3 & h2_m$Body < 181.1, "moderately high", h2_m$SMI_cat) # between 0.5 and 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body < 148.7, "low", h2_m$SMI_cat) # less than 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body > 148.7 & h2_m$Body < 159.5, "moderately low", h2_m$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
+h2_m$SMI_cat[which(is.na(h2_m$SMI_cat))] <- "moderate" 
+h2_m$SMI_cat = factor(h2_m$SMI_cat, levels = c("low","moderately low", "moderate","moderately high", "high"))
+h2_m = h2_m[-which(is.na(h2_m$mass)),]
+h2_m = h2_m[-which(is.na(h2_m$Territory)),]
+
 #table(h2_m$SMI_cat, h2_m$Territory)
-tmp_m = data.frame("Proportion_successful" = c(0.67,0,0.69,0.67,1), "SMI_category" = c("1","2", "3","4","5"))
+tmp_m = data.frame("Proportion_successful" = c(0,0.5,0.57,0.71,1), "SMI_category" = c("1","2", "3","4","5"))
 tmp_m$SMI_category = factor(tmp_m$SMI_category, levels = c("1","2", "3","4","5"))
-tmp_m$n = c(7, 4, 16, 7, 4)
-tmp_f$n = c(4, 5, 10, 8, 4)
+tmp_m$n = c(1, 8, 14, 7, 3)
+tmp_f$n = c(2, 7, 10, 11, 1)
 
 tmp_m$Sex = "Male"
 tmp_f$Sex = "Female"
 
 tmp = rbind(tmp_f, tmp_m)
+tmp$n = as.integer(tmp$n)
+
+par(mfrow = c(1,2))
+hist(h2_m$Body, main = "Male SMI category bins", xlab = "SMI score")
+abline(v = c(181.1,170.3,159.5,148.7),col="blue")
+abline(v=164.9, col="red")
+hist(h2_f$Body, main = "Female SMI category bins",xlab = "SMI score")
+abline(v = c(82.9,90.6,98.2,105.9),col="blue")
+abline(v=94.4, col="red")
 
 library(ggplot2)
 ggplot(tmp, aes(x=SMI_category, y=Proportion_successful, size=n))+
@@ -884,38 +925,57 @@ h2_m$Territory = ifelse(h2_m$Territory == "yes", 1, ifelse(h2_m$Territory == "no
 # Non-linear trends?
 
 #first females
-describe(h2_f$Body2) # find the mean and standard deviation for categorizing the SMI scores
-
-## MODIFIED ANALYSIS - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
-h2_f$SMI_cat = ifelse(h2_f$Body2 > 0.04+0.97, "high", NA) # greater than 1 sd from the mean
-h2_f$SMI_cat = ifelse(h2_f$Body2 > 0.53 & h2_f$Body2 < 1.01, "moderately high", h2_f$SMI_cat) # between 0.5 and 1 sd from the mean
-h2_f$SMI_cat = ifelse(h2_f$Body2 < 0.04-0.97, "low", h2_f$SMI_cat) # less than 1 sd from the mean
-h2_f$SMI_cat = ifelse(h2_f$Body2 > -0.93 & h2_f$Body2 < -0.45, "moderately low", h2_f$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
+describe(h2_f$Body) # find the mean and standard deviation for categorizing the SMI scores
+#moderate category = mean +/- 0.5 sd = 90.6-98.2
+94.4+3.8 #98.2
+94.4-3.8 #90.6 
+#moderately high = mean + 0.5 sd to mean + 1.5 sd = 98.2-105.9
+94.4+11.5 #105.9
+#high = mean + 1.5 sd = >105.9
+#moderately low = mean - 0.5 sd to mean - 1.5 sd = 82.9-90.6
+94.4-3.8 #90.6 
+94.4-11.5 #82.9
+#low = mean - 1.5 sd = <82.9
+h2_f$SMI_cat = ifelse(h2_f$Body > 105.9, "high", NA) # 2 sd more than moderate category
+h2_f$SMI_cat = ifelse(h2_f$Body > 98.2 & h2_f$Body < 105.9, "moderately high", h2_f$SMI_cat) # between 0.5 and 1.5 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body < 82.9, "low", h2_f$SMI_cat) # less than 1 sd from the mean
+h2_f$SMI_cat = ifelse(h2_f$Body > 82.9 & h2_f$Body < 90.6, "moderately low", h2_f$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
 h2_f$SMI_cat[which(is.na(h2_f$SMI_cat))] <- "moderate" 
 h2_f$SMI_cat = factor(h2_f$SMI_cat, levels = c("low","moderately low", "moderate","moderately high", "high"))
+h2_f = h2_f[-which(is.na(h2_f$Fledglings)),]
 
-table(h2_f$Fatbin, h2_f$Fledglings) #equal proportions in each category
-table(h2_f$SMI_cat, h2_f$Fledglings) # still a lot of data in the moderate category
+table(h2_f$Fatbin, h2_f$Fledglings) #relativley equal proportions in each category
+table(h2_f$SMI_cat, h2_f$Fledglings) # few birds in high and low category
 
-tmp_f = data.frame("Proportion_successful" = c(0.75,0.2,0.6,0.625,0.25), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
+tmp_f = data.frame("Proportion_successful" = c(0.50,0.43,0.6,0.55,0), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
 tmp_f$SMI_category = factor(tmp_f$SMI_category, levels = c("low","moderately low", "moderate","moderately high", "high"))
 
 #repeat for males
-describe(h2_m$Body2) # find the mean and standard deviation for categorizing the SMI scores
-#5.4, 10.8, 164.9
-## MODIFIED ANALYSIS - Because most individuals fall within the medium category when we group data using 1 standard deviation around the mean, we switched to using a half standard deviation increments around the mean. 
-h2_m$SMI_cat = ifelse(h2_m$Body2 > 0.03+0.97, "high", NA) # greater than 1 sd from the mean
-h2_m$SMI_cat = ifelse(h2_m$Body2 > 0.52 & h2_m$Body2 < 1, "moderately high", h2_m$SMI_cat) # between 0.5 and 1 sd from the mean
-h2_m$SMI_cat = ifelse(h2_m$Body2 < 0.03-0.97, "low", h2_m$SMI_cat) # less than 1 sd from the mean
-h2_m$SMI_cat = ifelse(h2_m$Body2 > -0.94 & h2_m$Body2 < -0.46, "moderately low", h2_m$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
+describe(h2_m$Body) # find the mean and standard deviation for categorizing the SMI scores
+#moderate category = mean +/- 0.5 sd = 159.5-170.3
+164.9+5.4 #170.3
+164.9-5.4 #159.5 
+#moderately high = mean + 0.5 sd to mean + 1.5 sd = 170.3-181.1
+164.9+16.2 #181.1
+#high = mean + 1.5 sd = >181.1
+#moderately low = mean - 0.5 sd to mean - 1.5 sd = 159.5-148.7
+164.9-5.4 #159.5 
+164.9-16.2 #148.7
+#low = mean - 1.5 sd = <148.7
+h2_m$SMI_cat = ifelse(h2_m$Body > 181.1, "high", NA) # greater than 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body > 170.3 & h2_m$Body < 181.1, "moderately high", h2_m$SMI_cat) # between 0.5 and 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body < 148.7, "low", h2_m$SMI_cat) # less than 1 sd from the mean
+h2_m$SMI_cat = ifelse(h2_m$Body > 148.7 & h2_m$Body < 159.5, "moderately low", h2_m$SMI_cat) # between 0.5 and 1 standard deviation less than the mean
 h2_m$SMI_cat[which(is.na(h2_m$SMI_cat))] <- "moderate" 
 h2_m$SMI_cat = factor(h2_m$SMI_cat, levels = c("low","moderately low", "moderate","moderately high", "high"))
+h2_m = h2_m[-which(is.na(h2_m$mass)),]
+h2_m = h2_m[-which(is.na(h2_m$Territory)),]
 
 table(h2_m$SMI_cat, h2_m$Territory)
-tmp_m = data.frame("Proportion_successful" = c(0.67,0,0.69,0.67,1), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
+tmp_m = data.frame("Proportion_successful" = c(0,0.5,0.57,0.71,1), "SMI_category" = c("low","moderately low", "moderate","moderately high","high"))
 tmp_m$SMI_category = factor(tmp_m$SMI_category, levels = c("low","moderately low", "moderate","moderately high", "high"))
-tmp_m$n = c(7, 4, 16, 7, 4)
-tmp_f$n = c(4, 5, 10, 8, 4)
+tmp_m$n = c(1, 8, 14, 7, 3)
+tmp_f$n = c(2, 7, 10, 11, 1)
 
 tmp_m$Sex = "Male"
 tmp_f$Sex = "Female"
@@ -924,7 +984,7 @@ tmp = rbind(tmp_f, tmp_m)
 
 library(tidyverse)
 
-table(h2_m$SMI_cat)
+table(h2_f$SMI_cat)
 
 ggplot(tmp, aes(x=SMI_category, y=Proportion_successful, size=n))+
   facet_wrap(.~Sex) +
