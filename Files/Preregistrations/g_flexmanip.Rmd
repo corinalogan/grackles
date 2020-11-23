@@ -152,6 +152,24 @@ Our methods and analysis plans are described in the peer-reviewed preregistratio
 
 ## RESULTS
 
+Although 22 grackles completed their color tube initial discrimination, only 20 grackles participated in one or more reversals (Table 1).
+
+**Table 1.** Summarized results per bird in the reversal learning (tube and touchscreen) and multiaccess box (plastic and wooden) experiments. Reversals to pass indicates how many serial reversals it took a bird to pass criterion if they were in the flexibility manipulation condition.
+
+```{r summary, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","Sex","Trials to learn (tube)","Trials to first reversal (tube)","Trials to last reversal (tube)","Reversals to pass","Total loci solved MAB plastic","Total loci solved MAB wooden","Average latency to attempt new solution (MAB plastic)","Average latency to attempt new solution (MAB wooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)")
+
+library(kableExtra)
+knitr::kable(d) %>%
+kable_styling(full_width = T, position = "left")
+```
+
+
+The plastic and wooden multiaccess box results did not correlate with each other (average latency to attempt a new locus: Pearson's r=0.74 (95% CI=-0.19-0.97), t=2.18, df=4, p=0.09; total loci solved: Pearson's r=0.51 (95% CI=-0.09-0.84), t=1.86, df=10, p=0.09).
+
 
 
 ## DISCUSSION
@@ -700,12 +718,14 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 We will first determine whether the total loci solved, the latency to solve or attempt at new loci are correlated across the two distinct multi-access boxes. If there is a positive correlation, then we will only use the variables for the plastic multi-access box (for which we will likely have more data), as presented below. If there is no correlation, we will incorporate the total loci solved, the latencies to solve and attempt at new loci for each of the multi-access boxes as independent variables in our model.
 
 ```{r improves, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-improve <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #Is performance on the two multi-access boxes correlated?
-cor(improve$AvgLatencySolveNewLoci_plastic, improve$AvgLatencySolveNewLoci_wooden)
-cor(improve$AvgLatencyAttemptNewLoci_plastic, improve$AvgLatencyAttemptNewLoci_wooden)
-cor(improve$TotalLoci_plastic, improve$TotalLoci_wooden)
+#cor(d$AvgLatencySolveNewLoci_plastic, d$AvgLatencySolveNewLoci_wooden) #we no longer run this analyses bc switching is about the next attempt, not the next solve
+cor.test(d$AvgLatencyAttemptNewLoci_plastic, d$AvgLatencyAttemptNewLoci_wooden, use="pairwise.complete.obs", method="pearson")
+#plastic and wooden are not significantly correlated cor=0.74 (95% CI=-0.19-0.97), t=2.18, df=4, p=0.09
+cor.test(d$TotalLoci_plastic, d$TotalLoci_wooden, use="pairwise.complete.obs", method="pearson")
+#plastic and wooden are not significantly correlated cor=0.51 (95% CI=-0.09-0.84), t=1.86, df=10, p=0.09
 
 # DATA CHECKING
 library(DHARMa)
