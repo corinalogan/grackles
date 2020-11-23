@@ -100,7 +100,7 @@ knitr::kable(d) %>%
 kable_styling(full_width = T, position = "left")
 ```
 
-![**Figure 2.** Mean screen pecks per trial per bird (n=8 grackles) in the Intervene (open circles) and Observe (black squares) conditions depending on whether the audio cue was the tone or noise. Within individual performances are shown by the lines connecting the circles to the squares. The bars indicate the group average per condition (light gray=Intervene, dark gray=Observe).](g_causalFig2sm.jpg){width=70%}
+![**Figure 2.** Mean screen pecks per trial per bird (n=8 grackles) in the Intervene (open circles) and Observe (black squares) conditions depending on whether the audio cue was the tone or noise. Within individual performances are shown by the lines connecting the circles to the squares. The bars indicate the group average per condition (light gray=Intervene, dark gray=Observe).](g_causalFig2.jpg){width=70%}
 
 
 #### Do causal cognition scores relate to behavioral flexibility performance?
@@ -113,11 +113,11 @@ Equation 1:
 
 Where p is the average screen pecks per trial in each of the associated conditions. A lower negative score indicates that causal cognition was used, a score near zero indicates there is no evidence for or against causal cognitive abilities, and a positive score indicates no evidence for causal cognition. In these grackles, the causal scores indicated that there was no evidence of causal cognition (Table 2). That is, there were no birds who both responded more when they observed the tone, rather than when they intervened to turn it on, and also responded similarly to when they observed the noise and intervened to turn it on.
 
-**Table 2.** Grackle causal cognition scores. The two flexibility measures are: the number of trials to reverse a preference in that bird’s most recent reversal, and the average number of seconds to switch to attempting a new option after having successfully solved a different option on both multi-access boxes (MAB). Note: Mole did not complete the causal cognition experiment because he had to be released before he was finished.
+**Table 2.** Grackle causal cognition scores. The two flexibility measures are: the number of trials to reverse a preference in that bird’s most recent reversal, and the average number of seconds to switch to attempting a new option after having successfully solved a different option on the multi-access log (MAB). We used only data from the MAB log experiment and not the MAB plastic box experiment because the log and plastic scores did not correlate with each other and there was data for more birds for the log experiment that were in the causal cognition study. Note: Mole did not complete the causal cognition experiment because he had to be released before he was finished.
 
 ```{r table2, eval=TRUE, warning=FALSE, results='asis', echo=FALSE}
 options(width=60)
-d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causalTable2.csv", header = F, sep = ",", stringsAsFactors = F)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv", header = T, sep = ",", stringsAsFactors = F)
 
 colnames(d)<-c("Bird name","Bird ID","Causal score","Number of trials to reverse last preference","Avg. seconds to switch options MAB")
 
@@ -126,11 +126,11 @@ knitr::kable(d) %>%
 kable_styling(full_width = T, position = "left")
 ```
 
-There was no evidence that those birds with lower causal scores were faster to reverse their most recent preference because there was no relationship between these two variables (Table 3). 
+There was no evidence that those birds with lower causal scores were faster to reverse their most recent preference or to switch more quickly to solving a new option on the multiaccess log because there was no relationship between these variables (Tables 3 and 4). 
 
 **Table 3.** Results from the GLM: causal score ~ number of trials in last reversal. The estimate and (standard error) are shown.
 
-```{r cause1results, eval=T, warning=F, results='asis', echo=T, include=T}
+```{r cause1resultsRev, eval=T, warning=F, results='asis', echo=T, include=T}
 cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
 d<-data.frame(cause)
 
@@ -147,11 +147,30 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #this prevents an issue with xcolor package when rendering to PDF
 ```
 
+**Table 4.** Results from the GLM: causal score ~ average latency (seconds) to switch to attempting a new locus on the multiaccess log after having previously solved a different locus. The estimate and (standard error) are shown.
+
+```{r cause1resultsMAB, eval=T, warning=F, results='asis', echo=T, include=T}
+cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
+d<-data.frame(cause)
+
+#GLM with response variable = causal cognition score
+m2 <- glm(CausalScore ~ AvgLatencySwitch, family="gaussian", data=d)
+#summary(m2)
+
+#load packages for the output table
+library(jtools) 
+#library(huxtable)
+base::suppressMessages(jtools::export_summs(m2, model.names=c("Causal score ~ Avg switch latency"), digits = getOption("jtools-digits", default = 2), model.info = getOption("summ-model.info", TRUE), model.fit = getOption("summ-model.fit", TRUE), pvals = getOption("summ-pvals", FALSE))) 
+#suppressMessages gets rid of the text saying that the broom package overwrites something in jtools. Need to specify the package before the function to avoid a message popping up and preventing the PDF from rendering
+knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) 
+#this prevents an issue with xcolor package when rendering to PDF
+```
+
 To further tease apart potential cognitive components underlying flexibility, we developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment (“Flexibility comprehensive”). Through a computational Bayesian reinforcement learning model including bird and experimenter ID as random effects, we obtained individual-level estimates for each bird’s random choice and learning rates (see Analysis Plan > Prediction 1 > Flexibility comprehensive for details). We validated the model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem], and we found that this parameterization accurately reproduces learning curves observed in real animals (see Figure 3).
 
 ![**Figure 3.** Proportion of correct choices per color preference trial for Santa Barbara, California great-tailed grackles (N = 8; top), and “birds” simulated from the reinforcement learning model using parameter estimates (N = 8; bottom). Dashed vertical lines indicate color reversal. Error bars show standard errors of the means.](g_causalFig3.png)
 
-The following results are presented as posterior means and 89% highest posterior density intervals (HPDI). Using the individual-level estimates to predict causal scores in a GLM, we did not find robust associations between either learning rate (= 0.03, HPDI = -0.63 - 0.69) or random choice rate (= -0.40, HPDI = -0.96 - 0.25) and birds’ causal scores. There was also no interaction between the estimates of the two learning parameters in the model ( x = 0.01, HPDI = -0.95 - 0.97).
+The following results are presented as posterior means and 89% highest posterior density intervals (HPDI). Using the individual-level estimates to predict causal scores in a GLM, we did not find robust associations between either learning rate ($\beta_\phi$ = 0.03, HPDI = -0.63 - 0.69) or random choice rate ($\beta_\lambda$ = -0.40, HPDI = -0.96 - 0.25) and birds’ causal scores. There was also no interaction between the estimates of the two learning parameters in the model ($\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.95 - 0.97).
 
 ### DISCUSSION
 
@@ -554,8 +573,8 @@ d<-data.frame(cause)
 m1 <- glm(CausalScore ~ TrialsReverseLast, family="gaussian", data=d)
 #summary(m1)
 
-#m2 <- glm(CausalScore ~ AvgLatencySwitch, family="gaussian", data=d)
-#summary(m2)
+m2 <- glm(CausalScore ~ AvgLatencySwitch, family="gaussian", data=d)
+summary(m2)
 
 #m3 <- glm(CausalScore ~ FlexComp, family="gaussian", data=d)
 #summary(m3)
