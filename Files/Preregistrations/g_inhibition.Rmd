@@ -52,7 +52,7 @@ See the [HTML](http://corinalogan.com/Preregistrations/g_causal.html) version be
 
 ![](logoPCIecology.png){width=50%}
 
-**Cite as:** Logan CJ, McCune K, MacPherson M, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, Folsom M, Wascher CAF. 2019. **[Are the more flexible individuals also better at inhibition?](http://corinalogan.com/Preregistrations/g_inhibition.html)** (http://corinalogan.com/Preregistrations/g_inhibition.html) In principle acceptance by *PCI Ecology* of the version on 6 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibition.Rmd).
+**Cite as:** Logan CJ, McCune K, MacPherson M, Johnson-Ulrich Z, Bergeron L, Rowney C, Seitz B, Blaisdell A, Folsom M, Wascher CAF. 2019. **[Are the more flexible individuals also better at inhibition?](http://corinalogan.com/Preregistrations/g_inhibition.html)** (http://corinalogan.com/Preregistrations/g_inhibition.html) In principle acceptance by *PCI Ecology* of the version on 6 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibitionPassedPreStudyPeerReview6Mar2019.pdf](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_inhibitionPassedPreStudyPeerReview6Mar2019.pdf).
 
 ![](logoOpenAccess.png){width=5%} ![](logoOpenCode.png){width=5%} ![](logoOpenPeerReview.png){width=5%}
 
@@ -98,7 +98,7 @@ A total of 18 grackles participated to varying degrees in the test battery betwe
 
 **Table 1.** Summarized results per bird in the go/no go and detour behavioral inhibition experiments, and the reversal and multi-access box (MAB) flexibility experiments [flexibility data from @logan2019flexmanip]. We used data from the MAB plastic experiment and the MAB wooden experiment because the wooden and plastic scores did not correlate with each other [@logan2019flexmanip]. **Go/no go trials to 85% correct after 150 trials** requires the bird must achieve 100% correct before trial 150 and if they did not, then they pass after they achieve 85% correct. **Go/no go trials to 85% correct** is simply the number of trials to reach this criterion without the 150 trial threshold of needing to get 100% correct. A value of 201 for go/no go indicates that the bird did not pass criterion within the 200 trial maximum (but note the exception of Taquito who was tested beyond trial 200 until he passed due to experimenter error). **Detour proportion correct modified** accounts for the grackle-specific behavior of standing at the opening of the tube where they are about to reach their head inside the tube to get the food, but they appear frustrated and bite the edge of the plastic tube. These bites do not count as first touch to the plastic when the bird obtains the food immediately after the bite (see Results for the Detour task for justification of this coding).
 
-```{r summary, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r summary, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
@@ -719,7 +719,7 @@ We think the reason for the lower (but still acceptable) interobserver agreement
 
 Interobserver reliability was not conducted on this variable because we obtained this data from the automatically generated PsychoPy data sheets. However, we must note that when entering the latency to first screen peck into the main data sheet that the experimenter used to determine whether they made a correct choice or not, the two data sheets did not always match. This is because: 1) if a session started or ended with the bird not participating such that a trial was not triggered, this receives a -1 in the experimenter's data sheet and is not recorded by the PsychoPy data sheet; and 2) the touchscreen regularly failed to register screen pecks, which could result in an NA for the PsychoPy data sheet whereas the experimenter's data sheet recorded a choice.
 
-```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 library(irr) #ICC package
 library(psych) #Cohen's kappa package
 
@@ -728,36 +728,49 @@ library(psych) #Cohen's kappa package
 # did Sophie Kaube pass interobserver reliability training? YES (0.91) on 10 Feb 2020
 
 ## 9 Jan 2020 = ICC = 0.4 because we differed on 2/21 data points. However, Sophie was correct (CL checked the video) because she followed the instructions in an unbiased way. I need to rethink the instructions and then give her another video or two to code
-ld <- c(1,1,-1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,0,1,1,1) #live coder data from AdaptedFirstTouchCorrectChoice column for A036R- 2019-01-07 Detour S1 T1, A036R- 2019-01-08 Detour S2 T3, A064LR 2019-11-07 Detour S1 T1
-vd <- c(1,1,-1,1,1,1,1,1,1,1,1,0,1,1,1,1,2,2,1,1,1) #video coder data for same videos
-vdtest <- c(1,1,-1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1) #video coder data for same videos 
+ld <- c(1,1,-1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,0,1,1,1) 
+#live coder data from AdaptedFirstTouchCorrectChoice column for A036R- 2019-01-07 Detour S1 T1, A036R- 2019-01-08 Detour S2 T3, A064LR 2019-11-07 Detour S1 T1
+vd <- c(1,1,-1,1,1,1,1,1,1,1,1,0,1,1,1,1,2,2,1,1,1) 
+#video coder data for same videos
+vdtest <- c(1,1,-1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1) 
+#video coder data for same videos 
 d <- data.frame(ld,vdtest)
 
-icc(d, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) #=0.412 BUT WAIT!!!! The reason the ICC was so low is because it was looking at the distance between the measurements: 0-2 and 0-2 were the differences, but in reality, these are just categories that don't have a distance. So change the TYPE to CONSISTENCY rather than AGREEMENT (http://neoacademic.com/2011/11/16/computing-intraclass-correlations-icc-as-estimates-of-interrater-reliability-in-spss/). BUT the instructions for ICC say that if a oneway model is chosen, then consistency is the only option so it is implicitly already doing consistency.
+icc(d, model = "oneway", type = "consistency", unit = "single", conf.level = 0.95) 
+#=0.412 BUT WAIT!!!! The reason the ICC was so low is because it was looking at the distance between the measurements: 0-2 and 0-2 were the differences, but in reality, these are just categories that don't have a distance. So change the TYPE to CONSISTENCY rather than AGREEMENT (http://neoacademic.com/2011/11/16/computing-intraclass-correlations-icc-as-estimates-of-interrater-reliability-in-spss/). BUT the instructions for ICC say that if a oneway model is chosen, then consistency is the only option so it is implicitly already doing consistency.
 
 ## 10 Feb 2020: Did Sophie pass IOR for the second 2 birds she coded? YES 0.91
 #NOTE: don't just add more videos to the above analysis to try to get her ICC up because it would take more than 4 extra videos to counteract the 2 disagreements. Instead, start from scratch on different videos and have her recode the above after she passes.
-ld2 <- c(1,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1) #live coder data from AdaptedFirstTouchCorrectChoice column for the same videos as vd2
-vd2 <- c(0,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1) #video coder data from AdaptedFirstTouchCorrectChoice for videos A025GO 2018-12-30 Detour Up S1 T1, A025GO 2018-12-31 Detour S2 T4, A025GO 2018-12-31 Detour S3 T6, A025GO 2018-12-31 Detour S4 T9, A025GO 2019-01-01 Detour S5 T10, A031-Y 2018-10-08 Detour S1 T1, A031-Y 2018-10-09 Detour S2 T10
+ld2 <- c(1,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1) 
+#live coder data from AdaptedFirstTouchCorrectChoice column for the same videos as vd2
+vd2 <- c(0,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1) 
+#video coder data from AdaptedFirstTouchCorrectChoice for videos A025GO 2018-12-30 Detour Up S1 T1, A025GO 2018-12-31 Detour S2 T4, A025GO 2018-12-31 Detour S3 T6, A025GO 2018-12-31 Detour S4 T9, A025GO 2019-01-01 Detour S5 T10, A031-Y 2018-10-08 Detour S1 T1, A031-Y 2018-10-09 Detour S2 T10
 d5 <- data.frame(ld2+2,vd2+2) 
 
-cohen.kappa(d5, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #Sophie = unweighted kappa = 0.91, confidence boundary=0.75-1.00, n=24 data points
+cohen.kappa(d5, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#Sophie = unweighted kappa = 0.91, confidence boundary=0.75-1.00, n=24 data points
 #Now have Sophie code 2 additional birds (don't need any more IOR because she already passed) and then 20% of the videos will be double coded
 
 ## 19 Feb 2020: Sophie IOR score for 20% of the videos (birds 25 Chalupa, 31 Queso, 35 Mole, 86 Chilaquile) = 0.91
-ld3 <- c(1,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1,  0,1,1,1,2,1,1,1,1,1,2,1,2,1,2,1,1,1,1,2) #live coder data from AdaptedFirstTouchCorrectChoice column for the same videos as vd2
-vd3 <- c(0,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1,  2,1,1,1,2,1,1,1,1,1,2,1,2,1,2,1,1,1,1,2) #video coder data from AdaptedFirstTouchCorrectChoice for videos A025GO 2018-12-30 Detour Up S1 T1, A025GO 2018-12-31 Detour S2 T4, A025GO 2018-12-31 Detour S3 T6, A025GO 2018-12-31 Detour S4 T9, A025GO 2019-01-01 Detour S5 T10, A031-Y 2018-10-08 Detour S1 T1, A031-Y 2018-10-09 Detour S2 T10, A035P- 2018-12-20 Detour S1 T1, A086GB 2020-01-01 Detour S1 T1
+ld3 <- c(1,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1,  0,1,1,1,2,1,1,1,1,1,2,1,2,1,2,1,1,1,1,2) 
+#live coder data from AdaptedFirstTouchCorrectChoice column for the same videos as vd2
+vd3 <- c(0,1,1,-1,1,2,-1,1,1,1,1,-1,2,1,1,1,0,1,1,1,1,1,-1,1,  2,1,1,1,2,1,1,1,1,1,2,1,2,1,2,1,1,1,1,2) 
+#video coder data from AdaptedFirstTouchCorrectChoice for videos A025GO 2018-12-30 Detour Up S1 T1, A025GO 2018-12-31 Detour S2 T4, A025GO 2018-12-31 Detour S3 T6, A025GO 2018-12-31 Detour S4 T9, A025GO 2019-01-01 Detour S5 T10, A031-Y 2018-10-08 Detour S1 T1, A031-Y 2018-10-09 Detour S2 T10, A035P- 2018-12-20 Detour S1 T1, A086GB 2020-01-01 Detour S1 T1
 dfinal <- data.frame(ld3+2,vd3+2) 
-cohen.kappa(dfinal, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #Sophie = unweighted kappa = 0.91, confidence boundary=0.78-1.00, n=44 data points
+cohen.kappa(dfinal, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#Sophie = unweighted kappa = 0.91, confidence boundary=0.78-1.00, n=44 data points
 
 
 #### go/no go
 
 # did Brynna Hood pass interobserver reliability training? YES Cohen's unweighted kappa = 0.91
-mm <- c(-1,0,1,0,1,0,1,0,1,0,0,1,1,-1,1,0,1,0,1,0,1,0,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,0) #live coder data (Maggie MacPherson) from CorectChoice column for the same trials as in videos for bh
-bh <- c(-1,2,1,0,1,0,1,0,1,0,0,1,1,-1,1,0,1,0,1,0,1,2,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,0) #video coder data from CorrectChoice for videos A064LR 2019-12-06 Go:No-Go S1 T1.mp4, A064LR 2019-12-06 Go:No-Go S2 T19.mp4
+mm <- c(-1,0,1,0,1,0,1,0,1,0,0,1,1,-1,1,0,1,0,1,0,1,0,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,0) 
+#live coder data (Maggie MacPherson) from CorectChoice column for the same trials as in videos for bh
+bh <- c(-1,2,1,0,1,0,1,0,1,0,0,1,1,-1,1,0,1,0,1,0,1,2,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,0) 
+#video coder data from CorrectChoice for videos A064LR 2019-12-06 Go:No-Go S1 T1.mp4, A064LR 2019-12-06 Go:No-Go S2 T19.mp4
 dgng <- data.frame(mm,bh) 
-cohen.kappa(dgng, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.91, confidence boundaries 0.80-1.00, n=40 data points
+cohen.kappa(dgng, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#unweighted kappa = 0.91, confidence boundaries 0.80-1.00, n=40 data points
 
 # interobserver reliability on 20% of the videos between Brynna Hood and the live coder (LC)
 data <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_dataIORgngHood.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -765,7 +778,8 @@ head(data)  #Check to make sure it looks right
 # Note: c(3,5) is telling R to look at columns 2 ('1CorrectChoice') and 3 ('2CorrectChoiceAdapted') and compare them. Double check this:
 data[,3] #1CorrectChoice = live coder
 data[,5] #2CorrectChoiceAdapted = re-aligned Coder2 data from Brynna
-cohen.kappa(data[,c(3,5)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.82, confidence boundary = 0.78-0.85, n=611 data points
+cohen.kappa(data[,c(3,5)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#unweighted kappa = 0.82, confidence boundary = 0.78-0.85, n=611 data points
 ```
 
 
@@ -782,7 +796,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be visually checked to determine whether they are normally distributed via two methods: 1) normality is indicated when the histograms of actual data match those with simulated data (Figure 2), and 2) normality is indicated when the residuals closely fit the dotted line in the Normal Q-Q plot (Figure 3) [@zuur2009]. If the data do not appear normally distributed, visually check the residuals. If they are patternless, then assume a normal distribution [@zuur2009]. Detour data look normal, go/no go data are questionable, and both have patternless residuals, therefore we presume normality for both variables.
 
-```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=TRUE}
+```{r dist_checkHist, eval=FALSE, warning=FALSE, results='asis', echo=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
 colnames(d) <- c("Bird","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost","TrialsFirst","TrialsLast","AvgLatencyPlastic","AvgLatencyLog")
@@ -790,13 +804,16 @@ colnames(d) <- c("Bird","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost
 #Check the dependent variables for normality: Histograms
 op <- par(mfrow=c(2,4), mar=c(4,4,2,0.2))
 #This is what the distribution of actual data looks like
-hist(d$Gonogo150, xlab="Go/no go 150: Trials to criterion", main="Actual Data") #not normally distributed
-hist(d$Gonogo85, xlab="Go/no go 85 (unregistered): Trials to criterion", main="Actual Data") #much more normally distributed than Gonogo150
+hist(d$Gonogo150, xlab="Go/no go 150: Trials to criterion", main="Actual Data") 
+#not normally distributed
+hist(d$Gonogo85, xlab="Go/no go 85 (unregistered): Trials to criterion", main="Actual Data") 
+#much more normally distributed than Gonogo150
 hist(d$Detour, xlab="Detour: First approach", main="Actual Data")
 
 #Given the actual data, this is what a normal distribution would look like
 Y2 <- rnorm(1281, mean=mean(d$Gonogo150), sd=sd(d$Gonogo150))
-hist(Y2, xlab="Go/no-go 150: Trials to criterion", main="Simulated Data") #The NAs break this, but looking at the histogram, the data are not normally distributed
+hist(Y2, xlab="Go/no-go 150: Trials to criterion", main="Simulated Data") 
+#The NAs break this, but looking at the histogram, the data are not normally distributed
 
 Z2 <- rnorm(1281, mean=mean(d$Detour), sd=sd(d$Detour))
 hist(Z2, xlab="Detour: First approach", main="Simulated Data")
@@ -854,7 +871,7 @@ Actual power                  	=	0,7103096
 
 This means that, with our sample size of 32, we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
 
-```{r better, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r better, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 acc <- read.csv ("/Users/corina/GTGR/data/data_accumulation.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #GLM
@@ -967,7 +984,7 @@ The parameter $\lambda_j$ represents the *random choice rate* of an individual (
 
 This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM that predicts their causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on the number of trials to pass criterion in go/no go as well as an interaction term. To model the number of trials to pass criterion, we used a Poisson likelihood and a standard log link function as appropriate for count data with an unknown maximum. 
 
-```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 
 # Load data
 d_flex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -1346,7 +1363,7 @@ Actual power                  	=	0,7061592
 
 This means that, with our sample size of 32, we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
 
-```{r golatency, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r golatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_data_gonogoExperimenter.csv"), header=T, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
 
@@ -1414,7 +1431,7 @@ The reliability of the behavioral inhibition tests will be calculated using Cron
 
 NOTE (Sep 2020): when we tried to run this code we discovered that this is not the appropriate test to run on our experimental design to test the internal validity of the experiment (e.g., does this test actually measure what we think it does). To test internal validity, we would need to change the experimental design, which was not the goal of our current study. Therefore, we did not conduct this analysis.
 
-```{r reliability, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r reliability, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 dat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datareliabilityanalysis.csv"), header=T, sep=",", stringsAsFactors=F)
 dat <- data.frame(dat)
 #Note: n=8 grackles participated in both of these tests (1 is female). Had to make IDs numeric for the code below to run
@@ -1444,7 +1461,7 @@ cronbach(da4) #alpha
 
 **See analysis description for P1 alternative 2.** 
 
-```{r reliability2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r reliability2, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 dat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datareliabilityanalysis.csv"), header=T, sep=",", stringsAsFactors=F)
 dat <- data.frame(dat)
 #Note: n=8 grackles participated in both of these tests (1 is female). Had to make IDs numeric for the code below to run
@@ -1561,15 +1578,11 @@ This research is carried out in accordance with permits from the:
 
 **Johnson-Ulrich:** Touchscreen programming for go/no go task, data interpretation, revising/editing.
 
-**Bergeron:** Data collection, data interpretation, revising/editing.
-
 **Rowney:** Data collection, data interpretation, revising/editing.
 
 **Seitz:** Experimental design (go/no go task), touchscreen programming (go/no go task), data interpretation, revising/editing.
 
 **Blaisdell:** Experimental design (go/no go task), data interpretation, revising/editing.
-
-**Folsom:** Data collection, data interpretation, revising/editing.
 
 **Deffner:** Data analysis (Flexibility 4 model), revising/editing.
 
@@ -1585,6 +1598,6 @@ We, the authors, declare that we have no financial conflicts of interest with th
 
 ### K. ACKNOWLEDGEMENTS
 
-We thank Dieter Lukas for help polishing the predictions; Ben Trumble for providing us with a wet lab at Arizona State University and Angela Bond for lab support; Melissa Wilson for sponsoring our affiliations at Arizona State University and lending lab equipment; Kevin Langergraber for serving as local PI on the ASU IACUC; Kristine Johnson for technical advice on great-tailed grackles; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; Richard McElreath for project support; Erin Vogel, our Recommender at PCI Ecology, and Simon Gingins and two anonymous reviewers for their wonderful feedback; Debbie Kelly for advice on how to modify the go/no go experiment; and our research assistants: Aelin Mayer, Nancy Rodriguez, Brianna Thomas, Aldora Messinger, Elysia Mamola, Michael Guillen, Rita Barakat, Adriana Boderash, Olateju Ojekunle, August Sevchik, Justin Huynh, Jennifer Berens, and Amanda Overholt.
+We thank Dieter Lukas for help polishing the predictions; Ben Trumble for providing us with a wet lab at Arizona State University and Angela Bond for lab support; Melissa Wilson for sponsoring our affiliations at Arizona State University; Kevin Langergraber for serving as the local PI on the ASU IACUC; Kristine Johnson for technical advice on great-tailed grackles; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; Richard McElreath for project support; Erin Vogel, our Recommender at PCI Ecology, and Simon Gingins and two anonymous reviewers for their wonderful feedback; Debbie Kelly for advice on how to modify the go/no go experiment; Melissa Folsom, Sawyer Lung, and Luisa Bergeron for field and aviary support; Brynna Hood and Sophie Kaube for interobserver reliability video coding; and our research assistants: Aelin Mayer, Nancy Rodriguez, Brianna Thomas, Aldora Messinger, Elysia Mamola, Michael Guillen, Rita Barakat, Adriana Boderash, Olateju Ojekunle, August Sevchik, Justin Huynh, Jennifer Berens, Amanda Overholt, Michael Pickett, Sam Munoz, Sam Bowser, Emily Blackwell, Kaylee Delcid, Sofija Savic, Brynna Hood, Sierra Planck, and Elise Lange.
 
 ### L. REFERENCES
