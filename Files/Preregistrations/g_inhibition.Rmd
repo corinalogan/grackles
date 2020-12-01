@@ -195,6 +195,30 @@ legend(x="bottomright", y=8, legend=c(pch2="85", pch1="150"), pch=c(2,1), box.lt
 axis(side=2, at=c(100,300))
 mtext("Go/no go: trials to pass", side=2, line=2.8, outer=F, cex=2, at=350)
 par(op)
+
+#combine gng85 and gng150 columns into one so it can be a factor
+gngtrials <-append(d$gng85,d$gng150)
+gngcriterion <-c(rep(85,nrow(d)),rep(150,nrow(d)))
+lastrev <- append(d$TrialsLastReversal,d$TrialsLastReversal)
+avglat <- append(d$AvgLatencySwitchPlastic,d$AvgLatencySwitchPlastic)
+gng <- data.frame(gngtrials,gngcriterion,lastrev,avglat)
+gngcriterion <- factor(gngcriterion)
+
+#make the plots
+library(ggplot2)
+library(cowplot)
+g <- ggplot(gng,aes(lastrev,gngtrials)) + geom_jitter() + ggtitle("") + xlab("Reversal: Trials in last reversal") + ylab("Go/no go: Trials to pass") + geom_point(aes(shape=factor(gngcriterion)), size = 4) + guides(shape=guide_legend(title="")) + theme(panel.border = element_rect(colour = "black", fill=NA))
+
+#legend.position=c(150,75),
+
+a1 <- ggplot(d,aes(TrialsLastReversal,gng85)) + geom_jitter() + ggtitle("") + xlab("Reversal: Trials in last reversal") + ylab("Go/no go: Trials to pass") + geom_point(data=d, aes(TrialsLastReversal,gng150), shape="triangle") + scale_shape_manual(name="Legend", values=c("85","150"))
+
+a2 <- ggplot(d,aes(AvgLatencySwitchPlastic,gng85)) + geom_jitter() + ggtitle("") + xlab("MAB: Average latency to switch") + ylab("Go/no go: Trials to pass") + geom_point(data=d, aes(AvgLatencySwitchPlastic,gng150), shape="triangle")
+theme_set(theme_cowplot(font_size=12))
+plot_grid(a1, a2, align='h', ncol=2, labels=c('A','B'))
+
+#theme(legend.text=element_text(size=8, colour="black"), legend.position="right")
+#, labels=c("85", "150")
 ```
 
 **Figure 1.** The number of go/no go trials to pass criterion using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the number of trials to reverse a color preference in their last reversal  (top) or the average latency to attempt a new locus on the multi-access box (MAB) plastic (bottom).
