@@ -176,57 +176,48 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #kable(sm1.table, caption="Table T: Model selection output.", format="html", digits=2)
 ```
 
-
-```{r summaryfiggng, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r summaryfiggngRev, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
 colnames(d) <- c("Bird","gng150","gng85","Detour","DetourA","Detour pre- or post-reversal","TrialsFirstReversal","TrialsLastReversal","AvgLatencySwitchPlastic","AvgLatencySwitchLog")
 
-op <- par(mfrow=c(2,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
-plot(jitter(d$TrialsLastReversal),jitter(d$gng85), ylab="", xlab="Trials in last reversal", ylim=c(0,310), xlim=c(0,180), cex=2, pch=2, yaxt="n")
-points(jitter(d$TrialsLastReversal),jitter(d$gng150), cex=2, pch=1, yaxt="n")
-legend(x="bottomright", y=8, legend=c(pch2="85", pch1="150"), pch=c(2,1), box.lty=1, cex=1)
-axis(side=2, at=c(100,300))
-
-plot(jitter(d$AvgLatencySwitchPlastic),jitter(d$gng85), ylab="", xlab="MAB: avg. switch latency", ylim=c(0,310), xlim=c(0,700), cex=2, pch=2, yaxt="n")
-points(jitter(d$AvgLatencySwitchPlastic),jitter(d$gng150), cex=2, pch=1, yaxt="n")
-legend(x="bottomright", y=8, legend=c(pch2="85", pch1="150"), pch=c(2,1), box.lty=1, cex=1)
-axis(side=2, at=c(100,300))
-mtext("Go/no go: trials to pass", side=2, line=2.8, outer=F, cex=2, at=350)
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d$TrialsLastReversal),jitter(d$gng85), ylab="Go/no go: trials to pass", xlab="Trials in last reversal", ylim=c(0,310), xlim=c(0,180), cex=4, pch=2, yaxt="n")
+points(jitter(d$TrialsLastReversal),jitter(d$gng150), cex=4, pch=1, yaxt="n")
+legend(x="bottomright", y=8, legend=c(pch2="85", pch1="150"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(100,200,300))
 par(op)
 
+
+## trying to get ggplot2 to work and failed
 #combine gng85 and gng150 columns into one so it can be a factor
-gngtrials <-append(d$gng85,d$gng150)
-gngcriterion <-c(rep(85,nrow(d)),rep(150,nrow(d)))
-lastrev <- append(d$TrialsLastReversal,d$TrialsLastReversal)
-avglat <- append(d$AvgLatencySwitchPlastic,d$AvgLatencySwitchPlastic)
-gng <- data.frame(gngtrials,gngcriterion,lastrev,avglat)
-gngcriterion <- factor(gngcriterion)
+#gngtrials <-append(d$gng85,d$gng150)
+#gngcriterion <-c(rep(85,nrow(d)),rep(150,nrow(d)))
+#lastrev <- append(d$TrialsLastReversal,d$TrialsLastReversal)
+#avglat <- append(d$AvgLatencySwitchPlastic,d$AvgLatencySwitchPlastic)
+#gng <- data.frame(gngtrials,gngcriterion,lastrev,avglat)
+#gngcriterion <- factor(gngcriterion)
 
 #make the plots
-library(ggplot2)
-library(cowplot)
-g <- ggplot(gng,aes(lastrev,gngtrials)) + geom_jitter() + ggtitle("") + xlab("Reversal: Trials in last reversal") + ylab("Go/no go: Trials to pass") + geom_point(aes(shape=factor(gngcriterion)), size = 4) + guides(shape=guide_legend(title="")) + theme(panel.border = element_rect(colour = "black", fill=NA))
+#library(ggplot2)
+#library(cowplot)
+#g <- ggplot(gng,aes(lastrev,gngtrials)) + geom_jitter() + ggtitle("") + xlab("Reversal: Trials in last reversal") + ylab("Go/no go: Trials to pass") + geom_point(aes(shape=factor(gngcriterion)), size = 4) + guides(shape=guide_legend(title="")) + theme(panel.border = element_rect(colour = "black", fill=NA))
 
 #legend.position=c(150,75),
 
-a1 <- ggplot(d,aes(TrialsLastReversal,gng85)) + geom_jitter() + ggtitle("") + xlab("Reversal: Trials in last reversal") + ylab("Go/no go: Trials to pass") + geom_point(data=d, aes(TrialsLastReversal,gng150), shape="triangle") + scale_shape_manual(name="Legend", values=c("85","150"))
+#a1 <- ggplot(d,aes(TrialsLastReversal,gng85)) + geom_jitter() + ggtitle("") + xlab("Reversal: Trials in last reversal") + ylab("Go/no go: Trials to pass") + geom_point(data=d, aes(TrialsLastReversal,gng150), shape="triangle") + scale_shape_manual(name="Legend", values=c("85","150"))
 
-a2 <- ggplot(d,aes(AvgLatencySwitchPlastic,gng85)) + geom_jitter() + ggtitle("") + xlab("MAB: Average latency to switch") + ylab("Go/no go: Trials to pass") + geom_point(data=d, aes(AvgLatencySwitchPlastic,gng150), shape="triangle")
-theme_set(theme_cowplot(font_size=12))
-plot_grid(a1, a2, align='h', ncol=2, labels=c('A','B'))
-
-#theme(legend.text=element_text(size=8, colour="black"), legend.position="right")
-#, labels=c("85", "150")
+#a2 <- ggplot(d,aes(AvgLatencySwitchPlastic,gng85)) + geom_jitter() + ggtitle("") + xlab("MAB: Average latency to switch") + ylab("Go/no go: Trials to pass") + geom_point(data=d, aes(AvgLatencySwitchPlastic,gng150), shape="triangle")
+#theme_set(theme_cowplot(font_size=12))
+#plot_grid(a1, a2, align='h', ncol=2, labels=c('A','B'))
 ```
 
-**Figure 1.** The number of go/no go trials to pass criterion using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the number of trials to reverse a color preference in their last reversal  (top) or the average latency to attempt a new locus on the multi-access box (MAB) plastic (bottom).
-
+**Figure 1.** The number of go/no go trials to pass criterion using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the number of trials to reverse a color preference in their last reversal or the average latency to attempt a new locus on the multi-access box (MAB) plastic (bottom).
 
 ##### *Flexibility: Multi-access box*
 
-There was no correlation between the two flexibility experiments: the number of trials to reverse a preference in the last reversal and the average number of seconds (latency) to attempt a new option on the multi-access box after a different locus has become non-functional because they passed criterion on it (Pearson's r=0.52 (95% confidence interval: -0.12-0.85), t=1.83, df=9, p=0.10). Therefore, we conducted a separate analysis to determine whether the number of trials to pass criterion in the go/no go experiment correlates with the average latency to attempt a new option in the MAB plastic and MAB log experiments [the average latency to attempt a new option did not correlate between the plastic and log experiments, which is why they are analyzed separately; @logan2019flexmanip]. Results showed that the average latency to attempt a new option on both MAB experiments (plastic and log) negatively correlated with go/no go performance when using the 85% go/no go criterion, and there was no correlation when using the 150 trial threshold (Table 3).
+There was no correlation between the two flexibility experiments: the number of trials to reverse a preference in the last reversal and the average number of seconds (latency) to attempt a new option on the multi-access box after a different locus has become non-functional because they passed criterion on it (Pearson's r=0.52 (95% confidence interval: -0.12-0.85), t=1.83, df=9, p=0.10). Therefore, we conducted a separate analysis to determine whether the number of trials to pass criterion in the go/no go experiment correlates with the average latency to attempt a new option in the MAB plastic and MAB log experiments [the average latency to attempt a new option did not correlate between the plastic and log experiments, which is why they are analyzed separately; @logan2019flexmanip]. Results showed that the average latency to attempt a new option on both MAB experiments (plastic and log) negatively correlated with go/no go performance when using the 85% go/no go criterion, and there was no correlation when using the 150 trial threshold (Table 3, Figure 2).
 
 **Table 3.** Results from the go/no go and multi-access box GLMs: **m1** and **m3** show results from the GLM using the number of trials to reach 85% correct if 100% correct was not achieved within the first 150 trials in go/no go, while **m2** and **m4** use the number of trials to reach 85% correct without the 150 trial threshold. **m1** and **m2** show results from the plastic multi-access box, while **m3** and **m4** show results from the log multi-access box. The estimate is presented above the standard error, which is in parentheses; asterisks refer to p-value significance.
 
@@ -260,9 +251,26 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #this prevents an issue with xcolor package when rendering to PDF
 ```
 
+```{r summaryfiggngMAB, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","gng150","gng85","Detour","DetourA","Detour pre- or post-reversal","TrialsFirstReversal","TrialsLastReversal","AvgLatencySwitchPlastic","AvgLatencySwitchLog")
+
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d$AvgLatencySwitchPlastic),jitter(d$gng85), ylab="Go/no go: trials to pass", xlab="MAB: avgerage switch latency (s)", ylim=c(0,310), xlim=c(0,700), cex=4, pch=2, yaxt="n")
+points(jitter(d$AvgLatencySwitchPlastic),jitter(d$gng150), cex=4, pch=1, yaxt="n")
+legend(x="topright", y=8, legend=c(pch2="85", pch1="150"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(100,200,300))
+par(op)
+```
+
+**Figure 2.** The number of go/no go trials to pass criterion using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the average latency to attempt a new locus on the multi-access box (MAB) plastic.
+
+
 **Model 2b: Latency to peck screen in go/no go**
 
-The model that examined whether the latency of the first peck to the screen per trial (response variable) was associated with the outcome of the trial (correct/incorrect) did not converge. This is probably because the correct choice on the no go trials was not to peck the screen and so this level of the categorical choice variable has much less data than the other two levels (incorrect choice and correct choice on the go trials; Figure 2). Therefore, we cannot include the analysis here or make conclusions based on it. Additionally, there was a problem matching the latency data across data sheets. Latency data was brought in from the PsychoPy data sheets, however, the number of trials reported by the experimenter and by PsychoPy sometimes differed for reasons that are unclear. Therefore, the first latency to peck the screen is not completely accurately matched between the two data sheets.
+The model that examined whether the latency of the first peck to the screen per trial (response variable) was associated with the outcome of the trial (correct/incorrect) did not converge. This is probably because the correct choice on the no go trials was not to peck the screen and so this level of the categorical choice variable has much less data than the other two levels (incorrect choice and correct choice on the go trials; Figure 3). Therefore, we cannot include the analysis here or make conclusions based on it. Additionally, there was a problem matching the latency data across data sheets. Latency data was brought in from the PsychoPy data sheets, however, the number of trials reported by the experimenter and by PsychoPy sometimes differed for reasons that are unclear. Therefore, the first latency to peck the screen is not completely accurately matched between the two data sheets.
 
 ```{r golatencyResults, eval=F, warning=F, results='asis', echo=T, include=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_data_gonogoPsychopy.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -427,13 +435,13 @@ smooth2 = predict(lm(avgfirstlatency ~ session, data = no))
 
 ![](g_inhibitionFig1post.png)
 
-**Figure 2.** The average latency (seconds) across all birds to first peck the screen in a trial per session according to whether it was a go trial (when they should peck; black triangles and black regression line) or a no go trial (when they should not peck; gray squares and gray regression line) (error bars=standard error of the mean).
+**Figure 3.** The average latency (seconds) across all birds to first peck the screen in a trial per session according to whether it was a go trial (when they should peck; black triangles and black regression line) or a no go trial (when they should not peck; gray squares and gray regression line) (error bars=standard error of the mean).
 
 #### Prediction 1 the more flexible individuals are also better at inhibition: detour
 
 ##### *Flexibility: Reversal learning*
 
-There was no correlation between the proportion correct on the detour experiment and the number of trials to reverse their last preference in the reversal learning experiment (Table 3, Figure 3). The same result was found using the more comprehensive flexibility measure with the Bayesian reinforcement model: we found no relationship between the learning rate ($\beta_\phi$ = 0.12, HPDI = -0.13 to 0.38) or random choice rate ($\beta_\lambda$ = -0.07, HPDI = -0.55 to 0.46) and the proportion of correct choices in the detour experiment. There was also no interaction among parameters (learning rate and random choice rate; $\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.39 to 0.38). Eighteen grackles completed this experiment and they averaged 71% correct (standard deviation: 25%, range: 20-100%). 
+There was no correlation between the proportion correct on the detour experiment and the number of trials to reverse their last preference in the reversal learning experiment (Table 3, Figure 4). The same result was found using the more comprehensive flexibility measure with the Bayesian reinforcement model: we found no relationship between the learning rate ($\beta_\phi$ = 0.12, HPDI = -0.13 to 0.38) or random choice rate ($\beta_\lambda$ = -0.07, HPDI = -0.55 to 0.46) and the proportion of correct choices in the detour experiment. There was also no interaction among parameters (learning rate and random choice rate; $\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.39 to 0.38). Eighteen grackles completed this experiment and they averaged 71% correct (standard deviation: 25%, range: 20-100%). 
 
 ##### Unregistered analyses
 
@@ -478,28 +486,21 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 ```
 
 
-```{r summaryfigdet, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r summaryfigdetRev, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
 colnames(d) <- c("Bird","gng150","gng85","Detour","DetourA","Detour pre- or post-reversal","TrialsFirstReversal","TrialsLastReversal","AvgLatencySwitchPlastic","AvgLatencySwitchLog")
 
-op <- par(mfrow=c(2,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=1.5)
-plot(jitter(d$TrialsLastReversal),jitter(d$Detour), ylab="", xlab="Trials in last reversal", ylim=c(0,1.2), xlim=c(0,180), cex=2, pch=2, yaxt="n")
-points(jitter(d$TrialsLastReversal),jitter(d$DetourA), cex=2, pch=1, yaxt="n")
-legend(x="bottomright", y=8, legend=c(pch2="Std", pch1="Grackle"), pch=c(2,1), box.lty=1, cex=1)
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d$TrialsLastReversal),jitter(d$Detour), ylab="Detour: Proportion correct", xlab="Trials in last reversal", ylim=c(0,1.2), xlim=c(0,180), cex=4, pch=2, yaxt="n")
+points(jitter(d$TrialsLastReversal),jitter(d$DetourA), cex=4, pch=1, yaxt="n")
+legend(x="bottomright", y=8, legend=c(pch2="Standard", pch1="Grackle"), pch=c(2,1), box.lty=1, cex=2)
 axis(side=2, at=c(0.5,1.0))
-
-plot(jitter(d$AvgLatencySwitchPlastic),jitter(d$Detour), ylab="", xlab="MAB: avg. switch latency", ylim=c(0,1.3), xlim=c(0,700), cex=2, pch=2, yaxt="n")
-points(jitter(d$AvgLatencySwitchPlastic),jitter(d$DetourA), cex=2, pch=1, yaxt="n")
-legend(x="bottomright", y=8, legend=c(pch2="Std", pch1="Grackle"), pch=c(2,1), box.lty=1, cex=1)
-axis(side=2, at=c(0.5,1.0))
-mtext("Detour: Proportion correct", side=2, line=2.8, outer=F, cex=2, at=1.3)
 par(op)
 ```
 
-**Figure 3.** The proportion of detour trials correct using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the number of trials to reverse a color preference in their last reversal (top) or the average latency to attempt a new locus on the multi-access box (MAB) plastic (bottom).
-
+**Figure 4.** The proportion of detour trials correct using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the number of trials to reverse a color preference in their last reversal.
 
 ##### *Flexibility: Multi-access box*
 
@@ -507,7 +508,7 @@ We conducted a separate analysis to determine whether the proportion correct in 
 
 ##### Unregistered analyses
 
-There was no correlation between the proportion correct in the detour experiment using the grackle-specific scoring method and the average latency to attempt a new option on either of the multi-access boxes (plastic or log; Table 5).
+There was no correlation between the proportion correct in the detour experiment using the grackle-specific scoring method and the average latency to attempt a new option on either of the multi-access boxes (plastic or log; Table 5, Figure 5).
 
 **Table 5.** Results from the detour and multi-access box GLMs: **m1** and **m3** show GLM outputs using the @maclean2014evolution method of scoring, while **m2** and **m4** show GLM outputs using the grackle-specific scoring method. **m1** and **m2** show results from the MAB plastic experiment, while **m3** and **m4** show results from the MAB log experiment.
 
@@ -541,6 +542,23 @@ base::suppressMessages(jtools::export_summs(m8, m9, m10, m11, model.names=c("m1:
 knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\usepackage{xcolor}', x, fixed = TRUE)}) 
 #this prevents an issue with xcolor package when rendering to PDF
 ```
+
+
+```{r summaryfigdetMAB, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","gng150","gng85","Detour","DetourA","Detour pre- or post-reversal","TrialsFirstReversal","TrialsLastReversal","AvgLatencySwitchPlastic","AvgLatencySwitchLog")
+
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d$AvgLatencySwitchPlastic),jitter(d$Detour), ylab="Detour: Proportion correct", xlab="MAB: avgerage switch latency", ylim=c(0,1.3), xlim=c(0,700), cex=4, pch=2, yaxt="n")
+points(jitter(d$AvgLatencySwitchPlastic),jitter(d$DetourA), cex=4, pch=1, yaxt="n")
+legend(x="bottomright", y=8, legend=c(pch2="Std", pch1="Grackle"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(0.5,1.0))
+par(op)
+```
+
+**Figure 5.** The proportion of detour trials correct using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the average latency to attempt a new locus on the multi-access box (MAB) plastic.
 
 
 #### Prediction 2: no correlation between inhibition tasks
@@ -612,7 +630,7 @@ We may decide to present the results from different tests in separate papers. NO
 
 ### C. HYPOTHESIS
 
-**If behavioral flexibility requires behavioral inhibition, then individuals that are more [behaviorally flexible](./g_flexmanip.Rmd) (indicated by individuals that are faster at functionally changing their behavior when circumstances change), as measured by reversal learning and switching to a different option after one becomes non-functional on a multi-access box, will also be better at inhibiting their responses in three tasks: delayed gratification, go/no go, and detour.**
+**If behavioral flexibility requires behavioral inhibition, then individuals that are more [behaviorally flexible](./g_flexmanip.Rmd) (indicated by individuals that are faster at functionally changing their behavior when circumstances change), as measured by reversal learning and switching to a different option after one becomes non-functional on a multi-access box, will also be better at inhibiting their responses in three tasks: delayed gratification, go/no go, and detour (Figure 6).**
 
 **P1:** Individuals that are faster to reverse preferences on a reversal learning task and who also have lower latencies to successfully solve new loci after previously solved loci become unavailable (multi-access box) (see [flexibility preregistration](./g_flexmanip.Rmd)) will perform better in the go/no go task (methods similar to @harding2004animal) and in the detour task (methods as in @maclean2014evolution who call it the "cylinder task"), and they will wait longer for higher quality (more preferred) food, but not for higher quantities of food (methods as in @hillemann2014waiting). Waiting for higher quality food has been validated as a test of inhibition in birds, while waiting for a higher quantity of food does not appear to measure inhibition (@hillemann2014waiting).
 
@@ -628,7 +646,7 @@ We may decide to present the results from different tests in separate papers. NO
 
 ![](g_inhibitionFig1.png)
 
-***Figure 4.*** The experimental designs of the three tasks: delayed gratification, go/no go, and detour (see [protocol](https://docs.google.com/document/d/1oEQ66yLrkMFr4UJTXfPBRAEXqoUuOgRwcKOB_KcT7HE/edit?usp=sharing) for details). In the **delay of gratification** task, individuals learn that food items will be transferred by the experimenter from a storing lid (near the experimenter) to a serving lid (near the bird) one at a time, and that they have access to the food in the serving lid from which they can eat at any time: they will have the opportunity to learn that they will have access to more food if they wait longer for the experimenter to transfer food items. Once they pass training (by waiting for more than one food item in three trials), they move on to the test where food items are transferred from the serving to the storing lid with delays ranging from 2-1280 seconds. Birds will be tested on whether will wait for food items that increase in quality (i.e., are more preferred) or increase in quantity (i.e., the same food type accumulates in the serving lid). In the **go/no go** task, after pecking a start key on the touchscreen to show they are attending to a trial, they will be presented with either a green circle or a purple circle (the rewarded circle color is counterbalanced across birds). Pecking the food key while the rewarded colored circle (green in the figure) is on the screen will result in the food hopper rising so the bird can eat food for 2 seconds, after which point the trial ends and the screen goes blank for 8 seconds before starting over again. If the non-rewarded colored circle (purple in the figure) appears on the screen after the start key is pecked, then the correct response is to refrain from pecking the food key for 10 seconds. If the bird succeeds in refraining, the next intertrial interval starts. If the bird fails and pecks the food key while the purple circle is on the screen, then it is given an aversive stimuli for 5 seconds (TV static screen). In the **detour** task, individuals first receive a warm up with an opaque tube where they learn that the experimenter will show them a piece of food and then move that piece of food into the tube. Subjects then have the opportunity to approach the tube and eat the food. A correct response is when their first approach is to go to the side of the tube to the opening to obtain the food and an incorrect response is when they try to access the food by pecking at the front of the tube (which has no opening). Once they pass the warm up, by solving correctly in 4 out of 5 consecutive trials, they move on to the test, which uses the same setup of tube and food except the tube is transparent. The idea is that being able to see the food through the tube wall might entice them to try to go through the wall rather than refrain from a direct approach to the food and instead go around the side through the tube opening.
+***Figure 6.*** The experimental designs of the three tasks: delayed gratification, go/no go, and detour (see [protocol](https://docs.google.com/document/d/1oEQ66yLrkMFr4UJTXfPBRAEXqoUuOgRwcKOB_KcT7HE/edit?usp=sharing) for details). In the **delay of gratification** task, individuals learn that food items will be transferred by the experimenter from a storing lid (near the experimenter) to a serving lid (near the bird) one at a time, and that they have access to the food in the serving lid from which they can eat at any time: they will have the opportunity to learn that they will have access to more food if they wait longer for the experimenter to transfer food items. Once they pass training (by waiting for more than one food item in three trials), they move on to the test where food items are transferred from the serving to the storing lid with delays ranging from 2-1280 seconds. Birds will be tested on whether will wait for food items that increase in quality (i.e., are more preferred) or increase in quantity (i.e., the same food type accumulates in the serving lid). In the **go/no go** task, after pecking a start key on the touchscreen to show they are attending to a trial, they will be presented with either a green circle or a purple circle (the rewarded circle color is counterbalanced across birds). Pecking the food key while the rewarded colored circle (green in the figure) is on the screen will result in the food hopper rising so the bird can eat food for 2 seconds, after which point the trial ends and the screen goes blank for 8 seconds before starting over again. If the non-rewarded colored circle (purple in the figure) appears on the screen after the start key is pecked, then the correct response is to refrain from pecking the food key for 10 seconds. If the bird succeeds in refraining, the next intertrial interval starts. If the bird fails and pecks the food key while the purple circle is on the screen, then it is given an aversive stimuli for 5 seconds (TV static screen). In the **detour** task, individuals first receive a warm up with an opaque tube where they learn that the experimenter will show them a piece of food and then move that piece of food into the tube. Subjects then have the opportunity to approach the tube and eat the food. A correct response is when their first approach is to go to the side of the tube to the opening to obtain the food and an incorrect response is when they try to access the food by pecking at the front of the tube (which has no opening). Once they pass the warm up, by solving correctly in 4 out of 5 consecutive trials, they move on to the test, which uses the same setup of tube and food except the tube is transparent. The idea is that being able to see the food through the tube wall might entice them to try to go through the wall rather than refrain from a direct approach to the food and instead go around the side through the tube opening.
 
 ### D. METHODS
 
