@@ -807,7 +807,61 @@ z ~ normal(alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s
 
 "
 
-m <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000, cores = 4, chains=1, control = list(adapt_delta=0.9, max_treedepth = 13))  
+mCause <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000, cores = 4, chains=1, control = list(adapt_delta=0.9, max_treedepth = 13))  
+
+
+# Plotting code for Figure 4
+
+# m <- extract.samples(mCause)
+# 
+# phi <- apply(m$phi_stand, 2, mean)
+# lambda <- apply(m$lambda_stand, 2, mean)
+# phiHPDI <- apply(m$phi_stand, 2, HPDI)
+# seq <- seq(-3,3,0.01)
+# 
+# 
+# par(mfrow = c(1,3), 
+#     mar=c(1,2,2,0.4), 
+#     oma=c(3.5,2,0,0))
+# 
+# plot(phi, dat$z, ylim = c(-2.5,2.5), pch = 16, type = "n", ylab = "", xlim = c(-3, 3))
+# for (i in 1:500) {
+#   lines(seq,m$alpha[i] + m$b_phi[i]*seq + m$b_lambda[i]*(-1) + m$b_int[i]*seq*(-1), col = alpha("purple", alpha = 0.14)) 
+# }
+# lines(seq,mean(m$alpha) + mean(m$b_phi)*seq + mean(m$b_lambda)*(-1) + mean(m$b_int)*seq*(-1), col="black", lwd=2)
+# 
+# points(phi, dat$z, pch = 16, cex = 1.1)
+# segments(x0 = phiHPDI[1,], y0 = dat$z, x1= phiHPDI[2,], y1 = dat$z, lwd = 1)
+# mtext(side = 3, line = 0 , expression(paste(italic(lambda[j])," = -1")), cex = 1)
+# mtext(side = 2, line = 3 , "Causal Score", cex = 0.8)
+# 
+# 
+# plot(phi, dat$z, ylim = c(-2.5,2.5), pch = 16, type = "n" ,ylab = "", xlim = c(-3, 3))
+# for (i in 1:500) {
+#   lines(seq,m$alpha[i] + m$b_phi[i]*seq + m$b_lambda[i]*(0) + m$b_int[i]*seq*(0), col = alpha("purple", alpha = 0.14)) 
+# }
+# lines(seq,mean(m$alpha) + mean(m$b_phi)*seq + mean(m$b_lambda)*(0) + mean(m$b_int)*seq*(0), col="black", lwd=2)
+# 
+# points(phi, dat$z, pch = 16, cex = 1.1)
+# segments(phiHPDI[1,],dat$z,phiHPDI[2,], dat$z, lwd = 1)
+# mtext(side = 3, line = 0 , expression(paste(italic(lambda[j])," = 0")), cex = 1)
+# 
+# 
+# plot(phi, dat$z, ylim = c(-2.5,2.5), pch = 16, type = "n", ylab = "", xlim = c(-3, 3))
+# for (i in 1:500) {
+#   lines(seq,m$alpha[i] + m$b_phi[i]*seq + m$b_lambda[i]*(1) + m$b_int[i]*seq*(1), col = alpha("purple", alpha = 0.14)) 
+# }
+# lines(seq,mean(m$alpha) + mean(m$b_phi)*seq + mean(m$b_lambda)*(1) + mean(m$b_int)*seq*(1), col="black", lwd=2)
+# 
+# points(phi, dat$z, pch = 16, cex = 1.1)
+# segments(phiHPDI[1,],dat$z,phiHPDI[2,], dat$z, lwd = 1)
+# 
+# mtext(side = 3, line = 0 , expression(paste(italic(lambda[j])," = 1")), cex = 1)
+# mtext(side = 1, line = 2.5 , expression(paste("Flexibility: Ind. Learning rate  ", italic(phi[j]))), cex = 1, outer = TRUE)
+
+
+
+
 
 
 ### NOTE: To make the model work, you need to set up a few things... (this took Logan a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next). It's best to go to https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started for instructions on how to install stan (and other dependencies) on your computer and get started. There are also plenty of stan fora where you can find answers to most common problems at https://discourse.mc-stan.org/. 
