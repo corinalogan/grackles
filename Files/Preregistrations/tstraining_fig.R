@@ -1,4 +1,6 @@
-#Touchscreen training article Figure
+# Touchscreen training article bar plot figure
+# Seitz BM, McCune KB, MacPherson M, Bergeron LM, Blaisdell AP, Logan CJ. 2020. Using touchscreen equipped operant chambers to study comparative cognition. Benefits, limitations, and advice. bioRxiv 2020.10.03.324814. https://doi.org/10.1101/2020.10.03.324814
+# Corina Logan, corina_logan@eva.mpg.de
 
 #ggplot2 advice https://cedricscherer.netlify.app/2019/08/05/a-ggplot2-tutorial-for-beautiful-plotting-in-r/#toc
 library(ggplot2)
