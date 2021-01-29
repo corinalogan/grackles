@@ -101,7 +101,7 @@ Evidence of causal cognition in grackles would be apparent by an interaction in 
 options(width=60)
 d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causalTable1.csv", header = F, sep = ",", stringsAsFactors = F)
 
-colnames(d)<-c("Cases","Sum of squares","df","Mean square","F","p","eta^2")
+colnames(d)<-c("Cases","Sum of squares","df","Mean square","F","p","eta^2^")
 
 library(kableExtra)
 knitr::kable(d) %>%
@@ -188,7 +188,7 @@ To further tease apart potential cognitive components underlying flexibility, we
 
 Figure 4 plots posterior predictions for the effect of individual-level learning rate $\phi_j$ on causal score for three different levels of the random choice rate $\lambda_j$ (results are presented as posterior means and 89% highest posterior density intervals (HPDI)). We did not find robust associations between either learning rate ($\beta_\phi$ = 0.03, HPDI = -0.63 - 0.69) or random choice rate ($\beta_\lambda$ = -0.40, HPDI = -0.96 - 0.25) and birds’ causal scores. There was also no interaction between the estimates of the two learning parameters in the model ($\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.95 - 0.97).
 
-![](PostPredCausal.png)
+![](g_causalPostPred.png)
 **Figure 4.** Results from the computational learning model (flexibility 4). Posterior predicted causal score based on estimates for the individual-level learning rates from the reinforcement learning model ($\phi_j$; black dots show posterior means and horizontal lines indicate 89% highest posterior density intervals). Curves are plotted for high (left; $\lambda_j$=-1), average (middle; $\lambda_j$=0) and low (right; $\lambda_j$=1) random choice rates. Purple lines represent 200 independent draws from the posterior. Both predictors ($\lambda_j$ and $\phi_j$) were standardized before calculations.
 
 
@@ -357,7 +357,17 @@ Before contingency training, subjects completed response key autoshaping and ins
 
 Contingency training follows the procedure outlined in Figure 5. The light is a white star (4cm wide x 4.5cm tall), the tone is 400hz presented for 10s, and the noise is a clicking noise presented for 10s. In the first training phase, subjects will receive trials during which the star will be presented on the screen followed by presentation of the tone. The star and tone will each be presented for 10s with the onset of the tone coinciding with the termination of the star. During the second training phase, subjects will receive two types of trials interspersed within each training session. On some trials, the star will be presented for 10 seconds followed by the delivery of food from the hopper. On other trials, the 10s noise and 10s delivery of food will onset and terminate together.
 
-At test, the grackles will receive four types of tests. Half of the tests involve the presentation of the Tone and the Noise on separate trials. The other half of the tests involve trials on which when the grackle pecks at one of two novel response keys (white square with gray lines (2.2cm wide x 2.2cm tall; formerly blue square) and white triangle with gray lines (3cm base x 3cm height; formerly green triangle) made available on the touchscreen, this is followed immediately by the presentation of the Tone (for pecking one response key) or the Noise (for the other response key). Thus, these latter tests involve the grackle intervening on the Tone and the Noise. If grackles have formed the causal models shown in Figure 5, then they should expect food on test trials on which the Tone and the Noise are observed (but not intervened on). This is due to the causal inferences derived from observing a direct cause (Noise) of an effect (Food), or an effect (Tone) of a direct cause (Light) of the Food. We predict different expectation of food in the Intervention test trials, however. When the grackle intervenes on the Noise, they should still expect Food since the Noise is a direct cause of Food. When the grackle intervenes on the Tone, however, they should treat the Tone as caused by their own action (key peck) and thus discount the possibility that the Light had just occurred. By discounting the Light, they should also not expect Food. Thus, we expect less Food seeking on test trials on which grackles intervene on the Tone compared to the other three trial types. If causal inference is demonstrated in Experiment 1, we will begin Experiment 2.
+At test, the grackles will receive four types of tests. Half of the tests involve the presentation of the Tone and the Noise on separate trials. The other half of the tests involve trials on which when the grackle pecks at one of two novel response keys (white square with gray lines (2.2cm wide x 2.2cm tall; formerly blue square) and white triangle with gray lines (3cm base x 3cm height; formerly green triangle) made available on the touchscreen, this is followed immediately by the presentation of the Tone (for pecking one response key) or the Noise (for the other response key). Thus, these latter tests involve the grackle intervening on the Tone and the Noise. If grackles have formed the causal models shown in Figure 5, then they should expect food on test trials on which the Tone and the Noise are observed (but not intervened on). This is due to the causal inferences derived from observing a direct cause (Noise) of an effect (Food), or an effect (Tone) of a direct cause (Light) of the Food. We predict different expectation of food in the Intervention test trials, however. When the grackle intervenes on the Noise, they should still expect Food since the Noise is a direct cause of Food. When the grackle intervenes on the Tone, however, they should treat the Tone as caused by their own action (key peck) and thus discount the possibility that the Light had just occurred. By discounting the Light, they should also not expect Food. Thus, we expect less Food seeking on test trials on which grackles intervene on the Tone compared to the other three trial types. 
+
+We devised an equation that would give each bird one causal cognition score, which would then make it possible to analyze the causal data as a dependent variable in the pre-planned GLMs. This equation weights differential responding to the tone (Intervene < Observe) and equal responding to the noise (Intervene = Observe) as being equally important in providing evidence for causal reasoning. 
+
+Equation 1:
+
+0.5(pInterveneTone - pObserveTone) + 0.5(abs(pInterveneNoise - pObserveNoise))
+
+Where p is the average screen pecks per trial. A lower negative score indicates that causal cognition was used, a score near zero indicates there is no evidence for or against causal cognitive abilities, and a positive score indicates no evidence for causal cognition.
+
+If causal inference is demonstrated in Experiment 1, we will begin Experiment 2.
 
 #### Experiment 2
 
@@ -555,7 +565,35 @@ Total sample size             	=	16
 
 Actual power                  	=	0,7052261
 
-This means that, with our sample size of 16 (for each experiment), we have a 71% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
+This means that, with our sample size of 16 (for each experiment), we have a 71% chance of detecting a large effect (approximated at f^2^=0.35 by @cohen1988statistical). 
+
+***UPDATE January 2021:*** during the post-study peer review process, we realized we conducted the power analysis on the wrong sample size (n=16 instead of n=8 per experiment). We therefore reran the power analysis with a sample size of 8 and we reduced the predictor variables from three to one (because we only ended up using one predictor variable in the models).
+
+*Input:*
+
+Effect size f²                	=	1.11
+
+α err prob                    	=	0.05
+
+Power (1-β err prob)          	=	0.7
+
+Number of predictors          	=	1
+
+*Output:*
+
+Noncentrality parameter λ     	=	8.8800000
+
+Critical F                    	=	5.9873776
+
+Numerator df                  	=	1
+
+Denominator df                	=	6
+
+Total sample size             	=	8
+
+Actual power                  	=	0.7010653
+
+@cohen1988statistical approximates small effect sizes at f^2^=0.20, medium at f^2^=0.50, and large at f^2^=0.80. This means that, with a sample size of 8 and a target 70% chance of detecting an effect, we will only be able to detect very large effects (f^2^>1). 
 
 #### Data checking
 
