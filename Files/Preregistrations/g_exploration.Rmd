@@ -272,15 +272,14 @@ We do not plan to **exclude** any data. When **missing data** occur, the existin
 
 #### *Unregistered analysis: interobserver reliability of dependent variables*
 
-To determine whether experimenters coded the dependent variables in a repeatable way, a hypothesis-blind video coder, Vincent Kiepsch, was first trained in video coding the dependent variable (order of the latency-distance categories), and then he coded 26% of the videos in the exploration and boldness experiments. We randomly chose five (Tomatillo, Queso, Mole, Habanero, and Tapa) of the 19 birds who participated in these experiments using random.org. Kiepsch then analyzed all videos from these five birds. The experimenter's data was compared with Kiepsch's data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). 
+To determine whether the experimenter (Breen) coded the dependent variables in a repeatable way, a hypothesis-blind video coder, Vincent Kiepsch, was first trained in video coding the dependent variable (order of the latency-distance categories), and then he coded 26% of the videos in the exploration and boldness experiments. We randomly chose five (Tomatillo, Queso, Mole, Habanero, and Tapa) of the 19 birds who participated in these experiments using random.org. Kiepsch then analyzed all videos from these five birds. The experimenter's data was compared with Kiepsch's data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). 
 
-To pass **interobserver reliability (IOR) training**, Kiepsch needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders. For training, Kiepsch coded three videos: 1) A035P- 2018-12-28 ExploreObj Time1 Familiar T1, 2) A035P- 2018-12-27 ExploreEnv Time1 Novel T1, and 3) A035P- 2019-2-12 ExploreEnv Time2 Novel T1. When Kiepsch's results were compared with the experimenter's (Breen), the score for the order of the latency-distance categories was ICC=0.96, indicating that this variable is repeatable and he passed training.
+To pass **interobserver reliability (IOR) training**, Kiepsch needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders. For training for the Exploration experiment, Kiepsch coded three videos (see R code comments for details). When Kiepsch's results were compared with the experimenter's, the score for the order of the latency-distance categories in Exploration was ICC=0.96 (confidence boundaries=0.92-1.00, n=141 data points), indicating that this variable was repeatable and he passed training. The boldness training score required additional training than the originally planned two videos, resulting in a final ICC=1.00 (confidence boundaries=1.00-1.00, n=11 data points; see R code comments for details). Note that, for both experiments, the ordered categories were aligned based on similar latencies between coders to prevent disagreements near the top of the data sheet from misaligning all subsequent entries.
  
 **Interobserver reliability scores (26% of the videos)** were as follows:
 
    - Exploration and boldness: closest distance to apparatus ICC = 0.
-   - Exploration: environment total number of times entered tent ICC = 0.
-   - Persistence: total number of touches to apparatus ICC = 0.
+   - Exploration environment: total number of times entered tent ICC = 0.
 
 These scores indicate that the dependent variables are repeatable given our instructions and training.
 
@@ -304,17 +303,19 @@ These scores indicate that the dependent variables are repeatable given our inst
 #### PASSING interobserver reliability TRAINING so they can become second coders for experiments
 #Note: this data counts as second coder data if they have ICC or Kappa > 0.89
 
+#coder 1 = Alexis Breen
+#coder 2 = Vincent Kiepsch
+
 library(irr) #ICC package
 library(psych) #Cohen's kappa package
 
 
 ##### EXPLORATION
 
-#### 1. Did Vincent pass interobserver reliability TRAINING? YES (5 Nov 2020)
+#### IOR TRAINING: Did Vincent pass interobserver reliability TRAINING? YES (5 Nov 2020)
 #video file names analyzed: A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1
-
 #For each coder, list the order of the distance categories scored (rows aligned to match latencies)
-d <- read.csv("/Users/corina/ownCloud/Documents/Grackles/Experiments/Interobserver Reliability/IOR_vincent.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)  #Check to make sure it looks right
 
 de <- d[d$Experiment=="Exploration",] 
@@ -326,12 +327,10 @@ cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 #unweighted kappa=0.96, confidence boundaries=0.92-1.00, n=141 data points
 
 
-#### On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
-#LatencyFirstTimeWithin20cmOfObject
+#### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
 
-
-#need to change the file path to the correect tab at the google sheet - the one here is for training data
-d <- read.csv("/Users/corina/ownCloud/Documents/Grackles/Experiments/Interobserver Reliability/IOR_vincent.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+# Exploration OBJECT and ENVIRONMENT: Closest distance to apparatus
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)  #Check to make sure it looks right
 
 de <- d[d$Experiment=="Exploration2",] 
@@ -343,17 +342,18 @@ de[,4] #coder2
 library(psych) #Cohen's kappa package
 cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 
-
+# Exploration ENVIRONMENT: Total number of times entered tent
 
 
 
 ##### BOLDNESS
 
-#### 1. Did Vincent pass interobserver reliability TRAINING? NO. 2 Nov 2020: Retrain and redo training on new videos
+#### TRAINING: Did Vincent pass interobserver reliability TRAINING? NO. 2 Nov 2020: Retrain and redo training on new videos 
+### ALEXIS: will you please list all of the boldness videos Vincent was trained on and which we ended up using only for training and which we ran the ICC on? I think the ICC was run only on the 2 files below (which are in the data sheet)
 #video file names analyzed: A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2
 
 #For each coder, list the order of the distance category per video
-d <- read.csv("/Users/corina/ownCloud/Documents/Grackles/Experiments/Interobserver Reliability/IOR_vincent.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)  #Check to make sure it looks right
 
 db <- d[d$Experiment=="Boldness",] 
@@ -365,14 +365,13 @@ cohen.kappa(db[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 
 
 
-#### On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
-#LatencyFirstTouchToFood
+#### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
 
-#need to change the file path to the correect tab at the google sheet - the one here is for training data
-d <- read.csv("/Users/corina/ownCloud/Documents/Grackles/Experiments/Interobserver Reliability/IOR_vincent.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+# Closest distance to apparatus
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)  #Check to make sure it looks right
 
-db <- d[d$Experiment=="Exploration2",] 
+db <- d[d$Experiment=="Boldness",] 
 head(db)  #Check to make sure it looks right
 
 db[,3] #coder1
