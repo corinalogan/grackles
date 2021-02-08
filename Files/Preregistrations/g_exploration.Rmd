@@ -579,6 +579,10 @@ summary(r1)
 m1 = glmer(log(LatencyFirstLand) ~ Condition + (1|BirdID), data = ee, family = gaussian)
 m2 = glm(log(LatencyFirstLand) ~ Condition, data = ee, family = gaussian)
 anova(m1,m2) #random effect improves fit, accounts for a significant proportion of the variance.
+library(ggplot2)
+ggplot(ee[which(ee$Condition == "Novel"),], aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
+  geom_point() +
+  facet_wrap( ~ BirdID)
 ```
 
 ```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
@@ -657,6 +661,11 @@ summary(r2)
 m3 = glmer(LatencyFirstLand ~ Condition + (1|BirdID), data = eo[-which(is.na(eo$LatencyFirstLand)),], family = gaussian)
 m4 = glm(LatencyFirstLand ~ Condition, data = eo[-which(is.na(eo$LatencyFirstLand)),], family = gaussian)
 anova(m3,m4) #random effect does not improve the fit of the model, does not account for a significant portion of the variance.
+
+library(ggplot2)
+ggplot(eo[which(eo$Condition == "Novel"),], aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
+  geom_point() +
+  facet_wrap( ~ BirdID)
 ```
 
 
@@ -750,6 +759,7 @@ expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + Latenc
 summary(expl1)
 autocorr(expl1$Sol) #Did fixed effects converge?
 autocorr(expl1$VCV) #Did random effects converge?
+
 ```
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
@@ -776,8 +786,8 @@ ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
   facet_wrap( ~ BirdID)
 
 library(lme4)
-eo <- glmer(LatencyFirstLand ~ Test + (1|BirdID), family=gaussian, data=dexp)
-#summary(eo) #negative correlation between environment and object latencies,r=-0.52
+m.eo <- glmer(LatencyFirstLand ~ Test + (1|BirdID), family=gaussian, data=dexp[-which(is.na(dexp$LatencyFirstLand)),])
+summary(m.eo) #negative correlation between environment and object latencies,r=-0.52
 #However, if one of the exploration tests is repeatable and the other is not, this could explain the lack of correlation between the two conditions and tell us which test we want to continue with
 
 
