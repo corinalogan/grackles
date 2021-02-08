@@ -24,7 +24,7 @@ output:
     latex_engine: xelatex
   github_document: 
     toc: true
-bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
+bibliography: MyLibrary.bib
 header-includes:
   - \usepackage[left]{lineno}
   - \linenumbers
@@ -639,7 +639,7 @@ Actual power                  	=	0,7027626
 This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
 ```{r explore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-explore <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
+explore <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
 
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
@@ -701,7 +701,31 @@ autocorr(expl1$VCV) #Did random effects converge?
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
 ```{r expbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-expbol <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+#UNREGISTERED ANALYSIS: first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground
+
+dexp <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
+
+#examine only Time 1 because not looking at intraindividual reliability and only the novel condition
+dexp <- dexp[!dexp$Time==2 & !dexp$Condition=="Familiar",]
+
+dexp$LatencyFirstLand <- as.numeric(dexp$LatencyFirstLand)
+dexp$Test <- as.factor(dexp$Test)
+dexp$BirdID <- as.factor(dexp$BirdID)
+dexp$Time <- as.factor(dexp$Time)
+
+#plot to see what the data show. Omit facet_wrap if you want to see all birds in one plot
+library(ggplot2)
+ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
+  geom_point() +
+  facet_wrap( ~ BirdID)
+
+library(lme4)
+eo <- glmer(LatencyFirstLand ~ Test + (1|BirdID), family=gaussian, data=dexp)
+summary(eo)
+library(rethinking)
+precis(eo)
+
+
 
 # DATA CHECKING
 library(DHARMa)
