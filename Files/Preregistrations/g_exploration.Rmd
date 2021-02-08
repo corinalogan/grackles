@@ -713,7 +713,7 @@ dexp$Test <- as.factor(dexp$Test)
 dexp$BirdID <- as.factor(dexp$BirdID)
 dexp$Time <- as.factor(dexp$Time)
 
-#plot to see what the data show. Omit facet_wrap if you want to see all birds in one plot
+#plot to see what the data show. Omit facet_wrap if you want to see all birds in one plot. Looks like there are differences between environment and object latencies for 12/19 birds. Generally faster to approach the environment than the object
 library(ggplot2)
 ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
   geom_point() +
@@ -721,12 +721,10 @@ ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
 
 library(lme4)
 eo <- glmer(LatencyFirstLand ~ Test + (1|BirdID), family=gaussian, data=dexp)
-summary(eo)
-library(rethinking)
-precis(eo)
+#summary(eo) #negative correlation between environment and object latencies,r=-0.54
 
 
-
+### REGISTERED ANALYSES
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
