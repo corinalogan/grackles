@@ -348,8 +348,7 @@ cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 
 ##### BOLDNESS
 
-#### TRAINING: Did Vincent pass interobserver reliability TRAINING? NO. 2 Nov 2020: Retrain and redo training on new videos 
-### ALEXIS: will you please list all of the boldness videos Vincent was trained on and which we ended up using only for training and which we ran the ICC on? I think the ICC was run only on the 2 files below (which are in the data sheet)
+#### TRAINING: Did Vincent pass interobserver reliability TRAINING? YES
 #video file names analyzed: A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2
 
 #For each coder, list the order of the distance category per video
@@ -395,7 +394,9 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 
 #### *Repeatability of exploration, boldness and persistence*
 
-**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary.
+**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. 
+
+Note Feb 2021: a Gaussian distribution was used instead of a Poisson for exploration and boldness latencies because they are Gaussian distributed.
 
 Note: The power analysis is the same as for P3 (below) because there are the same number of explanatory variables (fixed effects).
 
@@ -423,7 +424,8 @@ summary(bold)
 #autocorr(bold$Sol) #Did fixed effects converge?
 #autocorr(bold$VCV) #Did random effects converge?
 
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
+#Advice from Maxime Dahirel in the review for flexmanip on how to calculate repeatability from MCMCglmm (https://ecology.peercommunityin.org/public/rec?id=17&reviews=True). Dahirel says: “7- In P3a, you use a linear mixed model (lmer) to estimate repeatability when a generalized linear mixed model (glmer) should be used, as the dependent variable is a count. This would lead to potentially wrong estimates of repeatability, first because the individual variance will probably be wrongly estimated, and then because the residual/overdispersion variance is not the same for a Gaussian vs a Poisson model (Nakagawa & Schielzeth, 2010). If you want to extract correct repeatabilities from a lme4 (G)LMM (and their 95% CI) on both the response and latent scales, you can use the rptR package (Stoffel, Nakagawa, & Schielzeth, 2017). However, since you plan to fit your GLMM using MCMCglmm you actually don’t need that at all, since the latent scale adjusted repeatability and its credible interval can simply be obtained by mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]+mod$VCV[,any other included random effect]). For the raw repeatability, simply fit a model with no covariates. For the repeatability on the response scale, see (P. de Villemereuil, Morrissey, Nakagawa, & Schielzeth, 2018; Pierre de Villemereuil, Schielzeth, Nakagawa, & Morrissey, 2016) and the QGglmm R package.”
+#Therefore, because MCMCglmm can easily calculate repeatability on the latent scale, there is no need to transform this back to the observed scale.
 
 repeata <- bold$VCV[,"ID"]/(bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) 
@@ -530,8 +532,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 plotResiduals(ee$Test, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #REPEATABILITY
-#GLMM - 8 Feb 2021: changed family from poisson to gaussian because latency is gaussian
-# 8 Feb 2021: have to log-transform Latency so residuals are normally distributed
+#GLMM - 8 Feb 2021: changed family from poisson to gaussian because latency is gaussian, have to log-transform Latency so residuals are normally distributed
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 expl <- MCMCglmm(log(LatencyFirstLand) ~ Condition, random=~BirdID, family="gaussian", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
@@ -539,7 +540,8 @@ summary(expl)
 autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Most values=Yes
 autocorr(expl$VCV) #Did random effects converge? Most values=Yes
 
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
+
+#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 
 repeata <- expl$VCV[,"BirdID"]/(expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) #0.37
