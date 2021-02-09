@@ -512,7 +512,6 @@ ee <- ee[ee$Test=="Environment",]
 #should I change LatencyFirstLand NAs to a number higher than the assay session length so they show up as data points? yes. Set latency for these at 3400 (the highest assay duration was 3340s)
 ee$LatencyFirstLand <- as.numeric(ee$LatencyFirstLand)
 ee$BirdID <- as.factor(ee$BirdID)
-ee$LatencyFirstLand[which(ee$VideoFileName=="A064LR 2019-10-30 ExploreEnv Time1 Familiar T1 Part2")]<-NA # fixed latency because pt. 2 had 3400, but part 1 already listed the latency.
 
 # DATA CHECKING
 library(DHARMa)
@@ -525,15 +524,14 @@ testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
 #p=1 so not zero inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-#p=0.056 so the data are not heteroscedastic 
-# *KM gets p = 0.035 here, data not normally distributed. 
-# *Log-transformed Latency variable, and now p-value = 0.23
+# p = 0.035, data not normally distributed. 
+# Log-transformed Latency variable, and now p-value = 0.23
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(ee$Test, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #REPEATABILITY
 #GLMM - 8 Feb 2021: changed family from poisson to gaussian because latency is gaussian
-# 8 Feb 2021: But have to log-transform Latency so residuals are normally distributed
+# 8 Feb 2021: have to log-transform Latency so residuals are normally distributed
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 expl <- MCMCglmm(log(LatencyFirstLand) ~ Condition, random=~BirdID, family="gaussian", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
@@ -566,9 +564,10 @@ summary(explraw)
 repeataraw <- explraw$VCV[,"BirdID"]/(explraw$VCV[,"BirdID"]+explraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 posterior.mode(repeata) #0.33
 HPDinterval(repeata, 0.95) #0.09-0.63
+#RESULT: Exp Env = repeatable
 
 
-## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct
+## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm
 library(rptR)
 r1 = rpt(log(LatencyFirstLand) ~ Condition + (1|BirdID), grname = "BirdID", data=ee, datatype="Gaussian", nboot=1000, npermut=100)
 summary(r1)
@@ -618,10 +617,8 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 explo <- MCMCglmm(LatencyFirstLand ~ Condition, random=~BirdID, family="gaussian", data=eo, verbose=F, prior=prior, nitt=630000, thin=1000, burnin=23000)
 summary(explo) #slower to approach the novel object compared with the familiar object
-autocorr(explo$Sol) #Did fixed effects converge? No
-# *KM sees all values after lag 0 are <0.1 indicating they converged.
-autocorr(explo$VCV) #Did random effects converge? No
-# *KM sees two values >0.1, increased nitt (to 630,000) and thin (to 1,000), then all values <0.1
+autocorr(explo$Sol) #Did fixed effects converge? Yes=all values after lag 0 are <0.1 indicating they converged
+autocorr(explo$VCV) #Did random effects converge? Yes=two values >0.1, increased nitt (to 630,000) and thin (to 1,000), then all values <0.1
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
@@ -648,7 +645,7 @@ summary(explraw)
 repeataraw <- exploraw$VCV[,"BirdID"]/(exploraw$VCV[,"BirdID"]+exploraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 posterior.mode(repeata) #-1.03e-06
 HPDinterval(repeata, 0.95) #7.91e-23 to 0.08
-
+#RESULT=Env Obj is not repeatable
 
 ## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct
 library(rptR)
