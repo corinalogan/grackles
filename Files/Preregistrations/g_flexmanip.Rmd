@@ -320,6 +320,302 @@ Note April 2020: we realized that the average latency to solve a new locus after
 
 We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R [current version `r getRversion()`; @rcoreteam]. When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity.
 
+#### Unregistered analysis: interobserver reliability of dependent variables
+
+To determine whether experimenters coded the dependent variables in a repeatable way, hypothesis-blind video coders were first trained in video coding the dependent variable, and then they coded at least 20% of the videos in the reversal (tubes), multiaccess box, motor diversity, and persistence experiments. We randomly chose a subset of all of the birds who participated in each experiment using random.org: 
+
+- Persistence and motor diversity 5/19 grackles: Tomatillo, Queso, Mole, Habanero, Tapa
+
+- Reversal 6/20 grackles (half from the control group): Chalupa, Avocada, Diablo, Fideo, Tomatillo, Adobo
+
+- Multiaccess box plastic 3/15 grackles: Habanero, Queso, Chalupa
+
+- Multiaccess box log 3/12 grackles: Diablo, Adobo, Yuca
+
+Video coders then analyzed all videos from these five birds. The experimenter's data was compared with the video coder data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). 
+
+##### Interobserver reliability training
+
+To pass **interobserver reliability (IOR) training**, video coders needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders (see R code comments for details). 
+
+***Vincent Kiepsch*** (compared with Breen's video coding): 
+
+  - Persistence: total number of touches to apparatus ICC= (confidence boundaries=0.-1.00, n= data points) 
+
+- Motor diversity: presence or absence of a behavior from the ethogram ICC= (confidence boundaries=0.-1.00, n= data points)
+
+***Anja Becker*** (compared with experimenter's live coding): 
+
+ - Reversal: correct choice ICC=1.00 (confidence boundaries=1.00-1.00, n=25 data points) 
+ 
+***Tiana Lam*** (compared with experimenter's live coding): 
+
+ - Multiaccess box plastic: correct choice ICC=1.00 (confidence boundaries=1.00-1.00, n=25 data points) 
+
+***Alexis Breen*** (compared with experimenter's live coding): 
+
+ - Multiaccess box plastic: correct choice unweighted Cohen's Kappa=0.90 (confidence boundaries=0.77-1.00, n=33 data points) 
+
+ - Multiaccess box plastic: locus solved unweighted Cohen's Kappa=0.90 (confidence boundaries=0.76-1.00, n=33 data points) 
+ 
+Note: Breen was not a hypothesis-blind video coder, however she did not contribute to the interobserver reliability on MAB, but rather assisted with coding the other 80% of the videos.
+
+***Brynna Hood*** (compared with experimenter's live coding): 
+
+ - Multiaccess box log: correct choice unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
+
+ - Multiaccess box log: locus solved unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
+
+ 
+##### Interobserver reliability
+
+Interobserver reliability scores (minimum 20% of the videos) were as follows:
+   
+***Brynna Hood*** (compared with experimenter's live coding): 
+
+ - Multiaccess box log: correct choice unweighted Cohen's Kappa=0.91 (confidence boundaries=0.76-1.00, n=39 data points) 
+
+ - Multiaccess box log: locus solved unweighted Cohen's Kappa=1.0 (confidence boundaries=1.0-1.00, n=39 data points) 
+
+These scores indicate that the dependent variables are repeatable given our instructions and training.
+
+```{r ior, eval=F, warning=F, results='asis', echo=T, include=T}
+# Inter/intra-rater reliability using Cohen's kappa when the variable is categorical (scale=1+) or intra-class correlation coefficient when the variable is continuous (Mandrekar 2011 J Thoracic Oncology 6(1):6-7 https://doi.org/10.1097/JTO.0b013e318200f983)
+
+# Intra-class correlation / reliability coefficient / the # degree of bias in the regression slope (Hutcheon et al. 2010. Random measurement error and regression dilution bias  www.bmj.com/content/340/bmj.c2289). 'The ratio of variation in error-free (true) X values to the variation in the observed error-prone (observed) values is known as the reliability coefficient, attenuation factor, or intra-class correlation.'
+
+#Cohen's kappa = Good for nominal data (where distance doesn't mean anything; don't use the weighted Kappa bc it is like the ICC) https://www.rdocumentation.org/packages/psych/versions/1.9.12.31/topics/cohen.kappa 
+
+# ICC / Cohen's Kappa must be 0.90 or greater to be considered reliable and pass training
+### ICCs for agreement between the 2 coders (live coder and video coder)
+
+#### PASSING interobserver reliability TRAINING so they can become second coders for experiments
+#Note: this data counts as second coder data if they have ICC or Kappa > 0.89
+
+library(irr) #ICC package
+library(psych) #Cohen's kappa package
+
+
+##### MOTOR DIVERSITY
+#coder 1 = Corina Logan
+#coder 2 = Sierra Planck
+#coder 3 = Alexis Breen
+#coder 4 = Vincent Kiepsch
+
+#### IOR TRAINING for motor diversity and persistence at the same time: Did Sierra calibrate to Corina? Yes
+#Corina and Sierra both coded A035P- 2018-12-12 Multiaccess box S1 T1 to calibrate
+
+# motor diversity: 
+  #Corina=8 motor actions (data sheet: data_IORcorina at Google Drive)
+  #Sierra=6 motor actions (GrackleVideoCoding google sheet: tab Exp_mot row 2) 
+  #Corina decided Sierra passed because we went back through the video together. NOTE: Sierra has different codings here and Corina agrees with her - we worked out some kinks after Corina coded this data and we improved the categories. The only thing Sierra didn't have that Corina did was Vertical peck 3:04. 
+  #Decision: Sierra moves forward with video coding bc she is coding 100% and we will match the IOR to her
+
+# Persistence: Total touches to apparatus: Corina=40, Sierra=40 - perfect agreement
+
+# Matching Alexis to Sierra
+  #Alexis coded A035P- 2018-12-12 Multiaccess box S1 T1 = 9 motor actions (data sheet: GrackleVideoCoding google sheet: tab IOR_mot row 2). Alexis listed 3 actions (out of 9 total) that Sierra did not list
+  #Alexis n=9: GrabVert, PullVert, PeckVert (not in Sierra's), PeckHorz, GrabHorz, PeckUpDown, GrabUpDown (not in Sierra's), PullHorz (not in Sierra's), PushHorz
+  #01:12, 01:12,   01:34,     01:37,  01:45,  02:24,   02:25,  02:39, 02:41
+
+# Persistence: Total touches to apparatus: Alexis=32. All of us (Alexis, Corina, Sierra) counted n=21 functional touches, the difference was in the nonfunctional touches
+
+#Decided to have Alexis code all videos for bird 35 and match all future coders to her because she made the motor diversity ethogram more detailed and with diagrams, and has an extensive background in coding these kinds of behaviors. So move Sierra to the 20% person for MAB plastic and MAB log. Vincent is the 20% person for Exp and Bol.
+
+#From now (6 Oct 2020) on, for somone to pass interobserver reliability training, they must get Cohen's kappa 0.9 or above for MotorActionsUsed column motor action order, and ICC 0.9 or above for TotalNumberFunctionalTouches column time stamps
+
+
+#### IOR TRAINING: Did Vincent pass interobserver reliability TRAINING for motor diversity on exploration & boldness videos? NO (4 Nov 2020), then did more training and did pass
+#video file names analyzed 5 Nov 2020: A035P- 2018-12-27 ExploreEnv Time1 Novel T1
+#video file names analyzed 6 Nov 2020: A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1, A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2, A022-N 2018-12-10 ExploreEnv Novel T1
+#video file names analyzed 11 Nov 2020 (analysis 1): A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1, A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2, A022-N 2018-12-10 ExploreEnv Novel T1, A022-N 2019-01-11 ExploreEnv Time2 Novel T1
+#video file names analyzed 11 Nov 2020 (analysis 2 without the first 2 videos=38 data points): A035P- 2018-12-28 ExploreObj Time1 Familiar T1, A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2, A022-N 2018-12-10 ExploreEnv Novel T1, A022-N 2019-01-11 ExploreEnv Time2 Novel T1
+#video file names analyzed 11 Nov 2020 (analysis 3 only bird 22 explore environment): A022-N 2018-12-10 ExploreEnv Novel T1, A022-N 2019-01-11 ExploreEnv Time2 Novel T1
+#video file names analyzed 11 Nov 2020: A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1, A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2, A022-N 2018-12-10 ExploreEnv Novel T1, A022-N 2019-01-11 ExploreEnv Time2 Novel T1, A073OL 2019-11-28 ExploreEnv Time2 Novel T1 (pt. 1)
+#video file names analyzed 16 Nov 2020: A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1, A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2, A022-N 2018-12-10 ExploreEnv Novel T1, A022-N 2019-01-11 ExploreEnv Time2 Novel T1, A073OL 2019-11-28 ExploreEnv Time2 Novel T1 (pt. 1), A073OL 2019-10-25 ExploreEnv Time1 Novel T1
+#video file names analyzed 16 Nov 2020 (only those videos after the intensive training session): A073OL 2019-11-28 ExploreEnv Time2 Novel T1 (pt. 1), A073OL 2019-10-25 ExploreEnv Time1 Novel T1 = PASSED
+
+# motor diversity: presence/absence of a coder coding a particular behavior from the ethogram
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+dm <- d[d$Experiment=="Motor",] 
+head(dm)  #Check to make sure it looks right
+
+dm[,3]
+dm[,4]
+
+cohen.kappa(dm[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+#unweighted = 0.74, 0.61-0.87, n=105 data points. Did not pass on 5 Nov 2020
+#unweighted = 0.74, 0.62-0.86, n=126 data points. Did not pass on 6 Nov 2020
+#unweighted = 0.75, 0.64-0.87, n=147 data points. Did not pass on 11 Nov 2020 (1). There were too many mistakes in the first two videos for us to be able to evaluate whether he now passes training. Therefore, I am removing the first two videos from the analysis and recalculating...
+#unweighted = 0.74, 0.55-0.92, n=109 data points. Did not pass on 11 Nov 2020 (2). Try only analyzing the most recent videos coded on bird 22 (explore env), which occurred after more training
+#unweighted = 0.69, 0.41-0.99, n=42 data points. Did not pass on 11 Nov 2020 (3). So even his recent training is not improving his scoring ability. It's better to include all of the videos coded so far.
+#unweighted = 0.8, 0.71-0.89, n=168 data points. Did not pass on 13 Nov 2020
+#unweighted = 0.82, 0.73-0.90, n=189 data points. Did not pass on 16 Nov 2020
+#unweighted = 0.93, 0.80-1.00, n=42 data points. PASSED on 16 Nov 2020 (need to replace the other training videos to make sure he codes 20% of all videos)
+
+
+#### On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
+#total number of motor actions per bird across all experiments
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+dm <- d[d$Experiment=="Motor",] 
+head(dm)  #Check to make sure it looks right
+
+dm[,3]
+dm[,4]
+icc(d[,c(3,4)], model = "oneway", type = "consistency", unit = "single", conf.level = 0.95)
+
+
+
+##### PERSISTENCE
+
+#coder 1=Alexis Breen
+#coder 2=Vincent Kiepsch
+
+#### IOR TRAINING: Did Vincent pass interobserver reliability TRAINING for persistence on exploration & boldness videos? YES (4 Nov 2020)
+#video file names analyzed: A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1, A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2
+
+#list the values in the TotalNumberFunctionalTouches for each row (a row is a video or a trial depending on the experiment) (note: for exploration and boldness, there are only functional touches and no nonfunctional touches)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+dp <- d[d$Experiment=="Persistence",] 
+head(dp)  #Check to make sure it looks right
+
+dp[,3]  <- as.numeric(dp[,3]) #coder1
+dp[,4]  <- as.numeric(dp[,4]) #coder2
+icc(dp[,c(3,4)], model = "oneway", type = "consistency", unit = "single", conf.level = 0.95)
+#ICC=0.999, 95%-Confidence Interval 0.996 < ICC < 1, n=5 data points
+
+
+#### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
+#total number of touches to an apparatus per bird across all experiments
+
+#need to change the file path to the correect tab at the google sheet - the one here is for training data
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+dp <- d[d$Experiment=="Persistence",] 
+head(dp)  #Check to make sure it looks right
+
+dp[,3]  <- as.numeric(dp[,3]) #coder1
+dp[,4]  <- as.numeric(dp[,4]) #coder2
+
+icc(dp[,c(3,4)], model = "oneway", type = "consistency", unit = "single", conf.level = 0.95)
+
+
+
+##### REVERSAL
+
+#coder 1=experimenter live coding
+#coder 2=Anja Becker
+
+# IOR TRAINING: did ANJA pass interobserver reliability training? YES
+l <- c(1,-1,1,1,1,0,1,1,-1,-1,-1,1,1,-1,1,1,1,1,1,1,1,1,1,1,1) 
+#live coder data from CorrectChoice column for videos below
+v <- c(1,-1,1,1,1,0,1,1,-1,-1,-1,1,1,-1,1,1,1,1,1,1,1,1,1,1,1) 
+#video coder data for videos A064LR 2019-09-25 Color Reversal 0 S1 T1, A064LR 2019-09-25 Color Reversal 0 S2 T2, A064LR 2019-09-25 Color Reversal 0 S3 T8, A064LR 2019-09-26 Color Reversal 0 S4 T8, A064LR 2019-09-26 Color Reversal 0 S5 T8, A064LR 2019-09-26 Color Reversal 0 S6 T10
+df <- data.frame(l,v)
+cohen.kappa(df, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#Anja = unweighted kappa = 1 (1-1=lower and upper bounds, n=25 data points)
+
+# IOR: 20% of videos
+
+
+
+##### MULTIACCESS BOX PLASTIC
+
+#coder 1=experimenter live coding
+#coder 2=Tiana Lam
+#coder 3=Alexis Breen
+
+### IOR TRAINING: did Tiana Lam pass? YES  Cohen's unweighted kappa = 0.90 and 0.95
+#all videos from bird 31
+
+data <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABplastic_Lam_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(data)  #Check to make sure it looks right
+
+# correct choice
+data[,3] #1CorrectChoice = live coder
+data[,4] #2CorrectChoice = Coder2 data from Tiana
+cohen.kappa(data[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.77-1.00, n=33 data points
+
+# locus solved
+data[,5] #1LocusSolved = live coder
+data[,6] #2LocusSolved = Coder2 data from Tiana
+cohen.kappa(data[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.95, confidence boundary = 0.84-1.00, n=33 data points
+
+
+### IOR: interobserver reliability score from Tiana Lam on 20% of the videos
+data <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABplastic_Lam_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(data)  #Check to make sure it looks right
+
+# correct choice
+data[,3] #1CorrectChoice = live coder
+data[,4] #2CorrectChoice = Coder2 data from Tiana
+cohen.kappa(data[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.84, confidence boundary = 0.76-0.93, n=103 data points
+
+# locus solved
+data[,5] #1LocusSolved = live coder
+data[,6] #2LocusSolved = Coder2 data from Tiana
+cohen.kappa(data[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.93, confidence boundary = 0.92-0.92, n=103 data points
+
+
+
+### IOR TRAINING: did Alexis Breen pass? YES  Cohen's unweighted kappa = 0.90 and 0.90
+#all videos from bird 31
+
+data <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABplastic_Breen_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(data)  #Check to make sure it looks right
+
+# correct choice
+data[,3] #1CorrectChoice = live coder
+data[,4] #2CorrectChoice = Coder2 data from Tiana
+cohen.kappa(data[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.77-1.00, n=33 data points
+
+# locus solved
+data[,5] #1LocusSolved = live coder
+data[,6] #2LocusSolved = Coder2 data from Tiana
+cohen.kappa(data[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.76-1.00, n=33 data points
+
+### IOR
+
+
+
+##### MULTIACCESS BOX LOG
+
+#coder 1=experimenter live coding
+#coder 2=Brynna Hood
+
+### IOR TRAINING: did Brynna Hood pass? YES
+#didn't need to calculate it because everything matched (all videos from birds 73 and 87) - Brynna's training data is in the data sheet below with 20% of the videos (all of her training data was used in the 20% IOR calculation)
+#correct choice unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
+#locus solved unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
+
+## IOR: Brynna Hood interobserver reliability score for 20% of the videos = 0.91 & 1.00
+#20% of the videos = all videos from birds 64, 73, and 87
+ 
+data <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABlog_Hood.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(data)  #Check to make sure it looks right
+
+# correct choice
+# Note: c(3,4) is telling R to look at columns 2 ('1CorrectChoice') and 3 ('2CorrectChoice') and compare them. Double check this:
+data[,3] #1CorrectChoice = live coder
+data[,4] #2CorrectChoice = Coder2 data from Brynna
+
+cohen.kappa(data[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.91, confidence boundary = 0.76-1.00, n=39 data points
+
+# locus solved
+data[,5] #1LocusSolved = live coder
+data[,6] #2LocusSolved = Coder2 data from Brynna
+
+cohen.kappa(data[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = ,1.00 confidence boundary = 1-1, n=39 data points
+```
+
+
 #### *Ability to detect actual effects*
 
 To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we used G&ast;Power [v.3.1, @faul2007g; @faul2009statistical] to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMs (though the chosen test in G&ast;Power appears to align with GLMs) or GLMMs or for the inclusion of the number of trials per bird (which are generally large in our investigation), thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these experiments.
@@ -646,31 +942,40 @@ Due to delays in setting up the field site, we were only able to test two grackl
 
 We do not need a power analysis to estimate our ability to detect actual effects because, by definition, the individuals that complete this experiment must get faster at reversing in order to be able to pass the stopping criterion (two consecutive reversals in 50 trials or less). According to previous grackle data (from the pilot and from Santa Barbara), the fastest grackle passed their first reversal in 70 trials, which means that passing our serial reversal stopping criterion would require them to have improved their passing speed.
 
-```{r serial, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_minsamplesizesim.csv"), header=F, sep=",", stringsAsFactors=F)
-seriald <- read.csv ("/Users/corina/ownCloud/Documents/GitHub/grackles/Files/Preregistrations/g_flexmanip_data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
+```{r serial, eval=F, warning=F, results='asis', echo=T, include=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=seriald), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
+#Looks randomly scattered
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
+#p=0.032, it is underdispersed according to the plot at https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html. Could be because there are many more reversal number 1 because these are the control birds. Also, Taco is the only one in Batch=Juv
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+#p=1 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+#p=0.2925 so it is not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+#There is a pattern in the right panel
+#January 2021: My interpretation of the statistically significant underdispersion in the data is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
 
 # GLMM
+#remove NAs from the variables that will be in the model
+d2 <- subset(d,!(is.na(d["TrialsToReverse"])))
+d2 <- subset(d,!(is.na(d["ReverseNumber"])))
+
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0), G2 = list(V = 1, nu = 0)))
 serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = seriald, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000)
-summary(serial)
-# autocorr(serial$Sol) #Did fixed effects converge?
-# autocorr(serial$VCV) #Did random effects converge?
+	    family = "poisson", data = d2, verbose = F, prior = prior, 
+	    nitt = 100000, thin = 100, burnin = 50000)
+summary(serial) #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
+autocorr(serial$Sol) #Did fixed effects converge? No
+autocorr(serial$VCV) #Did random effects converge? No
 
 #AIC calculation
 library(MuMIn)
@@ -721,6 +1026,165 @@ We will first determine whether the total loci solved, the latency to solve or a
 ```{r improves, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
 
+##### This is the model code from the ability to detect actual effects section, copied here for clarity
+#remove pilot birds and Taco because he was the only one in batch "Juvenile"
+d2 <- d[!d$Bird=="Fajita" & !d$Bird=="Empanada",]
+
+#ulam doesn't like that batch is not consecutive (there is no batch 2 in this sample, only 1, 3 and 4), so renamed batches 3 and 4, 2 and 3, respectively
+d2$Batch[d2$Batch==3]<-2
+d2$Batch[d2$Batch==4]<-3
+d2$Batch[d2$Batch=="3a"]<-4 #This is Taco bc he wasn't officially in a batch due to him being the first juvenile we ever tested so we wanted to see if he performed similarly to the adults and he did
+d2$Batch<-as.integer(d2$Batch)
+
+#load libraries
+library(rethinking)
+library(rstan)
+library(formatR)
+
+### MAB PLASTIC LOCI last reversal
+#remove NAs from the variables that will be in the models. n=17
+d3 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["TotalLoci_plastic"]))) 
+
+dlist <- list(locisolved = d3$TotalLoci_plastic,
+              trials = standardize(d3$Trialstoreverselast),
+              batch = as.integer(d3$Batch)
+)
+
+mloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dlist , chains=4 , log_lik=TRUE )
+
+precis(mloci,depth=2)
+# a=number of loci solved: was there a difference betweeen batches? Yes, batch 1 solved more loci
+#b=effect of trials to reverse last on the number of loci solved. Results show that there are no relationships between the number of loci solved and the trials to reverse last (across all batches)
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1]  0.61 0.39  0.01  1.22  3289     1
+#a[2]  0.44 0.39 -0.19  1.06  2763     1
+#a[3] -0.76 0.56 -1.65  0.11  3031     1
+#a[4] -0.48 0.75 -1.70  0.65  3743     1
+#b    -0.28 0.26 -0.69  0.13  2905     1
+
+
+
+### MAB LOG LOCI last reversal
+#remove NAs from the variables that will be in the models. n=12
+d4 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["TotalLoci_wooden"]))) 
+
+dlistLog <- list(locisolved = d4$TotalLoci_wooden,
+              trials = standardize(d4$Trialstoreverselast),
+              batch = as.integer(d4$Batch)
+)
+
+mlociw <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dlistLog , chains=4 , log_lik=TRUE )
+
+precis(mlociw,depth=2)
+#a=number of loci solved: was there a difference betweeen batches? Yes, batches 2 and 3 (actually 3 and 4) solved more loci on the log. However, there was only 1 bird (Mole) in batch 1 (he solved all 4)
+#b=effect of trials to reverse last on the number of loci solved. There was no relationship between trials to reverse the last preference and the number of loci solved
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1] 1.09 0.75 -0.09  2.35  2820     1
+#a[2] 0.83 0.37  0.26  1.44  2595     1
+#a[3] 1.45 0.63  0.47  2.49  2432     1
+#a[4] 1.08 0.76 -0.10  2.36  2573     1
+#b    0.14 0.29 -0.32  0.62  2539     1
+
+#plot
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d3$Trialstoreverselast),jitter(d3$TotalLoci_plastic), ylab="Number of loci solved", xlab="Trials in last reversal", ylim=c(0,5), xlim=c(0,170), cex=4, pch=2, yaxt="n")
+points(jitter(d4$Trialstoreverselast),jitter(d4$TotalLoci_wooden), cex=4, pch=1, yaxt="n")
+legend(x="topright", y=8, legend=c(pch2="Plastic", pch1="Wooden"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(1,2,3,4))
+par(op)
+
+
+
+### MAB PLASTIC SWITCH last reversal
+#Load packages
+library("Rcpp")
+library(ggplot2)
+
+#remove NAs from the variables that will be in the models. n=11
+d5 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["AvgLatencyAttemptNewLoci_plastic"]))) 
+
+dlist5 <- list(latency = d5$AvgLatencyAttemptNewLoci_plastic,
+              trials = standardize(d5$Trialstoreverselast),
+              batch = as.integer(d5$Batch)
+)
+
+mswitchp <- ulam(
+  alist(
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[batch] + b*trials,
+    a[batch] ~ dnorm(1,1),
+    b ~ dnorm(0,1),
+    phi ~ dexp(1)
+  ),data=dlist5, log_lik=TRUE, messages=FALSE)
+
+precis(mswitchp,depth=2)
+#phi=dispersion of gamma poisson, b=effect of trials to reverse on latency, a=were some batches faster to switch
+#b=no correlation between average switch latencies and number of trials in last reversal
+
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1] 4.74 0.45  3.97  5.39   208    1
+#a[2] 3.64 0.42  2.99  4.32   278    1
+#a[3] 4.63 0.58  3.69  5.53   216    1
+#b    0.32 0.26 -0.06  0.77   438    1
+#phi  0.78 0.43  0.27  1.60   200    1
+
+
+### MAB LOG SWITCH last reversal
+#remove NAs from the variables that will be in the models. n=11
+d6 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["AvgLatencyAttemptNewLoci_wooden"]))) 
+
+dlist6 <- list(latency = d6$AvgLatencyAttemptNewLoci_wooden,
+              trials = standardize(d6$Trialstoreverselast),
+              batch = as.integer(d6$Batch)
+)
+
+mswitchw <- ulam(
+  alist(
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[batch] + b*trials,
+    a[batch] ~ dnorm(1,1),
+    b ~ dnorm(0,1),
+    phi ~ dexp(1)
+  ),data=dlist6, log_lik=TRUE, messages=FALSE)
+
+precis(mswitchw,depth=2)
+#phi=dispersion of gamma poisson, b=effect of trials to reverse on latency, a=were some batches faster to switch
+#b=no correlation between average switch latencies and number of trials in last reversal
+
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1]  4.17 0.68  3.07  5.25   208    1
+#a[2]  4.52 0.60  3.54  5.43   237    1
+#a[3]  4.27 0.60  3.36  5.22   207    1
+#a[4]  2.66 0.73  1.57  3.89   304    1
+#b    -0.27 0.36 -0.81  0.36   304    1
+#phi   0.20 0.12  0.06  0.45   162    1
+
+
+#plot
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d5$Trialstoreverselast),jitter(d5$AvgLatencyAttemptNewLoci_plastic), ylab="Average seconds to attempt a new locus", xlab="Trials in last reversal", ylim=c(0,1500), xlim=c(0,170), cex=4, pch=2, yaxt="n")
+points(jitter(d6$Trialstoreverselast),jitter(d6$AvgLatencyAttemptNewLoci_wooden), cex=4, pch=1, yaxt="n")
+legend(x="topright", y=8, legend=c(pch2="Plastic", pch1="Wooden"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500))
+par(op)
+
+
+
+
+
+
+
+######   BELOW was in the original preregistration  ######
 #Is performance on the two multi-access boxes correlated?
 #cor(d$AvgLatencySolveNewLoci_plastic, d$AvgLatencySolveNewLoci_wooden) #we no longer run this analyses bc switching is about the next attempt, not the next solve
 cor.test(d$AvgLatencyAttemptNewLoci_plastic, d$AvgLatencyAttemptNewLoci_wooden, use="pairwise.complete.obs", method="pearson")

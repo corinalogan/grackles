@@ -24,7 +24,7 @@ output:
     latex_engine: xelatex
   github_document: 
     toc: true
-bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
+bibliography: MyLibrary.bib
 header-includes:
   - \usepackage[left]{lineno}
   - \linenumbers
@@ -65,7 +65,7 @@ This is one of the first studies planned for our long-term research on the role 
 
 **Prior to collecting any data:** This preregistration was written and submitted to PCI Ecology for peer review (Sep 2018).
 
-**After data collection had begun (and before any data analysis was conducted):** This preregistration was peer reviewed at PCI Ecology, revised, and resubmitted (Feb 2019), and passed pre-study peer review (Mar 2019). See the [peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True).
+**After data collection had begun (and before any data analysis was conducted):** This preregistration was peer reviewed at PCI Ecology, revised, and resubmitted (Feb 2019), and passed pre-study peer review (Mar 2019). See the [peer review history](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True). Interobserver reliability analyses were added (Feb 2021).
 
 ### B. PARTITIONING THE RESULTS
 
@@ -162,7 +162,7 @@ There is no randomizing. The order of the three tasks will be counterbalanced ac
 
 #### **Blinding of conditions during analysis**
 
-No blinding is involved in this study.
+No blinding is involved in this study. NOTE Feb 2021: interobserver reliability analyses were conducted with hypothesis-blind video coders.
 
 #### **Variables included in analyses 1-5**
 
@@ -270,6 +270,117 @@ Independent variables:
 
 We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version `r getRversion()`; [@rcoreteam]). When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity.
 
+#### *Unregistered analysis: interobserver reliability of dependent variables*
+
+To determine whether the experimenter (Breen) coded the dependent variables in a repeatable way, a hypothesis-blind video coder, Vincent Kiepsch, was first trained in video coding the dependent variable (order of the latency-distance categories), and then he coded 26% of the videos in the exploration and boldness experiments. We randomly chose five (Tomatillo, Queso, Mole, Habanero, and Tapa) of the 19 birds who participated in these experiments using random.org. Kiepsch then analyzed all videos from these five birds. The experimenter's data was compared with Kiepsch's data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). 
+
+To pass **interobserver reliability (IOR) training**, Kiepsch needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders. For training for the Exploration experiment, Kiepsch coded three videos (see R code comments for details). When Kiepsch's results were compared with the experimenter's, the score for the order of the latency-distance categories in Exploration was ICC=0.96 (confidence boundaries=0.92-1.00, n=141 data points), indicating that this variable was repeatable and he passed training. The boldness training score required additional training than the originally planned two videos, resulting in a final ICC=1.00 (confidence boundaries=1.00-1.00, n=11 data points; see R code comments for details). Note that, for both experiments, the ordered categories were aligned based on similar latencies between coders to prevent disagreements near the top of the data sheet from misaligning all subsequent entries.
+ 
+**Interobserver reliability scores (26% of the videos)** were as follows:
+
+   - Exploration and boldness: closest distance to apparatus ICC = 0.
+   - Exploration environment: total number of times entered tent ICC = 0.
+
+These scores indicate that the dependent variables are repeatable given our instructions and training.
+
+```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+# Inter/intra-rater reliability using Cohen's kappa when the variable is categorical (scale=1+) or intra-class correlation coefficient when the variable is continuous (Mandrekar 2011 J Thoracic Oncology 6(1):6-7 https://doi.org/10.1097/JTO.0b013e318200f983)
+
+# Intra-class correlation / reliability coefficient / the
+# degree of bias in the regression slope (Hutcheon et al.
+# 2010. Random measurement error and regression dilution bias
+# www.bmj.com/content/340/bmj.c2289). 'The ratio of variation
+# in error-free (true) X values to the variation in the
+# observed error-prone (observed) values is known as the
+# reliability coefficient, attenuation factor, or intra-class
+# correlation.'
+
+#Cohen's kappa = Good for nominal data (where distance doesn't mean anything; don't use the weighted Kappa bc it is like the ICC) https://www.rdocumentation.org/packages/psych/versions/1.9.12.31/topics/cohen.kappa 
+
+# ICC / Cohen's Kappa must be 0.90 or greater to be considered reliable and pass training
+### ICCs for agreement between the 2 coders (live coder and video coder)
+
+#### PASSING interobserver reliability TRAINING so they can become second coders for experiments
+#Note: this data counts as second coder data if they have ICC or Kappa > 0.89
+
+#coder 1 = Alexis Breen
+#coder 2 = Vincent Kiepsch
+
+library(irr) #ICC package
+library(psych) #Cohen's kappa package
+
+
+##### EXPLORATION
+
+#### IOR TRAINING: Did Vincent pass interobserver reliability TRAINING? YES (5 Nov 2020)
+#video file names analyzed: A035P- 2018-12-27 ExploreEnv Time1 Novel T1, A035P- 2019-2-12 ExploreEnv Time2 Novel T1, A035P- 2018-12-28 ExploreObj Time1 Familiar T1
+#For each coder, list the order of the distance categories scored (rows aligned to match latencies)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+de <- d[d$Experiment=="Exploration",] 
+head(de)  #Check to make sure it looks right
+
+de[,3] #coder1
+de[,4] #coder2
+cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#unweighted kappa=0.96, confidence boundaries=0.92-1.00, n=141 data points
+
+
+#### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
+
+# Exploration OBJECT and ENVIRONMENT: Closest distance to apparatus
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+de <- d[d$Experiment=="Exploration2",] 
+head(de)  #Check to make sure it looks right
+
+de[,3] #coder1
+de[,4] #coder2
+
+library(psych) #Cohen's kappa package
+cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+
+# Exploration ENVIRONMENT: Total number of times entered tent
+
+
+
+##### BOLDNESS
+
+#### TRAINING: Did Vincent pass interobserver reliability TRAINING? YES
+#video file names analyzed: A022-N 2019-01-15 Boldness Time2 C2 T2, A031-Y 2018-12-24 Boldness C2 T2
+
+#For each coder, list the order of the distance category per video
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+db <- d[d$Experiment=="Boldness",] 
+head(db)  #Check to make sure it looks right
+db[,3]
+db[,4]
+cohen.kappa(db[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#unweighted kappa=1.00, confidence boundaries=1.00-1.00, n=11 data points
+
+
+
+#### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
+
+# Closest distance to apparatus
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)  #Check to make sure it looks right
+
+db <- d[d$Experiment=="Boldness",] 
+head(db)  #Check to make sure it looks right
+
+db[,3] #coder1
+db[,4] #coder2
+
+cohen.kappa(db[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+```
+
+
+
 #### *Ability to detect actual effects*
 
 To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we used G&ast;Power (v.3.1, @faul2007g, @faul2009statistical) to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMs (though the chosen test in G&ast;Power appears to align with GLMs) or GLMMs or for the inclusion of the number of trials per bird (which are generally large in our investigation), thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these experiments. 
@@ -283,7 +394,9 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 
 #### *Repeatability of exploration, boldness and persistence*
 
-**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary.
+**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. 
+
+Note Feb 2021: a Gaussian distribution was used instead of a Poisson for exploration and boldness latencies because they are Gaussian distributed.
 
 Note: The power analysis is the same as for P3 (below) because there are the same number of explanatory variables (fixed effects).
 
@@ -311,7 +424,8 @@ summary(bold)
 #autocorr(bold$Sol) #Did fixed effects converge?
 #autocorr(bold$VCV) #Did random effects converge?
 
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
+#Advice from Maxime Dahirel in the review for flexmanip on how to calculate repeatability from MCMCglmm (https://ecology.peercommunityin.org/public/rec?id=17&reviews=True). Dahirel says: “7- In P3a, you use a linear mixed model (lmer) to estimate repeatability when a generalized linear mixed model (glmer) should be used, as the dependent variable is a count. This would lead to potentially wrong estimates of repeatability, first because the individual variance will probably be wrongly estimated, and then because the residual/overdispersion variance is not the same for a Gaussian vs a Poisson model (Nakagawa & Schielzeth, 2010). If you want to extract correct repeatabilities from a lme4 (G)LMM (and their 95% CI) on both the response and latent scales, you can use the rptR package (Stoffel, Nakagawa, & Schielzeth, 2017). However, since you plan to fit your GLMM using MCMCglmm you actually don’t need that at all, since the latent scale adjusted repeatability and its credible interval can simply be obtained by mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]+mod$VCV[,any other included random effect]). For the raw repeatability, simply fit a model with no covariates. For the repeatability on the response scale, see (P. de Villemereuil, Morrissey, Nakagawa, & Schielzeth, 2018; Pierre de Villemereuil, Schielzeth, Nakagawa, & Morrissey, 2016) and the QGglmm R package.”
+#Therefore, because MCMCglmm can easily calculate repeatability on the latent scale, there is no need to transform this back to the observed scale.
 
 repeata <- bold$VCV[,"ID"]/(bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) 
@@ -391,35 +505,49 @@ HPDinterval(repeata, 0.95)
 
 ```{r repeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Exploration of novel environment
-ee <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
+ee <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
+
+#want only Test=Environment (not Object)
+ee <- ee[ee$Test=="Environment",]
+
+#LatencyFirstLand has the most data so will use this variable
+#should I change LatencyFirstLand NAs to a number higher than the assay session length so they show up as data points? yes. Set latency for these at 3400 (the highest assay duration was 3340s)
+ee$LatencyFirstLand <- as.numeric(ee$LatencyFirstLand)
+ee$BirdID <- as.factor(ee$BirdID)
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyExpEnv ~ Condition + (1|ID), family=poisson, data=ee), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(LatencyFirstLand) ~ Condition + (1|BirdID), family=gaussian, data=ee), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+#looks randomly spread
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+#p=0.832 so not over or under dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+#p=1 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p = 0.035, data not normally distributed. 
+# Log-transformed Latency variable, and now p-value = 0.23
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(ee$Test, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #REPEATABILITY
-#GLMM
+#GLMM - 8 Feb 2021: changed family from poisson to gaussian because latency is gaussian, have to log-transform Latency so residuals are normally distributed
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-expl <- MCMCglmm(LatencyExpEnv ~ Condition, random=~ID, family="poisson", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(pers)
-#autocorr(expl$Sol) #Did fixed effects converge?
-#autocorr(expl$VCV) #Did random effects converge?
+expl <- MCMCglmm(log(LatencyFirstLand) ~ Condition, random=~BirdID, family="gaussian", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(expl)
+autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Most values=Yes
+autocorr(expl$VCV) #Did random effects converge? Most values=Yes
 
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
-repeata <- expl$VCV[,"ID"]/(expl$VCV[,"ID"]+expl$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) 
-var(repeata) 
-posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) 
+#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
+
+repeata <- expl$VCV[,"BirdID"]/(expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.37
+var(repeata) #0.02
+posterior.mode(repeata) #0.33
+HPDinterval(repeata, 0.95) #0.10-0.63
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -427,50 +555,80 @@ vf <- sapply(1:nrow(expl[["Sol"]]), function(i) {
    var(predict(expl, it=i))  
 }) #estimates for each iteration of the MCMC
 
-repeataF <- (vf+expl$VCV[,"ID"])/(vf+expl$VCV[,"ID"]+expl$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) 
-HPDinterval(repeataF, 0.95)
+repeataF <- (vf+expl$VCV[,"BirdID"])/(vf+expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted + data scale
+posterior.mode(repeataF) #0.35
+HPDinterval(repeataF, 0.95) #0.11-0.63
 
 # Now compare with the raw repeatability: null model
-explraw <- MCMCglmm(LatencyExpEnv ~ 1, random=~ID, family="poisson", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+explraw <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(explraw)
 
-repeataraw <- explraw$VCV[,"ID"]/(explraw$VCV[,"ID"]+explraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata)
-HPDinterval(repeata, 0.95) 
+repeataraw <- explraw$VCV[,"BirdID"]/(explraw$VCV[,"BirdID"]+explraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata) #0.33
+HPDinterval(repeata, 0.95) #0.09-0.63
+#RESULT: Exp Env = repeatable
+
+
+## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm
+library(rptR)
+r1 = rpt(log(LatencyFirstLand) ~ Condition + (1|BirdID), grname = "BirdID", data=ee, datatype="Gaussian", nboot=1000, npermut=100)
+summary(r1)
+# R = 0.39
+# CI = 0.12-0.60
+# p < 0.05
+
+m1 = glmer(log(LatencyFirstLand) ~ Condition + (1|BirdID), data = ee, family = gaussian)
+m2 = glm(log(LatencyFirstLand) ~ Condition, data = ee, family = gaussian)
+anova(m1,m2) #random effect improves fit, accounts for a significant proportion of the variance.
+library(ggplot2)
+ggplot(ee[which(ee$Condition == "Novel"),], aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
+  geom_point() +
+  facet_wrap( ~ BirdID)
 ```
 
 ```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Exploration of novel object
-eo <- read.csv ("/Users/corina/GTGR/data/data_persist.csv", header=T, sep=",", stringsAsFactors=F) 
+eo <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
 
-# DATA CHECKING
+#want only Test=Object (not Environment)
+eo <- eo[eo$Test=="Object",]
+
+#LatencyFirstLand has the most data so will use this variable (=3400s when a bird never came to the ground; the highest assay duration was 3340s)
+eo$LatencyFirstLand <- as.numeric(eo$LatencyFirstLand)
+eo$BirdID <- as.factor(eo$BirdID)
+eo$Condition <- as.factor(eo$Condition)
+
+# DATA CHECKING - changed family to gaussian (from poisson) bc latency is gaussian
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyTableExpObject ~ Condition + (1|ID), family=poisson, data=eo), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyFirstLand ~ Condition + (1|BirdID), family=gaussian, data=eo, na.action = na.omit ), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+#looks randomly scattered
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+#p=0.984 so not over or underdispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05; p = 1
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05
+#p=1 so not heteroscadistic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(eo$Condition, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #REPEATABILITY
 #GLMM
+#eo2 <- subset(eo,!(is.na(eo["Condition"]))) *KM does not see NA values in the condition column of eo
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-explo <- MCMCglmm(LatencyTableExpObject ~ Condition, random=~ID, family="poisson", data=eo, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(pers)
-#autocorr(explo$Sol) #Did fixed effects converge?
-#autocorr(explo$VCV) #Did random effects converge?
+explo <- MCMCglmm(LatencyFirstLand ~ Condition, random=~BirdID, family="gaussian", data=eo, verbose=F, prior=prior, nitt=630000, thin=1000, burnin=23000)
+summary(explo) #slower to approach the novel object compared with the familiar object
+autocorr(explo$Sol) #Did fixed effects converge? Yes=all values after lag 0 are <0.1 indicating they converged
+autocorr(explo$VCV) #Did random effects converge? Yes=two values >0.1, increased nitt (to 630,000) and thin (to 1,000), then all values <0.1
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
-repeata <- explo$VCV[,"ID"]/(explo$VCV[,"ID"]+explo$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) 
-var(repeata) 
-posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) 
+repeata <- explo$VCV[,"BirdID"]/(explo$VCV[,"BirdID"]+explo$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.01
+var(repeata) #0.002
+posterior.mode(repeata) #-1.03e-06
+HPDinterval(repeata, 0.95) #7.91e-23 to 0.08
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -478,17 +636,35 @@ vf <- sapply(1:nrow(explo[["Sol"]]), function(i) {
    var(predict(explo, it=i))  
 }) #estimates for each iteration of the MCMC
 
-repeataF <- (vf+explo$VCV[,"ID"])/(vf+explo$VCV[,"ID"]+explo$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) 
-HPDinterval(repeataF, 0.95)
+repeataF <- (vf+explo$VCV[,"BirdID"])/(vf+explo$VCV[,"BirdID"]+explo$VCV[,"units"]) #latent scale adjusted + data scale
+posterior.mode(repeataF) #0.29
+HPDinterval(repeataF, 0.95) #0.11-0.43
 
 # Now compare with the raw repeatability: null model
-exploraw <- MCMCglmm(LatencyTableExpObject ~ 1, random=~ID, family="poisson", data=eo, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+exploraw <- MCMCglmm(LatencyFirstLand ~ 1, random=~BirdID, family="gaussian", data=eo, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(explraw)
 
-repeataraw <- exploraw$VCV[,"ID"]/(exploraw$VCV[,"ID"]+exploraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata)
-HPDinterval(repeata, 0.95) 
+repeataraw <- exploraw$VCV[,"BirdID"]/(exploraw$VCV[,"BirdID"]+exploraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata) #-1.03e-06
+HPDinterval(repeata, 0.95) #7.91e-23 to 0.08
+#RESULT=Env Obj is not repeatable
+
+## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct
+library(rptR)
+r2 = rpt(LatencyFirstLand ~ Condition + (1|BirdID), grname = "BirdID", data=eo, datatype="Gaussian", nboot=1000, npermut=100)
+summary(r2)
+# R = 0.11
+# CI = 0-0.34
+# p > 0.05
+
+m3 = glmer(LatencyFirstLand ~ Condition + (1|BirdID), data = eo[-which(is.na(eo$LatencyFirstLand)),], family = gaussian)
+m4 = glm(LatencyFirstLand ~ Condition, data = eo[-which(is.na(eo$LatencyFirstLand)),], family = gaussian)
+anova(m3,m4) #random effect does not improve the fit of the model, does not account for a significant portion of the variance.
+
+library(ggplot2)
+ggplot(eo[which(eo$Condition == "Novel"),], aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
+  geom_point() +
+  facet_wrap( ~ BirdID)
 ```
 
 
@@ -527,7 +703,7 @@ Actual power                  	=	0,7027626
 This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
 ```{r explore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-explore <- read.csv ("/Users/corina/GTGR/data/data_explore.csv", header=T, sep=",", stringsAsFactors=F) 
+explore <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
 
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
@@ -582,6 +758,7 @@ expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + Latenc
 summary(expl1)
 autocorr(expl1$Sol) #Did fixed effects converge?
 autocorr(expl1$VCV) #Did random effects converge?
+
 ```
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
@@ -589,8 +766,31 @@ autocorr(expl1$VCV) #Did random effects converge?
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
 ```{r expbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-expbol <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+#UNREGISTERED ANALYSIS: first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground.
 
+dexp <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
+
+#examine only Time 1 because not looking at intraindividual reliability and only the novel condition
+dexp <- dexp[!dexp$Time==2 & !dexp$Condition=="Familiar",]
+
+dexp$LatencyFirstLand <- as.numeric(dexp$LatencyFirstLand)
+dexp$Test <- as.factor(dexp$Test)
+dexp$BirdID <- as.factor(dexp$BirdID)
+dexp$Time <- as.factor(dexp$Time)
+
+#plot to see what the data show. Omit facet_wrap if you want to see all birds in one plot. Looks like there are differences between environment and object latencies for 12/19 birds. Generally faster to approach the environment than the object
+library(ggplot2)
+ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
+  geom_point() +
+  facet_wrap( ~ BirdID)
+
+library(lme4)
+m.eo <- glmer(LatencyFirstLand ~ Test + (1|BirdID), family=gaussian, data=dexp[-which(is.na(dexp$LatencyFirstLand)),])
+summary(m.eo) #negative correlation between environment and object latencies,r=-0.52
+#However, if one of the exploration tests is repeatable and the other is not, this could explain the lack of correlation between the two conditions and tell us which test we want to continue with
+
+
+### REGISTERED ANALYSES
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
