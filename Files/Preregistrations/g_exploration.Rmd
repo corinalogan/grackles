@@ -368,20 +368,28 @@ cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 #### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
 
 # Exploration OBJECT and ENVIRONMENT: Closest distance to apparatus
-d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_exploration_vincent.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)  #Check to make sure it looks right
 
-de <- d[d$Experiment=="Exploration2",] 
-head(de)  #Check to make sure it looks right
+d[,4] #Coder1closestdistancetoapparatus
+d[,6] #Coder2closestdistrancetoapparatus
 
-de[,3] #coder1
-de[,4] #coder2
+cohen.kappa(d[,c(4,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+# unweighted kappa=0.81, confidence boundaries: 0.64-0.98, n=32 data points
 
-library(psych) #Cohen's kappa package
-cohen.kappa(de[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+# additional analysis using only the Environment condition to determine repeatability, which will inform who we choose to code videos for our next field site
+de <- d[d$Experiment=="Environment",] 
+head(de)  
+cohen.kappa(de[,c(4,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+# unweighted kappa=0.76, confidence boundaries: 0.45-1.00, n=16 data points
 
-# Exploration ENVIRONMENT: Total number of times entered tent
 
+# Exploration ENVIRONMENT: First latency to enter tent
+d[,3] #Coder1timeentertent
+d[,5] #Coder2timeentertent
+
+icc(data[,c(3,5)], model="oneway", type="consistency", unit="single", conf.level=0.95) 
+# ICC = 0.75 (95% Confidence Interval: 0.71-0.78, n=32 data points)
 
 
 ##### BOLDNESS
