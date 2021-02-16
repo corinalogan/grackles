@@ -32,7 +32,7 @@
  
  - E) McCune KB, Folsom M, Ross C, Bergeron L, Logan CJ. 2020. **[Does great-tailed grackle space use behavior reflect individual differences in exploration?](http://corinalogan.com/Preregistrations/gspaceuse.html)** In principle acceptance by *PCI Ecology* of the version on 23 Sep 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gspaceuse.Rmd). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=75&reviews=True) peer review history.
  
- - I) Logan CJ, McCune KB, Breen AJ, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. In principle acceptance by *PCI Ecology* of the version on 6 Oct 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100062) peer review history.
+ - I) Logan CJ, McCune KB, Breen AJ, Marfori Z, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. In principle acceptance by *PCI Ecology* of the version on 6 Oct 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100062) peer review history.
 
  
 ### Preregistrations
