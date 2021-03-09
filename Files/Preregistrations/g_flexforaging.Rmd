@@ -16,7 +16,7 @@ output:
     latex_engine: xelatex
   github_document: 
     toc: true
-bibliography: /Users/corina/GitHub/grackles/Files/MyLibrary.bib
+bibliography: MyLibrary.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -226,80 +226,105 @@ To be able to conduct focal follows (methods as in @altmann1974observational), a
 Luisa Bergeron was the first person to conduct focal follows, therefore she trained Kelsey McCune and Melissa Folsom until they passed interobserver reliability (on 10 June 2019) for each of the 6 variables listed in the preregistrations. 
 
 ```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
-
 #Intra-class correlation / reliability coefficient / the degree of bias in the regression slope (Hutcheon et al. 2010. Random measurement error and regression dilution bias www.bmj.com/content/340/bmj.c2289). "The ratio of variation in error-free (true) X values to the variation in the observed error-prone (observed) values is known as the reliability coefficient, attenuation factor, or intra-class correlation." 
 
-#Download the datasheet as a .csv file and put in a folder where you know the file path
-#Load the datasheet here
-
-data <- read.csv ("/Users/corina/ownCloud/Documents/Grackles/Data/ASU/InterObsRelKel.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE) 
-data #Check to make sure it looks right
-
-#LOAD the irr package, and run it in R
+#LOAD the irr package
 library(irr)
 
-### ICCs for agreement between the 2 coders for 6 variables
+### ICCs for agreement between the 2 coders for 6-7 variables
 #Note: c(4,5) is telling R to look at columns 4 ("1NumberForagingTechniques") and 5 ("2NumberForagingTechniques") and compare them
 
-#NumberDifferentFoodsEaten
-icc(data[,c(2,3)], model="oneway", type="agreement", unit="single", conf.level=0.95) 
+#ICCs for KM=Kelsey McCune, MF=Melissa Folsom, CLR=Christa Rolls
+km <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_flexforagingKM.csv"), header=T, sep=",", stringsAsFactors=F) 
+km #Check to make sure it looks right
+km[,2]
+km[,3]
 
-#NumberDifferentForagingTechniques
-icc(data[,c(4,5)], model="oneway", type="agreement", unit="single", conf.level=0.95) 
+#ICC for number different foods eaten not working
+icc(km[,c(2,3)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberDifferentFoodsEaten. See note in text for why this is 1.00 rather than 0.64
 
-#NumberAffiliativeInteractions
-icc(data[,c(6,7)], model="oneway", type="agreement", unit="single", conf.level=0.95) 
+icc(km[,c(4,5)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberDifferentForagingTechniques
+icc(km[,c(6,7)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberAffiliativeInteractions
+icc(km[,c(8,9)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberAggressiveInteractions
+icc(km[,c(10,11)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberTimesSubjectInitiatedAggression
 
-#NumberAggressiveInteractions
-icc(data[,c(8,9)], model="oneway", type="agreement", unit="single", conf.level=0.95) 
+#ICC for microhabitat is not working, tried some things, but still not working. Agreement was 100% though so ICC=1.00
+km$X1Microhabitat <- as.factor(km$X1Microhabitat)
+km$X1Microhabitat <- as.numeric(km$X1Microhabitat)
+icc(km[,c(12,13)], model="oneway", type="agreement", unit="single", conf.level=0.95) #Microhabitat
 
-#NumberTimesSubjectInitiatedAggression
-icc(data[,c(10,11)], model="oneway", type="agreement", unit="single", conf.level=0.95) 
 
-#Microhabitat
-icc(data[,c(12,13)], model="oneway", type="agreement", unit="single", conf.level=0.95) 
+#ICCs for MF=Melissa Folsom
+mf <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_flexforagingMF.csv"), header=T, sep=",", stringsAsFactors=F) 
+mf #Check to make sure it looks right
+mf[,2]
+mf[,3]
+
+icc(mf[,c(2,3)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberDifferentFoodsEaten. See note in text for why this is 1.00 rather than 0.63
+icc(mf[,c(4,5)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberDifferentForagingTechniques
+icc(mf[,c(6,7)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberAffiliativeInteractions
+icc(mf[,c(8,9)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberAggressiveInteractions
+icc(mf[,c(10,11)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberTimesSubjectInitiatedAggression
+
+#ICC for microhabitat is not working, tried some things, but still not working. Agreement was 100% though so ICC=1.00
+icc(mf[,c(12,13)], model="oneway", type="agreement", unit="single", conf.level=0.95) #Microhabitat
+
+
+#ICCs for CLR=Christa Rolls
+clr <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_flexforagingCLR.csv"), header=T, sep=",", stringsAsFactors=F) 
+clr #Check to make sure it looks right
+
+icc(clr[,c(3,4)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberDifferentFoodsEaten
+icc(clr[,c(5,6)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberDifferentForagingTechniques
+icc(clr[,c(7,8)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberAffiliativeInteractions
+
+clr[,9]
+clr[,10]
+icc(clr[,c(9,10)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberAggressiveInteractions
+icc(clr[,c(11,12)], model="oneway", type="agreement", unit="single", conf.level=0.95) #NumberTimesSubjectInitiatedAggression
+icc(clr[,c(13,14)], model="oneway", type="agreement", unit="single", conf.level=0.95) #Microhabitat
+icc(clr[,c(15,16)], model="oneway", type="agreement", unit="single", conf.level=0.95) #Group size
 ```
 
-**ICCs for Folsom (n=6 focal follows, Bergeron=baseline, [data](https://github.com/corinalogan/grackles/blob/master/Files/Data/data_InterObsRelMel.csv)):**
+**ICCs for McCune (n=6 focal follows, Bergeron=baseline):**
 
 Different Foods Eaten = 1.00
 
-Diffent Foraging Techniques = 1.00
+Different Foraging Techniques = 0.97 (95% confidence interval=0.823-1.00)
 
-Number of Affiliative Interactions = 1.00
+Number of Affiliative Interactions = 0.96 (95% confidence interval=0.794-1.00)
 
-Number of Aggressive Interactions = 0.96
+Number of Aggressive Interactions = 1.00 (95% confidence interval=0.986-1.00)
 
-Number of Initiated Aggressive Interactions = 0.94
+Number of Initiated Aggressive Interactions = 1.00 (95% confidence interval=0.974-1.00)
 
 Microhabitat = 1.00
 
-**ICCs for McCune (n=6 focal follows, Bergeron=baseline, [data](https://github.com/corinalogan/grackles/blob/master/Files/Data/data_InterObsRelKel.csv)):**
+**ICCs for Folsom (n=6 focal follows, Bergeron=baseline):**
 
 Different Foods Eaten = 1.00
 
-Different Foraging Techniques = 0.97
+Different Foraging Techniques = 1.00
 
-Number of Affiliative Interactions = 0.96
+Number of Affiliative Interactions = 1.00
 
-Number of Aggressive Interactions = 1.00
+Number of Aggressive Interactions = 0.96 (95% confidence interval=0.779-0.994)
 
-Number of Initiated Aggressive Interactions = 1.00
+Number of Initiated Aggressive Interactions = 0.94 (95% confidence interval=0.696-0.991)
 
 Microhabitat = 1.00
 
 NOTE: the ICCs for the variable Different Foods Eaten for these focal follows was originally 0.63 (Melissa) and 0.64 (Kelsey) because Melissa and Kelsey recorded a "bug" being eaten while Luisa recorded no food type because she couldn't identify it to a more specific category. At this point, we decided that we would prefer to enter a general category for food type rather than having no information about what was eaten. Therefore, this data point was removed from the interobserver reliability analysis. This resulted in ICCs of 1.00 for both Kelsey and Melissa on the Different Foods Eaten variable because they matched Luisa in the other food type data points.
 
-**ICCs for Rolls (n=17 focal follows, McCune=baseline, [data](https://github.com/corinalogan/grackles/blob/master/Files/Data/data_InterObsRelKel.csv)):**
+**ICCs for Rolls (n=17 focal follows, McCune=baseline):**
 
-Different Foods Eaten = 0.92
+Different Foods Eaten = 0.92 (95% confidence interval=0.802-0.971)
 
-Different Foraging Techniques = 0.91
+Different Foraging Techniques = 0.91 (95% confidence interval=0.767-0.965)
 
-Number of Affiliative Interactions = 0.90
+Number of Affiliative Interactions = 0.90 (95% confidence interval=0.760-0.964)
 
-Number of Aggressive Interactions = 0.94
+Number of Aggressive Interactions = 0.94 (95% confidence interval=0.779-0.994)
 
 Number of Initiated Aggressive Interactions = 0.95
 
