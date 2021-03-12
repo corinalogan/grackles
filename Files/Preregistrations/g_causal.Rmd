@@ -10,17 +10,17 @@ author:
 - '[Logan CJ](http://CorinaLogan.com)^2^'
 date: '`r Sys.Date()`'
 output:
-  pdf_document:
-    keep_tex: no
-    latex_engine: xelatex
-  md_document: 
-    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
+  md_document: 
+    toc: true
+  pdf_document:
+    keep_tex: no
+    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: MyLibrary.bib
@@ -68,11 +68,11 @@ Behavioral flexibility, the ability to change behavior when circumstances change
 
 ## INTRODUCTION
 
-Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience [@mikhalevich_is_2017], is thought to play an important role in a species’ ability to successfully adapt to new environments and expand its geographic range [e.g., @lefebvre1997feeding; @griffin2014innovation; @chow2016practice; @sol2000behavioural; @sol2002behavioural; @sol2005big]. For example, flexibility would be useful for changing food preferences in accordance with locally available resources that potentially fluctuate over time. It is alternatively or additionally possible that causal cognition, the ability to understand the causality in relationships between events beyond their statistical covariations, could play a significant role in rapid range expansions by allowing one to learn faster and make more accurate predictions about outcomes, as well as by exertin For example, if a monkey observes an association between a tree branch shaking and a piece of fruit dislodging and falling to the ground where it can be consumed, a causal understanding of this association, that is that shaking the branch caused the fruit to fall, would provide the monkey the opportunity to itself intervene and shake the branch so as to procure the fruit. Two out of three measures of behavioral flexibility positively correlated with causal inference abilities in children [@deak2015cognitive], suggesting these two abilities might be linked. 
+Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience [@mikhalevich_is_2017], is thought to play an important role in a species’ ability to successfully adapt to new environments and expand its geographic range [e.g., @lefebvre1997feeding; @griffin2014innovation; @chow2016practice; @sol2000behavioural; @sol2002behavioural; @sol2005big]. For example, flexibility would be useful for changing food preferences in accordance with locally available resources that potentially fluctuate over time. It is alternatively or additionally possible that causal cognition, the ability to understand the causality in relationships between events beyond their statistical covariations, could play a significant role in rapid range expansions by allowing one to learn faster and make more accurate predictions about outcomes, as well as by exerting more control over events [@blaisdell2006causal; @leising2008special; @blaisdell2012rational]. For example, if a monkey observes an association between a tree branch shaking and a piece of fruit dislodging and falling to the ground where it can be consumed, a causal understanding of this association, that is that shaking the branch caused the fruit to fall, would provide the monkey the opportunity to itself intervene and shake the branch so as to procure the fruit. Two out of three measures of behavioral flexibility positively correlated with causal inference abilities in children [@deak2015cognitive], suggesting these two abilities might be linked. 
 
 While a smattering of studies have investigated understanding of physical causality, such as in tool construction and use, in birds and mammals [see reviews by @emery2009tool; @lambert2019birds; @volter2017causal] there are no existing studies of causal perception aside from those in rats from Blaisdell’s lab (see below) and chimpanzees [@premack1994levels].
 
-We aimed to determine whether great-tailed grackles (*Quiscalus mexicanus*), like rats [@blaisdell2006causal], derive predictions about the outcomes of interventions (actions) after passive observational learning of different kinds of causal models. Causal models involve a specific type of causal cognition in which causal representations between events that are estimated by observing the statistical regularity between continuous events, and can be combined into causal maps. For example, a bird that observes wind moving a branch, and then sees a fruit attached to the branch fall to the ground, the bird might interpret these observations as a causal chain in which wind *causes* the branch to shake, which in turn *causes* the fruit to shake loose and fall to the ground [@tomasello1997primate]. Causal maps, such as the wind-->shake branch-->fruit falling map just described, thus provide the causal structure in relationships that go beyond merely observing statistical covariation between events, and allow causal inferences to be derived, such as through diagnostic reasoning and reasoning about one’s own interventions on events within the causal model [@blaisdell2012rational; @waldmann1996knowledge]. Returning to the causal chain example, a bird with such causal knowledge could intervene to shake the branch itself (a causal intervention) with the expectation that they could themselves make the fruit fall to the ground where they would be able to retrieve and eat it. Without such causal knowledge, the bird would not try to shake the fruit loose.
+We aimed to determine whether great-tailed grackles (*Quiscalus mexicanus*), like rats [@blaisdell2006causal], derive predictions about the outcomes of interventions (actions) after passive observational learning of different kinds of causal models. Causal models involve a specific type of causal cognition in which causal representations between events that are estimated by observing the statistical regularity between continuous events, and can be combined into causal maps. For example, a bird that observes wind moving a branch, and then sees a fruit attached to the branch fall to the ground, might interpret these observations as a causal chain in which wind *causes* the branch to shake, which in turn *causes* the fruit to shake loose and fall to the ground [@tomasello1997primate]. Causal maps, such as the wind-->shake branch-->fruit falling map just described, thus provide the causal structure in relationships that go beyond merely observing statistical covariation between events, and allow causal inferences to be derived, such as through diagnostic reasoning and reasoning about one’s own interventions on events within the causal model [@blaisdell2012rational; @waldmann1996knowledge]. Returning to the causal chain example, a bird with such causal knowledge could intervene to shake the branch itself (a causal intervention) with the expectation that they could themselves make the fruit fall to the ground where they would be able to retrieve and eat it. Without such causal knowledge, the bird would not try to shake the fruit loose.
 
 ![](g_causal_figrat.jpg){width=50%}
 
@@ -514,8 +514,7 @@ icc(dat, model = "oneway", type = "consistency", unit = "single", conf.level = 0
 #Number of times head entered food hopper
 
 # Download the datasheet as a .csv file and put in a folder where you know the file path. Load the datasheet here
-data <- read.csv("/Users/corina/ownCloud/Documents/Experiments/Interobserver Reliability/InterObsRelCausalLCSierra.csv", 
-                 header = TRUE, sep = ",", stringsAsFactors = FALSE)
+data <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_causal_planck.csv"), header=T, sep=",", stringsAsFactors=F) 
 data  #Check to make sure it looks right
 # Note: c(2,3) is telling R to look at columns 2 ('1HeadEnteredHopper') and 3 ('2HeadEnteredHopper') and compare them. Double check this:
 data[,2]
@@ -913,7 +912,7 @@ mCause <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 ```{r cause2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-cause <- read.csv ("/Users/corina/GTGR/data/data_cause.csv", header=T, sep=",", stringsAsFactors=F) 
+#cause <- [no file path because experiment 2 was not conducted because they did not pass experiment 1]
 
 #Select only data from Experiment 2
 cause <- cause[cause$Experiment=="2a" | cause$Experiment=="2b",]
