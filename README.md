@@ -1,17 +1,19 @@
 # Table of Contents
 
-*Click the **title** of the preregistration you would like to see to be taken directly to that page. The **.Rmd** version is a version-tracked reproducible manuscript*
+*Click the **title** of the article you would like to see to be taken directly to that page. The **.Rmd** version is a version-tracked reproducible manuscript*
 
 &ast; = undergraduate co-author
 
-### Articles that were never preregistrations
+### Articles: passed pre- and post-study peer review at PCI Ecology
+
+  - &ast;Sevchik A, Logan CJ, McCune KB, Blackwell A, Rowney C, Lukas D. 2021. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html)**. [EcoEvoRxiv](https://ecoevorxiv.org/t6beh/), https://doi.org/10.32942/osf.io/t6beh, v5. [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd) received in principle acceptance by *Peer Community in Ecology* on 29 Nov 2019 ([pre-study peer review history](https://doi.org/10.24072/pci.ecology.100036)); and final manuscript was recommended on 10 Mar 2021 ([post-study review history](https://doi.org/10.32942/osf.io/t6beh)).
+
+### Articles: passed post-study peer review, but were never preregistrations
 
   - Seitz BM, McCune KB, MacPherson M, Bergeron LM, Blaisdell AP, Logan CJ. 2020. [Using touchscreen equipped operant chambers to study comparative cognition. Benefits, limitations, and advice](https://doi.org/10.1371/journal.pone.0246446). PLOS ONE 16(2): e0246446. [bioRxiv preprint](https://doi.org/10.1101/2020.10.03.324814), [data](https://doi.org/10.5063/F1J964SR)
 
 ### Post-study articles: passed pre-study peer review at PCI Ecology & currently in post-study peer review at PCI Ecology
 
-  - &ast;Sevchik A, Logan CJ, McCune KB, Blackwell A, Rowney C, Lukas D. 2019. **[Investigating sex differences in genetic relatedness in great-tailed grackles in Tempe, Arizona to infer potential sex biases in dispersal](http://corinalogan.com/Preregistrations/gdispersal_manuscript.html)**. (http://corinalogan.com/Preregistrations/gdispersal_manuscript.html) In principle acceptance by *PCI Ecology* of the version on 29 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gdispersal.Rmd). [EcoEvoRxiv](https://ecoevorxiv.org/t6beh/). [Pre-study](https://doi.org/10.24072/pci.ecology.100036) peer review history.
-  
   - &ast;Berens JM, Logan CJ, Folsom M, Bergeron L, McCune KB. 2019. **[Validating morphological condition indices and their relationship with reproductive success in great-tailed grackles](http://corinalogan.com/Preregistrations/gcondition.html)**. (http://corinalogan.com/Preregistrations/gcondition.html) In principle acceptance by *PCI Ecology* of the version on 8 Nov 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gcondition.Rmd). [EcoEvoRxiv](https://doi.org/10.32942/osf.io/857gt). [Pre-study](https://doi.org/10.24072/pci.ecology.100035) peer review history.
 
   - Blaisdell AP, Seitz B, Rowney C, Folsom M, MacPherson M, Deffner D, Logan CJ. 2019. **[Do the more flexible individuals rely more on causal cognition? Observation versus intervention in causal inference in great-tailed grackles](http://corinalogan.com/Preregistrations/g_causal.html)**. (http://corinalogan.com/Preregistrations/g_causal.html) In principle acceptance by *PCI Ecology* of the version on 31 Jan 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd). [PsyArXiv](https://doi.org/10.31234/osf.io/z4p6s). [Pre-study](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) peer review history.
