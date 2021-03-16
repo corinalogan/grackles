@@ -10,7 +10,7 @@
 
 ### Articles: passed post-study peer review, but were never preregistrations
 
-  - Seitz BM, McCune KB, MacPherson M, Bergeron LM, Blaisdell AP, Logan CJ. 2020. [Using touchscreen equipped operant chambers to study comparative cognition. Benefits, limitations, and advice](https://doi.org/10.1371/journal.pone.0246446). PLOS ONE 16(2): e0246446. [bioRxiv preprint](https://doi.org/10.1101/2020.10.03.324814), [data](https://doi.org/10.5063/F1J964SR)
+  - Seitz BM, McCune KB, MacPherson M, Bergeron LM, Blaisdell AP, Logan CJ. 2021. [Using touchscreen equipped operant chambers to study comparative cognition. Benefits, limitations, and advice](https://doi.org/10.1371/journal.pone.0246446). PLOS ONE 16(2): e0246446. [bioRxiv preprint](https://doi.org/10.1101/2020.10.03.324814), [data](https://doi.org/10.5063/F1J964SR)
 
 ### Post-study articles: passed pre-study peer review at PCI Ecology & currently in post-study peer review at PCI Ecology
 
