@@ -1,12 +1,12 @@
 ---
 title: Do the more flexible individuals rely more on causal cognition? Observation versus intervention in causal inference in great-tailed grackles
 author: 
-- 'Rowney C^2^'
-- 'Folsom M^2^'
-- 'Deffner D^2^'
 - '[Blaisdell AP](http://pigeonrat.psych.ucla.edu)^1^'
 - '[Seitz B](https://benjaminseitz.wixsite.com/mysite)^1^'
+- 'Rowney C^2^'
+- 'Folsom M^2^'
 - '[MacPherson M](http://maggiepmacpherson.com)^3^'
+- 'Deffner D^2^'
 - '[Logan CJ](http://CorinaLogan.com)^2^'
 date: '`r Sys.Date()`'
 output:
@@ -42,7 +42,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 ```
 
-See the [HTML](http://corinalogan.com/Preregistrations/g_causal.html) version because it is easy-to-read, and the reproducible manuscript [Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd) version for the code.
+*See the [HTML](http://corinalogan.com/Preregistrations/g_causal.html) version because it is easy-to-read, and the reproducible manuscript [Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd) version for the code.*
 
 &nbsp;
 
@@ -684,13 +684,12 @@ The second major part of the model expresses the probability an individual $j$ c
  
 The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). For instance, if an individual has a 60%-40% preference for option A, a value of $\lambda_j = 3$ means they choose A 65% of the time, and a value of $\lambda_j =10$ means they choose A 88% of the time. This parameter closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. 
 
-We validated this computational model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem]. The following code first prepares the Santa Barbara data for the reinforcement learning model, runs the model and extracts samples from the posterior distribution. We then use those population estimates of both learning parameters, $\phi_j$ and $\lambda_j$, to simulate experimental data for 8 new birds. Finally, this code plots the empirical and simulated learning curves (see figure 4).
+We validated this computational model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem]. The following code first prepares the Santa Barbara data for the reinforcement learning model, runs the model, and extracts samples from the posterior distribution. We then use those population estimates of both learning parameters, $\phi_j$ and $\lambda_j$, to simulate experimental data for 8 new birds. Finally, this code plots the empirical and simulated learning curves (see figure 4).
 
 ```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-
 library(rethinking)
 
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SB_Flex.csv"), header=T, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_data_SBreverse.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 d$id <- sapply(1:nrow(d), function (i) which(unique(d$Bird) == d$Bird[i]) )
 d <- d[-which(d$Experiment=="Refresher"),]
@@ -901,7 +900,6 @@ mtext(side = 2, "Proportion Correct", line = 0.5, outer = TRUE, cex = 1.2)
 
 
 ### NOTE: To make the model work, you need to set up a few things... (this took Logan a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next). It's best to go to https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started for instructions on how to install stan (and other dependencies) on your computer and get started. There are also plenty of stan fora where you can find answers to most common problems at https://discourse.mc-stan.org/. 
-
 ```
 
 
