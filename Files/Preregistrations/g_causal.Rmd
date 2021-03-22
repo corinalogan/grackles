@@ -161,7 +161,7 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #this prevents an issue with xcolor package when rendering to PDF
 ```
 
-To further tease apart potential cognitive components underlying flexibility, we developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment (“Flexibility comprehensive”). Through a computational Bayesian reinforcement learning model including bird and experimenter ID as random effects, we obtained individual-level estimates for each bird’s random choice and learning rates (see Analysis Plan > Prediction 1 > Flexibility comprehensive for details). We validated the model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem], and we found that this parameterization accurately reproduces learning curves observed in real animals (see Figure 4).
+To further tease apart potential cognitive components underlying flexibility, we developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment (“Flexibility comprehensive”). Through a computational Bayesian reinforcement learning model including bird and experimenter ID as random effects, we obtained individual-level estimates for each bird’s random choice and learning rates (see Analysis Plan > Prediction 1 > Flexibility comprehensive for details). We validated the model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem], and we found that this parameterization accurately reproduces learning curves observed in real animals (see figure 4).
 
 ![](g_causalFig3.png){width=50%}
 
@@ -668,7 +668,7 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #this prevents an issue with xcolor package when rendering to PDF
 ```
 
-**Flexibility comprehensive:** In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices. 
+**Flexibility comprehensive:** In addition to the number of trials it took birds to reverse a preference, we also developed a more mechanistic measure of behavioral flexibility that takes into account all choices in the reversal learning experiment. Specifically, we use multilevel Bayesian reinforcement learning models that, from trial to trial, update the latent values of different options and use those *attractions* to explain observed choices [@doya2007reinforcement]. We adapted the specific implementation of a social learning reinforcement model developed for human laboratory experiments [@deffner2020dynamic].
 
 There are two basic components: 
 
@@ -676,17 +676,238 @@ First, we have an updating or learning equation that tells us how attractions to
 
 $A_{i,j, t+1} = (1-\phi_j) A_{i,j,t} + \phi_j \pi_{i,j,t}$. 
 
-The (bird-specific) parameter $\phi_j$ describes the weight of recent experience. The higher the value of $\phi_j$, the faster the bird updates their attraction. It thus can be interpreted as the *learning or updating rate of an individual*. This corresponds to the first and third connotation of behavioral flexibility as defined by [@bond_serial_2007], the ability to rapidly and adaptively change behavior in light of new experiences. 
+The (bird-specific) parameter $\phi_j$ describes the weight of recent experience. The higher the value of $\phi_j$, the faster the bird updates their attraction. It thus can be interpreted as the *learning or updating rate of an individual*. A value of 0.04, for example, means that receiving a single reward for one of the two options will shift preferences by 2% from initial 50%-50% attractions, a value of 0.06 will shift preferences by 3% and so on. This parameter corresponds to the first and third connotation of behavioral flexibility as defined by [@bond_serial_2007], the ability to rapidly and adaptively change behavior in light of new experiences. 
 
 The second major part of the model expresses the probability an individual $j$ chooses option $i$ in the next round, $t+1$, based on the latent attractions:
  
  $P(i)_{t+1} = \frac{\exp(\lambda_j A_{i, j, t})}{\sum\limits_{m=1}^{2}\exp(\lambda_j A_{m, j, t})}.$
  
-The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). This closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. To account for potential differences between experimenters, we also included experimenter ID as a random effect (omitted from previous equations to enhance readability, but available in the code below). 
+The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). For instance, if an individual has a 60%-40% preference for option A, a value of $\lambda_j = 3$ means she chooses A 65% of the time, a value of $\lambda_j =10$ means she chooses A 88% of the time. This parameter closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. 
 
-This analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a GLM that predicts their causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on causal score as well as an interaction term.
+We validated this computational model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem]. The following code first prepares the Santa Barbara data for the reinforcement learning model, runs the model and extracts samples from the posterior distribution. We then use those population estimates of both learning parameters, $\phi_j$ and $\lambda_j$, to simulate experimental data for 8 new birds. Finally, this code plots the empirical and simulated learning curves (see figure 4).
 
 ```{r reinforcement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+
+library(rethinking)
+
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SB_Flex.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+d$id <- sapply(1:nrow(d), function (i) which(unique(d$Bird) == d$Bird[i]) )
+d <- d[-which(d$Experiment=="Refresher"),]
+
+
+d <- d[with(d, order(d$id)), ]
+d$Choice <- NA
+for (i in 1: nrow(d)) {
+  if (d$Experiment[i] == "Initial"){
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 1
+    } else {
+      d$Choice[i] <- 2
+    } 
+  } else {
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 2
+    } else {
+      d$Choice[i] <- 1
+    } 
+  }
+}
+
+d[d=="Initial"] <- 0
+d[d=="Reverse"] <- 1
+d$Experiment <- as.integer(d$Experiment)
+
+dat <- as.list(d)
+dat$N <- nrow(d)
+dat$N_id <- length(unique(d$id))
+
+reinforcement_model <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+for ( i in 1:N_id ) A[i,1:2] = rep_vector(0,2)';
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , 1:2 ] = ( (1-phi)*to_vector(A[ id[i] , 1:2 ]) + phi*pay)';
+
+}//i
+}
+
+
+"
+
+m_SB <- stan( model_code =  reinforcement_model, data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+
+# Post-hoc Simulation for Grackle reversal learning
+s <- extract.samples(m_SB)
+lambda <- sapply(1 : dat$N_id, function(x) exp( mean(s$log_L) + mean(s$v_ID[ ,x, 1])))
+phi <- sapply(1 : dat$N_id, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_ID[ ,x, 2])))
+
+
+#Simulation function
+Sim_fct <- function(Tmax = 100,  #Number of trials, payoffs switch after 50 rounds
+                    N_id = 8){   #Updating/learning rate  
+  
+  #Create output object
+  
+  d_Overall <- c()
+  
+  #Loop over birds
+  
+  for (ind in 1:N_id) {
+    
+    #Set initial attractions to 0
+    A <- c(0,0)
+    
+    #Create output matrix to record choices and payoffs
+    d <- data.frame(id=ind, trial = 1:Tmax, Choice=NA, Payoff=NA, Experiment = NA)
+    
+    d$Experiment[1:50] <- 0
+    d$Experiment[51:100] <- 1
+    
+    # Start simulation loop
+    for (i in 1:Tmax) {
+      Prob <- c()
+      for (xx in 1:2) {
+        Prob[xx] <- exp(lambda[ind]*A[xx]) / sum(exp(lambda[ind]*A))
+      }
+      
+      #Make choice proportional to attraction scores
+      d$Choice[which(d$id==ind & d$trial==i)] <- sample(c(1:2), size = 1, prob = Prob)
+      
+      pay <- c(0,0)
+      
+      if (d$Experiment[i] == 0){
+        if (d$Choice[i] == 1){
+          d$Payoff[i] <- 1
+          pay[1] <- 1
+        } else {
+          d$Payoff[i] <- 0
+        } 
+      } else {
+        if (d$Choice[i] == 1){
+          d$Payoff[i] <- 0
+        } else {
+          d$Payoff[i] <- 1
+          pay[2] <- 1
+        } 
+      }
+      
+      #Update Attractions
+      for (xx in 1:2) {
+        A[xx] <- (1-phi[ind]) * A[xx] + phi[ind] * pay[xx]
+      }
+    }#time i
+    
+    d_Overall <- rbind(d_Overall, d)
+    
+  }#ind
+  return(d_Overall)
+}
+
+
+# Run simulation
+dat <- Sim_fct() 
+
+
+# Plot learning curves
+
+#Compute mean correct and SE of choices for simulation and real data
+Prop_correct_sim<- c()
+se <- function(x) sd(x)/sqrt(length(x))
+Prop_correct_sim  <- sapply(1:100, function (x) mean(dat$Payoff[dat$trial==x]) )
+Prop_correct_sim_SE <- sapply(1:100, function (x) se(dat$Payoff[dat$trial==x]) )
+
+Prop_correct_initial<- c()
+Prop_correct_initial  <- sapply(1:100, function (x) mean(d$Correct[d$Trial==x & d$Experiment == 0]) )
+Prop_correct_initial_SE <- sapply(1:100, function (x) se(d$Correct[d$Trial==x & d$Experiment == 0]) )
+
+Prop_correct_reversal<- c()
+Prop_correct_reversal  <- sapply(1:100, function (x) mean(d$Correct[d$Trial==x & d$Experiment == 1]) )
+Prop_correct_reversal_SE <- sapply(1:100, function (x) se(d$Correct[d$Trial==x & d$Experiment == 1]) )
+
+
+par(mfrow=c(2,1),
+    oma=c(1.1,2.5,0,0),
+    mar=c(2.5,2.4,1.5,0.1))
+
+plot(c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50]), type="n", lwd=2, lty=1, ylim=c(0,1), ylab="",xlab="", main = "SB Grackle Data")
+arrows(1:100,c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50])-c(Prop_correct_initial_SE[1:50], Prop_correct_reversal_SE[1:50]),1:100,c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50])+c(Prop_correct_initial_SE[1:50], Prop_correct_reversal_SE[1:50]),col="darkgray", code=3, lwd=1, length=0.01, angle = 90)
+lines(c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50]), lwd=2)
+abline(v = 51, lty =2)
+
+plot(Prop_correct_sim, type="n", lwd=2, lty=1, ylim=c(0,1), ylab="",xlab="", main = "Simulated Data")
+arrows(1:100,Prop_correct_sim-Prop_correct_sim_SE,1:100,Prop_correct_sim+Prop_correct_sim_SE, code=3, lwd=1,col="darkgray", length=0.01, angle = 90)
+lines(Prop_correct_sim, lwd=2)
+abline(v = 51, lty =2)
+mtext(side = 1, "Trial", line = 0, outer = TRUE, cex = 1.2)
+mtext(side = 2, "Proportion Correct", line = 0.5, outer = TRUE, cex = 1.2)
+
+
+### NOTE: To make the model work, you need to set up a few things... (this took Logan a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next). It's best to go to https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started for instructions on how to install stan (and other dependencies) on your computer and get started. There are also plenty of stan fora where you can find answers to most common problems at https://discourse.mc-stan.org/. 
+
+```
+
+
+This computational analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a linear model that predicts Grackles' causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on causal score as well as an interaction term. To account for potential differences between experimenters, we also included experimenter ID as a random effect (omitted from previous equations to enhance readability, but available in the code below). 
+
+```{r reinforcement_comb, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 #Load data
 cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -866,7 +1087,7 @@ z ~ normal(alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s
 mCause <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000, cores = 4, chains=1, control = list(adapt_delta=0.9, max_treedepth = 13))  
 
 
-# Plotting code for Figure 4
+# Plotting code for Figure 5
 
 # m <- extract.samples(mCause)
 # 
