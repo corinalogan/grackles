@@ -676,13 +676,13 @@ First, we have an updating or learning equation that tells us how attractions to
 
 $A_{i,j, t+1} = (1-\phi_j) A_{i,j,t} + \phi_j \pi_{i,j,t}$. 
 
-The (bird-specific) parameter $\phi_j$ describes the weight of recent experience. The higher the value of $\phi_j$, the faster the bird updates their attraction. It thus can be interpreted as the *learning or updating rate of an individual*. A value of 0.04, for example, means that receiving a single reward for one of the two options will shift preferences by 2% from initial 50%-50% attractions, a value of 0.06 will shift preferences by 3% and so on. This parameter corresponds to the first and third connotation of behavioral flexibility as defined by [@bond_serial_2007], the ability to rapidly and adaptively change behavior in light of new experiences. 
+The (bird-specific) parameter $\phi_j$ describes the weight of recent experience. The higher the value of $\phi_j$, the faster the bird updates their attraction. It thus can be interpreted as the *learning or updating rate of an individual*. A value of $\phi_j = 0.04$, for example, means that receiving a single reward for one of the two options will shift preferences by 0.02 from initial 0.5-0.5 attractions, a value of $\phi_j = 0.06$ will shift preferences by 0.03 and so on. This parameter corresponds to the first and third connotation of behavioral flexibility as defined by [@bond_serial_2007], the ability to rapidly and adaptively change behavior in light of new experiences. 
 
 The second major part of the model expresses the probability an individual $j$ chooses option $i$ in the next round, $t+1$, based on the latent attractions:
  
  $P(i)_{t+1} = \frac{\exp(\lambda_j A_{i, j, t})}{\sum\limits_{m=1}^{2}\exp(\lambda_j A_{m, j, t})}.$
  
-The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). For instance, if an individual has a 60%-40% preference for option A, a value of $\lambda_j = 3$ means they choose A 65% of the time, and a value of $\lambda_j =10$ means they choose A 88% of the time. This parameter closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. 
+The parameter $\lambda_j$ represents the *random choice rate* of an individual (also called inverse temperature). It controls how sensitive choices are to differences in attraction scores. As $\lambda_j$ gets larger, choices become more deterministic, as it gets smaller, choices become more exploratory (random choice if $\lambda_j = 0$). For instance, if an individual has a 0.6-0.4 preference for option A, a value of $\lambda_j = 3$ means they choose A 65% of the time, a value of $\lambda_j = 10$ means they choose A 88% of the time and a value of $\lambda_j = 0.5$ means they choose A only 53% of the time. This parameter closely corresponds to the second connotation of internally generated behavioral variation, exploration or creativity [@bond_serial_2007]. 
 
 We validated this computational model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem]. The following code first prepares the Santa Barbara data for the reinforcement learning model, runs the model, and extracts samples from the posterior distribution. We then use those population estimates of both learning parameters, $\phi_j$ and $\lambda_j$, to simulate experimental data for 8 new birds. Finally, this code plots the empirical and simulated learning curves (see figure 4).
 
@@ -800,15 +800,12 @@ phi <- sapply(1 : dat$N_id, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_
 
 
 #Simulation function
-Sim_fct <- function(Tmax = 100,  #Number of trials, payoffs switch after 50 rounds
-                    N_id = 8){   #Updating/learning rate  
+Sim_fct <- function(Tmax = 100,  N_id = 8){    
   
   #Create output object
-  
   d_Overall <- c()
   
   #Loop over birds
-  
   for (ind in 1:N_id) {
     
     #Set initial attractions to 0
