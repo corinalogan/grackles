@@ -434,22 +434,34 @@ db[,4]
 cohen.kappa(db[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
 #unweighted kappa=1.00, confidence boundaries=1.00-1.00, n=11 data points
 
-
-
 #### IOR: On 20% of the videos, what was the interrater reliability between Vincent and Alexis?
+##These scores are in the IOR_exploration_vincent.csv file to match how the EXP & BOL data are
+##combined in the GrackleVideoScoring tab Exp7&8_IOR_AB_VK
 
 # Closest distance to apparatus
-d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolmotper_vincent_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_exploration_vincent.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)  #Check to make sure it looks right
 
 db <- d[d$Experiment=="Boldness",] 
 head(db)  #Check to make sure it looks right
 
-db[,3] #coder1
-db[,4] #coder2
+db[,4] #coder1
+db[,6] #coder2
 
-cohen.kappa(db[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+db$Coder1closestdistancetoapparatus<-as.factor(db$Coder1closestdistancetoapparatus)
+db$Coder2closestdistrancetoapparatus<-as.factor(db$Coder2closestdistrancetoapparatus)
 
+#load tidyverse for data wrangling
+library(tidyverse)
+
+#clean col 4 & 6 b/c if not than counts n/a as a factor level in IOR calc
+dbclean<-db %>% 
+  filter(Coder1closestdistancetoapparatus != "n/a") %>% #throw out n/a category
+  filter(Coder2closestdistrancetoapparatus != "n/a") %>% #throw out n/a category
+  droplevels() #drop unused level n/a from factor 4 & 6
+
+cohen.kappa(db[,c(4,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+# unweighted kappa=0.87, confidence boundaries: 0.95-1.00, n=72 data points
 
 ##### MOTOR DIVERSITY
 #coder 1 = Corina Logan
