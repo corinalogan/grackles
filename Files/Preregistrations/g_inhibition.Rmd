@@ -119,14 +119,15 @@ kable_styling(full_width = T, position = "left")
 
 ##### *Relationship between reversal learning (flexibility) and go/no go (inhibition)*
 
-There was a positive correlation between the number of trials to pass criterion in the go/no go experiment and the number of trials to reverse a preference in the colored tube reversal experiment (in their **last reversal**, thus for the control grackles, this was their first and only reversal, while for the manipulated grackles, this was their last reversal in the serial reversal manipulation) when using one of the two go/no go passing criteria: the number of trials to reach 85% correct (measured in the most recent 20 trial block; Table 2, Figure 1). The other passing criterion of achieving 100% correct performance by trial 150, and if this is not met then they pass when they reach 85% correct after trial 150 (measured in the most recent 20 trial block) did not correlate with reversal performance. Regardless of criterion type, we capped the number of trials at 200, with the exception of 2 individuals who continued trials to 249 (and did not pass) and 290 (and passed).
-
+There was a positive correlation between the number of trials to pass criterion in the go/no go experiment and the number of trials to reverse a preference (average=60 trials, standard deviation=33, range=23-160 trials, n=16 grackles, Table 1) in the colored tube reversal experiment (in their **last reversal**, thus for the control grackles, this was their first and only reversal, while for the manipulated grackles, this was their last reversal in the serial reversal manipulation) when using one of the two go/no go passing criteria: the number of trials to reach 85% correct (measured in the most recent 20 trial block; average=149 trials, standard deviation=71, range=60-290 trials, n=9 grackles; Table 2, Figure 1). The other passing criterion of achieving 100% correct performance by trial 150, and if this is not met then they pass when they reach 85% correct after trial 150 (measured in the most recent 20 trial block; average=178 trials, standard deviation=15, range=160-200 trials) did not correlate with reversal performance. Regardless of criterion type, we capped the number of trials at 200, with the exception of 2 individuals who continued trials to 249 (and did not pass) and 290 (and passed).
 
 ```{r summaryfiggngRev, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
 colnames(d) <- c("Bird","gng150","gng85","Detour","DetourA","Detour pre- or post-reversal","TrialsFirstReversal","TrialsLastReversal","AvgLatencySwitchPlastic","AvgLatencySwitchLog")
+
+#sd(d$TrialsLastReversal,na.rm=TRUE) #33
 
 op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
 plot(jitter(d$TrialsLastReversal),jitter(d$gng85), ylab="Go/no go: trials to pass", xlab="Trials in last reversal", ylim=c(0,310), xlim=c(0,180), cex=4, pch=2, yaxt="n")
@@ -159,7 +160,7 @@ par(op)
 #plot_grid(a1, a2, align='h', ncol=2, labels=c('A','B'))
 ```
 
-**Figure 1.** The number of go/no go trials to pass criterion per bird using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the number of trials to reverse a color preference in their last reversal.
+**Figure 1.** The number of go/no go trials to pass criterion per bird using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the number of trials to reverse a color preference in their last reversal (n=9 grackles).
 
 These two results were confirmed using a more comprehensive computational measure of reversal learning that accounts for all of the choices an individual made as well as the degree of uncertainty exhibited as preferences change (flexibility 4 in the Methods). We use multilevel Bayesian reinforcement learning models to investigate a bird’s learning rate and random choice rate per reversal (see Methods for more details; results presented as posterior means and 89% highest posterior density intervals (HPDI)). With the **85% correct criterion**, we found a negative relationship between reversal learning rate and the number of go/no go trials to pass criterion. This means that birds who are faster to update their behavior in the reversal experiment were also faster to reach criterion in the go/no go task ($\beta_\phi$ = -0.37, HPDI = -0.54 to -0.16). Moreover, birds that exhibited a higher random choice rate in the reversal experiment took longer to reach the 85% correct criterion compared to birds that were less random in their choices ($\beta_\lambda$ = -0.34, HPDI = -0.52 to -0.12). We also found some evidence for a positive interaction between both learning parameters (reversal learning rate and random choice rate; $\beta_{\phi\chi\lambda}$ = 0.27, HPDI = 0.02 - 0.58), suggesting a buffering effect among parameters such that the influence of random choice rate is weaker for individuals that are fast learners. As with the other analysis, there was no robust association between either learning rate ($\beta_\phi$ = - 0.02, HPDI = -0.15 - 0.12) or random choice rate ($\beta_\lambda$ = -0.02, HPDI = -0.12 - 0.07) and the number of trials to pass the other go/no go criterion (**100% correct by trial 150**). There was no interaction between the learning parameters ($\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.23 - 0.19).
 
@@ -167,15 +168,13 @@ Figure 2 plots posterior predictions for the effect of learning rate $\phi_j$ on
 
 ![](g_inhibitionPostPred.png)
 
-**Figure 2.** Results from the computational learning model (flexibility 4). Posterior predicted number of trials to pass go/no go using the 85% correct after 150 trials (top row) or 85% correct (bottom row) criteria, based on estimates for the individual-level learning rates from the reinforcement learning model ($\phi_j$; black dots show posterior means, black horizontal lines indicate 89% highest posterior density intervals). Curves are plotted for high (left; $\lambda_j$=-1), average (middle; $\lambda_j$=0) and low (right; $\lambda_j$=1) random choice rates. Purple lines represent 200 independent draws from the posterior, the black lines show posterior means. Both predictors ($\lambda_j$ and $\phi_j$) were standardized before calculations.
+**Figure 2.** Results from the computational learning model (flexibility 4; n=9). Posterior predicted number of trials to pass go/no go using the 85% correct after 150 trials (top row) or 85% correct (bottom row) criteria, based on estimates for the individual-level learning rates from the reinforcement learning model ($\phi_j$; black dots show posterior means, black horizontal lines indicate 89% highest posterior density intervals). Curves are plotted for high (left; $\lambda_j$=-1), average (middle; $\lambda_j$=0) and low (right; $\lambda_j$=1) random choice rates. Purple lines represent 200 independent draws from the posterior, the black lines show posterior means. Both predictors ($\lambda_j$ and $\phi_j$) were standardized before calculations.
 
-The 85% correct passing criterion was more relevant to the grackles, and the one we recommend using in the future, because setting an **arbitrary threshold** of needing 100% correct in the first 150 trials to pass criterion, which is not generally used in go/no go inhibition tasks, was not ecologically relevant for grackles. In reversal learning tests, which are similar to the go/no go experimental design in that they learn to discriminate between two shapes, grackles almost always continue to explore their options regardless of whether they already have a color preference [e.g., @logan2016flexibilityproblem]. There was also more individual variation using the 85% passing criterion. 
-
-Nine grackles participated in the go/no go experiment. They passed the 85% criterion in an average of 149 trials (standard deviation: 71, range: 60-290 trials), and passed the 150 threshold criterion in an average of 178 trials (standard deviation: 15, range: 160 trials to not passing before the experiment ended at 200 trials) (Table 1). The positive correlation between go/no go and reversal performance indicates that those individuals that have more inhibition are also faster at changing their preferences when circumstances change. We must note that the relationship was likely influenced by Taquito, who was particularly slow at both tests and was one of the two birds who was tested beyond the 200-trial cap due to experimenter error. We would need a larger sample size to determine to what degree the relationship is perturbed by such individual variation. 
+The positive correlation between go/no go and reversal performance indicates that those individuals that have more inhibition are also faster at changing their preferences when circumstances change. We must note that the relationship was likely influenced by Taquito, who was particularly slow at both tests and was one of the two birds who was tested beyond the 200-trial cap due to experimenter error. We would need a larger sample size to determine to what degree the relationship is perturbed by such individual variation. 
 
 ##### Unregistered analyses
 
-We additionally analyzed the relationship between go/no go performance and the number of trials to reverse a color preference in the **first reversal** to make our results comparable across more species. This is because most studies do not conduct serial reversals, but only one reversal. The results remained the same regardless of whether the first or last reversal were analyzed: there was a positive correlation between go/no go and reversal learning performance when using the 85% go/no go criterion, and no relationship when using the 100% by 150 trial criterion (Table 2).
+We additionally analyzed the relationship between go/no go performance and the number of trials to reverse a color preference (average=76, standard deviation=29, range=40-160, n=16 grackles) in the **first reversal** to make our results comparable across more species. This is because most studies do not conduct serial reversals, but only one reversal. The results remained the same regardless of whether the first or last reversal were analyzed: there was a positive correlation between go/no go and reversal learning performance when using the 85% go/no go criterion, and no relationship when using the 100% by 150 trial criterion (Table 2).
 
 **Table 2.** Results from the go/no go and reversal learning GLMs: **m1** and **m2** show GLM outputs for the last reversal, while **m3** and **m4** show GLM outputs for the first reversal. **m1** and **m3** show results from the GLM using the number of trials to reach 85% correct if 100% correct was not achieved within the first 150 trials in go/no go, while **m2** and **m4** use the number of trials to reach 85% correct without the 150 trial threshold. The estimate is presented above the standard error, which is in parentheses; asterisks refer to p-value significance.
 
@@ -183,6 +182,8 @@ We additionally analyzed the relationship between go/no go performance and the n
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
 colnames(d) <- c("Bird","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost","TrialsFirst","TrialsLast","AvgLatencyPlastic","AvgLatencyLog")
+
+#sd(d$TrialsFirstReversal,na.rm=TRUE) #29
 
 #Is performance on the two multi-access boxes correlated?
 #cor.test(d$TrialsLast, d$AvgLatency, use="pairwise.complete.obs", method="pearson")
@@ -226,7 +227,7 @@ knitr::knit_hooks$set(document = function(x) {sub('\\usepackage[]{color}', '\\us
 #kable(sm1.table, caption="Table T: Model selection output.", format="html", digits=2)
 ```
 
-##### *Flexibility: Multi-access box*
+##### *Relationship between multi-access box (flexibility) and go/no go (inhibition)*
 
 There was no correlation between the two flexibility experiments: the number of trials to reverse a preference in the last reversal and the average number of seconds (latency) to attempt a new option on the multi-access box after a different locus has become non-functional because they passed criterion on it (Pearson's r=0.52 (95% confidence interval: -0.12-0.85), t=1.83, df=9, p=0.10). Therefore, we conducted a separate analysis to determine whether the number of trials to pass criterion in the go/no go experiment correlates with the average latency to attempt a new option in the MAB plastic and MAB log experiments [the average latency to attempt a new option did not correlate between the plastic and log experiments, which is why they are analyzed separately; @logan2019flexmanip]. Results showed that the average latency to attempt a new option on both MAB experiments (plastic and log) negatively correlated with go/no go performance when using the 85% go/no go criterion, and there was no correlation when using the 150 trial threshold (Table 3, Figure 3).
 
@@ -276,7 +277,7 @@ axis(side=2, at=c(100,200,300))
 par(op)
 ```
 
-**Figure 3.** The number of go/no go trials to pass criterion per bird using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the average latency to attempt a new locus on the multi-access box (MAB) plastic.
+**Figure 3.** The number of go/no go trials to pass criterion per bird (n=7) using the 85% correct (triangles) or 85% correct after 150 trials (circles) criteria and the average latency to attempt a new locus on the multi-access box (MAB) plastic.
 
 
 **Model 2b: Latency to peck screen in go/no go**
@@ -447,13 +448,13 @@ smooth2 = predict(lm(avgfirstlatency ~ session, data = no))
 
 ![](g_inhibitionFig1post.png)
 
-**Figure 4.** The average latency (seconds) across all birds to first peck the screen in a trial per session according to whether it was a go trial (when they should peck; black triangles and black regression line) or a no go trial (when they should not peck; gray squares and gray regression line) (error bars=standard error of the mean).
+**Figure 4.** The average latency (seconds) across all birds (n=9) to first peck the screen in a trial per session according to whether it was a go trial (when they should peck; black triangles and black regression line) or a no go trial (when they should not peck; gray squares and gray regression line) (error bars=standard error of the mean).
 
 #### Prediction 1 the more flexible individuals are also better at inhibition: detour
 
-##### *Flexibility: Reversal learning*
+##### *Relationship between reversal learning (flexibility) and go/no go (inhibition)*
 
-There was no correlation between the proportion correct on the detour experiment and the number of trials to reverse their last preference in the reversal learning experiment (Table 3, Figure 5). The same result was found using the more comprehensive flexibility measure with the Bayesian reinforcement model: we found no relationship between the learning rate ($\beta_\phi$ = 0.12, HPDI = -0.13 to 0.38) or random choice rate ($\beta_\lambda$ = -0.07, HPDI = -0.55 to 0.46) and the proportion of correct choices in the detour experiment. There was also no interaction among parameters (learning rate and random choice rate; $\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.39 to 0.38). Eighteen grackles completed this experiment and they averaged 71% correct (standard deviation: 25%, range: 20-100%). 
+There was no correlation between the proportion correct on the detour experiment (average=0.71, standard deviation=0.25, range=0.20-1.00, n=18 grackles) and the number of trials to reverse their **last preference** in the reversal learning experiment (Table 3, Figure 5). The same result was found using the more comprehensive flexibility measure with the Bayesian reinforcement model: we found no relationship between the learning rate ($\beta_\phi$ = 0.12, HPDI = -0.13 to 0.38) or random choice rate ($\beta_\lambda$ = -0.07, HPDI = -0.55 to 0.46) and the proportion of correct choices in the detour experiment. There was also no interaction among parameters (learning rate and random choice rate; $\beta_{\phi\chi\lambda}$ = 0.01, HPDI = -0.39 to 0.38).  
 
 ##### Unregistered analyses
 
@@ -512,15 +513,15 @@ axis(side=2, at=c(0.5,1.0))
 par(op)
 ```
 
-**Figure 5.** The proportion of detour trials correct per bird using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the number of trials to reverse a color preference in their last reversal.
+**Figure 5.** The proportion of detour trials correct per bird (n=15) using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the number of trials to reverse a color preference in their last reversal.
 
-##### *Flexibility: Multi-access box*
+##### *Relationship between multi-access box (flexibility) and go/no go (inhibition)*
 
 We conducted a separate analysis to determine whether the proportion correct in the detour experiment was related to the average latency to attempt a new option on the multi-access boxes (plastic and log) and found no relationship with detour performance [using the @maclean2014evolution method of scoring; Table 5].
 
 ##### Unregistered analyses
 
-There was no correlation between the proportion correct in the detour experiment using the grackle-specific scoring method and the average latency to attempt a new option on either of the multi-access boxes (plastic or log; Table 5, Figure 6).
+There was no correlation between the proportion correct in the detour experiment using the grackle-specific scoring method and the average latency to attempt a new option on either of the multi-access boxes (plastic or log; Table 5, Figure 6). On the plastic multi-access box, the average of the average latency per bird to attempt a new solution was 208 seconds (standard deviation=226, range=25-685, n=11 grackles). On the log multi-access box, the average of the average latency per bird to attempt a new solution was 489 seconds (standard deviation=499, range=77-1482, n=10 grackles).
 
 **Table 5.** Results from the detour and multi-access box GLMs: **m1** and **m3** show GLM outputs using the standard @maclean2014evolution method of scoring (std), while **m2** and **m4** show GLM outputs using the grackle-specific scoring method (grackle). **m1** and **m2** show results from the MAB plastic experiment, while **m3** and **m4** show results from the MAB log experiment.
 
@@ -528,6 +529,15 @@ There was no correlation between the proportion correct in the detour experiment
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_inhibition_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 d <- data.frame(d)
 colnames(d) <- c("Bird","Gonogo150","Gonogo85","Detour","DetourA","Detourprepost","TrialsFirst","TrialsLast","AvgLatencyPlastic","AvgLatencyLog")
+
+#mean(d$AvgLatencySwitchPlastic, na.rm=T) #208, n=11
+#sd(d$AvgLatencySwitchPlastic, na.rm=T) #226
+#min(d$AvgLatencySwitchPlastic, na.rm=T) #25
+#max(d$AvgLatencySwitchPlastic, na.rm=T) #685
+#mean(d$AvgLatencySwitchLog, na.rm=T) #489, n=10
+#sd(d$AvgLatencySwitchLog, na.rm=T) #499
+#min(d$AvgLatencySwitchLog, na.rm=T) #77
+#max(d$AvgLatencySwitchLog, na.rm=T) #1482
 
 #GLM
 m8 <- glm(Detour ~ AvgLatencyPlastic, family="binomial", data=d)
@@ -569,7 +579,7 @@ axis(side=2, at=c(0.5,1.0))
 par(op)
 ```
 
-**Figure 6.** The proportion of detour trials correct per bird using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the average latency to attempt a new locus on the multi-access box (MAB) plastic.
+**Figure 6.** The proportion of detour trials correct per bird (n=11) using the standard calculation method (triangles) or the grackle-specific calculation method (circles) and the average latency to attempt a new locus on the multi-access box (MAB) plastic.
 
 
 #### Prediction 2: no correlation between inhibition tasks
@@ -614,9 +624,11 @@ We were not able to conduct the delay of gratification experiment because the gr
 
 ## DISCUSSION
 
-We found mixed support for the hypothesis that flexibility and inhibition are associated with each other. Flexibility on the reversal task and on the multi-access boxes were positively and negatively, respectively, associated with inhibition in one context (go/no go) and not associated with it in another context (detour). These results confirm previous findings where detour performance was not associated with behavioral flexibility as measured by the multi-access box locus switching performance [@johnson2018proactive] or by reversal learning [@boogert_song_2011; @shaw2015wild; @damerius2017curiosity; @brucks2017measures; @dubois2018song; @ducatez2019speed]. This mixed support could be because the two inhibition tests, go/no go and detour, might not measure the same trait in great-tailed grackles.
+We found mixed support for the hypothesis that flexibility and inhibition are associated with each other. Flexibility on the reversal task and on the multi-access boxes were positively and negatively, respectively, associated with inhibition in one context (go/no go) and not associated with it in another context (detour). These results confirm previous findings where detour performance was not associated with flexibility as measured by the multi-access box locus switching performance [@johnson2018proactive] or by reversal learning [@boogert_song_2011; @shaw2015wild; @damerius2017curiosity; @brucks2017measures; @dubois2018song; @ducatez2019speed]. This mixed support could be because the two inhibition tests, go/no go and detour, might not measure the same trait in great-tailed grackles.
 
 There is controversy around how to best assess inhibition given the several experimental paradigms that are available. Inhibitory control is a multi-level construct and an integral part of executive functioning. One aspect of inhibition is motor self-regulation [i.e., stopping a prepotent but counterproductive movement; @diamond2013executive], which is usually assessed with the detour task in non-human animals. While another aspect of inhibitory control is self-control [i.e., the ability to withhold an immediate response towards a present stimulus in favor of a later stimulus; @nigg2017annual]. To assess self-control in non-human animals, a task must crucially involve a component of decision making, such as deciding between obtaining a less preferred reward now or tolerating a delay for a more valuable outcome in the future [@beran2015comparative]. In non-human animals, self-control is typically assessed using experimental paradigms, such as the accumulation paradigm, exchange paradigm, hybrid delay, and intertemporal choice task [for an overview see: @beran2018self; @miller2019self]. A major concern associated with the comparison of performance on inhibition tasks is that measures are not always consistent when different experimental paradigms are used [@addessi2013delay; @brucks2017measures; @van2018detour], which is further confirmed by our findings. This indicates that it is crucial to compare inhibition paradigms with each other on the same individuals to understand whether and how they relate to each other and in which contexts. In addition, it may be best to refer to the different inhibition paradigms with distinct terms to differentiate them (e.g., “motor inhibition” for detour-like tasks and “self-control” for delay of gratification tasks).
+
+In the go/no go experiment, the 85% correct passing criterion was more relevant to the grackles, and the one we recommend using in the future. Setting an **arbitrary threshold** of needing 100% correct in the first 150 trials to pass criterion, which is not generally used in go/no go inhibition tasks, was not ecologically relevant for grackles. In reversal learning tests, which are similar to the go/no go experimental design in that they learn to discriminate between two shapes, grackles almost always continue to explore their options regardless of whether they already have a color preference [e.g., @logan2016flexibilityproblem]. There was also more individual variation using the 85% passing criterion, which makes it a more useful measure for comparison. 
 
 Although great-tailed grackles had never experienced touchscreen experiments before, we found that the grackles were able to learn to use the touchscreen and to complete the go/no go experiment on it. This validates the use of this setup for future experiments in this species, and shows that it could be a viable option for wild-caught birds from other species as well. However, there are several caveats to the feasibility of touchscreen tasks for behavioral testing [see @Seitz2020biorxivtraingrackle for details]. First, touchscreen hardware and software can be prone to error. We recommend future studies ensure that the touchscreens accurately record the target behaviors prior to intensive experimentation. Second, touchscreen experimentation should be as fully automated as possible; it can be difficult for observers to objectively code bird behaviors as the birds interact with a touchscreen. Our interobserver reliability was not as reliable as we had hoped, although it was still acceptable for data analysis, due to some of these issues (see details in [Methods](#unregistered-analysis-interobserver-reliability-of-dependent-variables)). 
 
