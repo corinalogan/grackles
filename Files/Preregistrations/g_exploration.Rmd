@@ -316,7 +316,7 @@ To determine whether the experimenter coded the dependent variables in a repeata
 
 To pass **interobserver reliability (IOR) training**, video coders needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders (see R code comments for details). 
 
-**Sierra Planck (discusseed with Logan):** Persistence (total number of touches to apparatus) and motor diversity (presence or absence of a behavior from the ethogram). Planck was the first to code videos for these variables so there was not an already established training process or someone to compare her to. Planck and Logan worked together to agree on coding decisions using one video, and then Planck proceeded to code videos independently after that.
+**Sierra Planck (discussed with Logan):** Persistence (total number of touches to apparatus) and motor diversity (presence or absence of a behavior from the ethogram). Planck was the first to code videos for these variables so there was not an already established training process or someone to compare her to. Planck and Logan worked together to agree on coding decisions using one video, and then Planck proceeded to code videos independently after that.
 
 **Alexis Breen**
 
@@ -461,6 +461,50 @@ dbclean<-db %>%
 
 cohen.kappa(dbclean[,c(4,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 # unweighted kappa=0.86, confidence boundaries: 0.68-1.00, n=24 data points
+
+
+#### WILD BOLDNESS ####
+#Coded by the experimenter 1) live in the field, 2) more than a year later from video and field notes, and 3) 20% of individuals re-coded from video and field notes more than 2 months later for IOR calculation.
+#Latency to Land#
+field.d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_BolExpFIELD_KM.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+
+head(field.d)  #Check to make sure it looks right
+
+field.bold <- field.d[field.d$Experiment=="Boldness",] 
+head(field.bold)  #Check to make sure it looks right
+
+field.bold[,5] #coder1
+field.bold[,7] #coder2
+
+field.bold$Coder1latencyland<-as.factor(field.bold$Coder1latencyland)
+field.bold$Coder2latencyland<-as.factor(field.bold$Coder2latencyland)
+
+#load tidyverse for data wrangling
+library(tidyverse)
+
+#clean col 5 & 7 b/c if not than counts n/a as a factor level in IOR calc
+clean<-field.bold %>% 
+  filter(Coder1latencyland != "n/a") %>% #throw out n/a category
+  filter(Coder2latencyland != "n/a") %>% #throw out n/a category
+  droplevels() #drop unused level n/a from factor 
+
+cohen.kappa(clean[,c(5,7)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
+# unweighted kappa=, confidence boundaries: , n= data points
+
+#Closest distance to apparatus#
+field.bold$Coder1closestdistancetoapparatus<-as.factor(field.bold$Coder1closestdistancetoapparatus)
+field.bold$Coder2closestdistancetoapparatus<-as.factor(field.bold$Coder2closestdistancetoapparatus)
+
+#load tidyverse for data wrangling
+library(tidyverse)
+
+#clean col 6 & 8 b/c if not than counts n/a as a factor level in IOR calc
+clean<-field.bold %>% 
+  filter(Coder1closestdistancetoapparatus != "n/a") %>% #throw out n/a category
+  filter(Coder2closestdistancetoapparatus != "n/a") %>% #throw out n/a category
+  droplevels() #drop unused level n/a from factor 
+
+cohen.kappa(clean[,c(6,8)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 
 
 ##### MOTOR DIVERSITY
