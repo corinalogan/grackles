@@ -340,6 +340,11 @@ To pass **interobserver reliability (IOR) training**, video coders needed an ICC
    - **Exploration environment:** first latency to enter tent ICC = 0.997 (confidence boundaries=0.99-0.999, n=10 data points)
    - **Boldness:** closest distance to apparatus Cohen's unweighted kappa = 0.86 (confidence boundaries=0.68-1.00, n=24 data points)
 
+**Exploration and boldness in the WILD** (comparison between McCune transcribing recorded notes in March 2021 vs McCune transcribing recorded notes in May 2021):
+   - Exploration and boldness data collected in the wild were combined because there was not much data for either
+   - **Exploration and boldness:** closest distance category to apparatus Cohen's unweighted kappa = 1.00 (confidence boundaries=1.00-1.00, n=12 data points)
+   - **Exploration and boldness:** latency to first landing in a distance category ICC = 0.999 (confidence boundaries=0.994-1.000, n=8 data points)
+
 **Persistence and Motor Diversity** (comparisons between Breen, Kiepsch, and Planck):
  
    - **Persistence:** 
@@ -463,8 +468,31 @@ cohen.kappa(dbclean[,c(4,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 # unweighted kappa=0.86, confidence boundaries: 0.68-1.00, n=24 data points
 
 
-#### WILD BOLDNESS ####
+#### WILD BOLDNESS & EXPLORATION ####
 #Coded by the experimenter 1) live in the field, 2) more than a year later from video and field notes, and 3) 20% of individuals re-coded from video and field notes more than 2 months later for IOR calculation.
+
+fd <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolfieldKM.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(fd)  #Check to make sure it looks right
+
+## Exploration AND boldness (not much data so they are combined): latency to land in a distance category
+fd[,5] #Coder1latencyland
+fd[,7] #Coder2latencyland
+
+# Need to change columns to numeric (b.c currently categorical)
+fd$Coder1latencyland<-as.numeric(fd$Coder1latencyland)
+fd$Coder1latencyland<-as.numeric(fd$Coder2latencyland)
+
+icc(fd[,c(5,7)], model="oneway", type="consistency", unit="single", conf.level=0.95) 
+# ICC = 0.999 (95% Confidence Interval: 0.994-1.000, n=8 data points (but only 10 with data in them))
+
+## Exploration AND boldness (not much data so they are combined): closest distance category
+fd[,6]
+fd[,8]
+cohen.kappa(fd[,c(6,8)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+#unweighted kappa=1.00, confidence boundaries=1.00-1.00, n=12 data points
+
+
+###### KELSEY - Can Corina delete below (until Motor Diversity)?
 #Latency to Land#
 field.d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolfieldKM.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
@@ -489,7 +517,7 @@ clean<-field.bold %>%
   droplevels() #drop unused level n/a from factor 
 
 cohen.kappa(clean[,c(5,7)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
-# unweighted kappa=, confidence boundaries: , n= data points
+# unweighted kappa=0.75, confidence boundaries: 0.34-1.00, n=5 data points
 
 #Closest distance to apparatus#
 field.bold$Coder1closestdistancetoapparatus<-as.factor(field.bold$Coder1closestdistancetoapparatus)
