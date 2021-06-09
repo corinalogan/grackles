@@ -340,8 +340,8 @@ To pass **interobserver reliability (IOR) training**, video coders needed an ICC
    - **Exploration environment:** first latency to enter tent ICC = 0.997 (confidence boundaries=0.99-0.999, n=10 data points)
    - **Boldness:** closest distance to apparatus Cohen's unweighted kappa = 0.86 (confidence boundaries=0.68-1.00, n=24 data points)
 
-**Exploration and boldness in the WILD** (comparison between McCune transcribing recorded notes in March 2021 vs McCune transcribing recorded notes in May 2021):
-   - Exploration and boldness data collected in the wild were combined because there was not much data for either
+**Exploration and boldness in the WILD** (comparison between McCune video coding and transcribing field notes for 20% of the grackles in the wild sample in March 2021 and again on the same data in May 2021):
+   - Exploration and boldness data collected in the wild were combined because there was not much data for either and because the variables were the same for both assays
    - **Exploration and boldness:** closest distance category to apparatus Cohen's unweighted kappa = 1.00 (confidence boundaries=1.00-1.00, n=12 data points)
    - **Exploration and boldness:** latency to first landing in a distance category ICC = 0.999 (confidence boundaries=0.994-1.000, n=8 data points)
 
@@ -469,7 +469,7 @@ cohen.kappa(dbclean[,c(4,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 
 
 #### WILD BOLDNESS & EXPLORATION ####
-#Coded by the experimenter 1) live in the field, 2) more than a year later from video and field notes, and 3) 20% of individuals re-coded from video and field notes more than 2 months later for IOR calculation.
+#Coded by the experimenter 1) live in the field using video and field notes, 2) more than a year later from video and field notes, and 3) 20% of individuals re-coded from video and field notes more than 2 months later for IOR calculation.
 
 fd <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolfieldKM.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(fd)  #Check to make sure it looks right
@@ -490,49 +490,6 @@ fd[,6]
 fd[,8]
 cohen.kappa(fd[,c(6,8)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
 #unweighted kappa=1.00, confidence boundaries=1.00-1.00, n=12 data points
-
-
-###### KELSEY - Can Corina delete below (until Motor Diversity)?
-#Latency to Land#
-field.d <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_expbolfieldKM.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-
-head(field.d)  #Check to make sure it looks right
-
-field.bold <- field.d[field.d$Experiment=="Boldness",] 
-head(field.bold)  #Check to make sure it looks right
-
-field.bold[,5] #coder1
-field.bold[,7] #coder2
-
-field.bold$Coder1latencyland<-as.factor(field.bold$Coder1latencyland)
-field.bold$Coder2latencyland<-as.factor(field.bold$Coder2latencyland)
-
-#load tidyverse for data wrangling
-library(tidyverse)
-
-#clean col 5 & 7 b/c if not than counts n/a as a factor level in IOR calc
-clean<-field.bold %>% 
-  filter(Coder1latencyland != "n/a") %>% #throw out n/a category
-  filter(Coder2latencyland != "n/a") %>% #throw out n/a category
-  droplevels() #drop unused level n/a from factor 
-
-cohen.kappa(clean[,c(5,7)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
-# unweighted kappa=0.75, confidence boundaries: 0.34-1.00, n=5 data points
-
-#Closest distance to apparatus#
-field.bold$Coder1closestdistancetoapparatus<-as.factor(field.bold$Coder1closestdistancetoapparatus)
-field.bold$Coder2closestdistancetoapparatus<-as.factor(field.bold$Coder2closestdistancetoapparatus)
-
-#load tidyverse for data wrangling
-library(tidyverse)
-
-#clean col 6 & 8 b/c if not than counts n/a as a factor level in IOR calc
-clean<-field.bold %>% 
-  filter(Coder1closestdistancetoapparatus != "n/a") %>% #throw out n/a category
-  filter(Coder2closestdistancetoapparatus != "n/a") %>% #throw out n/a category
-  droplevels() #drop unused level n/a from factor 
-
-cohen.kappa(clean[,c(6,8)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL)
 
 
 ##### MOTOR DIVERSITY
