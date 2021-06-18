@@ -177,30 +177,59 @@ Blinding is usually not involved in the final analyses because the experimenters
 
 We use **simulations** and design customized **models** to determine what sample sizes allow us to detect differences between sites (see chapter 5.3 in @bolker2008ecological for why simulations perform more powerful power analyses). We do not plan to **exclude** any data and if there are **missing** data (e.g. if a bird participated in one of the two experiments, then it will only be included in those analyses for which it has data). Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam) and Stan (version 2.18, @carpenter2017stan). 
 
-##### Interobserver reliability of dependent variables
+#### Interobserver reliability of dependent variables
 
 To determine whether experimenters coded the dependent variables in a repeatable way, hypothesis-blind video coders will first be trained in video coding the dependent variables (reversal learning and multiaccess log: whether the bird made the correct choice or not; exploration: latency to approach), requiring a Cohen's unweighted kappa (reversal and multiaccess categorical variables) or an intra-class correlation coefficient (ICC; exploration continuous variable) of 0.90 or above to pass training. This threshold indicates that the two coders (the experimenter and the video coder) agree with each other to a high degree (kappa: @landis1977measurement, using the psych package in R @psych; ICC: @hutcheon2010random, using the irr package in R: @gamer2012package). After passing training, the video coders will code 20% of the videos for each experiment and the kappa and ICC will be calculated to determine how objective and repeatable scoring was for each variable, while noting that the experimenter has the advantage over the video coder because watching the videos is not as clear as watching the bird participate in the trial from the aisle of the aviaries. The unweighted kappa is used when analyzing a categorical variable where the distances between the numbers are meaningless (0=incorrect choice, 1=correct choice, -1=did not participate), and the ICC is used for continuous variables where distances are meaningful (e.g., if coders disagree by a difference of 2 s rather than 5 s, this is important to account for).
 
+##### Interobserver reliability training
+
+To pass **interobserver reliability (IOR) training**, video coders needed an ICC or Cohen's unweighted kappa score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders. Video coders, Alexis Breen and Vincent Kiepsch, passed interobserver reliability training for exploratoin in a previous article [@mccune2019exploration] where their training results can be found.
+
+***Lea Gihlein*** (compared with experimenter's live coding): 
+
+ - Reversal learning: correct choice unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=21 data points) 
+
+ - Multiaccess box: correct choice unweighted Cohen's Kappa=0. (confidence boundaries=0.-.00, n= data points) 
+ 
+##### Interobserver reliability
+
+Interobserver reliability scores (minimum 20% of the videos) were as follows:
+   
+***Lea Gihlein*** (compared with experimenter's live coding): 
+
+ - Reversal learning: correct choice unweighted Cohen's Kappa=.00 (confidence boundaries=.00-.00, n= data points) 
+ 
+ - Multiaccess log: correct choice unweighted Cohen's Kappa=0. (confidence boundaries=0.-.00, n= data points) 
+
+ - Multiaccess log: locus solved unweighted Cohen's Kappa=.0 (confidence boundaries=.00-.00, n= data points) 
+
+
 ```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(irr) #ICC package
+library(psych) #Cohen's kappa package
 
 #### FLEXIBILITY (reversal learning)
 
-# did video coder pass interobserver reliability training? 
-data <- read.csv("", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(data)  #Check to make sure it looks right
+# did video coder Lea Gihlein pass interobserver reliability training? 
+leat <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_xpop_rev_LeaTraining.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(leat)  #Check to make sure it looks right
 # Note: c(3,5) is telling R to look at columns 2 and 3 and compare them. Double check this:
-data[,3] #coder 1 (live coder)
-data[,5] #coder 2 (video coder)
-cohen.kappa(data[,c(3,5)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+leat[,11] #coder 1 (live coder)
+leat[,12] #coder 2 (video coder)
+cohen.kappa(leat[,c(11,12)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
 
-# video coder score for 20% of videos =  
+head(becker)
+cohen.kappa(becker[,c("X1CorrectChoice","X2CorrectChoice")], w=NULL, n.obs=NULL, alpha=.05, levels=NULL)
+#unweighted kappa = 1; upper and lower CIs = 1 - 1, n = 21
+
+
+# video coder Lea Gihlein score for 20% of videos =  
 data <- read.csv("", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(data)  #Check to make sure it looks right
+head(lea)  #Check to make sure it looks right
 # Note: c(3,5) is telling R to look at columns 2 and 3 and compare them. Double check this:
-data[,3] #coder 1 (live coder)
-data[,5] #coder 2 (video coder)
-cohen.kappa(data[,c(3,5)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
+lea[,3] #coder 1 (live coder)
+lea[,5] #coder 2 (video coder)
+cohen.kappa(lea[,c(3,5)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
 
 
 #### INNOVATIVENESS (multiaccess log)
