@@ -393,7 +393,6 @@ kbl(p2, col.names = colnames,align = c("l","c","c","c","c"),caption="Table 3. Re
 ```
 
 
-\pagebreak
 **Prediction 2: energetic condition and probability of daily nest survival**
 
 Logistic regression analyses to determine reproductive success from nests discovered in different stages will be systematically biased [@shaffer2004unified]. Nests discovered at a more progressed stage (i.e., nestling stage compared to building stage) are statistically more likely to succeed and nests with frequent and prolonged adult visits (such as those that occur when nests survive longer) are more likely to be discovered. Therefore, nests that fail early are less likely to be detected [@shaffer2004unified]. Consequently, we analyzed female reproductive success using a logistic exposure model [@bolker2014logistic], which uses survival analysis to determine the factors affecting the probability of daily nest survival, while accounting for incomplete nest observations.  
@@ -451,12 +450,50 @@ ple = data.frame("Parameter" = c("Intercept","Fat score", "SMI","Day of year","A
 colnames<- c("Parameter", "Estimate (SE)", "OR (CI)", "p-value")
 kbl(ple, col.names = colnames,align = c("l","c","c","c"),caption="Table 4. Results of the logistic exposure model showing the relationship between the probability of daily nest survival and scaled mass index (SMI), fat score, the amount of time spent in the aviaries, and the day of the year. Parameter estimates are presented with the standard error in parentheses. Odds ratios (OR) represent the exponentiated estimates, and are presented to increase interpretability with 95% confidence intervals in parentheses.") %>% 
   kable_styling()
+```
 
+
+```{r logoddfig, echo=FALSE, message=FALSE, warning=FALSE, hold=TRUE, paged.print=FALSE, results='asis'}
 library(ggplot2)
 library(visreg)
 library(sjPlot)
 library(bayestestR)
+library(lme4)
+library(MASS)
+logexp <- function(exposure = 1) {
+  ## hack to help with visualization, post-prediction etc etc
+  get_exposure <- function() {
+    if (exists("..exposure", env=.GlobalEnv))
+      return(get("..exposure", envir=.GlobalEnv))
+    exposure
+  }
+  linkfun <- function(mu) qlogis(mu^(1/get_exposure()))
+  ## FIXME: is there some trick we can play here to allow
+  ##   evaluation in the context of the 'data' argument?
+  linkinv <- function(eta) plogis(eta)^get_exposure()
+  logit_mu_eta <- function(eta) {
+    ifelse(abs(eta)>30,.Machine$double.eps,
+           exp(eta)/(1+exp(eta))^2)
+  }
+  mu.eta <- function(eta) {       
+    get_exposure() * plogis(eta)^(get_exposure()-1) *
+      logit_mu_eta(eta)
+  }
+  valideta <- function(eta) TRUE
+  link <- paste("logexp(", deparse(substitute(exposure)), ")",
+                sep="")
+  structure(list(linkfun = linkfun, linkinv = linkinv,
+                 mu.eta = mu.eta, valideta = valideta, 
+                 name = link),
+            class = "link-glm")
+}
 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gcondition_p2_logexpdata.csv"), header=T, sep=",", stringsAsFactors=F)
+rs3 = na.omit(d) # remove NAs in fat score values
+
+exp3 <- glmer(Fate ~ FatScore + Body2 + DayofYear2 + Aviary + (1|MothersID), #+ (1|Year),
+         family=binomial(link=logexp(rs3$Interval)),
+         data = rs3)
 set_theme(base = theme_classic())
 p = plot_model(exp3, show.values = T, title = "Probability of daily nest survival",axis.title = "Odds ratio",
            axis.labels = c("Aviary","Day of year","SMI","Fat score"),
