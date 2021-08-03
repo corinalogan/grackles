@@ -193,9 +193,9 @@ kable_styling(full_width = T, position = "left")
 
 ### P2: serial reversals improve rule switching & problem solving on the MAB
 
-#### Number of loci solved on the multiaccess box (plastic) ~ trials to reverse
+#### Problem solving: number of loci solved on the multiaccess box (plastic) ~ trials to reverse
 
-The total number of loci solved per bird on the plastic multiaccess box was not associated with the number of trials to pass criterion on the last color tube reversal (Table C).
+Grackles that were faster to reverse a preference (in their last reversal) solved more loci on the plastic multiaccess box (Table C; n=15 grackles because Mole and Habanero had to be excluded due to experimenter error during habituation - they were given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p). The original model included aviary batch, however this ended up confounding the analysis because control and manipulated individuals, while randomly assigned to these conditions, ended up in particular batches as a result of their willingness to participate. As such, grackles who did not participate in their condition in a given batch were replaced in the aviary batch. Therefore, we removed batch from the model. We additionally examined whether first reversal (rather than last reversal) or condition (control or manipulated) better explained the relationship between reversal performance and number of loci solved on the plastic multiaccess box: they did not. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, which indicates that the conditions did not differ from each other. This suggests that it is some combination of the flexibility manipulation, which trains individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing, other previous experience that led to differences in performance on the multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. There was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on the multiaccess box, which indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
 
 ```{r p2mabplastic, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -206,178 +206,212 @@ library(formatR)
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
-colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","Reversals to pass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
 
-# Exclude Mole and Habanero from this analysis because the were given the put together plastic box during habituation (due to experimenter error)
+# Exclude Mole and Habanero from this analysis because they were given the put together plastic box during habituation (due to experimenter error)
 d <- d[!d$Bird=="Mole" & !d$Bird=="Habanero",]
 
 # Remove NAs
 d <- subset(d,!(is.na(d["TotalLociSolvedMABplastic"])) & !(is.na(d["TrialsLastReversal"])))
 
 # n=15: 6 in manipulated group, 9 in control group
-length(d$TotalLociSolvedMABplastic)
+#length(d$TotalLociSolvedMABplastic)
 
 # make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
 d$Batch <- as.factor(d$Batch)
 levels(d$Batch)[c(3)] <- c("3")
 
 # look at the data
-hist(d$TotalLociSolvedMABplastic)
-mean(d$TotalLociSolvedMABplastic) #2
-sd(d$TotalLociSolvedMABplastic) #1.6
-hist(d$TrialsLastReversal)
-mean(d$TrialsLastReversal) #61.5
-sd(d$TrialsLastReversal) #34.2
+#hist(d$TotalLociSolvedMABplastic)
+#mean(d$TotalLociSolvedMABplastic) #2
+#sd(d$TotalLociSolvedMABplastic) #1.6
+#hist(d$TrialsLastReversal)
+#mean(d$TrialsLastReversal) #61.5
+#sd(d$TrialsLastReversal) #34.2
+
+#translating the actual data (rather than the simulated data) into effect sizes (see equation below in "translated the simulation output into effect sizes"): SDx / SDy = 1.6/34.2 actual data (note: simulated data were 1.5/21=0.7)
+#sd(d$TotalLociSolvedMABplastic)/sd(d$TrialsLastReversal) #=0.5
+#cor.test(d$TotalLociSolvedMABplastic,d$TrialsLastReversal,alternative=c("two.sided"),method = c("pearson"),conf.level = 0.95)
+#corr = r =-0.24
+#solve equation for beta:
+#-0.24/(sd(d$TotalLociSolvedMABplastic)/sd(d$TrialsLastReversal)) #-4.98 = beta
 
 # RUN MODEL on the actual data
-dat <- list(locisolved = d$TotalLociSolvedMABplastic,
-            trials = standardize(d$TrialsLastReversal),
-            batch = d$Batch
-              )
+#dat <- list(locisolved = d$TotalLociSolvedMABplastic,
+#            trials = standardize(d$TrialsLastReversal),
+#            batch = d$Batch
+#              )
 
-m1 <- ulam( alist(
-  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
-  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
-  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-) , data=dat , chains=4 , log_lik=TRUE )
+#m1 <- ulam( alist(
+#  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+#  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+#  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+#  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+#) , data=dat , chains=4 , log_lik=TRUE )
 
-precis(m1,depth=2)
+#precis(m1,depth=2)
 #      mean   sd  5.5% 94.5% n_eff Rhat4
 #a[1]  0.04 0.46 -0.70  0.78  2304     1
 #a[2]  0.29 0.36 -0.30  0.87  2456     1
 #a[3] -0.78 0.55 -1.65  0.08  2510     1
 #b    -0.22 0.25 -0.63  0.18  2364     1
-#mean varies by batch, but in all cases the confidence intervals cross 0. n_eff  (number of independent samples obtained) is high, Rhat (indicator of model convergence) is good (p.281 Rethinking) 
+#mean loci solved varies by batch, b=slope for correlation between number of loci solved and number of trials to pass last reversal - there is a negative relationship, but (in all cases) the confidence interval crosses 0 so this indicates no correlation because we can't say with certainty that it is different from zero. n_eff  (number of independent samples obtained) is high, Rhat (indicator of model convergence) is good (p.281 Rethinking) 
 #Result: total number of loci solved is not associated with the number of trials to pass criterion on the last reversal
 
 #model details: 2000 samples from 4 chains
-show(m1)
+#show(m1)
 #no correlations between variables across batches
-pairs(m1)
+#pairs(m1)
 #check the chain - fuzzy caterpillars = looks good
-traceplot(m1)
+#traceplot(m1)
 #check the chain a different way - "histograms overlap and stay within the same range" ≠ looks good (p.285 Rethinking)
-trankplot(m1) 
+#trankplot(m1) 
 
-# plot the results on the outcome scale (p.330 Rethinking). V1-3 = batch 1-3, value = ???
-postm1 <- extract.samples(m1)
-p_batch <- inv_logit( postm1$a )
-plot( precis( as.data.frame(p_batch) ) , xlim=c(0,1) )
+# plot the results on the outcome scale (p.330 Rethinking). V1-3 = batch 1-3, value = probability of solving a locus
+#postm1 <- extract.samples(m1)
+#p_batch <- inv_logit( postm1$a )
+#plot( precis( as.data.frame(p_batch) ) , xlim=c(0,1) )
 
-# contrasts between batches: the difference between batches. Scale = log odds of solving a locus (p.331 Rethinking)
-diffsm1 <- list(
-    b13 = postm1$a[,1] - postm1$a[,2],
-    b14 = postm1$a[,1] - postm1$a[,3],
-    b34 = postm1$a[,2] - postm1$a[,3] )
-labsdif <- c("Batch 1-3","Batch 1-4","Batch 3-4")
-plot( precis(diffsm1), xlim=c(-3,3), labels=labsdif)
+# contrasts between batches: the log odds differences in solving a locus between batches. Value = log odds of solving a locus (p.331 & 341 Rethinking)
+#diffsm1 <- list(
+#    b13 = postm1$a[,1] - postm1$a[,2],
+#    b14 = postm1$a[,1] - postm1$a[,3],
+#    b34 = postm1$a[,2] - postm1$a[,3] )
+#labsdif <- c("Batch 1-3","Batch 1-4","Batch 3-4")
+#plot( precis(diffsm1), xlim=c(-3,3), labels=labsdif)
+
+# contrasts between batches on the outcome scale (p.341 Rethinking). This shows that the batches are actually not different from each other in how many loci they solved because all values cross zero
+#diff_b13 <- inv_logit( postm1$a[,1]) - inv_logit( postm1$a[,2])
+#diff_b14 <- inv_logit( postm1$a[,1]) - inv_logit( postm1$a[,3])
+#diff_b34 <- inv_logit( postm1$a[,2]) - inv_logit( postm1$a[32])
+#precis( list( diff_b13 , diff_b14 , diff_b34 ) )
 
 #check posterior for p to look at the distribution of probabilities that are probable
-prior <- extract.prior(m1,n=1e4)
-p <- inv_logit(prior$a) #convert from logit to actual probability
-dens(p,adj=0.1)
-#result: as with the simulation, it is a normal curve. The simulation curve peaked at 3.5, this curve peaked at 0.55
+#p <- inv_logit(postm1$a) #convert from logit to actual probability
+#dens(p,adj=0.1)
+#HPDI(p) #most mass is below 0.5
+#median(p) #0.49
+#result: the prior was a normal curve that peaked at 0.5. The posterior: the mean y axis point where the intercept is is 0.49 (meaning they solve on average 50% of the loci = 2), which means this is when trials to reverse is at the average
 
 #check to see if including batch has an influence on the estimate of b by removing batch
-mwobatch <- ulam( alist(
-  locisolved ~ dbinom(4,p) , 
-  logit(p) <- a + b*trials , #standardize trials so 0=mean
-  a ~ dnorm(0,0.5) , 
-  b ~ dnorm(0,2)
-) , data=dat , chains=4 , log_lik=TRUE )
+#mwobatch <- ulam( alist(
+#  locisolved ~ dbinom(4,p) , 
+#  logit(p) <- a + b*trials , #standardize trials so 0=mean
+#  a ~ dnorm(0,0.5) , 
+#  b ~ dnorm(0,2)
+#) , data=dat , chains=4 , log_lik=TRUE )
 
-precis(mwobatch,depth=2)
+#precis(mwobatch,depth=2)
 #   mean   sd  5.5% 94.5% n_eff Rhat4
 #a -0.02 0.24 -0.40  0.35  1466     1
 #b -0.46 0.31 -0.97 -0.01  1383     1
-#the confidence interval crosses 0. n_eff is high, but lower than for m1, Rhat is good. Choose m1 because the n_eff is higher and otherwise mwobatch is just the average of m1
+#the confidence interval does NOT cross 0, which indicates batch differ in their composition of control and manipulated indviduals. n_eff is high, but lower than for m1, Rhat is good. Report both: there is a potential confound of batch, which is differently composed (m1). 
 
 #check posterior for p to look at the distribution of probabilities that are probable
-prior_mwobatch <- extract.prior(mwobatch,n=1e4)
-p_mwobatch <- inv_logit(prior$a) #convert from logit to actual probability
-dens(p_mwobatch,adj=0.1)
-#result: same as for m1
+#postmwobatch <- extract.samples(mwobatch)
+#p2 <- inv_logit(postmwobatch$a) #convert from logit to actual probability
+#dens(p2,adj=0.1)
+#HPDI(p2) 
+#median(p2) #0.50, narrower than prior & m1
+#result: The posterior: the mean y axis point where the intercept is is 0.50 (meaning they solve on average 50% of the loci = 2), which means this is when trials to reverse is at the average
+
+#see whether the confound of batch in m1 is an issue of the composition of control and manipulated individuals in a particular batch that is causing the batch differences in the MAB models
+#trialsbatch <- ulam( alist(
+#  trials ~ normal(mu,sigma),
+#  mu <- a[batch],
+#  a[batch] ~ dnorm(0,0.5) , 
+#  sigma ~ dexp(1)
+#) , data=dat , chains=4 , log_lik=TRUE )
+#precis(trialsbatch,depth=2)
+#batches differ, which suggests that this is a confound in m1: can't accurately estimate the relationship between loci solved and trials to reverse because the batches already contain the difference. So need to EXCLUDE batch from the MAB model and use mwobatch
+
+
+## see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
+# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
+#d$ReversalsToPass <- as.factor(d$ReversalsToPass)
+#levels(d$ReversalsToPass)[c(1,2,3)] <- c("Control","Manipulated","Manipulated")
+
+#dat2 <- list(locisolved = d$TotalLociSolvedMABplastic,
+#            trials = standardize(d$TrialsFirstReversal),
+#            condition = d$ReversalsToPass
+#              )
+
+#mcondition <- ulam( alist(
+#  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+#  logit(p) <- a[condition] , #condition=random effect, standardize trials so 0=mean
+#  a[condition] ~ dnorm(0,1)  #each condition gets its own intercept
+#) , data=dat2 , chains=4 , log_lik=TRUE )
+#precis(mcondition,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1] -0.11 0.32 -0.62   0.4  1311     1
+#a[2]  0.15 0.39 -0.46   0.8  1222     1
+
+# contrasts between conditions: the log odds differences in solving a locus between batches. Value = log odds of solving a locus (p.331 & 341 Rethinking)
+#postmcondition <- extract.samples(mcondition)
+#diffsmcondition <- postmcondition$a[,1] - postmcondition$a[,2]
+#labsdifc <- c("Control-Manipulated")
+#plot( precis(diffsmcondition), xlim=c(-1.5,1), labels=labsdifc)
+# contrasts between conditions on the outcome scale (p.341 Rethinking)
+#precis( diffsmcondition )
+#Both of thse results show that the condiitons are actually not different from each other in how many loci they solved because all values cross zero. This means that mwobatch shows that it is some combination of the flexibility manipulation (training those individuals who were not already fast) and other previous experience (not making much of a difference in reversal speeds for those who were already fast) that led to differences on the MAB. This suggests the important variable is the ability to be flexible, which birds could have from the beginning or could be manipulated in the experiment. It is the effect of the experiment on this ability, not the something else about the experiment (e.g., differences in motivation, exploration, etc.)
+
+
+## see whether the flexibility manipulation actually had an effect on MAB performance by replacing trials to LAST reversal with trials to FIRST reversal
+# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
+#dat3 <- list(locisolved = d$TotalLociSolvedMABplastic,
+#            trials = standardize(d$TrialsFirstReversal),
+#            batch = d$Batch
+#              )
+
+#mwobatch2 <- ulam( alist(
+#  locisolved ~ dbinom(4,p) , 
+#  logit(p) <- a + b*trials , #standardize trials so 0=mean
+#  a ~ dnorm(0,0.5) , 
+#  b ~ dnorm(0,2)
+#) , data=dat , chains=4 , log_lik=TRUE )
+
+#precis(mwobatch2,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+#a  0.00 0.24 -0.37  0.39  1208     1
+#b -0.44 0.30 -0.94  0.02  1273     1
+#b crosses zero so there is no correlation between number of loci solved and number of trials to reverse on the first reversal. This means that reversal in general doesn't correlate with MAB loci. You actually have to DO something to flexibility to make it matter for MAB loci
+
+
+## visualizing start up again at p401 rethinking
+
+# plot p.353 Rethinking
+plot( d$TrialsLastReversal , d$TotalLociSolvedMABplastic , xlab="Number of trials to pass last reversal" , ylab="Number of loci solved on plastic multiaccess box" , col=rangi2 , lwd=2 , ylim=c(0,4))
+lines(d$TotalLociSolvedMABplastic~d$TrialsLastReversal , lty=2 , lwd=1.5 )
+shade( , d$TotalLociSolvedMABplastic~d$TrialsLastReversal , xpd=TRUE )
+
+#from rethinkingcorina.rmd line 258
+## posterior predictions on linear scale. 
+#1=choose range of predictor variable (log weights): 2 to 4
+log_weight_seq <- seq(from=2, to=4, length.out=30)
+
+#2=pass sequence to link () to compute posterior distributions of expected values for each value in the sequence
+pred_mu <- link(m4.4, data=list(log_weight=log_weight_seq)) #link only gives the values of any linear models for all posterior samples
+str(pred_mu)
+
+#3 compute posterior mean for each log weight value
+mu_mean <- apply(pred_mu, 2, mean) #take the columns and compute the mean of each column
+
+#4 compute compatibility intervals for each log weight
+mu_CI <- apply(pred_mu, 2, PI)
+
+#plot
+lines(log_weight_seq, mu_mean, col="red", lwd=3)
+shade(mu_CI, log_weight_seq)
 ```
 
-#### Number of loci solved on the multiaccess box (wooden) ~ trials to reverse
-
-```{r p2mablog, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-library(rethinking)
-library(rstan)
-library(formatR)
-
-# LOAD the data and column names
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-
-d <- data.frame(d)
-colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","Reversals to pass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
-
-# Remove NAs
-d <- subset(d,!(is.na(d["TotalLociSolvedMABplastic"])) & !(is.na(d["TrialsLastReversal"])))
-
-# n=15: 6 in manipulated group, 9 in control group
-length(d$TotalLociSolvedMABplastic)
-
-# make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
-d$Batch <- as.factor(d$Batch)
-levels(d$Batch)[c(3)] <- c("3")
-
-# look at the data
-hist(d$TotalLociSolvedMABplastic)
-mean(d$TotalLociSolvedMABplastic) #2
-sd(d$TotalLociSolvedMABplastic) #1.6
-hist(d$TrialsLastReversal)
-mean(d$TrialsLastReversal) #61.5
-sd(d$TrialsLastReversal) #34.2
-
-# RUN MODEL on the actual data
-dat <- list(locisolved = d$TotalLociSolvedMABplastic,
-            trials = standardize(d$TrialsLastReversal),
-            batch = d$Batch
-              )
-
-m1 <- ulam( alist(
-  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
-  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
-  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-) , data=dat , chains=4 , log_lik=TRUE )
-
-precis(m1,depth=2)
-#      mean   sd  5.5% 94.5% n_eff Rhat4
-
-#check posterior for p to look at the distribution of probabilities that are probable
-prior <- extract.prior(m1,n=1e4)
-p <- inv_logit(prior$a) #convert from logit to actual probability
-dens(p,adj=0.1)
-#result: as with the simulation, it is a normal curve. The simulation curve peaked at 3.5, this curve peaked at 0.55
+#### Problem solving: number of loci solved on the multiaccess box (wooden) ~ trials to reverse
 
 
-#check to see if including batch has an influence on the estimate of b by removing batch
-mwobatch <- ulam( alist(
-  locisolved ~ dbinom(4,p) , 
-  logit(p) <- a + b*trials , #standardize trials so 0=mean
-  a ~ dnorm(0,0.5) , 
-  b ~ dnorm(0,2)
-) , data=dat , chains=4 , log_lik=TRUE )
-
-precis(mwobatch,depth=2)
-#   mean   sd  5.5% 94.5% n_eff Rhat4
-#result = really similar to model m1
-
-#check posterior for p to look at the distribution of probabilities that are probable
-prior_mwobatch <- extract.prior(mwobatch,n=1e4)
-p_mwobatch <- inv_logit(prior$a) #convert from logit to actual probability
-dens(p_mwobatch,adj=0.1)
-#result: same as for m1
-```
-
-#### Latency to attempt a new locus on the multiaccess box (plastic) ~ trials to reverse
+#### Rule switching: latency to attempt a new locus on the multiaccess box (plastic) ~ trials to reverse
 
 
 
-#### Latency to attempt a new locus on the multiaccess box (wooden) ~ trials to reverse
+#### Rule switching: latency to attempt a new locus on the multiaccess box (wooden) ~ trials to reverse
 
 
 
