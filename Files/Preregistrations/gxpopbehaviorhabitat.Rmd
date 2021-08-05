@@ -636,6 +636,969 @@ kable_styling(full_width = T, position = "left")
 
 **Population differences in phi and lambda**
 
+```{r sim_power_philambda, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+
+library(rethinking)
+library(dplyr)
+library(rethinking)
+
+
+# We first reanalyze the Santa Barbara data to otbtain values for phi and lambda upon which to base our expectations of what the mean and variance might be at a site.
+# We load the Santa Barbara data from github
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_data_SBreverse.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+# We need to perform some modifications on these data to set them up for the STAN model
+d$id <- sapply(1:nrow(d), function (i) which(unique(d$Bird) == d$Bird[i]) )
+d <- d[-which(d$Experiment=="Refresher"),]
+d <- d[with(d, order(d$id)), ]
+d$Choice <- NA
+for (i in 1: nrow(d)) {
+  if (d$Experiment[i] == "Initial"){
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 1
+    } else {
+      d$Choice[i] <- 2
+    } 
+  } else {
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 2
+    } else {
+      d$Choice[i] <- 1
+    } 
+  }
+}
+
+d[d=="Initial"] <- 0
+d[d=="Reverse"] <- 1
+d$Experiment <- as.integer(d$Experiment)
+
+
+# We can now extract the relevant data for the STAN model. In the model, we want to estimate the phi and lambda for each individual that was tested in Santa Barbara based on their choices during the initial learning phase and the reversal learning phase.
+dat <- as.list(d)
+dat$N <- nrow(d)
+dat$N_id <- length(unique(d$id))
+
+# The STAN model is set up to have the inital attraction for each option set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
+reinforcement_model_nonzeroattraction <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
+# We run this model for the Santa Barbara data
+m_SB <- stan( model_code =  reinforcement_model_nonzeroattraction, data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+
+# We extract the estimated phi and lambda values for each bird from the STAN model
+s <- extract.samples(m_SB)
+santabarbara_lambda <- sapply(1 : dat$N_id, function(x) exp( mean(s$log_L) + mean(s$v_ID[ ,x, 1])))
+santabarbara_phi <- sapply(1 : dat$N_id, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_ID[ ,x, 2])))
+
+#These values are what we will use to set up our expectations
+# For phi, we see a mean of 0.025 and a standard deviation of 0.007
+mean(santabarbara_phi)
+sd(santabarbara_phi)
+range(santabarbara_phi)
+
+# These values are slightly lower than what we had calculated in a previous preregistration (causal) because in there we had used a STAN model where initial attraction for both options was set to zero and birds updated their attractions to both options after each trial. For reference, these were the phi values estimated with that approach
+Causal_santabarbara_phi<-c(0.03061692, 0.03430556, 0.04839631, 0.02748937, 0.03125310, 0.03356904, 0.04142868, 0.03397079)
+
+# For lambda, we see a mean of 4.9 and a standard deviation of 2.3
+mean(santabarbara_lambda)
+sd(santabarbara_lambda)
+range(santabarbara_lambda)
+
+# Again, for comparison, here are the lambda values estimated with the prvious approach (they are slightly lower)
+Causal_santabarbara_lambda<-c(3.311051, 4.811929, 2.897794, 4.687649, 2.360964, 6.928005, 6.013120, 3.492505)
+
+
+################################################################################################
+# Start the simulation here
+########################
+
+# Based on the values for the Santa Barbara birds, we can now set our expectations as inputs for the power simulations. To illustrate the range, a phi of 0.02 means that there is a ~1% shift in attraction if birds would be equally attracted to an option whereas a phi of 0.04 means that there is a ~2% shift. 
+simulated_sitemean_phi<-c(0.01,0.015,0.02,0.0225,0.025,0.03,0.035,0.04)
+simulated_sitesd_phi<-c(0.005,0.005,0.006,0.006,0.007,0.007,0.008,0.008)
+simulated_sitemean_lambda<-c(3,4,6,9)
+simulated_sitesd_lambda<-c(1,1.5,2.5,3)
+
+#Calculate the number of sites using the number of combinations of the mean and sd options for phi and lambda
+totalnumberofsites<-length(simulated_sitemean_phi)*length(simulated_sitemean_lambda)
+
+# We set up a dataframe that will store the relevant information, saving the choice of individuals at each trials and how their attraction scores change correspondingly.
+simulatedreversaldata<-matrix(ncol=15,nrow=totalnumberofsites*20*300)
+simulatedreversaldata<-as.data.frame(simulatedreversaldata)
+colnames(simulatedreversaldata)<-c("Bird_ID", "Session", "Trial", "Reversal","Choice", "CorrectChoice","Phi_mean","Lambda_mean","Site","Phi_sd","Lambda_sd","ThisBirdsPhi","ThisBirdsLambda","Attraction1","Attraction2")
+
+
+
+# There are two tubes, lightgrey and darkgrey
+# Initially, one of them is the rewarded option (here lightgrey) and the other is the unrewarded option (here darkgrey)
+# Rewarded option gives a payoff of 1, unrewarded option gives a payoff of 0
+# When a reversal occurs, the rewards are flipped (previous option with 1 now gets 0, previous option with 0 now gets 1)
+
+
+counter<-1
+bird_id<-1
+site_id<-1
+
+for (mean_phi in 1:length(simulated_sitemean_phi)) {
+  current_mean_phi<-simulated_sitemean_phi[mean_phi]
+  current_sd_phi<-simulated_sitesd_phi[mean_phi]
+  
+  for (mean_lambda in 1:length(simulated_sitemean_lambda)) {
+  current_mean_lambda<-simulated_sitemean_lambda[mean_lambda]
+  current_sd_lambda<-simulated_sitesd_lambda[mean_lambda]
+  
+  for (bird in 1:20) {
+    bird_phi<-rnorm(1,current_mean_phi,current_sd_phi)
+    if(bird_phi<0){bird_phi<-0}
+    bird_lambda<-rnorm(1,current_mean_lambda,current_sd_lambda)
+    if(bird_lambda<0){bird_lambda<-0}
+    
+    
+    # All birds initially have only a small attraction for either option;
+    # setting these values to zero means that there would be no attraction at all. In this case,  
+    # choosing the wrong option and not getting a reward does not reduce the attraction to that option. 
+    # Accordingly, with values set to zero birds can only learn when they pick the right option.
+    # Alternatively, setting both these to the same value higher than zero (e.g. 0.1) means
+    # that individuals initially do not have a preference, but are somewhat attracted to both options.
+    # In this case, not getting a reward at the wrong option would reduce the attraction to that option.
+    # Accordingly, with values larger than zero birds can initially potentially learn twice as fast
+    # because they update attractions both when choosing the correct and the wrong option.
+    attractionlightgrey<-0.1
+    attractiondarkgrey<-0.1
+    
+    # Initially, the light grey option is rewarded
+    lightgreyreward<-1
+    darkgreyreward<-0
+    reversal<-"initial"
+    
+    # Reflecting the data being collected, the maximum number of sessions a bird can participate in is 30
+    for (session in 1:30) {
+    
+    # Each session runs for 10 trials
+    for (trial in 1:10) {
+    
+    # We first calculate the probability that the bird will choose the light grey option during this trial based on her relative attraction to this option over the dark grey option
+    probability_choose_lightgrey<-exp(bird_lambda*attractionlightgrey)/(exp(bird_lambda*attractionlightgrey)+exp(bird_lambda*attractiondarkgrey)  )
+    
+    # Based on the probability, the bird will now make a choice
+    choselightgrey<-if(runif(1,0,1)<probability_choose_lightgrey){1} else{0}
+    
+    # For the option they choose, they update their attraction. If they chose the correct option, the learned about the reward and increase their attraction to that option; if they chose the wrong option, they decrease their attraction to that option
+    if(choselightgrey==1){
+      attractionlightgrey<-(1-bird_phi)*attractionlightgrey+bird_phi*lightgreyreward
+    } else {
+      attractiondarkgrey<-(1-bird_phi)*attractiondarkgrey+bird_phi*darkgreyreward
+    }
+    
+    # We store all the relevant information about this trial in the data frame
+    simulatedreversaldata[counter,]$Bird_ID<-bird_id
+    simulatedreversaldata[counter,]$Session<-session
+    simulatedreversaldata[counter,]$Trial<-(session-1)*10+trial
+    simulatedreversaldata[counter,]$Reversal<-reversal
+    simulatedreversaldata[counter,]$Site<-site_id
+    simulatedreversaldata[counter,]$Phi_mean<-current_mean_phi
+    simulatedreversaldata[counter,]$Lambda_mean<-current_mean_lambda
+    simulatedreversaldata[counter,]$Phi_sd<-current_sd_phi
+    simulatedreversaldata[counter,]$Lambda_sd<-current_sd_lambda
+    simulatedreversaldata[counter,]$Choice<-choselightgrey
+    simulatedreversaldata[counter,]$Attraction1<-attractionlightgrey
+    simulatedreversaldata[counter,]$Attraction2<-attractiondarkgrey
+    simulatedreversaldata[counter,]$ThisBirdsPhi<-bird_phi
+    simulatedreversaldata[counter,]$ThisBirdsLambda<-bird_lambda
+    simulatedreversaldata[counter,]$CorrectChoice<-ifelse(reversal=="initial",ifelse(choselightgrey==1,1,0),ifelse(choselightgrey==1,0,1))
+    
+    counter<-counter+1
+    #End of trial loop
+    }
+
+      # Birds are done when they have successfully completed the reversal trials after the initial learning trials. Matching the experiments, birds are counted as successful if they chose the correct option in 17 or more of the 20 trials and if they also during those last two sessions chose the correct option 8 or more times out of the 10 times in each session.
+      if (reversal=="reversal") {
+        if (sum(simulatedreversaldata[(counter-11):(counter-1),]$CorrectChoice)>7  
+            & sum(simulatedreversaldata[(counter-21):(counter-12),]$CorrectChoice)>7 
+            & sum(simulatedreversaldata[(counter-21):(counter-1),]$CorrectChoice)>16 ) {
+          break
+        }
+      }
+
+      # Birds switch from the initial learning to the reversal trials, based on the same definition of being successful. In this case, the reward is now set to be associated with the dark grey option in the following reversal trials.     
+      if(session > 1) {
+      if (   sum(simulatedreversaldata[(counter-11):(counter-1),]$CorrectChoice)>7  
+             & sum(simulatedreversaldata[(counter-21):(counter-12),]$CorrectChoice)>7 
+             & sum(simulatedreversaldata[(counter-21):(counter-1),]$CorrectChoice)>16 ) {
+        lightgreyreward<-0
+        darkgreyreward<-1
+        reversal<-"reversal"
+      }
+      }
+      
+    #End of session loop  
+    }
+    
+    bird_id <-bird_id+1    
+  #End of bird loop
+  }
+  
+  site_id<-site_id+1
+ 
+  # End of mean lambda loop
+}
+
+#End of mean phi loop 
+}
+
+# Remove unnecessary rows at the bottom that contain only NA values
+rem_simulatedreversaldata<-simulatedreversaldata[is.na(simulatedreversaldata$Site)==F,]
+
+# What are the attraction values observed across all individuals in all populations across both initial and reversal for the option that is rewarded during the initial phase
+hist(rem_simulatedreversaldata$Attraction1)
+# What are the attraction values observed across all individuals in all populations across both initial and reversal for the option that is rewarded during the reversal phase
+hist(rem_simulatedreversaldata$Attraction2)
+
+# Boxplots of the 20 individual phi values per population to see whether populations with different mean phi values are different
+boxplot(rem_simulatedreversaldata$ThisBirdsPhi~rem_simulatedreversaldata$Phi_mean)
+
+
+# Save the output - use this code for the modified version with initial attraction scores at 0.1 and individuals only learning about the option they chose
+write.csv(rem_simulatedreversaldata,file="SimulatedReversalData_Grackles_PhiLambda_Attraction.csv")
+
+################################################################################################
+# End of the simulation
+################################################################################################
+
+
+
+################################################################################################
+# Load previously simulated data 
+################################################################################################
+
+# These two are the sets we decided on, with initial attractions at 0.1 and eight different phi and four different lambda combinations
+simulatedreversaldata_attractionscores_1<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SimulatedReversalData_Grackles_PhiLambda_Attraction02_Aug2021.csv"), header=T, sep=",", stringsAsFactors=F) 
+  
+simulatedreversaldata_attractionscores_2<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SimulatedReversalData_Grackles_PhiLambda_Attraction04_Aug2021.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+# In both simulations, sites were counted from 1-16; we now assign each site a unique value from 1-32
+simulatedreversaldata_attractionscores_2$site<-simulatedreversaldata_attractionscores_2$site+16
+
+# We combine the two data sets for the further analyses
+simulatedreversaldata_attractionscores<-bind_rows(simulatedreversaldata_attractionscores_1,simulatedreversaldata_attractionscores_2)
+
+################################################################################################
+
+# In the simulations, trials were counted continuously for each bird. We now want to change this so that it restarts counting trials from 1 upward once a bird switches to reversal.
+
+for (birds in 1:length(unique(simulatedreversaldata_attractionscores$Bird_ID))){
+  currentbird<-unique(simulatedreversaldata_attractionscores$Bird_ID)[birds]
+  maximuminitial<-max(simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "initial",]$Trial)
+  simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial - maximuminitial
+}
+
+# We need to adjust the coding during the reversal learning so that "correct" now matches whether it is correct or not. 
+simulatedreversaldata_attractionscores$Choice<-as.integer(as.factor(simulatedreversaldata_attractionscores$Choice))
+
+# To use the model to estimate the phi and lambda parameters, we first need to change the column names to match these to the specifications in the model: change Bird_ID  to id; change Reversal to Choice, change CorrectChoice to Correct, change Site to Expid
+
+colnames(simulatedreversaldata_attractionscores)<-c("counter","id","Session","Trial","Reversal","Choice","Correct","Phi_mean","Lambda_mean","Site","Phi_sd","Lambda_sd","ThisBirdsPhi","ThisBirdsLambda","Attraction1","Attraction2")
+
+
+################################################################################################
+# Next, we can plot the average choices across trials for the different sites
+################################################################################################
+
+# Calculate average performance in reversal learning for different phi values c(0.02,0.0325,0.035,0.45)
+se <- function(x) sd(x)/sqrt(length(x))
+
+Prop_correct_reversal_phi_0.02  <- sapply(1:100, function (x) mean(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.02]) )
+Prop_correct_reversal_SE_phi_0.02 <- sapply(1:100, function (x) se(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.02]) )
+
+Prop_correct_reversal_phi_0.02<-1-Prop_correct_reversal_phi_0.02 #reverse the proportion so it is proportion of newly rewarded option correct
+
+Prop_correct_reversal_phi_0.0325  <- sapply(1:100, function (x) mean(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.0325]) )
+Prop_correct_reversal_SE_phi_0.0325 <- sapply(1:100, function (x) se(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.0325]) )
+
+Prop_correct_reversal_phi_0.0325<-1-Prop_correct_reversal_phi_0.0325
+
+Prop_correct_reversal_phi_0.035  <- sapply(1:100, function (x) mean(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.035]) )
+Prop_correct_reversal_SE_phi_0.035 <- sapply(1:100, function (x) se(simulatedreversaldata_attractionscores$simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.035]) )
+
+Prop_correct_reversal_phi_0.035<-1-Prop_correct_reversal_phi_0.035
+
+Prop_correct_reversal_phi_0.45  <- sapply(1:100, function (x) mean(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.45]) )
+Prop_correct_reversal_SE_phi_0.45 <- sapply(1:100, function (x) se(simulatedreversaldata_attractionscores$Correct[simulatedreversaldata_attractionscores$Trial==x & simulatedreversaldata_attractionscores$Reversal == "reversal" & simulatedreversaldata_attractionscores$Phi_mean ==0.45]) )
+
+Prop_correct_reversal_phi_0.45<-1-Prop_correct_reversal_phi_0.45
+
+
+# We now plot the curves that show how the average performance changes with each trial. Initially birds are close to 100% choosing the previously rewarded option. We now want to see how quickly they change from that to never selecting this option. We plot the outcomes with the different values for phi in different colours
+
+plot(Prop_correct_reversal_phi_0.02[1:100],type="n" , lwd=2, lty=1, ylim=c(0,1), ylab="Proportion correct",xlab="Trial number", main = "Simulated Grackle Data")
+arrows(1:100,c(Prop_correct_reversal_phi_0.02[1:100])-c(Prop_correct_reversal_SE_phi_0.02[1:100]),1:100,c(Prop_correct_reversal_phi_0.02[1:100], Prop_correct_reversal_phi_0.02[1:100])+c(Prop_correct_reversal_SE_phi_0.02[1:100], Prop_correct_reversal_phi_0.02[1:100]),col="darkgray", code=3, lwd=1, length=0.01, angle = 90)
+
+arrows(1:100,c(Prop_correct_reversal_phi_0.035[1:100])-c(Prop_correct_reversal_SE_phi_0.035[1:100]),1:100,c(Prop_correct_reversal_phi_0.035[1:100], Prop_correct_reversal_phi_0.035[1:100])+c(Prop_correct_reversal_SE_phi_0.035[1:100], Prop_correct_reversal_phi_0.035[1:100]),col="blue", code=3, lwd=1, length=0.01, angle = 90)
+
+#arrows(1:100,c(Prop_correct_reversal_phi_0.45[1:100])-c(Prop_correct_reversal_SE_phi_0.45[1:100]),1:100,c(Prop_correct_reversal_phi_0.45[1:100], Prop_correct_reversal_phi_0.45[1:100])+c(Prop_correct_reversal_SE_phi_0.45[1:100], Prop_correct_reversal_phi_0.45[1:100]),col="red", code=3, lwd=1, length=0.01, angle = 90)
+
+
+# Now we do the same for lambda
+
+Prop_correct_reversal_lambda_3  <- sapply(1:100, function (x) mean(cleanedsimulatedreversaldata$CorrectChoice[cleanedsimulatedreversaldata$Trial==x & cleanedsimulatedreversaldata$Reversal == "reversal" & cleanedsimulatedreversaldata$Lambda_mean ==3]) )
+Prop_correct_reversal_SE_lambda_3 <- sapply(1:100, function (x) se(cleanedsimulatedreversaldata$CorrectChoice[cleanedsimulatedreversaldata$Trial==x & cleanedsimulatedreversaldata$Reversal == "reversal" & cleanedsimulatedreversaldata$Lambda_mean ==3]) )
+
+Prop_correct_reversal_lambda_3<-1-Prop_correct_reversal_lambda_3
+
+Prop_correct_reversal_lambda_45  <- sapply(1:100, function (x) mean(cleanedsimulatedreversaldata$CorrectChoice[cleanedsimulatedreversaldata$Trial==x & cleanedsimulatedreversaldata$Reversal == "reversal" & cleanedsimulatedreversaldata$Lambda_mean ==4.5]) )
+Prop_correct_reversal_SE_lambda_45 <- sapply(1:100, function (x) se(cleanedsimulatedreversaldata$CorrectChoice[cleanedsimulatedreversaldata$Trial==x & cleanedsimulatedreversaldata$Reversal == "reversal" & cleanedsimulatedreversaldata$Lambda_mean ==4.5]) )
+
+Prop_correct_reversal_lambda_45<-1-Prop_correct_reversal_lambda_45
+
+# Plot the curves for the different lambda values
+plot(Prop_correct_reversal_lambda_3[1:100],type="n" , lwd=2, lty=1, ylim=c(0,1), ylab="Proportion correct",xlab="Trial number", main = "Simulated Grackle Data")
+arrows(1:100,c(Prop_correct_reversal_lambda_3[1:100])-c(Prop_correct_reversal_SE_lambda_3[1:100]),1:100,c(Prop_correct_reversal_lambda_3[1:100], Prop_correct_reversal_lambda_3[1:100])+c(Prop_correct_reversal_SE_lambda_3[1:100], Prop_correct_reversal_lambda_3[1:100]),col="darkgray", code=3, lwd=1, length=0.01, angle = 90)
+
+arrows(1:100,c(Prop_correct_reversal_lambda_45[1:100])-c(Prop_correct_reversal_SE_lambda_45[1:100]),1:100,c(Prop_correct_reversal_lambda_45[1:100], Prop_correct_reversal_lambda_45[1:100])+c(Prop_correct_reversal_SE_lambda_45[1:100], Prop_correct_reversal_lambda_45[1:100]),col="red", code=3, lwd=1, length=0.01, angle = 90)
+
+
+
+################################################################################################
+# Do phi and lambda influence performance?
+################################################################################################
+
+performance_mean<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(id, Phi_mean, Reversal) %>% summarize(mean(Trial)))
+
+boxplot((performance_mean[performance_mean$Reversal=="initial",]$`mean(Trial)`)~performance_mean[performance_mean$Reversal=="initial",]$Phi_mean)
+
+boxplot((performance_mean[performance_mean$Reversal=="reversal",]$`mean(Trial)`)~performance_mean[performance_mean$Reversal=="reversal",]$Phi_mean)
+
+
+performance_mean_lambda<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(id, Lambda_mean, Reversal) %>% summarize(mean(Trial)))
+
+boxplot((performance_mean_lambda[performance_mean_lambda$Reversal=="initial",]$`mean(Trial)`)~performance_mean_lambda[performance_mean_lambda$Reversal=="initial",]$Lambda_mean)
+
+boxplot((performance_mean_lambda[performance_mean_lambda$Reversal=="reversal",]$`mean(Trial)`)~performance_mean_lambda[performance_mean_lambda$Reversal=="reversal",]$Lambda_mean)
+
+
+
+################################################################################################
+# Can we estimate the phi lambda values back from the simulated data
+################################################################################################
+
+# We start with a single site, and estimate values for each individual
+
+# Randomly pick one site from the 32 simulated sites  
+site<-sample(unique(simulatedreversaldata_attractionscores$Site),1)
+
+# Pick the individuals and their trials from that one site
+singlesitetest<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Site==site ,]
+
+# Renumber the site id so that it is 1 (necessary so that the STAN model knows to work on these data)
+singlesitetest$id<-singlesitetest$id-((site-1)*20)
+
+# Change the Choice into whether they picked option 1 or 2
+singlesitetest$Choice<-as.integer(as.factor(singlesitetest$Choice))
+
+# If you want to run the estimation only on the reversal trials, use the following, and then in the setting up of the data for the model choose "singlesitetest_reversal" instead of "singlesitetest"
+singlesitetest_reversal<-singlesitetest[singlesitetest$Reversal=="reversal",]
+
+# Set up the data for the STAN model
+dat_singlesite <- as.list(singlesitetest)
+dat_singlesite$N <- nrow(singlesitetest)
+dat_singlesite$N_id <- length(unique(singlesitetest$id))
+
+# Define the STAN model. In this model, the initial attraction is set to 0.1 for both options and individuals only update their attraction for the option they chose.
+
+reinforcement_model_nonzeroattraction <- "
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+parameters{
+
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+model{
+matrix[N_id,2] A; // attraction matrix
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
+# Now we run the STAN model on the data from this one site
+m_singlesite <- stan( model_code =  reinforcement_model_nonzeroattraction, data=dat_singlesite ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+# We extract samples from the posterior of the STANmodel
+posterior_singlesite<-extract.samples(m_singlesite)
+
+# We calculate what lambda and phi values the STAN model estimated for each individual from this one site
+lambda_singlesite <- sapply(1 : dat_singlesite$N_id, function(x) exp( mean(posterior_singlesite$log_L) + mean(posterior_singlesite$v_ID[ ,x, 1])))
+phi_singlesite <- sapply(1 : dat_singlesite$N_id, function(x) inv_logit( mean(posterior_singlesite$logit_phi) + mean(posterior_singlesite$v_ID[ ,x, 2])))
+
+
+# We set up a quick projection function to see how well the estimated STAN values can recover the  performance of the birds at this one simulated site
+Projection_fct <- function(Tmax = 100,  N_id = 20){    
+  #Create output object
+  d_Overall <- c()
+  #Loop over birds
+  for (ind in 1:N_id) {
+    #Set initial attractions to 0
+    A <- c(0.1,0.1)
+    #Create output matrix to record choices and payoffs
+    d <- data.frame(id=ind, trial = 1:Tmax, Choice=NA, Payoff=NA, Experiment = NA)
+    d$Experiment[1:50] <- 0
+    d$Experiment[51:100] <- 1
+    # Start simulation loop
+    for (i in 1:Tmax) {
+      Prob <- c()
+      for (xx in 1:2) {
+        Prob[xx] <- exp(lambda_singlesite[ind]*A[xx]) / sum(exp(lambda_singlesite[ind]*A))
+      }
+      #Make choice proportional to attraction scores
+      d$Choice[which(d$id==ind & d$trial==i)] <- sample(c(1:2), size = 1, prob = Prob)
+      pay <- c(0,0)
+      if (d$Experiment[i] == 0){
+        if (d$Choice[i] == 1){
+          d$Payoff[i] <- 1
+          pay[1] <- 1
+        } else {
+          d$Payoff[i] <- 0
+        } 
+      } else {
+        if (d$Choice[i] == 1){
+          d$Payoff[i] <- 0
+        } else {
+          d$Payoff[i] <- 1
+          pay[2] <- 1
+        } 
+      }
+      #Update Attractions
+      for (xx in 1:2) {
+        A[xx] <- (1-phi_singlesite[ind]) * A[xx] + phi_singlesite[ind] * pay[xx]
+      }
+    }#time i
+    d_Overall <- rbind(d_Overall, d)
+  }#ind
+  return(d_Overall)
+}
+
+# We run this projection to get the expected performance of the birds based on the STAN estimates
+dat_sim <- Projection_fct() 
+
+# We now plot the learning curves for this birds at this one simulated site and the projected learning curves based on the STAN estimates
+
+#Compute mean correct and SE of choices for simulated and projected data
+Prop_correct_sim<- c()
+se <- function(x) sd(x)/sqrt(length(x))
+Prop_correct_sim  <- sapply(1:100, function (x) mean(dat$Payoff[dat$trial==x]) )
+Prop_correct_sim_SE <- sapply(1:100, function (x) se(dat$Payoff[dat$trial==x]) )
+
+Prop_correct_initial<- c()
+Prop_correct_initial  <- sapply(1:100, function (x) mean(singlesitetest$Correct[singlesitetest$Trial==x & singlesitetest$Reversal == "initial"]) )
+Prop_correct_initial_SE <- sapply(1:100, function (x) se(singlesitetest$Correct[singlesitetest$Trial==x & singlesitetest$Reversal == "initial"]) )
+
+Prop_correct_reversal<- c()
+Prop_correct_reversal  <- sapply(1:100, function (x) mean(singlesitetest$Correct[singlesitetest$Trial==x & singlesitetest$Reversal == "reversal"]) )
+Prop_correct_reversal_SE <- sapply(1:100, function (x) se(singlesitetest$Correct[singlesitetest$Trial==x & singlesitetest$Reversal == "reversal"]) )
+
+
+op<-par()
+par(mfrow=c(2,1),
+    oma=c(1.1,2.5,0,0),
+    mar=c(2.5,2.4,1.5,0.1))
+
+plot(c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50]), type="n", lwd=2, lty=1, ylim=c(0,1), ylab="",xlab="", main = "simulated site 40")
+arrows(1:100,c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50])-c(Prop_correct_initial_SE[1:50], Prop_correct_reversal_SE[1:50]),1:100,c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50])+c(Prop_correct_initial_SE[1:50], Prop_correct_reversal_SE[1:50]),col="darkgray", code=3, lwd=1, length=0.01, angle = 90)
+lines(c(Prop_correct_initial[1:50], Prop_correct_reversal[1:50]), lwd=2)
+abline(v = 51, lty =2)
+
+plot(Prop_correct_sim, type="n", lwd=2, lty=1, ylim=c(0,1), ylab="",xlab="", main = "Simulated Data")
+arrows(1:100,Prop_correct_sim-Prop_correct_sim_SE,1:100,Prop_correct_sim+Prop_correct_sim_SE, code=3, lwd=1,col="darkgray", length=0.01, angle = 90)
+lines(Prop_correct_sim, lwd=2)
+abline(v = 51, lty =2)
+mtext(side = 1, "Trial", line = 0, outer = TRUE, cex = 1.2)
+mtext(side = 2, "Proportion Correct", line = 0.5, outer = TRUE, cex = 1.2)
+
+par(op)
+
+########################################################################################
+
+
+# Now we run a STAN model with all simulated sites, estimating both means of phi and lambda for each site as well as each individuals' phi and lambda
+
+# We set up the data for the model
+dat_full <- as.list(simulatedreversaldata_attractionscores)
+dat_full$N <- nrow(simulatedreversaldata_attractionscores)
+dat_full$N_id <- length(unique(simulatedreversaldata_attractionscores$id))
+dat_full$N_exp <- length(unique(simulatedreversaldata_attractionscores$Site))
+dat_full$Choice <- as.numeric(as.factor(dat_full$Choice))
+
+# This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose.
+
+reinforcement_model_id_site_nonzeroattraction <- "
+data{
+   int N;
+   int N_id;
+   int N_exp;
+   int id[N];
+   int Site[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+parameters{
+
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+
+  // Varying effects clustered on experimenter
+  matrix[2,N_exp] z_EXP;
+  vector<lower=0>[2] sigma_EXP;
+  cholesky_factor_corr[2] Rho_EXP;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on individuals
+matrix[N_exp,2] v_EXP; // varying effects on experimenter
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+to_vector(z_EXP) ~ normal(0,1);
+sigma_EXP ~ exponential(1);
+Rho_EXP ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+L =  exp(log_L + v_ID[id[i],1]+ v_EXP[Site[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+phi =  inv_logit(logit_phi + v_ID[id[i],2]+ v_EXP[Site[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+}//i
+}
+"
+
+# Now we run the STAN model on the full data. This will take a few hours.
+m_simulated_full <- stan( model_code =  reinforcement_model_id_site_nonzeroattraction, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+# We extract the posterior from the STAN model
+s <- extract.samples(m_simulated_full)
+
+# We calculate the mean phi and lambda for each site as estimated by the STAN model
+lambda <- sapply(1 : dat_full$N_exp, function(x) exp( mean(s$log_L) + mean(s$v_EXP[ ,x, 1])))
+phi <- sapply(1 : dat_full$N_exp, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_EXP[ ,x, 2])))
+
+# We calculate the original mean phi and lambda values for each site. Because we randomly generated 20 individuals per site, these original values will be slightly different than the means we set as starting values for the simulations
+originallambda<-as.vector(as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(ThisBirdsLambda)))[,2])
+originalphi<-(as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(ThisBirdsPhi)))[,2])
+
+
+# We want to know whether the STAN model estimated two sites to be different or not. As criterion for this, we check whether the samples in the posterior for pairs of site overlap or not. That means that, when calculating the difference between the samples in the posterior for a pair of site, they are assumed to be different if the differences are all on one side of zero.
+
+# We first check our power to estimate difference in mean phi between sites
+# We calculate the pairwise differences between sites for the estimated phi means
+pairwisedifferences_phiposteriors<-list(sapply(1 : (dat_full$N_exp * (dat_full$N_exp-1)/2), function(x) (s$v_EXP[ ,combn(1:dat_full$N_exp,m=2)[1,x], 2]-(s$v_EXP[ ,combn(1:dat_full$N_exp,m=2)[2,x], 2]))))
+
+# We convert it into a dataframe for easier manipulation
+estimates_pairwisedifferences_phiposteriors<-as.data.frame(precis(pairwisedifferences_phiposteriors,depth=2))
+
+# We add a column that classifies as true or false whether the estimates crosses zero (as opposed to all values being either smaller or larger than zero)
+estimates_pairwisedifferences_phiposteriors$crosseszero<-ifelse(estimates_pairwisedifferences_phiposteriors$mean>0,estimates_pairwisedifferences_phiposteriors$`5.5%`<0,estimates_pairwisedifferences_phiposteriors$`94.5%`>0)
+
+# We go back and again calculate the original phi values for each site (the average across the random sample of 20 birds simulated at each site)
+eachsimulatedsitesobservedphi<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(ThisBirdsPhi)))
+colnames(eachsimulatedsitesobservedphi)<-c("Site","Site_ObservedPhi_mean")
+
+# We want to know all pairwise differences in the original means across the 32 sites
+observedphi_combinations_wide<-as.data.frame((combn(eachsimulatedsitesobservedphi$Site_ObservedPhi_mean,m=2)))
+
+# observedphi_combinations_wide is a long vector with two rows. To add it to the data frame we created before that has the difference in the estimated means from the STAN model, we need to transverse it into a format with two columns
+observedphi_combinations_long<-matrix(ncol=2,nrow=(dat_full$N_exp * (dat_full$N_exp-1)/2))
+observedphi_combinations_long<-as.data.frame(observedphi_combinations_long)
+observedphi_combinations_long[,1]<-as.numeric(observedphi_combinations_wide[1,])
+observedphi_combinations_long[,2]<-as.numeric(observedphi_combinations_wide[2,])
+colnames(observedphi_combinations_long)<-c("observedphi_firstsiteforcomparison","observedphi_secondsiteforcomparison")
+observedphi_combinations_long$observedsitedifference<-abs(observedphi_combinations_long$observedphi_firstsiteforcomparison-observedphi_combinations_long$observedphi_secondsiteforcomparison)
+
+# We can now add the column from observedphi_combinations_long that has the differences in the phi means in the original data to the dataframe that has the differences from the STAN estimations
+estimates_pairwisedifferences_phiposteriors$observedsitedifference<-observedphi_combinations_long$observedsitedifference
+
+# As a first check, we can see whether the cases where the STAN model estimates that the two sites are not different (difference crosses zero is TRUE) show smaller differences in the original phis of the two sites than those cases where the STAN model does estimate the difference to be clear.
+boxplot(estimates_pairwisedifferences_phiposteriors$simulatedsitedifference~estimates_pairwisedifferences_phiposteriors$crosseszero)
+
+
+# We now also want to add the information about how different two sites were supposed to be based on the input values of the phi means in the simulations. We assumed variation at each site, so when we randomly simulated 20 individuals the mean across their phis can be lower or higher than what we set as the input. We can see that in the following plot, where on the x-axis we have the differences between sites that were set in the inputs and on the y-axis the actual differences in the original phi means that we obtained in the simulations.
+plot(dat_phidifferences$differencedetected~combined_estimates_pairwisedifferences_phiposteriors$observedsitedifference)
+
+# We first obtain the input value for each site
+eachsimulatedsitessimulatedphi<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(Phi_mean)))
+colnames(eachsimulatedsitessimulatedphi)<-c("Site","Site_SimulatedPhi_mean")
+
+# We set up all pairwise comparisons between sites again
+simulatedphi_combinations_wide<-as.data.frame((combn(eachsimulatedsitessimulatedphi$Site_SimulatedPhi_mean,m=2)))
+
+# The simulatedphi_combinations_wide needs to again be transformed into a data frame with the comparisons in columns
+simulatedphi_combinations_long<-matrix(ncol=2,nrow=(dat_full$N_exp * (dat_full$N_exp-1)/2))
+simulatedphi_combinations_long<-as.data.frame(simulatedphi_combinations_long)
+simulatedphi_combinations_long[,1]<-as.numeric(simulatedphi_combinations_wide[1,])
+simulatedphi_combinations_long[,2]<-as.numeric(simulatedphi_combinations_wide[2,])
+colnames(simulatedphi_combinations_long)<-c("simulatedphi_firstsiteforcomparison","simulatedphi_secondsiteforcomparison")
+simulatedphi_combinations_long$simulatedsitedifference<-abs(simulatedphi_combinations_long$simulatedphi_firstsiteforcomparison-simulatedphi_combinations_long$simulatedphi_secondsiteforcomparison)
+
+# We add the column from simulatedphi_combinations_long that has the differences in the preset phi means for each simulated site to the dataframe that has the differences from the STAN estimations 
+estimates_pairwisedifferences_phiposteriors$simulatedsitedifference<-simulatedphi_combinations_long$simulatedsitedifference
+
+
+# We now have a dataframe with all the relevant information to determine our power to detect differences between sites when we have a sample of 20 individuals from each site. To estimate power, we run additional STAN models that estimate how the probability that a difference between a pair of sites crosses zero (meaning that we cannot tell the sites apart) depends on the difference in the phi means between those sites.
+
+# We set up the data for the STAN model. There are two predictors: first, the differences in the inputs for the simulations (converted to categories) and second the differences in the original phi means at each of the simulated sites (log converted because we assume that the probability to detect a difference will drop off exponentially rather than change linearly)
+dat_phidifferences <- list(differencedetected = as.integer(estimates_pairwisedifferences_phiposteriors$crosseszero),
+                           simulatedsitedifference = as.integer(as.factor( estimates_pairwisedifferences_phiposteriors$simulatedsitedifference)),
+                           observedsitedifference = standardize(estimates_pairwisedifferences_phiposteriors$observedsitedifference)
+) 
+dat_phidifferences$inv_observedsitedifference<-log(estimates_pairwisedifferences_phiposteriors$observedsitedifference)
+
+# We run the first model that estimates how the probability to detect a difference depends on differences in the input values for the simulated sites
+m_phidifferences <- ulam(
+  alist(
+    differencedetected~dbinom(1,p),
+    logit(p) <- b[simulatedsitedifference],
+    b[simulatedsitedifference]~dnorm(0,1.5)
+  ),data=dat_phidifferences, log_lik=TRUE, messages=FALSE,cmdstan=T)
+
+precis( m_phidifferences , depth=2 )
+
+# We can plot the estimated probabilities to detect a difference across the scale of differences in the input values. The input values were set up such that they can be apart by one of 9 differences
+plot(inv_logit(precis(m_phidifferences,depth=2)[,1])~c(0,0.0025,0.005,0.0075,0.01,0.015,0.02,0.025,0.03), lwd=2, lty=1, ylim=c(0,1),xlim=c(0,0.04), ylab=strwrap("Probability model estimates difference could be zero"),xlab="Difference of mean phis between pairs of sites", main = "Power to detect site differences with n=20 birds/site",frame.plot=F)
+arrows(x0=c(0,0.0025,0.005,0.0075,0.01,0.015,0.02,0.025,0.03),x1=c(0,0.0025,0.005,0.0075,0.01,0.015,0.02,0.025,0.03),y0=inv_logit(precis(m_phidifferences,depth=2)[,3]),y1=inv_logit(precis(m_phidifferences,depth=2)[,4])
+  ,col=col.alpha(rangi2,0.3), code=3, lwd=5, length=0.01, angle = 90)
+
+
+# Next, we run the second model that estimates how the probability to detect a difference depends on differences in the original mean values across the 20 random birds at each of the simulated sites
+m_phidifferences_inv <- ulam(
+  alist(
+    differencedetected~dbinom(1,p),
+    logit(p) <- a+b*inv_observedsitedifference,
+    b~dnorm(0,1.5),
+    a~dnorm(0,1.5)
+  ),data=dat_phidifferences, log_lik=TRUE, messages=FALSE,cmdstan=T)
+
+# To plot the change in probability across the continuous differences in the original mean values for the sites, we set up a dataframe that has the values with the differences in the original mean values and use the model to calculate the probability for each of these values
+sequence_mean_differences<-c(sort(unique(dat_phidifferences$inv_observedsitedifference)))
+sequence_mean_differences
+slopeestimate<-c()
+for (i in 1:length(sequence_mean_differences)) {
+  slopeestimate[i]<-inv_logit(precis( m_phidifferences_inv , depth=2 )[2,1]+precis( m_phidifferences_inv , depth=2 )[1,1]*sequence_mean_differences[i])
+}
+inv_sequence_mean_differences<-exp(sequence_mean_differences)
+plot(slopeestimate~inv_sequence_mean_differences, lwd=2, lty=1, ylim=c(0,1),xlim=c(0,0.04), ylab=strwrap("Probability model estimates difference could be zero"),xlab="Difference of mean phis between pairs of sites", main = "Power to detect site differences with n=20 birds/site",frame.plot=F)
+mu <- link( m_phidifferences_inv , data=data.frame( inv_observedsitedifference=sequence_mean_differences ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( inv_sequence_mean_differences , mu_mean , lwd=2 )
+shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
+
+#####################################################################################################
+
+# We next check our power to estimate difference in mean lambda between sites
+# We calculate the pairwise differences between sites for the estimated lambda means
+pairwisedifferences_lambdaposteriors<-list(sapply(1 : (dat_full$N_exp * (dat_full$N_exp-1)/2), function(x) (s$v_EXP[ ,combn(1:dat_full$N_exp,m=2)[1,x], 1]-(s$v_EXP[ ,combn(1:dat_full$N_exp,m=2)[2,x], 1]))))
+
+# We convert it into a dataframe for easier manipulation
+estimates_pairwisedifferences_lambdaposteriors<-as.data.frame(precis(pairwisedifferences_lambdaposteriors,depth=2))
+
+# We add a column that classifies as true or false whether the estimates crosses zero (as opposed to all values being either smaller or larger than zero)
+estimates_pairwisedifferences_lambdaposteriors$crosseszero<-ifelse(estimates_pairwisedifferences_lambdaposteriors$mean>0,estimates_pairwisedifferences_lambdaposteriors$`5.5%`<0,estimates_pairwisedifferences_lambdaposteriors$`94.5%`>0)
+
+# We go back and again calculate the original phi values for each site (the average across the random sample of 20 birds simulated at each site)
+eachsimulatedsitesobservedlambda<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(ThisBirdsLambda)))
+colnames(eachsimulatedsitesobservedlambda)<-c("Site","Site_ObservedLambda_mean")
+
+# We want to know all pairwise differences in the original means across the 32 sites
+observedlambda_combinations_wide<-as.data.frame((combn(eachsimulatedsitesobservedlambda$Site_ObservedLambda_mean,m=2)))
+
+# observedphi_combinations_wide is a long vector with two rows. To add it to the data frame we created before that has the difference in the estimated means from the STAN model, we need to transverse it into a format with two columns
+observedlambda_combinations_long<-matrix(ncol=2,nrow=(dat_full$N_exp * (dat_full$N_exp-1)/2))
+observedlambda_combinations_long<-as.data.frame(observedlambda_combinations_long)
+observedlambda_combinations_long[,1]<-as.numeric(observedlambda_combinations_wide[1,])
+observedlambda_combinations_long[,2]<-as.numeric(observedlambda_combinations_wide[2,])
+colnames(observedlambda_combinations_long)<-c("observedlambda_firstsiteforcomparison","observedlambda_secondsiteforcomparison")
+observedlambda_combinations_long$observedsitedifference<-abs(observedlambda_combinations_long$observedlambda_firstsiteforcomparison-observedlambda_combinations_long$observedlambda_secondsiteforcomparison)
+
+# We can now add the column from observedlambda_combinations_long that has the differences in the phi means in the original data to the dataframe that has the differences from the STAN estimations
+estimates_pairwisedifferences_lambdaposteriors$observedsitedifference<-observedlambda_combinations_long$observedsitedifference
+
+# As a first check, we can see whether the cases where the STAN model estimates that the two sites are not different (difference crosses zero is TRUE) show smaller differences in the original phis of the two sites than those cases where the STAN model does estimate the difference to be clear.
+boxplot(estimates_pairwisedifferences_lambdaposteriors$observedsitedifference~estimates_pairwisedifferences_lambdaposteriors$crosseszero)
+
+
+# We now also want to add the information about how different two sites were supposed to be based on the input values of the phi means in the simulations. We assumed variation at each site, so when we randomly simulated 20 individuals the mean across their phis can be lower or higher than what we set as the input. We can see that in the following plot, where on the x-axis we have the differences between sites that were set in the inputs and on the y-axis the actual differences in the original phi means that we obtained in the simulations.
+plot(dat_lambdadifferences$differencedetected~combined_estimates_pairwisedifferences_lambdaposteriors$observedsitedifference)
+
+# We first obtain the input value for each site
+eachsimulatedsitessimulatedlambda<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(Lambda_mean)))
+colnames(eachsimulatedsitessimulatedlambda)<-c("Site","Site_SimulatedLambda_mean")
+
+# We set up all pairwise comparisons between sites again
+simulatedlambda_combinations_wide<-as.data.frame((combn(eachsimulatedsitessimulatedlambda$Site_SimulatedLambda_mean,m=2)))
+
+# The simulatedphi_combinations_wide needs to again be transformed into a data frame with the comparisons in columns
+simulatedlambda_combinations_long<-matrix(ncol=2,nrow=(dat_full$N_exp * (dat_full$N_exp-1)/2))
+simulatedlambda_combinations_long<-as.data.frame(simulatedlambda_combinations_long)
+simulatedlambda_combinations_long[,1]<-as.numeric(simulatedlambda_combinations_wide[1,])
+simulatedlambda_combinations_long[,2]<-as.numeric(simulatedlambda_combinations_wide[2,])
+colnames(simulatedlambda_combinations_long)<-c("simulatedlambda_firstsiteforcomparison","simulatedlambda_secondsiteforcomparison")
+simulatedlambda_combinations_long$simulatedsitedifference<-abs(simulatedlambda_combinations_long$simulatedlambda_firstsiteforcomparison-simulatedlambda_combinations_long$simulatedlambda_secondsiteforcomparison)
+
+# We add the column from simulatedlambda_combinations_long that has the differences in the preset phi means for each simulated site to the dataframe that has the differences from the STAN estimations 
+estimates_pairwisedifferences_lambdaposteriors$simulatedsitedifference<-simulatedlambda_combinations_long$simulatedsitedifference
+
+
+
+
+# We now have a dataframe with all the relevant information to determine our power to detect differences between sites when we have a sample of 20 individuals from each site. To estimate power, we run additional STAN models that estimate how the probability that a difference between a pair of sites crosses zero (meaning that we cannot tell the sites apart) depends on the difference in the phi means between those sites.
+
+# We set up the data for the STAN model. There are two predictors: first, the differences in the inputs for the simulations (converted to categories) and second the differences in the original phi means at each of the simulated sites (log converted because we assume that the probability to detect a difference will drop off exponentially rather than change linearly)
+dat_lambdadifferences <- list(differencedetected = as.integer(estimates_pairwisedifferences_lambdaposteriors$crosseszero),
+                           simulatedsitedifference = as.integer(as.factor( estimates_pairwisedifferences_lambdaposteriors$simulatedsitedifference)),
+                           observedsitedifference = standardize(estimates_pairwisedifferences_lambdaposteriors$observedsitedifference)
+) 
+dat_lambdadifferences$inv_observedsitedifference<-log(estimates_pairwisedifferences_lambdaposteriors$observedsitedifference)
+
+# We run the first model that estimates how the probability to detect a difference depends on differences in the input values for the simulated sites
+m_lambdadifferences <- ulam(
+  alist(
+    differencedetected~dbinom(1,p),
+    logit(p) <- b[simulatedsitedifference],
+    b[simulatedsitedifference]~dnorm(0,1.5)
+  ),data=dat_lambdadifferences, log_lik=TRUE, messages=FALSE,cmdstan=T)
+
+precis( m_lambdadifferences , depth=2 )
+
+# We can plot the estimated probabilities to detect a difference across the scale of differences in the input values. The input values were set up such that they can be apart by one of 9 differences
+plot(inv_logit(precis(m_lambdadifferences,depth=2)[,1])~c(0,1,2,3,5,6), lwd=2, lty=1, ylim=c(0,1),xlim=c(0,7), ylab=strwrap("Probability model estimates difference could be zero"),xlab="Difference of mean lambdas between pairs of sites", main = "Power to detect site differences with n=20 birds/site",frame.plot=F)
+arrows(x0=c(0,1,2,3,5,6),x1=c(0,1,2,3,5,6),y0=inv_logit(precis(m_lambdadifferences,depth=2)[,3]),y1=inv_logit(precis(m_lambdadifferences,depth=2)[,4])
+  ,col=col.alpha(rangi2,0.3), code=3, lwd=5, length=0.01, angle = 90)
+
+# Next, we run the second model that estimates how the probability to detect a difference depends on differences in the original mean values across the 20 random birds at each of the simulated sites
+m_lambdadifferences_inv <- ulam(
+  alist(
+    differencedetected~dbinom(1,p),
+    logit(p) <- a+b*inv_observedsitedifference,
+    b~dnorm(0,1.5),
+    a~dnorm(0,1.5)
+  ),data=dat_lambdadifferences, log_lik=TRUE, messages=FALSE,cmdstan=T)
+
+# To plot the change in probability across the continuous differences in the original mean values for the sites, we set up a dataframe that has the values with the differences in the original mean values and use the model to calculate the probability for each of these values
+sequence_mean_differences<-c(sort(unique(dat_lambdadifferences$inv_observedsitedifference)))
+sequence_mean_differences
+slopeestimate<-c()
+for (i in 1:length(sequence_mean_differences)) {
+  slopeestimate[i]<-inv_logit(precis( m_lambdadifferences_inv , depth=2 )[2,1]+precis( m_lambdadifferences_inv , depth=2 )[1,1]*sequence_mean_differences[i])
+}
+inv_sequence_mean_differences<-exp(sequence_mean_differences)
+plot(slopeestimate~inv_sequence_mean_differences , lwd=2, lty=1, ylim=c(0,1),xlim=c(0,7), ylab=strwrap("Probability model estimates difference could be zero"),xlab="Difference of mean lambdas between pairs of sites", main = "Power to detect site differences with n=20 birds/site",frame.plot=F)
+mu <- link( m_lambdadifferences_inv , data=data.frame( inv_observedsitedifference=sequence_mean_differences ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( inv_sequence_mean_differences , mu_mean , lwd=2 )
+shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
+
+
+
+# Plot all four outcomes together in a single figure
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,3,2.9))
+mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj=0.5,at=4,cex=1.5)
+plot(inv_logit(precis(m_phidifferences,depth=2)[,1])~c(0,0.0025,0.005,0.0075,0.01,0.015,0.02,0.025,0.03), lwd=2, lty=1, ylim=c(0,1),xlim=c(0,0.035),ylab="",xlab="Difference of mean phis between pairs of sites",frame.plot=F)
+arrows(x0=c(0,0.0025,0.005,0.0075,0.01,0.015,0.02,0.025,0.03),x1=c(0,0.0025,0.005,0.0075,0.01,0.015,0.02,0.025,0.03),y0=inv_logit(precis(m_phidifferences,depth=2)[,3]),y1=inv_logit(precis(m_phidifferences,depth=2)[,4])
+       ,col=col.alpha(rangi2,0.3), code=3, lwd=5, length=0.01, angle = 90)
+
+mtext("Probability model estimates difference could be zero",side=2, line=3,adj=0.5,at=-0.5,cex=1.2)
+sequence_mean_differences<-c(sort(unique(dat_phidifferences$inv_observedsitedifference)))
+sequence_mean_differences
+slopeestimate<-c()
+for (i in 1:length(sequence_mean_differences)) {
+  slopeestimate[i]<-inv_logit(precis( m_phidifferences_inv , depth=2 )[2,1]+precis( m_phidifferences_inv , depth=2 )[1,1]*sequence_mean_differences[i])
+}
+inv_sequence_mean_differences<-exp(sequence_mean_differences)
+plot(slopeestimate~inv_sequence_mean_differences, lwd=2, lty=1, ylim=c(0,1),xlim=c(0,0.035),ylab="",xlab="Difference of mean phis between pairs of sites", frame.plot=F)
+mu <- link( m_phidifferences_inv , data=data.frame( inv_observedsitedifference=sequence_mean_differences ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( inv_sequence_mean_differences , mu_mean , lwd=2 )
+shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
+
+mtext("Probability model estimates difference could be zero",side=2, line=3,adj=0.5,at=-0.5,cex=1.2)
+plot(inv_logit(precis(m_lambdadifferences,depth=2)[,1])~c(0,1,2,3,5,6), lwd=2, lty=1, ylim=c(0,1),xlim=c(0,7),ylab="", xlab="Difference of mean lambdas between pairs of sites", frame.plot=F)
+arrows(x0=c(0,1,2,3,5,6),x1=c(0,1,2,3,5,6),y0=inv_logit(precis(m_lambdadifferences,depth=2)[,3]),y1=inv_logit(precis(m_lambdadifferences,depth=2)[,4])
+       ,col=col.alpha(rangi2,0.3), code=3, lwd=5, length=0.01, angle = 90)
+
+sequence_mean_differences<-c(sort(unique(dat_lambdadifferences$inv_observedsitedifference)))
+sequence_mean_differences
+slopeestimate<-c()
+for (i in 1:length(sequence_mean_differences)) {
+  slopeestimate[i]<-inv_logit(precis( m_lambdadifferences_inv , depth=2 )[2,1]+precis( m_lambdadifferences_inv , depth=2 )[1,1]*sequence_mean_differences[i])
+}
+inv_sequence_mean_differences<-exp(sequence_mean_differences)
+plot(slopeestimate~inv_sequence_mean_differences , lwd=2, lty=1, ylim=c(0,1),xlim=c(0,7),ylab="", xlab="Difference of mean lambdas between pairs of sites",frame.plot=F)
+mu <- link( m_lambdadifferences_inv , data=data.frame( inv_observedsitedifference=sequence_mean_differences ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( inv_sequence_mean_differences , mu_mean , lwd=2 )
+shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
+par(op)
+mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj=0.5,at=3.5,cex=1.5)
+
+
+
+
+
+
+```
+
+
+
+
 
 
 
