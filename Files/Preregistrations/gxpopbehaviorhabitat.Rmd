@@ -1570,6 +1570,183 @@ lines( inv_sequence_mean_differences , mu_mean , lwd=2 )
 shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
 par(op)
 mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj=0.5,at=3.5,cex=1.5)
+
+
+
+#############################################################################################
+# We have an addition simulation for a more direct assessment of how sample size influences our ability to tell whether two populations have different mean phi values. Here, we do not generate the whole performance in the learning and reversal trials, but assume that we have estimated a phi for each individual in each population. Values from a single population are specified by a mean and variation. To represent values within populations, we thought that the distribution of phi values among individuals within a population most likely represents that of the gamma distribution: values have to be larger than zero, and only few individuals are expected to have very large values.
+
+### SIMULATION: Manipulate mu sd of phi across a set of 7 populations
+# We generate 7 simulated populations of 10000 individuals with the respective means spanning the same range that we used in the previous simulations (as informed by the Santa Barbara data) 
+
+d1<-rgamma(10000,shape=2,rate=200) #mean phi: 0.01
+d2<-rgamma(10000,shape=4,rate=200) #mean phi: 0.02
+d3<-rgamma(10000,shape=6.8,rate=200) #mean phi: 0.034
+d4<-rgamma(10000,shape=7,rate=200) #mean phi: 0.035
+d5<-rgamma(10000,shape=7.5,rate=200) #mean phi: 0.038
+d6<-rgamma(10000,shape=10,rate=200) #mean phi: 0.05
+d7<-rgamma(10000,shape=12,rate=200) #mean phi: 0.06
+
+# We now set our range of likely sample sizes, from a minimum of 9 individuals per population to a maximum of 24 individuals per population. We draw repeated samples of individuals of that size from each of the 7 populations, during each repetition we draw two samples from each population (so we can infer the false negative rate of wrongly estimating that two samples come from a different population even though they were taken from the sampe population). This means we have 14 populations, with 91 pairwise comparisons between, each repeated 10 times.
+samplesizes<-c(rep(9,910),rep(12,910),rep(15,910),rep(18,910),rep(21,910),rep(24,910))
+
+currentsamplesize<-NA
+
+# We have a vector with all the possible pairwise distances between the mean phis in the fourteen simulated populations (91 differences).
+currentmeandifference<-rep(c(0.01, 0.024, 0.025, 0.028, 0.04, 0.05, 0, 0.01,  0.024, 0.025, 0.028, 0.04, 0.05, 0.014, 0.015, 0.018, 0.03, 0.04, 0.01, 0, 0.014, 0.015, 0.018, 0.03, 0.04, 0.001, 0.004, 0.016, 0.026, 0.024, 0.014, 0, 0.001, 0.004, 0.016, 0.026, 0.003, 0.015, 0.025, 0.025, 0.015, 0.001, 0, 0.003, 0.015, 0.025, 0.012, 0.022, 0.028, 0.018, 0.004, 0.003, 0, 0.012, 0.022, 0.01, 0.04, 0.03, 0.016, 0.015, 0.012, 0, 0.01, 0.05, 0.04, 0.026, 0.025, 0.022, 0.01, 0, 0.01, 0.024, 0.025, 0.028, 0.04, 0.05, 0.014, 0.015, 0.018, 0.03, 0.04, 0.001, 0.004, 0.016, 0.026, 0.003, 0.015, 0.025, 0.012, 0.022, 0.01) ,60)
+currentoutcome<-NA
+counter<-1
+
+# We now run our simulations. There are six different sample sizes, and for each we perform 10 estimations for a total of 60 samples from 14 populations.
+for (samplesize in 1:60) {
+  
+        n <- samplesizes[counter] #number of grackles in total across all sites (~20/site; AZ=20)
+        sites <- matrix(nrow=n*7*2,ncol=2) #store data here
+        colnames(sites)<-c("phi","site")
+        
+        # We randomly draw the pre-specified number of individuals from the 10,000 individuals in each population
+        sample1_1<-sample(d1,n)
+        sample2_1<-sample(d2,n)
+        sample3_1<-sample(d3,n)
+        sample4_1<-sample(d4,n)
+        sample5_1<-sample(d5,n)
+        sample6_1<-sample(d6,n)
+        sample7_1<-sample(d7,n)
+        
+        sample1_2<-sample(d1,n)
+        sample2_2<-sample(d2,n)
+        sample3_2<-sample(d3,n)
+        sample4_2<-sample(d4,n)
+        sample5_2<-sample(d5,n)
+        sample6_2<-sample(d6,n)
+        sample7_2<-sample(d7,n)
+        
+        # We combine them into one long dataframe
+        allsamples<-c(sample1_1,sample2_1,sample3_1,sample4_1,sample5_1,sample6_1,sample7_1,sample1_2,sample2_2,sample3_2,sample4_2,sample5_2,sample6_2,sample7_2)
+        
+        # In the dataframe, we will have the phi, and an identifier for each population
+        sites[,1]<-allsamples
+        sites[,2]<-c(rep(1,n),rep(2,n),rep(3,n),rep(4,n),rep(5,n),rep(6,n),rep(7,n),rep(8,n),rep(9,n),rep(10,n),rep(11,n),rep(12,n),rep(13,n),rep(14,n))
+        
+        ### We now run a STAN model to see whether we estimate that these samples come from the same or from different populations
+        #This sets up the data sheet with the simulated data that the model will run on
+        dat <- list(phi = as.numeric(sites[,1]),
+                    site = as.integer(sites[,2])
+        ) 
+        
+        # Our model, which will estimate a different mean and variance of phi for each site
+        s1 <- ulam(
+          alist(
+            phi~dnorm(a[site],sigma[site]),
+            a[site] ~ dnorm(0,1),
+            sigma[site] ~ dunif(0,2)
+          ),data=dat, log_lik=TRUE, messages=FALSE,cmdstan=T)
+        
+        # Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi. For this, we calculate all pairwise differences in the posterior estimates of the sites.
+        for (sample in 1:13) {
+          for (comparison in (sample+1):14) {
+        
+        post1 <- extract.samples(s1) 
+        post1$diff <- post1$a[,sample] - post1$a[,comparison]
+        currentoutcome[counter]<-ifelse( precis(post1,depth=2)[29,1]<0 , currentoutcome[counter]<-precis(post1,depth=2)[29,4]<0, currentoutcome[counter]<-precis(post1,depth=2)[29,3]>0 )
+        
+        currentsamplesize[counter]<-samplesizes[i]
+        counter<-counter+1
+           }
+        }
+}
+
+# We now take the output from the estimation that says whether the model thought the phis are different or not, and link it to the sample size for that run and the difference we had set between the original populations
+combinedoutput<-matrix(ncol=3,nrow=91*60)
+combinedoutput[,1]<-as.integer(currentoutcome)
+combinedoutput[,2]<-currentmeandifference
+combinedoutput[,3]<-samplesizes
+combinedoutput<-as.data.frame(combinedoutput)
+colnames(combinedoutput)<-c("differencedetected","populationdifference","samplesize")
+combinedoutput<-arrange(combinedoutput,samplesize)
+falsenegative<-filter(combinedoutput,populationdifference>0)
+
+# We can look at how many times two sites were estimated to be different or not for the six different sample sizes
+table(combinedoutput[,c(1,3)])
+
+#To get a better estimate of how the probability that the model will estimate that there is a difference, we use these outputs in another STAN model. This model will, for each pairwise difference, calculate how the sample size influences whether a comparison was deemed different or not
+
+# We set up the data frame for the model
+falsenegative_data <- list(differencedetected = falsenegative$differencedetected,
+                           populationdifference = 1/(1100*(falsenegative$populationdifference)),
+                           samplesize = c(rep(1,840),rep(2,840),rep(3,840),rep(4,840),rep(5,840),rep(6,840))
+)
+
+
+# We run the STAN model - it is a binomial model that assumes that the probability to estimate a difference depends on an interaction between the sample size and the difference between the populations.
+output_5 <- ulam(
+  alist(
+    differencedetected~dbinom(1,p),
+    logit(p) <- a[samplesize]-b[samplesize]*populationdifference,
+    a[samplesize]~dnorm(a_bar,sigma_a),
+    a_bar~dnorm(0,1.5),
+    sigma_a~dexp(1),
+    b[samplesize]~dnorm(0,1.5)
+  ),data=falsenegative_data, log_lik=TRUE, messages=FALSE,cmdstan=T)
+
+# To plot the output of this STAN model, we sort the differences between the populations so that they align along the x-axis
+sequence_mean_differences<-c(sort(unique(falsenegative_data$populationdifference)))
+
+# We extract the posterior estimates from this STAN model.
+precis_output_5<-precis( output_5 , depth=2 )
+
+# Based on the posterior, we want to estimate the predicted performance at the sample size. We set up vectors to store these perdictions
+samplesize_9_predictions<-NA
+samplesize_12_predictions<-NA
+samplesize_15_predictions<-NA
+samplesize_18_predictions<-NA
+samplesize_21_predictions<-NA
+samplesize_24_predictions<-NA
+
+
+# There are 17 unique differences in the mean phis of the populations (e.g. the difference between a mean of 0.01 and 0.02 is the same as the difference between a mean of 0.025 and 0.035). For each of these, we generate the predictions for each sample size
+for (i in 1:17) {
+  samplesize_9_predictions[i]<-inv_logit(precis_output_5[1,1])-inv_logit(precis_output_5[9,1])*sequence_mean_differences[i]
+}
+for (i in 1:17) {
+  samplesize_12_predictions[i]<-inv_logit(precis_output_5[2,1])-inv_logit(precis_output_5[10,1])*sequence_mean_differences[i]
+}
+for (i in 1:17) {
+  samplesize_15_predictions[i]<-inv_logit(precis_output_5[3,1])-inv_logit(precis_output_5[11,1])*sequence_mean_differences[i]
+}
+for (i in 1:17) {
+  samplesize_18_predictions[i]<-inv_logit(precis_output_5[4,1])-inv_logit(precis_output_5[12,1])*sequence_mean_differences[i]
+}
+for (i in 1:17) {
+  samplesize_21_predictions[i]<-inv_logit(precis_output_5[5,1])-inv_logit(precis_output_5[13,1])*sequence_mean_differences[i]
+}
+for (i in 1:17) {
+  samplesize_24_predictions[i]<-inv_logit(precis_output_5[6,1])-inv_logit(precis_output_5[14,1])*sequence_mean_differences[i]
+}
+
+
+# We can now plot the predictions for the different sample sizes as separate lines
+sequence_mean_differences_toplot<-sort(unique(falsenegative$populationdifference),decreasing=T)
+sequence_mean_differences_toplot[17]<-0.001
+samplesize_9_predictions[17]<-0
+plot(lines(samplesize_9_predictions~sequence_mean_differences_toplot,col="black"),xlim=c(0,0.05),ylim=c(0.0,1.0),pch=1,ann=F,frame.plot=F,cex=1.5)
+lines(1-samplesize_9_predictions~sequence_mean_differences_toplot,col="grey75",lty=2,lwd=3)
+lines(1-samplesize_12_predictions~sequence_mean_differences_toplot,col="red",lty=1,lwd=5)
+lines(1-samplesize_15_predictions~sequence_mean_differences_toplot,col="blue",lwd=1.5,lty=3)
+lines(1-samplesize_18_predictions~sequence_mean_differences_toplot,pch=1,col="yellow",lty=1,lwd=3)
+lines(1-samplesize_21_predictions~sequence_mean_differences_toplot,pch=1,col="grey75",lty=2,lwd=3)
+lines(1-samplesize_24_predictions~sequence_mean_differences_toplot,pch=1,col="black",lty=3,lwd=3)
+
+legend(x="topright",legend=c(lty2="9",lty1="12",lty3="15",lty1="18",lty2="21",lty3="24"),lty=c(2,1,3,1,2,3),lwd=c(3,3,3,3,3,3),col=c("grey75","red","blue","yellow","grey75","black"),cex=1,bty="n")
+
+mtext("Sample size",side=3,line=-0.7,at=0.048)
+mtext("Power to detect site differences",side=3,line=1,at=0.025,cex=1.5)
+mtext("Difference of mean phis between sites",side=1,line=3)
+mtext("Probability model estimates difference could be zero",side=2,line=3)
+
+
+
+
 ```
 
 <img width="100%" src="gxpopbehaviorhabitat_Figure_Power_PhiLambda.png">
