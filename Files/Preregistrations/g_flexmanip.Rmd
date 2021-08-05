@@ -187,15 +187,158 @@ knitr::kable(d) %>%
 kable_styling(full_width = T, position = "left")
 ```
 
+Because the wooden multiaccess box was added after in principle acceptance, we conducted an unregistered analysis to determine whether the plastic and wooden multiaccess box results correlated with each other, which would indicate that these tests are interchangeable. We found that they did not correlate with each other on either variable measured: the average latency to attempt a new locus (switching; Pearson's r=0.74, 95% CI=-0.19-0.97, t=2.18, df=4, p=0.09) or the total number of loci solved (problem solving; Pearson's r=0.51, 95% CI=-0.09-0.84, t=1.86, df=10, p=0.09). Therefore, these two tests are not interchangeable and we analyzed them separately.
 
 ### P1: reversal speed gets faster with serial reversals
 
+There was a significant negative correlation between the number of trials to reverse (average=71 trials, sd=28) and the reversal number for those grackles in the flexibility manipulation condition (n=9, which included Memela who did not pass the manipulation condition; Figure B). When this model was compared with the null model, the null model had a higher Akaike weight, however it was not high enough to indicate the two models were different from each other (Table B). Therefore, we conclude that there was no correlation between the number of trials to reverse and reversal number. 
+
+**Unregistered analysis:** While there may not be a correlation when one examines all reversals, there is a difference between manipulated and control reversal speeds when comparing their last reversals (for the control birds, their last reversal is their first reversal): the Akaike weight of the full model was 0.94, which means including condition in the model explains the bulk of the variation in the number of trials to reverse in the last reversal (Table C). This analysis 19 grackles (8 manipulated condition - only those who actually passed the manipulation, 11 control condition) who had an overall average of 62 trials in their last reversal (sd=32).
+
+**Table B.** Does the number of trials to reverse decrease with increasing reversal number? No: the Akaike weight of null model was higher than that of the the full model, though not >0.89 which indicates that neither model is more reliable than the other.
+
+```{r p1table, eval=F, warning=F, results='asis', echo=T, include=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variables
+d$Batch <- as.factor(d$Batch)
+d$ID <- as.factor(d$ID)
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0), G2 = list(V = 1, nu = 0)))
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+#reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
+summary(serial)
+#Did fixed effects converge (<0.1)? Yes
+autocorr(serial$Sol) 
+#Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
+autocorr(serial$VCV)
+
+#AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000))
+
+library(kableExtra)
+knitr::kable(base)
+
+#UNREGISTERED ANALYSIS: compare control vs manipulated group reversal speeds using only last reversals
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0), G2 = list(V = 1, nu = 0)))
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+#reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
+summary(serial)
+#Did fixed effects converge (<0.1)? Yes
+autocorr(serial$Sol) 
+#Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
+autocorr(serial$VCV)
+```
+
+
+```{r p1fig, eval=T, warning=F, results='asis', echo=T, include=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#n, mean, sd
+#length(levels(d$ID)) #9
+#mean(d$TrialsToReverse) #71
+#sd(d$TrialsToReverse) #28
+
+#figure
+plot(d$TrialsToReverse ~ d$ReverseNumber)
+```
+
+**Figure C.** Individuals in the manipulated condition (who received serial reversals) did not decrease their reversal passing speeds with increasing reversal number (n=9 grackles in the manipulated condition).
+
+
+**Table C.** Do individuals in the manipulated condition pass their last reversal in fewer trials than control individuals? Yes: the Akaike weight of full model was >0.89, indicating that it is more reliable than the null model.
+
+```{r p1last, eval=T, warning=F, results='asis', echo=T, include=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+
+# Remove NAs
+d <- subset(d,!(is.na(d["TrialsLastReversal"])))
+
+# exclude the bird who didn't pass serial
+d <- d[!d$Bird=="Memela",]
+
+# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
+d$ReversalsToPass <- as.factor(d$ReversalsToPass)
+levels(d$ReversalsToPass)[c(1,2,3,4)] <- c("Control","Manipulated","Manipulated","Manipulated")
+
+#UNREGISTERED ANALYSIS: compare control vs manipulated group reversal speeds using only last reversals
+last <- glm(d$TrialsLastReversal~d$ReversalsToPass)
+#manipulated group has significantly fewer trials to reverse in last reversal, as expected due to the manipulation
+#summary(last)
+
+#AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+aw <- dredge(glm(d$TrialsLastReversal~d$ReversalsToPass))
+
+library(kableExtra)
+knitr::kable(aw)
+#the full model has an Akaike weight >0.9 so it is reliable. This means that condition explains differences in the number of trials to pass the last reversal, with the manipulated group being faster than the control group
+```
+
+```{r p1figlast, eval=T, warning=F, results='asis', echo=T, include=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+
+# Remove NAs
+d <- subset(d,!(is.na(d["TrialsLastReversal"])))
+
+# exclude the bird who didn't pass serial
+d <- d[!d$Bird=="Memela",]
+
+#n, mean, and sd
+#length(d$TrialsLastReversal) #19
+#mean(d$TrialsLastReversal) #62
+#sd(d$TrialsLastReversal) #32
+
+# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
+d$ReversalsToPass <- as.factor(d$ReversalsToPass)
+levels(d$ReversalsToPass)[c(1,2,3,4)] <- c("Control","Manipulated","Manipulated","Manipulated")
+
+#figure
+plot(d$TrialsLastReversal ~ d$ReversalsToPass)
+```
+
+**Figure D.** Individuals in the manipulated condition (who received serial reversals) passed their last reversal in fewer trials than individuals in the control condition (who only received 1 reversal). n=19 grackles: 8 in the manipulated condition, 11 in the control condition.
 
 ### P2: serial reversals improve rule switching & problem solving on the MAB
 
 #### Problem solving: number of loci solved on the multiaccess box (plastic) ~ trials to reverse
 
-Grackles that were faster to reverse a preference (in their last reversal) solved more loci on the plastic multiaccess box (Model 2, Table C; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p). The original model (Model 1, Table C) included aviary batch, however this ended up confounding the analysis because control and manipulated individuals, while randomly assigned to these conditions, ended up in particular batches as a result of their willingness to participate (Model 3, Table C). As such, grackles who did not participate in their condition in a given batch were replaced in the aviary batch. Therefore, we removed batch from the model. We additionally examined whether first reversal (rather than last reversal) or condition (control or manipulated) better explained the relationship between reversal performance and number of loci solved on the plastic multiaccess box: they did not. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, which indicates that the conditions did not differ from each other (Model 4, Table C). This suggests that it is some combination of the flexibility manipulation, which trains individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing, other previous experience that led to differences in performance on the multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. There was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on the multiaccess box (Model 5, Table C), which indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
+Grackles that were faster to reverse a preference (in their last reversal: average 62 trials, sd=34) solved more loci on the plastic multiaccess box (average=2 loci, sd=1.6; Figure E; Table C: Model 2; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p). The original model (Table C: Model 1) included aviary batch, however this ended up confounding the analysis because control and manipulated individuals, while randomly assigned to these conditions, ended up in particular batches as a result of their willingness to participate (Table C: Model 3). As such, grackles who did not participate in their condition in a given batch were replaced in the aviary batch. Therefore, we removed batch from the model. We additionally examined whether first reversal (rather than last reversal) or condition (control or manipulated) better explained the relationship between reversal performance and number of loci solved: they did not. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, which indicates that the conditions did not differ from each other (Table C: Model 4). There was also no correlation between the number of trials to reverse in the first reversal (average=75 trials, sd=31) and the number of loci solved on the multiaccess box (Table C: Model 5). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
 
 ```{r p2mabplastic, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -331,6 +474,9 @@ postmwobatch <- extract.samples(mwobatch)
 
 
 # MODEL 4: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
+#mean(d$TrialsFirstReversal) #74.7
+#sd(d$TrialsFirstReversal) #30.7
+
 # make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
 #d$ReversalsToPass <- as.factor(d$ReversalsToPass)
 #levels(d$ReversalsToPass)[c(1,2,3)] <- c("Control","Manipulated","Manipulated")
@@ -382,17 +528,25 @@ diffsmcondition <- postmcondition$a[,1] - postmcondition$a[,2]
 
 
 # VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left)
+
+# figure out xlim: -0.96 - 2.65
+#range(dat$trials)
+
+# dat$locisolved is on the outcome scale, but the model output is on the logit scale so transform dat$locisolved to a probability by dividing by 4 total loci
+dat$locisolvedp <- (dat$locisolved/4)
+
 # draw 50 lines from the prior
 trials_seq <- seq( from=-1.13 , to=2.9 , length.out=30 )
 
-plot(dat$locisolved ~ dat$trials , pch=16 , col=rangi2 ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Number of loci solved on multiaccess box (plastic)" ,
-    xlim=c(-1.2,3.1) )
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(dat$locisolvedp ~ dat$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Probability of solving a locus on the multiaccess box (plastic)" , xlim=c(-1.2,3.1), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mwobatch , data=data.frame( trials=trials_seq ) )
 mu_mean <- apply( mu , 2 , mean )
 mu_ci <- apply( mu , 2 , PI , prob=0.97 )
 lines( trials_seq , mu_mean , lwd=2 )
 shade( mu_ci , trials_seq , col=col.alpha(rangi2,0.3) )
+par(op)
 
 # contrasts between batches on the outcome scale (p.341 Rethinking). Value = difference in number of loci solved. This shows that the batches are actually not different from each other in how many loci they solved because all values cross zero
 labsdif1 <- c("m1: Batch 1-3","m1: Batch 1-4","m1: Batch 3-4")
@@ -403,9 +557,26 @@ plot( precis(diffsmcondition), xlim=c(-1.5,0.5), xlab="Difference in number of l
 par(op)
 ```
 
+![](g_flexmanip_figp2mabplastic.png){width=100%}
+**Figure E.** The probability of solving a locus on the plastic multiaccess box is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles, shading = 97% prediction interval). 
+
+**Table C.** Model outputs for the number of loci solved on the plastic (models 1-5) and wooden (models 6-8) multiaccess boxes. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved and number of trials to pass reversal.
+
+```{r p2outputs, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs.csv"), header=T, sep=",", stringsAsFactors=F)
+
+table <- data.frame(table)
+colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
+
+library(kableExtra)
+knitr::kable(table) %>%
+kable_styling(full_width = T, position = "left")
+```
+
+
 #### Problem solving: number of loci solved on the multiaccess box (wooden) ~ trials to reverse
 
-There was no correlation between the number of loci solved on the wooden multiaccess box and the number of trials to reverse a preference (in their last reversal; Model 6, Table C; n=11 grackles: 5 in manipulated condition, 6 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is not the most robust because, while the effect size of 0.44 is larger than what we determined would be the minimum cut off of -0.36, the sample size was only 11 (rather than 15) and the beta was -6 (rather than -5; Table 1p). Aviary batch was excluded because of what we learned in the previous section. Similar to the previous section, control and manipulated individuals did not differ in their multiaccess box performance, indicating that the conditions did not differ from each other (Model 7, Table C), and there was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on the multiaccess box (Model 8, Table C). 
+There was no correlation between the number of loci solved on the wooden multiaccess box (average=3.2, sd=1.3) and the number of trials to reverse a preference (in their last reversal: average=59 trials, sd=38; Figure F; Model 6, Table C; n=11 grackles: 5 in manipulated condition, 6 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is not the most robust because, while the effect size of 0.44 is larger than what we determined would be the minimum cut off of -0.36, the sample size was only 11 (rather than 15) and the beta was -6 (rather than -5; Table 1p). Aviary batch was excluded because of what we learned in the previous section. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, indicating the conditions did not differ from each other (Table C: Model 7, wooden), or between the number of trials to reverse in the first reversal (average=74 trials, sd=34) and the number of loci solved on the multiaccess box (Table C: Model 8, wooden). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
 
 ```{r p2mablog, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -413,42 +584,42 @@ library(rstan)
 library(formatR)
 
 # LOAD the data and column names
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+d2 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
-d <- data.frame(d)
-colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+d2 <- data.frame(d2)
+colnames(d2) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
 
 # Exclude Mole and Habanero from this analysis because they were given the put together plastic box during habituation (due to experimenter error)
-d <- d[!d$Bird=="Mole" & !d$Bird=="Habanero",]
+d2 <- d2[!d2$Bird=="Mole" & !d2$Bird=="Habanero",]
 
 # Remove NAs
-d <- subset(d,!(is.na(d["TotalLociSolvedMABwooden"])) & !(is.na(d["TrialsLastReversal"])))
+d2 <- subset(d2,!(is.na(d2["TotalLociSolvedMABwooden"])) & !(is.na(d2["TrialsLastReversal"])))
 
 # n=11: 5 in manipulated group, 6 in control group
-#length(d$TotalLociSolvedMABwooden)
+#length(d2$TotalLociSolvedMABwooden)
 
 # make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
-d$Batch <- as.factor(d$Batch)
-levels(d$Batch)[c(3)] <- c("3")
+d2$Batch <- as.factor(d2$Batch)
+levels(d2$Batch)[c(2)] <- c("3")
 
 # look at the data
-#hist(d$TotalLociSolvedMABwooden)
-#mean(d$TotalLociSolvedMABwooden) #3.2
-#sd(d$TotalLociSolvedMABwooden) #1.3
-#mean(d$TrialsLastReversal) #59.4
-#sd(d$TrialsLastReversal) #38.0
+#hist(d2$TotalLociSolvedMABwooden)
+#mean(d2$TotalLociSolvedMABwooden) #3.2
+#sd(d2$TotalLociSolvedMABwooden) #1.3
+#mean(d2$TrialsLastReversal) #59.4
+#sd(d2$TrialsLastReversal) #38.0
 
 #translating the actual data (rather than the simulated data) into effect sizes (see equation below in "translated the simulation output into effect sizes"): SDx / SDy = 1.3/38 actual data (note: simulated data were 1.5/21=0.7)
-#sd(d$TotalLociSolvedMABwooden)/sd(d$TrialsLastReversal) #=0.03
-#cor.test(d$TotalLociSolvedMABwooden,d$TrialsLastReversal,alternative=c("two.sided"),method = c("pearson"),conf.level = 0.95)
+#sd(d2$TotalLociSolvedMABwooden)/sd(d2$TrialsLastReversal) #=0.03
+#cor.test(d2$TotalLociSolvedMABwooden,d2$TrialsLastReversal,alternative=c("two.sided"),method = c("pearson"),conf.level = 0.95)
 #corr = r =0.20
 #solve equation for beta:
-#-0.20/(sd(d$TotalLociSolvedMABwooden)/sd(d$TrialsLastReversal)) #-6.08 = beta, which is larger than the estimated -5
+#-0.20/(sd(d2$TotalLociSolvedMABwooden)/sd(d2$TrialsLastReversal)) #-6.08 = beta, which is larger than the estimated -5
 
 # RUN MODELs on the actual data
-dat <- list(locisolved = d$TotalLociSolvedMABwooden,
-            trials = standardize(d$TrialsLastReversal),
-            batch = d$Batch
+datw <- list(locisolved = d2$TotalLociSolvedMABwooden,
+            trials = standardize(d2$TrialsLastReversal),
+            batch = d2$Batch
               )
 
 # MODEL 6: same as model 2 in previous section
@@ -457,7 +628,7 @@ m6 <- ulam( alist(
   logit(p) <- a + b*trials, #standardize trials so 0=mean
   a ~ dnorm(0,0.5) , 
   b ~ dnorm(0,2)
-) , data=dat , chains=4 , log_lik=TRUE )
+) , data=datw , chains=4 , log_lik=TRUE )
 
 precis(m6,depth=2)
 #   mean   sd  5.5% 94.5% n_eff Rhat4
@@ -484,13 +655,16 @@ postm6 <- extract.samples(m6)
 
 
 # MODEL 7: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
-# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
-d$ReversalsToPass <- as.factor(d$ReversalsToPass)
-levels(d$ReversalsToPass)[c(1,2,3)] <- c("Control","Manipulated","Manipulated")
+#mean(d2$TrialsFirstReversal) #73.6
+#sd(d2$TrialsFirstReversal) #34.1
 
-dat2 <- list(locisolved = d$TotalLociSolvedMABplastic,
-            trials = standardize(d$TrialsFirstReversal),
-            condition = d$ReversalsToPass
+# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
+d2$ReversalsToPass <- as.factor(d2$ReversalsToPass)
+levels(d2$ReversalsToPass)[c(1,2,3)] <- c("Control","Manipulated","Manipulated")
+
+dat2 <- list(locisolved = d2$TotalLociSolvedMABplastic,
+            trials = standardize(d2$TrialsFirstReversal),
+            condition = d2$ReversalsToPass
               )
 
 m7 <- ulam( alist(
@@ -515,9 +689,9 @@ precis( diffsm7 )
 
 
 # MODEL 8: see whether the flexibility manipulation actually had an effect on MAB performance by replacing trials to LAST reversal with trials to FIRST reversal
-dat3 <- list(locisolved = d$TotalLociSolvedMABplastic,
-            trials = standardize(d$TrialsFirstReversal),
-            batch = d$Batch
+dat3 <- list(locisolved = d2$TotalLociSolvedMABplastic,
+            trials = standardize(d2$TrialsFirstReversal),
+            batch = d2$Batch
               )
 
 m8 <- ulam( alist(
@@ -525,28 +699,40 @@ m8 <- ulam( alist(
   logit(p) <- a + b*trials , #standardize trials so 0=mean
   a ~ dnorm(0,0.5) , 
   b ~ dnorm(0,2)
-) , data=dat , chains=4 , log_lik=TRUE )
+) , data=dat3 , chains=4 , log_lik=TRUE )
 
 precis(m8,depth=2)
 #     mean   sd  5.5% 94.5% n_eff Rhat4
-#a 0.97 0.30  0.49  1.46  1223     1
-#b 0.41 0.45 -0.24  1.19  1034     1
+#a -0.01 0.26 -0.42  0.40  1258     1
+#b -0.50 0.37 -1.11  0.06  1379     1
 #b crosses zero so there is no correlation between number of loci solved and number of trials to reverse on the first reversal. This means that reversal in general doesn't correlate with MAB loci. You actually have to DO something to flexibility to make it matter for MAB loci
 
 
 # VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left)
-# draw 50 lines from the prior
-trials_seq <- seq( from=-0.96 , to=2.7 , length.out=30 )
+# figure out xlim: -0.96 - 2.65
+#range(datw$trials)
 
-plot(dat$locisolved ~ dat$trials , pch=16 , col=rangi2 ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Number of loci solved on multiaccess box (plastic)" ,
-    xlim=c(-1.2,4.1), ylim=c(-0.1,4.1) )
-mu <- link( m6 , data=data.frame( trials=trials_seq ) )
+# datw$locisolved is on the outcome scale, but the model output is on the logit scale so transform datw$locisolved to a probability by dividing by 4 total loci
+datw$locisolvedp <- (datw$locisolved/4)
+
+# draw 50 lines from the prior
+trialsw_seq <- seq( from=-0.96 , to=2.7 , length.out=30 )
+
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(datw$locisolvedp ~ datw$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Probability of solving a locus on the multiaccess box (wooden)" , xlim=c(-1.2,3.1), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( m6 , data=data.frame( trials=trialsw_seq ) )
 mu_mean <- apply( mu , 2 , mean )
 mu_ci <- apply( mu , 2 , PI , prob=0.97 )
-lines( trials_seq , mu_mean , lwd=2 )
-shade( mu_ci , trials_seq , col=col.alpha(rangi2,0.3) )
+lines( trialsw_seq , mu_mean , lwd=2 )
+shade( mu_ci , trialsw_seq , col=col.alpha(rangi2,0.3) )
+par(op)
 ```
+
+![](g_flexmanip_figp2mablog.png){width=100%}
+
+**Figure F.** The probability of solving a locus on the wooden multiaccess box is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles, shading = 97% prediction interval). 
+
 
 #### Rule switching: latency to attempt a new locus on the multiaccess box (plastic) ~ trials to reverse
 
@@ -555,10 +741,6 @@ shade( mu_ci , trials_seq , col=col.alpha(rangi2,0.3) )
 #### Rule switching: latency to attempt a new locus on the multiaccess box (wooden) ~ trials to reverse
 
 
-
-#### UNREGISTERED ANALYSIS
-
-Because the wooden multiaccess box was added after in principle acceptance, we added an analysis to determine whether the plastic and wooden multiaccess box results correlated with each other, which would indicate that these tests are interchangeable. We found that they did not correlate with each other on either variable measured: the average latency to attempt a new locus (switching; Pearson's r=0.74, 95% CI=-0.19-0.97, t=2.18, df=4, p=0.09) or the total number of loci solved (problem solving; Pearson's r=0.51, 95% CI=-0.09-0.84, t=1.86, df=10, p=0.09). Therefore, these two tests are not interchangeable and should be analyzed separately.
 
 
 ### P2 alternative 2 (additional analysis): latency and motor diversity
@@ -580,6 +762,9 @@ Because the wooden multiaccess box was added after in principle acceptance, we a
 
 ## DISCUSSION
 
+Serial reversals improved problem solving on the plastic multiaccess box, but not in a predicted way. We predicted (P2) that there would be differences in multiaccess box performance between individuals in the control and manipulated conditions in the reversal experiment, however this was not the case: there was no difference between the conditions. We had an alternative prediction (P2 alternative 1) for if the flexibility manipulation did not work, however the manipulation did work in that almost all individuals (8/9) in the manipulated condition met the passing criterion: they were faster at reversing preferences in their last reversals than control individuals were in their first reversals. This suggests that the flexibility manipulation trained individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing when they began the experiment, that other previous experience led to differences in their performance on the plastic multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. That there was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on either multiaccess box indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
+
+There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, which could be due to a small sample size and/or indicate that the two boxes differ in some way that affects their ability to solve it. The boxes did differ in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps it is because of these differences that the grackles solved more loci on the wooden box an average.
 
 
 
@@ -1247,45 +1432,55 @@ We do not need a power analysis to estimate our ability to detect actual effects
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
 d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
 
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variables
+d$Batch <- as.factor(d$Batch)
+d$ID <- as.factor(d$ID)
+
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
 simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
 #Looks randomly scattered
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
-#p=0.032, it is underdispersed according to the plot at https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html. Could be because there are many more reversal number 1 because these are the control birds. Also, Taco is the only one in Batch=Juv
+#p=0.00, it is underdispersed according to the plot at https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html.
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
 #p=1 so not zero inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-#p=0.2925 so it is not heteroscedastic
+#p=0.06 so it is not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 #There is a pattern in the right panel
 #January 2021: My interpretation of the statistically significant underdispersion in the data is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
 
 # GLMM
-#remove NAs from the variables that will be in the model
-d2 <- subset(d,!(is.na(d["TrialsToReverse"])))
-d2 <- subset(d,!(is.na(d["ReverseNumber"])))
-
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0), G2 = list(V = 1, nu = 0)))
 serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = d2, verbose = F, prior = prior, 
-	    nitt = 100000, thin = 100, burnin = 50000)
-summary(serial) #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
-autocorr(serial$Sol) #Did fixed effects converge? No
-autocorr(serial$VCV) #Did random effects converge? No
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+#reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
+summary(serial)
+#Did fixed effects converge (<0.1)? Yes
+autocorr(serial$Sol) 
+#Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
+autocorr(serial$VCV)
 
 #AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = seriald, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000))
+base <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000))
 library(knitr)
-kable(base1, caption="Table 2: Model selection output.")
+kable(base, caption="Table 2: Model selection output.")
 ```
 
 #### *P2: serial reversal improves rule switching and problem solving*
