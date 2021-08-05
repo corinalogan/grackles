@@ -359,9 +359,6 @@ We ran these analyses in R (current version `r getRversion()`; @rcoreteam) and u
 
 **Model and simulation**
 
-Expected values for reversal learning using color tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles (@logan2016behavioral). 
-
-
 >DELETE BELOW
 
 This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21 (n=7 grackles). The $\sigma$ prior is set to produce only positive values that encompass the range of values shown by the Santa Barbara grackles (reversing in 70-130 trials, 130 trials-91 mean is about 40 trials).
@@ -619,6 +616,8 @@ kable_styling(full_width = T, position = "left")
 
 To investigate the degree to which we can detect differences in the variances between sites, we ran another version of the **mathematical model** using a sample size of 15 per site and we held the mean number of trials to reverse a preference constant between all populations. We reduced the $\sigma$ standard deviation to 10 (from 40) to reduce the expectation of measurement error, which would overshadow any actual site differences attributable to variation in the standard deviation. We then changed the $\alpha$ standard deviations and performed pairwise site contrasts. We determined that it will be difficult to detect meaningful differences in variances in the number of trials to reverse a preference between sites (Table 3). 
 
+> MOVE TABLE 3 to "Innovation analysis" section and delete the trials to reverse data from this table
+
 **Table 3.** Simulation outputs from **varying the $\alpha$ standard deviations (the variance)**, while holding sample size (n) and site means ($\mu$) constant. We calculate pairwise contrasts between the estimated standard deviations from the posterior distribution: if for a large sample the difference is both positive and negative and crosses zero (yes), then we are not able to detect differences between the two sites. If the differences between the means are all on one side of zero for 89% of the posterior samples (no), then we are able to detect differences between the two sites. We chose the 89% interval based on [@statrethinkingbook]. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites.
 
 ```{r tablevariance, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
@@ -632,16 +631,16 @@ kable_styling(full_width = T, position = "left")
 ```
 
 
->REPLACE WITH BELOW
 
-**Population differences in phi and lambda**
+>REPLACE FLEXIBILITY ANALYSIS MODEL AND SIMULATIONS WITH BELOW
 
-```{r sim_power_philambda, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+We modified the reversal learning Bayesian model in @blaisdell2021causal to simulate and analyze population differences in reversal learning, and calculate our ability to detect differences between populations. As in @blaisdell2021causal, we, too, used previously published data on reversal learning of color tube preferences in great-tailed grackles [@logan2016behavioral] to inform the model. 
 
+
+```{r sim_power_philambda, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
 library(dplyr)
 library(rethinking)
-
 
 # We first reanalyze the Santa Barbara data to otbtain values for phi and lambda upon which to base our expectations of what the mean and variance might be at a site.
 # We load the Santa Barbara data from github
@@ -691,7 +690,6 @@ data{
 }
 
 parameters{
-
   real logit_phi;
   real log_L;
 
@@ -707,7 +705,6 @@ v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
 }
 
 model{
-
 matrix[N_id,2] A; // attraction matrix
 
 logit_phi ~  normal(0,1);
@@ -795,13 +792,10 @@ simulatedreversaldata<-as.data.frame(simulatedreversaldata)
 colnames(simulatedreversaldata)<-c("Bird_ID", "Session", "Trial", "Reversal","Choice", "CorrectChoice","Phi_mean","Lambda_mean","Site","Phi_sd","Lambda_sd","ThisBirdsPhi","ThisBirdsLambda","Attraction1","Attraction2")
 
 
-
 # There are two tubes, lightgrey and darkgrey
 # Initially, one of them is the rewarded option (here lightgrey) and the other is the unrewarded option (here darkgrey)
 # Rewarded option gives a payoff of 1, unrewarded option gives a payoff of 0
 # When a reversal occurs, the rewards are flipped (previous option with 1 now gets 0, previous option with 0 now gets 1)
-
-
 counter<-1
 bird_id<-1
 site_id<-1
@@ -819,7 +813,6 @@ for (mean_phi in 1:length(simulated_sitemean_phi)) {
     if(bird_phi<0){bird_phi<-0}
     bird_lambda<-rnorm(1,current_mean_lambda,current_sd_lambda)
     if(bird_lambda<0){bird_lambda<-0}
-    
     
     # All birds initially have only a small attraction for either option;
     # setting these values to zero means that there would be no attraction at all. In this case,  
@@ -897,19 +890,14 @@ for (mean_phi in 1:length(simulated_sitemean_phi)) {
         reversal<-"reversal"
       }
       }
-      
     #End of session loop  
     }
-    
-    bird_id <-bird_id+1    
+  bird_id <-bird_id+1    
   #End of bird loop
   }
-  
   site_id<-site_id+1
- 
   # End of mean lambda loop
 }
-
 #End of mean phi loop 
 }
 
@@ -923,7 +911,6 @@ hist(rem_simulatedreversaldata$Attraction2)
 
 # Boxplots of the 20 individual phi values per population to see whether populations with different mean phi values are different
 boxplot(rem_simulatedreversaldata$ThisBirdsPhi~rem_simulatedreversaldata$Phi_mean)
-
 
 # Save the output - use this code for the modified version with initial attraction scores at 0.1 and individuals only learning about the option they chose
 write.csv(rem_simulatedreversaldata,file="SimulatedReversalData_Grackles_PhiLambda_Attraction.csv")
@@ -995,9 +982,7 @@ Prop_correct_reversal_SE_phi_0.45 <- sapply(1:100, function (x) se(simulatedreve
 
 Prop_correct_reversal_phi_0.45<-1-Prop_correct_reversal_phi_0.45
 
-
 # We now plot the curves that show how the average performance changes with each trial. Initially birds are close to 100% choosing the previously rewarded option. We now want to see how quickly they change from that to never selecting this option. We plot the outcomes with the different values for phi in different colours
-
 plot(Prop_correct_reversal_phi_0.02[1:100],type="n" , lwd=2, lty=1, ylim=c(0,1), ylab="Proportion correct",xlab="Trial number", main = "Simulated Grackle Data")
 arrows(1:100,c(Prop_correct_reversal_phi_0.02[1:100])-c(Prop_correct_reversal_SE_phi_0.02[1:100]),1:100,c(Prop_correct_reversal_phi_0.02[1:100], Prop_correct_reversal_phi_0.02[1:100])+c(Prop_correct_reversal_SE_phi_0.02[1:100], Prop_correct_reversal_phi_0.02[1:100]),col="darkgray", code=3, lwd=1, length=0.01, angle = 90)
 
@@ -1007,7 +992,6 @@ arrows(1:100,c(Prop_correct_reversal_phi_0.035[1:100])-c(Prop_correct_reversal_S
 
 
 # Now we do the same for lambda
-
 Prop_correct_reversal_lambda_3  <- sapply(1:100, function (x) mean(cleanedsimulatedreversaldata$CorrectChoice[cleanedsimulatedreversaldata$Trial==x & cleanedsimulatedreversaldata$Reversal == "reversal" & cleanedsimulatedreversaldata$Lambda_mean ==3]) )
 Prop_correct_reversal_SE_lambda_3 <- sapply(1:100, function (x) se(cleanedsimulatedreversaldata$CorrectChoice[cleanedsimulatedreversaldata$Trial==x & cleanedsimulatedreversaldata$Reversal == "reversal" & cleanedsimulatedreversaldata$Lambda_mean ==3]) )
 
@@ -1082,8 +1066,8 @@ data{
    int Choice[N];
    int Correct[N];
 }
-parameters{
 
+parameters{
   real logit_phi;
   real log_L;
 
@@ -1226,7 +1210,6 @@ lines(Prop_correct_sim, lwd=2)
 abline(v = 51, lty =2)
 mtext(side = 1, "Trial", line = 0, outer = TRUE, cex = 1.2)
 mtext(side = 2, "Proportion Correct", line = 0.5, outer = TRUE, cex = 1.2)
-
 par(op)
 
 ########################################################################################
@@ -1254,8 +1237,8 @@ data{
    int Choice[N];
    int Correct[N];
 }
-parameters{
 
+parameters{
   real logit_phi;
   real log_L;
 
@@ -1495,8 +1478,6 @@ simulatedlambda_combinations_long$simulatedsitedifference<-abs(simulatedlambda_c
 estimates_pairwisedifferences_lambdaposteriors$simulatedsitedifference<-simulatedlambda_combinations_long$simulatedsitedifference
 
 
-
-
 # We now have a dataframe with all the relevant information to determine our power to detect differences between sites when we have a sample of 20 individuals from each site. To estimate power, we run additional STAN models that estimate how the probability that a difference between a pair of sites crosses zero (meaning that we cannot tell the sites apart) depends on the difference in the phi means between those sites.
 
 # We set up the data for the STAN model. There are two predictors: first, the differences in the inputs for the simulations (converted to categories) and second the differences in the original phi means at each of the simulated sites (log converted because we assume that the probability to detect a difference will drop off exponentially rather than change linearly)
@@ -1589,19 +1570,13 @@ lines( inv_sequence_mean_differences , mu_mean , lwd=2 )
 shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
 par(op)
 mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj=0.5,at=3.5,cex=1.5)
-
-
-
-
-
-
 ```
 
+<img width="100%" src="gxpopbehaviorhabitat_Figure_Power_PhiLambda.png">
 
+**Figure X.** How small of a site difference in phi and lambda can we detect? The probability that the model estimates that the difference shown on the x axis is zero, meaning that these two estimates come from a population with the same phi or lambda. Each point is the mean phi or mean lambda from one site minus the mean phi or mean lambda from another site (calculated from 20 individuals per site) for all pairwise comparisons for all 32 sites (for a total of 496 pairwise comparisons). Left panels: error bars=89% compatability intervals. Right panels: shaded areas=97% prediction intervals.
 
-
-
-
+> END OF ADDITION
 
 **Results (using our actual data)**
 
