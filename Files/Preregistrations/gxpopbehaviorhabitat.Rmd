@@ -1936,15 +1936,13 @@ We then ran the **mathematical model** and performed pairwise contrasts and dete
 
 Because the mean and the variance are linked in the binomial distribution, and because the variance simulations in the flexibility analysis showed that we will not be able to robustly detect differences in variance between sites, we will plot the variance in the number of loci solved between sites to determine whether the edge population has a wider or narrower spread than the other two populations.
 
-
-```{r figInnovationMinN, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r figInnovationMinN, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table3.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("ResponseVariable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","Difference crosses zero? S1-S2","Difference crosses zero? S1-S3","Difference crosses zero? S2-S3")
 
 simulateddata_locisolved<-d[d$ResponseVariable=="loci solved",]
 library(dplyr)
-
 
 colnames(simulateddata_locisolved) <- c("ResponseVariable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","CrossesZeroS1vsS2","CrossesZeroS1vsS3","CrossesZeroS2vsS3")
 
@@ -1963,7 +1961,6 @@ locisolved_forplotting[locisolved_forplotting$crosseszero==2,]$crosseszero<-0
 locisolved_forplotting$mu_difference<-locisolved_forplotting$mu_difference*(-1)
 plot(locisolved_forplotting[locisolved_forplotting$samplesize==45,] %>% group_by(mu_difference) %>% summarise(probabilitytodetectdifference=mean(crosseszero)),pch=1,cex=3,xlim=c(0,2.5))
 points(locisolved_forplotting[locisolved_forplotting$samplesize==60,] %>% group_by(mu_difference) %>% summarise(probabilitytodetectdifference=mean(crosseszero)),pch=19)
-
 ```
 
 **Results (using our actual data)**
