@@ -1669,7 +1669,7 @@ falsenegative<-filter(combinedoutput,populationdifference>0)
 # We can look at how many times two sites were estimated to be different or not for the six different sample sizes
 table(combinedoutput[,c(1,3)])
 
-#To get a better estimate of how the probability that the model will estimate that there is a difference, we use these outputs in another STAN model. This model will, for each pairwise difference, calculate how the sample size influences whether a comparison was deemed different or not
+#To get a better estimate of how the probability that the model will estimate that there is a difference, we use these outputs in another STAN model. This model will, for each pairwise difference, calculate how the sample size influences whether a comparison was deemed different or not. The transformation of the population differences in phi (1/1100) helps to approximate the rapid initial change in power better.
 
 # We set up the data frame for the model
 falsenegative_data <- list(differencedetected = falsenegative$differencedetected,
@@ -1695,54 +1695,42 @@ sequence_mean_differences<-c(sort(unique(falsenegative_data$populationdifference
 # We extract the posterior estimates from this STAN model.
 precis_output_5<-precis( output_5 , depth=2 )
 
-# Based on the posterior, we want to estimate the predicted performance at the sample size. We set up vectors to store these perdictions
-samplesize_9_predictions<-NA
-samplesize_12_predictions<-NA
-samplesize_15_predictions<-NA
-samplesize_18_predictions<-NA
-samplesize_21_predictions<-NA
-samplesize_24_predictions<-NA
-
-
-# There are 17 unique differences in the mean phis of the populations (e.g. the difference between a mean of 0.01 and 0.02 is the same as the difference between a mean of 0.025 and 0.035). For each of these, we generate the predictions for each sample size
-for (i in 1:17) {
-  samplesize_9_predictions[i]<-inv_logit(precis_output_5[1,1])-inv_logit(precis_output_5[9,1])*sequence_mean_differences[i]
-}
-for (i in 1:17) {
-  samplesize_12_predictions[i]<-inv_logit(precis_output_5[2,1])-inv_logit(precis_output_5[10,1])*sequence_mean_differences[i]
-}
-for (i in 1:17) {
-  samplesize_15_predictions[i]<-inv_logit(precis_output_5[3,1])-inv_logit(precis_output_5[11,1])*sequence_mean_differences[i]
-}
-for (i in 1:17) {
-  samplesize_18_predictions[i]<-inv_logit(precis_output_5[4,1])-inv_logit(precis_output_5[12,1])*sequence_mean_differences[i]
-}
-for (i in 1:17) {
-  samplesize_21_predictions[i]<-inv_logit(precis_output_5[5,1])-inv_logit(precis_output_5[13,1])*sequence_mean_differences[i]
-}
-for (i in 1:17) {
-  samplesize_24_predictions[i]<-inv_logit(precis_output_5[6,1])-inv_logit(precis_output_5[14,1])*sequence_mean_differences[i]
-}
-
 
 # We can now plot the predictions for the different sample sizes as separate lines
-sequence_mean_differences_toplot<-sort(unique(falsenegative$populationdifference),decreasing=T)
-sequence_mean_differences_toplot[17]<-0.001
-samplesize_9_predictions[17]<-0
 plot(lines(samplesize_9_predictions~sequence_mean_differences_toplot,col="black"),xlim=c(0,0.05),ylim=c(0.0,1.0),pch=1,ann=F,frame.plot=F,cex=1.5)
-lines(1-samplesize_9_predictions~sequence_mean_differences_toplot,col="grey75",lty=2,lwd=3)
-lines(1-samplesize_12_predictions~sequence_mean_differences_toplot,col="red",lty=1,lwd=5)
-lines(1-samplesize_15_predictions~sequence_mean_differences_toplot,col="blue",lwd=1.5,lty=3)
-lines(1-samplesize_18_predictions~sequence_mean_differences_toplot,pch=1,col="yellow",lty=1,lwd=3)
-lines(1-samplesize_21_predictions~sequence_mean_differences_toplot,pch=1,col="grey75",lty=2,lwd=3)
-lines(1-samplesize_24_predictions~sequence_mean_differences_toplot,pch=1,col="black",lty=3,lwd=3)
 
-legend(x="topright",legend=c(lty2="9",lty1="12",lty3="15",lty1="18",lty2="21",lty3="24"),lty=c(2,1,3,1,2,3),lwd=c(3,3,3,3,3,3),col=c("grey75","red","blue","yellow","grey75","black"),cex=1,bty="n")
+mu_9 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(1,17) ) )
+mu_9_mean <- apply( mu_9 , 2 , mean )
+mu_9_ci <- apply( mu_9 , 2 , PI , prob=0.97 )
+shade( 1-mu_9_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("blue",0.4) )
+
+mu_12 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(2,17) ) )
+mu_12_mean <- apply( mu_12 , 2 , mean )
+mu_12_ci <- apply( mu_12 , 2 , PI , prob=0.97 )
+shade( 1-mu_12_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("orange",0.4) )
+
+mu_15 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(3,17) ) )
+mu_15_mean <- apply( mu_15 , 2 , mean )
+mu_15_ci <- apply( mu_15 , 2 , PI , prob=0.97 )
+shade( 1-mu_15_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("skyblue",0.4) )
+
+
+mu_18 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(4,17) ) )
+mu_18_mean <- apply( mu_18 , 2 , mean )
+mu_18_ci <- apply( mu_18 , 2 , PI , prob=0.97 )
+shade( 1-mu_18_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("#213940",0.4) )
+
+mu_24 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(6,17) ) )
+mu_24_mean <- apply( mu_24 , 2 , mean )
+mu_24_ci <- apply( mu_24 , 2 , PI , prob=0.97 )
+shade( 1-mu_24_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("yellow",0.4) )
 
 mtext("Sample size",side=3,line=-0.7,at=0.048)
 mtext("Power to detect site differences",side=3,line=1,at=0.025,cex=1.5)
 mtext("Difference of mean phis between sites",side=1,line=3)
 mtext("Probability model estimates difference could be zero",side=2,line=3)
+
+legend(x="topright",legend=c(lty2="9",lty1="12",lty3="15",lty2="18",lty3="24"),lty=c(1,1,1,1,1),lwd=c(5,5,5,5,5),col=c(col.alpha("blue",0.4),col.alpha("orange",0.4),col.alpha("skyblue",0.4),col.alpha("#213940",0.4),col.alpha("yellow",0.4)),cex=1,bty="n")
 
 
 
