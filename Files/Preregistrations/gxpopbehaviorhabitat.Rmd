@@ -1576,7 +1576,8 @@ mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj
 #############################################################################################
 # We have an addition simulation for a more direct assessment of how sample size influences our ability to tell whether two populations have different mean phi values. Here, we do not generate the whole performance in the learning and reversal trials, but assume that we have estimated a phi for each individual in each population. Values from a single population are specified by a mean and variation. To represent values within populations, we thought that the distribution of phi values among individuals within a population most likely represents that of the gamma distribution: values have to be larger than zero, and only few individuals are expected to have very large values.
 
-### SIMULATION: Manipulate mu sd of phi across a set of 7 populations
+### SIMULATION: 
+# Manipulate mean and sd of phi across a set of 7 populations
 # We generate 7 simulated populations of 10000 individuals with the respective means spanning the same range that we used in the previous simulations (as informed by the Santa Barbara data) 
 
 d1<-rgamma(10000,shape=2,rate=200) #mean phi: 0.01
@@ -1587,13 +1588,27 @@ d5<-rgamma(10000,shape=7.5,rate=200) #mean phi: 0.038
 d6<-rgamma(10000,shape=10,rate=200) #mean phi: 0.05
 d7<-rgamma(10000,shape=12,rate=200) #mean phi: 0.06
 
+# Alternatively, manipulate mean and sd of lambda across a set of 7 populations
+# We generate 7 simulated populations of 10000 individuals with the respective means spanning the same range that we used in the previous simulations (as informed by the Santa Barbara data) 
+d1<-rgamma(10000,shape=2,rate=1) #mean lambda: 2, 
+d2<-rgamma(10000,shape=5.25,rate=1.5) #mean lambda: 3.5, larger variance
+d3<-rgamma(10000,shape=7,rate=2) #mean phi: 3.5, smaller variance
+d4<-rgamma(10000,shape=8,rate=2) #mean lambda: 4
+d5<-rgamma(10000,shape=9.5,rate=2) #mean lambda: 4.25
+d6<-rgamma(10000,shape=11,rate=2) #mean lambda: 5.5
+d7<-rgamma(10000,shape=16,rate=2) #mean lambda: 8
+
+
+
 # We now set our range of likely sample sizes, from a minimum of 9 individuals per population to a maximum of 24 individuals per population. We draw repeated samples of individuals of that size from each of the 7 populations, during each repetition we draw two samples from each population (so we can infer the false negative rate of wrongly estimating that two samples come from a different population even though they were taken from the sampe population). This means we have 14 populations, with 91 pairwise comparisons between, each repeated 10 times.
 samplesizes<-c(rep(9,910),rep(12,910),rep(15,910),rep(18,910),rep(21,910),rep(24,910))
 
 currentsamplesize<-NA
 
 # We have a vector with all the possible pairwise distances between the mean phis in the fourteen simulated populations (91 differences).
-currentmeandifference<-rep(c(0.01, 0.024, 0.025, 0.028, 0.04, 0.05, 0, 0.01,  0.024, 0.025, 0.028, 0.04, 0.05, 0.014, 0.015, 0.018, 0.03, 0.04, 0.01, 0, 0.014, 0.015, 0.018, 0.03, 0.04, 0.001, 0.004, 0.016, 0.026, 0.024, 0.014, 0, 0.001, 0.004, 0.016, 0.026, 0.003, 0.015, 0.025, 0.025, 0.015, 0.001, 0, 0.003, 0.015, 0.025, 0.012, 0.022, 0.028, 0.018, 0.004, 0.003, 0, 0.012, 0.022, 0.01, 0.04, 0.03, 0.016, 0.015, 0.012, 0, 0.01, 0.05, 0.04, 0.026, 0.025, 0.022, 0.01, 0, 0.01, 0.024, 0.025, 0.028, 0.04, 0.05, 0.014, 0.015, 0.018, 0.03, 0.04, 0.001, 0.004, 0.016, 0.026, 0.003, 0.015, 0.025, 0.012, 0.022, 0.01) ,60)
+pairwisecomparisons<-combn(rep(c(mean(d1),mean(d2),mean(d3),mean(d4),mean(d5),mean(d6),mean(d7)),2),m=2)
+# We calculate the differences between populations. We set this up in a vector that will link to the simulation output, so there are 60 repeats for the 10 independent repetitions across the 6 different sample sizes each
+currentmeandifference<-rep(abs(pairwisecomparisons[1,]-pairwisecomparisons[2,]) ,60)
 currentoutcome<-NA
 counter<-1
 
@@ -1602,7 +1617,7 @@ for (samplesize in 1:60) {
   
         n <- samplesizes[counter] #number of grackles in total across all sites (~20/site; AZ=20)
         sites <- matrix(nrow=n*7*2,ncol=2) #store data here
-        colnames(sites)<-c("phi","site")
+        colnames(sites)<-c("phi","site") # We label the outcome phi, but this doesn't matter for the lambda simulations
         
         # We randomly draw the pre-specified number of individuals from the 10,000 individuals in each population
         sample1_1<-sample(d1,n)
@@ -1642,7 +1657,7 @@ for (samplesize in 1:60) {
             sigma[site] ~ dunif(0,2)
           ),data=dat, log_lik=TRUE, messages=FALSE,cmdstan=T)
         
-        # Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi. For this, we calculate all pairwise differences in the posterior estimates of the sites.
+        # Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi / lambda. For this, we calculate all pairwise differences in the posterior estimates of the sites.
         for (sample in 1:13) {
           for (comparison in (sample+1):14) {
         
@@ -1673,13 +1688,13 @@ table(combinedoutput[,c(1,3)])
 
 # We set up the data frame for the model
 falsenegative_data <- list(differencedetected = falsenegative$differencedetected,
-                           populationdifference = 1/(1100*(falsenegative$populationdifference)),
+                           populationdifference = log(falsenegative$populationdifference),
                            samplesize = c(rep(1,840),rep(2,840),rep(3,840),rep(4,840),rep(5,840),rep(6,840))
 )
 
 
 # We run the STAN model - it is a binomial model that assumes that the probability to estimate a difference depends on an interaction between the sample size and the difference between the populations.
-output_5 <- ulam(
+m_samplesize_populationdifferences <- ulam(
   alist(
     differencedetected~dbinom(1,p),
     logit(p) <- a[samplesize]-b[samplesize]*populationdifference,
@@ -1693,45 +1708,52 @@ output_5 <- ulam(
 sequence_mean_differences<-c(sort(unique(falsenegative_data$populationdifference)))
 
 # We extract the posterior estimates from this STAN model.
-precis_output_5<-precis( output_5 , depth=2 )
+precis_output_5<-precis( m_samplesize_populationdifferences , depth=2 )
 
 
 # We can now plot the predictions for the different sample sizes as separate lines
-plot(lines(samplesize_9_predictions~sequence_mean_differences_toplot,col="black"),xlim=c(0,0.05),ylim=c(0.0,1.0),pch=1,ann=F,frame.plot=F,cex=1.5)
+plot(NULL,xlim=c(0,max(exp(sequence_mean_differences))),ylim=c(0.0,1.0),pch=1,ann=F,frame.plot=F,cex=1.5)
 
-mu_9 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(1,17) ) )
+mu_9 <- link( m_samplesize_populationdifferences , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(1,length(sequence_mean_differences)) ) )
 mu_9_mean <- apply( mu_9 , 2 , mean )
 mu_9_ci <- apply( mu_9 , 2 , PI , prob=0.97 )
-shade( 1-mu_9_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("blue",0.4) )
+shade( 1-mu_9_ci , exp(sequence_mean_differences) , col=col.alpha("blue",0.4) )
 
-mu_12 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(2,17) ) )
+mu_12 <- link( m_samplesize_populationdifferences , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(2,length(sequence_mean_differences)) ) )
 mu_12_mean <- apply( mu_12 , 2 , mean )
 mu_12_ci <- apply( mu_12 , 2 , PI , prob=0.97 )
-shade( 1-mu_12_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("orange",0.4) )
+shade( 1-mu_12_ci , exp(sequence_mean_differences) , col=col.alpha("orange",0.4) )
 
-mu_15 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(3,17) ) )
+mu_15 <- link( m_samplesize_populationdifferences , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(3,length(sequence_mean_differences)) ) )
 mu_15_mean <- apply( mu_15 , 2 , mean )
 mu_15_ci <- apply( mu_15 , 2 , PI , prob=0.97 )
-shade( 1-mu_15_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("skyblue",0.4) )
+shade( 1-mu_15_ci , exp(sequence_mean_differences) , col=col.alpha("skyblue",0.4) )
 
 
-mu_18 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(4,17) ) )
+mu_18 <- link( m_samplesize_populationdifferences , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(4,length(sequence_mean_differences)) ) )
 mu_18_mean <- apply( mu_18 , 2 , mean )
 mu_18_ci <- apply( mu_18 , 2 , PI , prob=0.97 )
-shade( 1-mu_18_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("#213940",0.4) )
+shade( 1-mu_18_ci , exp(sequence_mean_differences) , col=col.alpha("#213940",0.4) )
 
-mu_24 <- link( output_5 , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(6,17) ) )
+mu_24 <- link( m_samplesize_populationdifferences , data=data.frame( populationdifference=sequence_mean_differences,samplesize=rep(6,length(sequence_mean_differences)) ) )
 mu_24_mean <- apply( mu_24 , 2 , mean )
 mu_24_ci <- apply( mu_24 , 2 , PI , prob=0.97 )
-shade( 1-mu_24_ci , 1/(1100*sequence_mean_differences) , col=col.alpha("yellow",0.4) )
+shade( 1-mu_24_ci , exp(sequence_mean_differences) , col=col.alpha("yellow",0.4) )
 
+legend(x="topright",legend=c(lty2="9",lty1="12",lty3="15",lty2="18",lty3="24"),lty=c(1,1,1,1,1),lwd=c(5,5,5,5,5),col=c(col.alpha("blue",0.4),col.alpha("orange",0.4),col.alpha("skyblue",0.4),col.alpha("#213940",0.4),col.alpha("yellow",0.4)),cex=1,bty="n")
+
+
+# Labels when analysing phi
 mtext("Sample size",side=3,line=-0.7,at=0.048)
 mtext("Power to detect site differences",side=3,line=1,at=0.025,cex=1.5)
 mtext("Difference of mean phis between sites",side=1,line=3)
 mtext("Probability model estimates difference could be zero",side=2,line=3)
 
-legend(x="topright",legend=c(lty2="9",lty1="12",lty3="15",lty2="18",lty3="24"),lty=c(1,1,1,1,1),lwd=c(5,5,5,5,5),col=c(col.alpha("blue",0.4),col.alpha("orange",0.4),col.alpha("skyblue",0.4),col.alpha("#213940",0.4),col.alpha("yellow",0.4)),cex=1,bty="n")
-
+# Labels when analysing lambda
+mtext("Sample size",side=3,line=-0.7,at=7.6)
+mtext("Power to detect site differences",side=3,line=1,at=3,cex=1.5)
+mtext("Difference of mean lambdas between sites",side=1,line=3)
+mtext("Probability model estimates difference could be zero",side=2,line=3)
 
 
 
