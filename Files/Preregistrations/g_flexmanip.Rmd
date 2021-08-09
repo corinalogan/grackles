@@ -191,11 +191,11 @@ Because the wooden multiaccess box was added after in principle acceptance, we c
 
 ### P1: reversal speed gets faster with serial reversals
 
-There was a significant negative correlation between the number of trials to reverse (average=71 trials, sd=28) and the reversal number for those grackles in the flexibility manipulation condition (n=9, which included Memela who did not pass the manipulation condition; Figure B). When this model was compared with the null model, the null model had a higher Akaike weight, however it was not high enough to indicate the two models were different from each other (Table B). Therefore, we conclude that there was no correlation between the number of trials to reverse and reversal number. 
+There was a significant negative correlation between the number of trials to reverse (average=71 trials, sd=28) and the reversal number for those grackles in the flexibility manipulation condition (n=9, which included Memela who did not pass the manipulation condition; Figure B). When this model was compared with the null model, the null model had a higher Akaike weight, however it was not high enough to indicate the two models were reliably different from each other (Table B). Therefore, we conclude that there was no effect of a linear relationship between the number of trials to reverse and reversal number. 
 
-**Unregistered analysis:** While there may not be a correlation when one examines all reversals, there is a difference between manipulated and control reversal speeds when comparing their last reversals (for the control birds, their last reversal is their first reversal): the Akaike weight of the full model was 0.94, which means including condition in the model explains the bulk of the variation in the number of trials to reverse in the last reversal (Table C). This analysis 19 grackles (8 manipulated condition - only those who actually passed the manipulation, 11 control condition) who had an overall average of 62 trials in their last reversal (sd=32).
+**Unregistered analysis:** While there may not be an effect when one examines all reversals, there is a difference between manipulated and control reversal speeds when comparing their last reversals (for the control birds, their last reversal is their first reversal): the Akaike weight of the full model was 0.94, which means that including condition in the model explains the bulk of the variation in the number of trials to reverse in the last reversal (Table C). This analysis includes 19 grackles (8 manipulated condition - only those who actually passed the manipulation, 11 control condition) who had an overall average of 62 trials in their last reversal (sd=32).
 
-**Table B.** Does the number of trials to reverse decrease with increasing reversal number? No: the Akaike weight of null model was higher than that of the the full model, though not >0.89 which indicates that neither model is more reliable than the other.
+**Table B.** Does the number of trials to reverse decrease with increasing reversal number? Not more than would be expected by chance: the Akaike weight of null model was higher than that of the the full model, though not >0.89, which indicates that neither model is more reliable than the other.
 
 ```{r p1table, eval=F, warning=F, results='asis', echo=T, include=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -220,11 +220,11 @@ serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch,
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 300000, thin = 500, burnin = 90000)
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
-summary(serial)
+#summary(serial)
 #Did fixed effects converge (<0.1)? Yes
-autocorr(serial$Sol) 
+#autocorr(serial$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
-autocorr(serial$VCV)
+#autocorr(serial$VCV)
 
 #AIC calculation
 library(MuMIn)
@@ -237,17 +237,17 @@ library(kableExtra)
 knitr::kable(base)
 
 #UNREGISTERED ANALYSIS: compare control vs manipulated group reversal speeds using only last reversals
-prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0), G2 = list(V = 1, nu = 0)))
-serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 300000, thin = 500, burnin = 90000)
+#prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+#	    nu = 0), G2 = list(V = 1, nu = 0)))
+#serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+#	    family = "poisson", data = d, verbose = F, prior = prior, 
+#	    nitt = 300000, thin = 500, burnin = 90000)
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
-summary(serial)
+#summary(serial)
 #Did fixed effects converge (<0.1)? Yes
-autocorr(serial$Sol) 
+#autocorr(serial$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
-autocorr(serial$VCV)
+#autocorr(serial$VCV)
 ```
 
 
@@ -338,7 +338,7 @@ plot(d$TrialsLastReversal ~ d$ReversalsToPass)
 
 #### Problem solving: number of loci solved on the multiaccess box (plastic) ~ trials to reverse
 
-Grackles that were faster to reverse a preference (in their last reversal: average 62 trials, sd=34) solved more loci on the plastic multiaccess box (average=2 loci, sd=1.6; Figure E; Table C: Model 2; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p). The original model (Table C: Model 1) included aviary batch, however this ended up confounding the analysis because control and manipulated individuals, while randomly assigned to these conditions, ended up in particular batches as a result of their willingness to participate (Table C: Model 3). As such, grackles who did not participate in their condition in a given batch were replaced in the aviary batch. Therefore, we removed batch from the model. We additionally examined whether first reversal (rather than last reversal) or condition (control or manipulated) better explained the relationship between reversal performance and number of loci solved: they did not. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, which indicates that the conditions did not differ from each other (Table C: Model 4). There was also no correlation between the number of trials to reverse in the first reversal (average=75 trials, sd=31) and the number of loci solved on the multiaccess box (Table C: Model 5). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
+Grackles that were faster to reverse a preference (in their last reversal: average 62 trials, sd=34) solved more loci on the plastic multiaccess box (average=2 loci, sd=1.6; Figure E; Table C: Model 2; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p). The original model (Table C: Model 1) included aviary batch, however this ended up confounding the analysis because control and manipulated individuals, while randomly assigned to these conditions, ended up in particular batches as a result of their willingness to participate (Table C: Model 3). As such, grackles who did not participate in their condition in a given batch were replaced in the aviary batch. Therefore, we removed batch from the model. We additionally examined whether first reversal (rather than last reversal) or condition (control or manipulated) better explained the relationship between reversal performance and number of loci solved: they did not. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, which indicates that the conditions did not differ from each other (Table C: Model 4). There was also no correlation between the number of trials to reverse in the first reversal (average=75 trials, sd=31) and the number of loci solved on the multiaccess box (Table C: Model 5; unregistered analysis). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
 
 ```{r p2mabplastic, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -360,7 +360,7 @@ d <- subset(d,!(is.na(d["TotalLociSolvedMABplastic"])) & !(is.na(d["TrialsLastRe
 # n=15: 6 in manipulated group, 9 in control group
 #length(d$TotalLociSolvedMABplastic)
 
-# make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
+# make Batch a factor (assigned Taco to batch 3 because 3a doesn't work with the model)
 d$Batch <- as.factor(d$Batch)
 levels(d$Batch)[c(3)] <- c("3")
 
@@ -576,7 +576,7 @@ kable_styling(full_width = T, position = "left")
 
 #### Problem solving: number of loci solved on the multiaccess box (wooden) ~ trials to reverse
 
-There was no correlation between the number of loci solved on the wooden multiaccess box (average=3.2, sd=1.3) and the number of trials to reverse a preference (in their last reversal: average=59 trials, sd=38; Figure F; Model 6, Table C; n=11 grackles: 5 in manipulated condition, 6 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is not the most robust because, while the effect size of 0.44 is larger than what we determined would be the minimum cut off of -0.36, the sample size was only 11 (rather than 15) and the beta was -6 (rather than -5; Table 1p). Aviary batch was excluded because of what we learned in the previous section. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, indicating the conditions did not differ from each other (Table C: Model 7, wooden), or between the number of trials to reverse in the first reversal (average=74 trials, sd=34) and the number of loci solved on the multiaccess box (Table C: Model 8, wooden). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
+There was no correlation between the number of loci solved on the wooden multiaccess box (average=3.2, sd=1.3) and the number of trials to reverse a preference (in their last reversal: average=59 trials, sd=38; Figure F; Model 6, Table C; n=11 grackles: 5 in manipulated condition, 6 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This result is not the most robust because, while the effect size of 0.44 is larger than what we determined would be the minimum cut off of -0.36, the sample size was only 11 (rather than 15) and the beta was -6 (rather than -5; Table 1p). Aviary batch was excluded because of what we learned in the previous section. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, indicating the conditions did not differ from each other (Table C: Model 7, wooden), or between the number of trials to reverse in the first reversal (average=74 trials, sd=34) and the number of loci solved on the multiaccess box (Table C: Model 8, wooden; unregistered analysis). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
 
 ```{r p2mablog, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -736,10 +736,331 @@ par(op)
 
 #### Rule switching: latency to attempt a new locus on the multiaccess box (plastic) ~ trials to reverse
 
+Grackles that were faster to reverse a preference (in their last reversal: average 52 trials, sd=23) were also faster to attempt to solve a new locus on the plastic multiaccess box (after just having passed criterion on a different locus; average=208 seconds, sd=226; Figure G; Table C: Model 9; n=11 grackles: 6 in manipulated condition, 5 in control condition; Pizza, Taquito, Chalupa, and Pollito completed this experiment, but they only solved 0 locus, therefore they did not have any locus switching times to analyze; Marisco and Taco also completed this experiment and solved 1 locus, but did not attempt another locus after that, thus they also do not have any switching times to analyze). *REPLACE: This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p).* We excluded aviary batch from all analyses because of our findings in the first section of Results P2. We also found that individuals in the flexibilty manipulation had faster switch latencies than those in the control condition (Table C: Model 10). There was a positive correlation between the number of trials to reverse in the first reversal (average=70 trials, sd=21) and the average switch latency on the multiaccess box (Table C: Model 11; unregistered analysis). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
+
+```{r p2mabplasticlat, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(rethinking)
+library(rstan)
+library(formatR)
+
+# LOAD the data and column names
+d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d3 <- data.frame(d3)
+colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+
+# Remove NAs
+d3 <- subset(d3,!(is.na(d3["AverageLatencyAttemptNewLocusMABplastic"])) & !(is.na(d3["TrialsLastReversal"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d3$AverageLatencyAttemptNewLocusMABplastic)
+
+# make Batch a factor
+d3$Batch <- as.factor(d3$Batch)
+
+# look at the data
+#hist(d3$AverageLatencyAttemptNewLocusMABplastic)
+#mean(d3$AverageLatencyAttemptNewLocusMABplastic) #208
+#sd(d3$AverageLatencyAttemptNewLocusMABplastic) #226
+#mean(d3$TrialsLastReversal) #52
+#sd(d3$TrialsLastReversal) #23
+#mean(d3$TrialsFirstReversal) #70
+#sd(d3$TrialsFirstReversal) #21
+
+#translating the actual data (rather than the simulated data) into effect sizes (see equation below in "translated the simulation output into effect sizes")
+#sd(d3$AverageLatencyAttemptNewLocusMABplastic)/sd(d3$TrialsLastReversal) #=9.9
+#cor.test(d3$AverageLatencyAttemptNewLocusMABplastic,d3$TrialsLastReversal,alternative=c("two.sided"),method = c("pearson"),conf.level = 0.95)
+#corr = r = 0.52
+#solve equation for beta:
+#0.52/(sd(d3$AverageLatencyAttemptNewLocusMABplastic)/sd(d3$TrialsLastReversal)) #0.05 = beta
+
+# RUN MODELs on the actual data
+library("Rcpp")
+library("rstan")
+library(rethinking)
+library(ggplot2)
+
+# MODEL 9: batch was excluded because of what was learned in the previous sections
+dl <- list(trials = standardize(as.numeric(d3$TrialsLastReversal)), 
+           latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(d3$Batch)
+           )
+
+mplat1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * trials, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1,depth=2)
+#   mean   sd  5.5% 94.5% n_eff Rhat4
+#a   4.93 0.30 4.45  5.41  1235  1.01
+#b   0.46 0.29 0.00  0.92  1363  1.00
+#phi 0.93 0.35 0.44  1.55  1476  1.00
+#the confidence interval for b (the slope) touches 0 but does not cross it (which would be indicated by a sign change), which indicates that there is likely a positive correlation between MAB switch latency and trials to reverse
+
+#check posterior for p to look at the distribution of probabilities that are probable
+postmplat1 <- extract.samples(mplat1)
+p3 <- exp(postmplat1$a) #convert from log to number of seconds
+dens(p3,adj=0.1)
+HPDI(p3) #76-209
+median(p3) #139, narrower and shifted left than the curve from the simulations
+#result: The posterior: the mean y axis point where the intercept is is 139 (meaning they switch on average at a latency of 139 seconds), which means this is when trials to reverse is at the average. The actual median is smaller than what we estimated the mean would be in the simulations (300s)
+
+#model details: 2000 samples from 4 chains
+#show(mplat1)
+#no correlation
+#pairs(mplat1)
+#check the chain - fuzzy caterpillars = looks good
+#traceplot(mplat1)
+#check the chain a different way - "histograms overlap and stay within the same range" ≠ looks good (p.285 Rethinking)
+#trankplot(mplat1) 
+
+
+# MODEL 10: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
+#mean(d2$TrialsFirstReversal) #73.6
+#sd(d2$TrialsFirstReversal) #34.1
+
+# make ReversalsToPass a factor that has only 2 levels: level 1 = manipulated, level 2 = control
+d3$ReversalsToPass <- as.factor(d3$ReversalsToPass)
+levels(d3$ReversalsToPass)[c(1,2,3)] <- c("Manipulated","Manipulated","Manipulated")
+
+dl2 <- list(latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
+           condition = as.integer(d3$ReversalsToPass)
+           )
+
+mplat2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a[condition], 
+  a[condition] ~ dnorm(1, 1), 
+  phi ~ dexp(1)
+  ), data = dl2, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat2,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1] 4.07 0.39 3.46  4.68  1027  1.00
+#a[2] 5.18 0.39 4.50  5.76  1006  1.00
+#phi  0.91 0.41 0.37  1.63   925  1.01
+#Condition correlates with performance on the MAB bc neither a[] CI crosses zero, a1 manipulated has a lower mean than a2 control
+
+# contrasts between conditions: the log odds differences in solving a locus between batches. Value = log odds of solving a locus (p.331 & 341 Rethinking)
+postmplat2 <- extract.samples(mplat2)
+diffmplat2 <- postmplat2$a[,1] - postmplat2$a[,2]
+labsdif2 <- c("Manipulated-Control")
+plot( precis(diffmplat2), xlim=c(-2,0.5), labels=labsdif2)
+# contrasts between conditions on the outcome scale (p.341 Rethinking)
+precis( diffmplat2 )
+#conditons are different from each other in their average latency to switch because CI does not cross zero. This means that the manipulated individuals are faster to switch than control individuals. This suggests that the experience involved in the flexibility manipulation had a direct effect on mab performance
+
+
+# MODEL 11: see whether the flexibility manipulation actually had an effect on MAB performance by replacing trials to LAST reversal with trials to FIRST reversal
+dl3 <- list(locisolved = d3$AverageLatencyAttemptNewLocusMABplastic,
+            trials = standardize(d3$TrialsFirstReversal)
+              )
+
+mplat3 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * trials, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat3,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+#a   4.93 0.29 4.46  5.39  1488     1
+#b   0.46 0.28 0.02  0.93  1211     1
+#phi 0.94 0.36 0.44  1.60  1447     1
+#b does not cross zero so there is a positive correlation between average switch latencies and number of trials to reverse on the first reversal. This means that reversal in general correlates with MAB loci and that the flexibility manipulation is not needed to enhance or make this relationship
+
+
+# VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left)
+# figure out xlim: -1.28 - 2.10
+#range(dl$trials)
+
+# draw 50 lines from the prior
+trialsp_seq <- seq( from=-1.29 , to=2.11 , length.out=30 )
+
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multiaccess box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( trialsp_seq , mu_mean , lwd=2 )
+shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
+par(op)
+```
+
+![](g_flexmanip_figp2latmabplastic.png){width=100%}
+
+**Figure G.** The average latency (seconds) to attempt to solve a different locus on the plastic multiaccess box after having previously successfully solved a locus is positively correlated with the number of trials to pass their last reversal (n = 11 grackles, shading = 97% prediction interval). 
 
 
 #### Rule switching: latency to attempt a new locus on the multiaccess box (wooden) ~ trials to reverse
 
+There was no correlation between the number of trials to reverse a preference (in their last reversal: average 60 trials, sd=38) and the latency to attempt to solve a new locus on the wooden multiaccess box (after just having passed criterion on a different locus; average=463 seconds, sd=481; Figure H; Table C: Model 12; n=11 grackles: 5 in manipulated condition, 6 in control condition; Diablo also completed this experiment and solved 1 locus, but did not attempt another locus after that, thus he does not have any switching times to analyze). *REPLACE: This result is robust because the effect size of -0.46 is larger than what we determined would be the minimum cut off of -0.36 for a sample size of 15 with a beta of -5 (Table 1p).* We excluded aviary batch from all analyses because of our findings in the first section of Results P2. We additionally found that there was no difference in average latency to switch between individuals in the flexibilty manipulation and those in the control condition (Table C: Model 13). There was a negative correlation between the number of trials to reverse in the first reversal (average=73 trials, sd=34) and the average switch latency on the multiaccess box (Table C: Model 14; unregistered analysis). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
+
+```{r p2mabloglat, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(rethinking)
+library(rstan)
+library(formatR)
+library("Rcpp")
+library("rstan")
+library(ggplot2)
+
+# LOAD the data and column names
+d4 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d4 <- data.frame(d4)
+colnames(d4) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+
+# Remove NAs
+d4 <- subset(d4,!(is.na(d4["AverageLatencyAttemptNewLocusMABwooden"])) & !(is.na(d4["TrialsLastReversal"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d4$AverageLatencyAttemptNewLocusMABwooden)
+
+# make Batch a factor (assigned Taco to batch 3 because 3a doesn't work with the model)
+d4$Batch <- as.factor(d4$Batch)
+levels(d4$Batch)[c(3)] <- c("3")
+
+# look at the data
+#hist(d4$AverageLatencyAttemptNewLocusMABwooden)
+#mean(d4$AverageLatencyAttemptNewLocusMABwooden) #463
+#sd(d4$AverageLatencyAttemptNewLocusMABwooden) #481
+#mean(d4$TrialsLastReversal) #60
+#sd(d4$TrialsLastReversal) #38
+#mean(d4$TrialsFirstReversal) #73
+#sd(d4$TrialsFirstReversal) #34
+
+#translating the actual data (rather than the simulated data) into effect sizes (see equation below in "translated the simulation output into effect sizes")
+#sd(d4$AverageLatencyAttemptNewLocusMABwooden)/sd(d4$TrialsLastReversal) #=12.8
+#cor.test(d4$AverageLatencyAttemptNewLocusMABwooden,d4$TrialsLastReversal,alternative=c("two.sided"),method = c("pearson"),conf.level = 0.95)
+#corr = r = -0.26
+#solve equation for beta:
+#-0.26/(sd(d4$AverageLatencyAttemptNewLocusMABwooden)/sd(d4$TrialsLastReversal)) #0.02 = beta
+
+# RUN MODELs on the actual data
+
+# MODEL 12: batch was excluded because of what was learned in the previous sections
+dlw <- list(trials = standardize(as.numeric(d4$TrialsLastReversal)), 
+           latency = as.integer(d4$AverageLatencyAttemptNewLocusMABwooden)
+           )
+
+mwlat1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * trials, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dlw, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwlat1,depth=2)
+#   mean   sd  5.5% 94.5% n_eff Rhat4
+#a    5.75 0.28  5.28  6.18  1049  1.00
+#b   -0.41 0.32 -0.86  0.15  1281  1.01
+#phi  1.04 0.42  0.48  1.77  1456  1.00
+#the confidence interval for b (the slope) crosses zero, indicating that there is no correlation between MAB switch latency and trials to reverse
+
+#check posterior for p to look at the distribution of probabilities that are probable
+postmwplat1 <- extract.samples(mwlat1)
+#p4 <- exp(postmwplat1$a) #convert from log to number of seconds
+#dens(p4,adj=0.1)
+#HPDI(p4) #193-469
+#median(p4) #315, as expected from the simulations
+#result: The posterior: the mean y axis point where the intercept is is 315 (meaning they switch on average at a latency of 315 seconds), which means this is when trials to reverse is at the average. The actual median is the same as what we estimated the mean would be in the simulations (300s)
+
+#model details: 2000 samples from 4 chains
+#show(mwlat1)
+#no correlation
+#pairs(mwlat1)
+#check the chain - fuzzy caterpillars = looks good
+#traceplot(mwlat1)
+#check the chain a different way - "histograms overlap and stay within the same range" ≠ looks good (p.285 Rethinking)
+#trankplot(mwlat1) 
+
+
+# MODEL 13: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
+#mean(d2$TrialsFirstReversal) #73.6
+#sd(d2$TrialsFirstReversal) #34.1
+
+# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
+d4$ReversalsToPass <- as.factor(d4$ReversalsToPass)
+levels(d4$ReversalsToPass)[c(1,2,3,4)] <- c("Control","Manipulated","Manipulated","Manipulated")
+
+dl3 <- list(latency = as.integer(d4$AverageLatencyAttemptNewLocusMABwooden), 
+           condition = as.integer(d4$ReversalsToPass)
+           )
+
+mwlat2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a[condition], 
+  a[condition] ~ dnorm(1, 1), 
+  phi ~ dexp(1)
+  ), data = dl3, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwlat2,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1] 5.31 0.42 4.61  5.95   701  1.00
+#a[2] 5.34 0.44 4.61  6.00   620  1.01
+#phi  0.66 0.32 0.25  1.25   806  1.00
+#Condition correlates with performance on the MAB bc neither a[] CI crosses zero, a1 control and a2 manipulated have similar means
+
+# contrasts between conditions: the log odds differences in solving a locus between batches. Value = log odds of solving a locus (p.331 & 341 Rethinking)
+postmwlat2 <- extract.samples(mwlat2)
+diffmwlat2 <- postmwlat2$a[,1] - postmwlat2$a[,2]
+labsdif3 <- c("Control-Manipulated")
+plot( precis(diffmwlat2), xlim=c(-1,1), labels=labsdif3)
+# contrasts between conditions on the outcome scale (p.341 Rethinking)
+precis( diffmwlat2 )
+#conditons are not different from each other in their average latency to switch because CI crosses zero. Same interpretation as for MAB plastic loci solved
+
+
+# MODEL 14: see whether the flexibility manipulation actually had an effect on MAB performance by replacing trials to LAST reversal with trials to FIRST reversal
+dl4 <- list(latency = d4$AverageLatencyAttemptNewLocusMABwooden,
+            trials = standardize(d4$TrialsFirstReversal)
+              )
+
+mwlat3 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * trials, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl4, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwlat3,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+#a    5.71 0.26  5.28  6.12  1109     1
+#b   -0.50 0.28 -0.89 -0.01  1308     1
+#phi  1.08 0.41  0.53  1.80  1347     1
+#b does not cross zero so there is a negative correlation between average switch latencies and number of trials to reverse on the first reversal. This means that reversal in general correlates with MAB loci and that the flexibility manipulation is not needed to enhance or make this relationship
+
+
+# VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left)
+# figure out xlim: -1 - 2.65
+#range(dlw$trials)
+
+# draw 50 lines from the prior
+trialsw_seq <- seq( from=-1 , to=2.65 , length.out=30 )
+
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,3,0.9))
+plot(dlw$latency ~ dlw$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multiaccess box (wooden)" , xlim=c(-1,2.65), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( mwlat1 , data=data.frame( trials=trialsw_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( trialsw_seq , mu_mean , lwd=2 )
+shade( mu_ci , trialsw_seq , col=col.alpha(rangi2,0.3) )
+par(op)
+```
+
+![](g_flexmanip_figp2latmablog.png){width=100%}
+
+**Figure H.** The average latency (seconds) to attempt to solve a different locus on the wooden multiaccess box after having previously successfully solved a locus is positively correlated with the number of trials to pass their last reversal (n = 11 grackles, shading = 97% prediction interval). 
 
 
 
@@ -762,9 +1083,14 @@ par(op)
 
 ## DISCUSSION
 
-Serial reversals improved problem solving on the plastic multiaccess box, but not in a predicted way. We predicted (P2) that there would be differences in multiaccess box performance between individuals in the control and manipulated conditions in the reversal experiment, however this was not the case: there was no difference between the conditions. We had an alternative prediction (P2 alternative 1) for if the flexibility manipulation did not work, however the manipulation did work in that almost all individuals (8/9) in the manipulated condition met the passing criterion: they were faster at reversing preferences in their last reversals than control individuals were in their first reversals. This suggests that the flexibility manipulation trained individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing when they began the experiment, that other previous experience led to differences in their performance on the plastic multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. That there was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on either multiaccess box indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
+**Serial reversals improved switch latencies on both multiaccess boxes**. Grackles that were faster to reverse a preference in their first and last reversals were also faster to attempt to solve a new locus on the **plastic** multiaccess box, and individuals in the manipulated condition had faster switch times than those in the control condition. This indicates that, while these variables already positively correlate before conducting a manipulation, the serial reversal flexibility manipulation improved multiaccess box switching latencies. In contrast, there was no difference between control and manipulated switching performance on the **wooden** multiaccess box. Instead, serial reversal experience changed the relationship between the number of trials to reverse and switch latencies from being negative in the first reversal to having no relationship in the last reversal. This indicates that the flexibility manipulation had some effect on changing the latency to switch to attempting different loci on the wooden multiaccess box. 
+
+The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. They are presumed to measure flexibility...
+
+**Serial reversals improved problem solving on the plastic multiaccess box**, but not in a predicted way. We predicted (P2) that there would be differences in multiaccess box performance between individuals in the control and manipulated conditions in the reversal experiment, however this was not the case: there was no difference between the conditions. We had an alternative prediction (P2 alternative 1) for if the flexibility manipulation did not work, however the manipulation did work in that almost all individuals (8/9) in the manipulated condition met the passing criterion: they were faster at reversing preferences in their last reversals than control individuals were in their first reversals. This suggests that the flexibility manipulation trained individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing when they began the experiment, that other previous experience led to differences in their performance on the plastic multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. That there was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on either multiaccess box indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
 
 There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, which could be due to a small sample size and/or indicate that the two boxes differ in some way that affects their ability to solve it. The boxes did differ in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps it is because of these differences that the grackles solved more loci on the wooden box an average.
+
 
 
 
@@ -802,7 +1128,7 @@ We will stop testing birds once we have completed two full aviary seasons (likel
 
 [Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all three experiments: color tube reversal learning, plastic multi-access box, wooden multi-access box, and touch screen reversal learning
 
-NOTE (Oct 2020): Touchscreen training data and a summary of what happened is detailed in @Seitz2020biorxivtraingrackle.
+NOTE (Oct 2020): Touchscreen training data and a summary of what happened is detailed in @seitz2021training
 
 #### **Open data**
 
