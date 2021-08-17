@@ -1067,14 +1067,57 @@ par(op)
 
 ### P2 alternative 2 (additional analysis): latency and motor diversity
 
+Because there was no correlation between the number of trials to reverse in the last reversal and the latency to attempt a different locus on the wooden multiaccess box, we conducted this additional analysis to determine whether the model fit was improved when adding the number of motor actions as an explanatory variable. Adding the number of motor actions (wooden: average=13, sd=4) did not improve the model fit when examining the relationship between the latency to switch loci on the plastic and wooden multiaccess boxes (wooden: average=463, sd=481) and the number of trials to reverse in the last reversal (wooden: average=60, sd=38) because the Akaike weights were similar for both models (wooden: n=11 grackles: 5 in the manipulated group, 6 in the control group; Table Z).
+
+```{r diversity1Wresults, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+# WOODEN MULTI-ACCESS BOX (W)
+dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+dw <- data.frame(dw)
+colnames(dw) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden","Notes")
+
+# Remove NAs
+dw <- subset(dw,!(is.na(dw["MotorActionsWooden"])) & !(is.na(dw["TrialsLastReversal"])) & !(is.na(dw["AverageLatencyAttemptNewLocusMABwooden"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(dw$AverageLatencyAttemptNewLocusMABwooden)
+
+# look at the data
+#hist(dw$AverageLatencyAttemptNewLocusMABwooden)
+#mean(dw$AverageLatencyAttemptNewLocusMABwooden) #463
+#sd(dw$AverageLatencyAttemptNewLocusMABwooden) #481
+
+#hist(dw$MotorActionsWooden)
+#mean(dw$MotorActionsWooden) #13
+#sd(dw$MotorActionsWooden) #4
+
+#mean(dw$TrialsLastReversal) #60
+#sd(dw$TrialsLastReversal) #38
+
+# GLM
+motw <- glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden)
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+dredgemw <- dredge(glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden))
+library(knitr)
+kable(dredgemw, caption = "")
+#Akaike weights = 0.71 null and <0.15 for the rest, therefore the models with or without motor actions are essentially the same
+```
+
 
 ### P3a: reversal is repeatable within individuals within a context
 
 
-### P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?
+
+### P3a alternative: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?
+
 
 
 ### P3b: repeatable across contexts
+
+
 
 
 ### P4: serial reversal learning strategy
@@ -1086,13 +1129,11 @@ par(op)
 
 **Serial reversals improved switch latencies on both multiaccess boxes**. Grackles that were faster to reverse a preference in their first and last reversals were also faster to attempt to solve a new locus on the **plastic** multiaccess box, and individuals in the manipulated condition had faster switch times than those in the control condition. This indicates that, while these variables already positively correlate before conducting a manipulation, the serial reversal flexibility manipulation improved multiaccess box switching latencies. In contrast, there was no difference between control and manipulated switching performance on the **wooden** multiaccess box. Instead, serial reversal experience changed the relationship between the number of trials to reverse and switch latencies from being negative in the first reversal to having no relationship in the last reversal. This indicates that the flexibility manipulation had some effect on changing the latency to switch to attempting different loci on the wooden multiaccess box. 
 
-The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. They are presumed to measure flexibility...
-
 **Serial reversals improved problem solving on the plastic multiaccess box**, but not in a predicted way. We predicted (P2) that there would be differences in multiaccess box performance between individuals in the control and manipulated conditions in the reversal experiment, however this was not the case: there was no difference between the conditions. We had an alternative prediction (P2 alternative 1) for if the flexibility manipulation did not work, however the manipulation did work in that almost all individuals (8/9) in the manipulated condition met the passing criterion: they were faster at reversing preferences in their last reversals than control individuals were in their first reversals. This suggests that the flexibility manipulation trained individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing when they began the experiment, that other previous experience led to differences in their performance on the plastic multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. That there was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on either multiaccess box indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
 
-There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, which could be due to a small sample size and/or indicate that the two boxes differ in some way that affects their ability to solve it. The boxes did differ in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps it is because of these differences that the grackles solved more loci on the wooden box an average.
+**Performance differed between the two multiaccess boxes**, suggesting that box design plays a large role in the outcomes of an experiment. The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. Switch latencies are presumed to measure flexibility, however, if this is the case, switch latency should be relatively independent of box design. There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, and a negative correlation on the plastic multiacces box. The lack of correlation on the wooden multiaccess box could be due to a small sample size. These results generally indicate that the two boxes differ in some way that affects a grackle's solving ability. The two box designs differed in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps the wooden multiaccess box was more ecologically relevant, thus the grackles solved more loci an average than on the plastic multiaccess box.
 
-
+Motor diversity did not play a role...
 
 
 ## METHODS
@@ -1157,7 +1198,7 @@ Number of trials to reverse a preference. An individual is considered to have a 
 
 *P3b: additional analysis: individual consistency in flexibility across contexts + flexibility is correlated across contexts*
 
-Number of trials to solve a new loci on the multi-access boxes
+Number of trials to solve a new locus on the multi-access boxes
 
 *P4: learning strategies* 
 
@@ -2073,29 +2114,64 @@ This means that, with our sample size of 32, we have a 70% chance of detecting a
 
 We will perform separate models for each multi-access box (plastic and wooden).
 
+NOTE (Aug 2021): when attempting to run the below model, we realized the model has to be a GLM and not a GLMM because there is only one data point per bird, so we changed this accordingly.
+
 ```{r diversity1P, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Latency to attempt to solve a new locus
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+dp <- data.frame(dp)
+colnames(dp) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden","Notes")
+
+# Remove NAs
+dp <- subset(dp,!(is.na(dp["MotorActionsPlastic"])) & !(is.na(dp["TrialsLastReversal"])) & !(is.na(dp["AverageLatencyAttemptNewLocusMABplastic"])))
+
+# n=11: 6 in manipulated group, 5 in control group
+#length(dp$AverageLatencyAttemptNewLocusMABplastic)
+
+# look at the data
+#hist(dp$AverageLatencyAttemptNewLocusMABplastic)
+#mean(dp$AverageLatencyAttemptNewLocusMABplastic) #208
+#sd(dp$AverageLatencyAttemptNewLocusMABplastic) #226
+
+#hist(dp$MotorActionsPlastic)
+#mean(dp$MotorActionsPlastic) #14
+#sd(dp$MotorActionsPlastic) #3
+
+#mean(dp$TrialsLastReversal) #52
+#sd(dp$TrialsLastReversal) #22
+#mean(dp$TrialsFirstReversal) #70
+#sd(dp$TrialsFirstReversal) #21
+
 
 # PLASTIC MULTI-ACCESS BOX (P)
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutp <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutp$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutp) #...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMultiW, simulationOutp$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-plotResiduals(TrialsToReverseLast, simulationOutp$scaledResiduals)
+simulationOutp <- simulateResiduals(fittedModel = glmer(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic + (1|Bird), family=poisson, data=dp), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutp$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.992 so not over or under dispersed
+testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
+testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.45 so not heterscedastic
+plot(simulationOutp) #...there should be no pattern in the data points in the right panel. There is no pattern
 
-# GLMM
+# GLM
+motp <- glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic)
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+dredgemp <- dredge(glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic))
+library(knitr)
+kable(dredgemp, caption = "")
+#Akaike weights are all >0.5, therefore the models are essentially the same
+
+
+# GLMM - can't use this because only 1 data point per bird
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
+div <- MCMCglmm(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic, random = ~Bird, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -2109,26 +2185,58 @@ base1 <- dredge(MCMCglmm(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMot
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
-kable(base1, caption = "Table 5: Model selection output.")
+kable(base1, caption = "")
 ```
 
 ```{r diversity1W, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-
 # WOODEN MULTI-ACCESS BOX (W)
+dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+dw <- data.frame(dw)
+colnames(dw) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden","Notes")
+
+# Remove NAs
+dw <- subset(dw,!(is.na(dw["MotorActionsWooden"])) & !(is.na(dw["TrialsLastReversal"])) & !(is.na(dw["AverageLatencyAttemptNewLocusMABwooden"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(dw$AverageLatencyAttemptNewLocusMABwooden)
+
+# look at the data
+#hist(dw$AverageLatencyAttemptNewLocusMABwooden)
+#mean(dw$AverageLatencyAttemptNewLocusMABwooden) #463
+#sd(dw$AverageLatencyAttemptNewLocusMABwooden) #481
+
+#hist(dw$MotorActionsWooden)
+#mean(dw$MotorActionsWooden) #13
+#sd(dw$MotorActionsWooden) #4
+
+#mean(dw$TrialsLastReversal) #60
+#sd(dw$TrialsLastReversal) #38
+
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutp <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutp$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutp) #...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMultiW, simulationOutp$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-plotResiduals(TrialsToReverseLast, simulationOutp$scaledResiduals)
+simulationOutw <- simulateResiduals(fittedModel = glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutw$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutw) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.744 so not over or under dispersed
+testZeroInflation(simulationOutw) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
+testUniformity(simulationOutw) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.53 so not heterscedastic
+plot(simulationOutw) #...there should be no pattern in the data points in the right panel. It says "quantile deviations detected"
 
-# GLMM
+# GLM
+motw <- glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden)
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+dredgemw <- dredge(glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden))
+library(knitr)
+kable(dredgemw, caption = "")
+#Akaike weights = 0.71 null and <0.15 for the rest, therefore the models with or without motor actions are essentially the same
+
+
+
+# GLMM - does not work because only one data point per bird
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
