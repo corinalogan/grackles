@@ -1127,13 +1127,12 @@ kable(dredgemw, caption = "")
 
 ## DISCUSSION
 
-**Serial reversals improved switch latencies on both multiaccess boxes**. Grackles that were faster to reverse a preference in their first and last reversals were also faster to attempt to solve a new locus on the **plastic** multiaccess box, and individuals in the manipulated condition had faster switch times than those in the control condition. This indicates that, while these variables already positively correlate before conducting a manipulation, the serial reversal flexibility manipulation improved multiaccess box switching latencies. In contrast, there was no difference between control and manipulated switching performance on the **wooden** multiaccess box. Instead, serial reversal experience changed the relationship between the number of trials to reverse and switch latencies from being negative in the first reversal to having no relationship in the last reversal. This indicates that the flexibility manipulation had some effect on changing the latency to switch to attempting different loci on the wooden multiaccess box. 
+**Serial reversals improved switch latencies on both multiaccess boxes**. Grackles that were faster to reverse a preference in their first and last reversals were also faster to attempt to solve a new locus on the **plastic** multiaccess box, and individuals in the manipulated condition had faster switch times than those in the control condition. This indicates that, while these variables already positively correlate before conducting a manipulation, the serial reversal flexibility manipulation improved multiaccess box switching latencies. In contrast, there was no difference between control and manipulated switching performance on the **wooden** multiaccess box. Instead, serial reversal experience changed the relationship between the number of trials to reverse and switch latencies from being negative in the first reversal to having no relationship in the last reversal. This indicates that the flexibility manipulation had some effect on changing the latency to switch to attempting different loci on the wooden multiaccess box. Because there was no correlation between trials to pass last reversal and the latency to attempt a different locus on the wooden multiaccess box, we added motor diversity (the number of motor actions used on the wooden multiaccess box) to the model as a measure of innovativeness to determine whether switch latencies might measure both flexibility and innovativeness. This addition did not improve the model fit. This indicates that innovativeness is likely not a confound in switch latencies, which were influenced by serial reversals.
 
 **Serial reversals improved problem solving on the plastic multiaccess box**, but not in a predicted way. We predicted (P2) that there would be differences in multiaccess box performance between individuals in the control and manipulated conditions in the reversal experiment, however this was not the case: there was no difference between the conditions. We had an alternative prediction (P2 alternative 1) for if the flexibility manipulation did not work, however the manipulation did work in that almost all individuals (8/9) in the manipulated condition met the passing criterion: they were faster at reversing preferences in their last reversals than control individuals were in their first reversals. This suggests that the flexibility manipulation trained individuals who were not already fast to become faster at reversing, and, for those individuals who were already fast at reversing when they began the experiment, that other previous experience led to differences in their performance on the plastic multiaccess box. This could indicate that the important variable is the ability to be flexible, which individuals could already possess or could be trained to improve on during the experimental manipulation. That there was no correlation between the number of trials to reverse in the first reversal and the number of loci solved on either multiaccess box indicates that reversal learning in general does not correlate with problem solving on the multiaccess box: experimenters must actively do something to flexibility to make a difference in multiaccess box performance. 
 
 **Performance differed between the two multiaccess boxes**, suggesting that box design plays a large role in the outcomes of an experiment. The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. Switch latencies are presumed to measure flexibility, however, if this is the case, switch latency should be relatively independent of box design. There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, and a negative correlation on the plastic multiacces box. The lack of correlation on the wooden multiaccess box could be due to a small sample size. These results generally indicate that the two boxes differ in some way that affects a grackle's solving ability. The two box designs differed in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps the wooden multiaccess box was more ecologically relevant, thus the grackles solved more loci an average than on the plastic multiaccess box.
 
-Motor diversity did not play a role...
 
 
 ## METHODS
@@ -2368,36 +2367,52 @@ Actual power                  	=	0.7083763
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
 
 ```{r repeatableR, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-serial2 <- read.csv ("/Users/corina/GTGR/data/data_reverse.csv", header=T, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variable
+d$ID <- as.factor(d$ID)
+
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+#n=9
+#length(unique(d$ID))
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID), family=poisson, data=serial2), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p<2.2e-16 
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.049 so heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel. There is a pattern
+#January 2021: My interpretation of the statistically significant underdispersion and heteroscedasticity is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
 
 # GLMM
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(serial)
-#autocorr(serial$Sol) #Did fixed effects converge?
-#autocorr(serial$VCV) #Did random effects converge?
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random=~ID, family="poisson", data=d, verbose=F, prior=prior, nitt=50000, thin=100, burnin=25000)
+#summary(serial)
+#autocorr(serial$Sol) #Did fixed effects converge (<0.1)? yes
+#autocorr(serial$VCV) #Did random effects converge (<0.1)? yes except for 6 values
+
 
 #REPEATABILITY
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
 
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
 repeata <- serial$VCV[,"ID"]/(serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) #0.79 variance
-var(repeata) #0.15 variance
-posterior.mode(repeata) #0.99879
-HPDinterval(repeata, 0.95) #2.6e-14 to 0.99999
+mean(repeata) #0.15
+var(repeata) #0.03 variance
+posterior.mode(repeata) #0.0001
+HPDinterval(repeata, 0.95) #2.06e-15 to 0.48, probability=0.952
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -2406,19 +2421,19 @@ vf <- sapply(1:nrow(serial[["Sol"]]), function(i) {
 }) #estimates for each iteration of the MCMC
 
 repeataF <- (vf+serial$VCV[,"ID"])/(vf+serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) #1.0
-HPDinterval(repeataF, 0.95) #0.9999 to 1.0
+posterior.mode(repeataF) #0.998
+HPDinterval(repeataF, 0.95) #0.992 to 0.9998, probability=0.952
 
 # Now compare with the raw repeatability: null model
-serialraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=serial2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(serialraw)
+serialraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=d, verbose=F, prior=prior, nitt=50000, thin=100, burnin=25000)
+#summary(serialraw)
 
 repeataraw <- serialraw$VCV[,"ID"]/(serialraw$VCV[,"ID"]+serialraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata) #0.99879
-HPDinterval(repeata, 0.95) #2.6e-14 to 0.99999
+posterior.mode(repeataraw) # -0.00002
+HPDinterval(repeataraw, 0.95) #7.2e-16 to 0.18, probability=0.952
 ```
 
-#### *P3a alternative 1: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
+#### *P3a alternative: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
 
 **Analysis:** Because the independent variables could influence each other or measure the same variable, I will analyze them in a single model: Generalized Linear Mixed Model [GLMM; MCMCglmm function, MCMCglmm package; @hadfieldMCMCglmmpackage] with a binomial distribution (called categorical in MCMCglmm) and logit link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence [lag time autocorrelation values <0.01; @hadfieldMCMCglmmpackage], and adjust parameters if necessary. The contribution of each independent variable will be evaluated using the Estimate in the full model. NOTE (Apr 2021): This analysis is restricted to data from their first reversal because this is the only reversal data that is comparable across the manipulated and control groups.
 
@@ -2512,12 +2527,29 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
  
 ```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
-improve1 <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variable
+d$ID <- as.factor(d$ID)
+
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+#n=9
+#length(unique(d$ID))
+
+#NOTE: removed touchscreen trials to reverse from the models below because the touchscreen experiment did not end up working out
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToSolveNewLoci ~ Condition + ReversalNumber + TrialsToReverseT + TrialsToReverse + (1|ID), family=poisson, data=improve1), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyMABplastic ~ Condition + ReversalNumber + TrialsToReverse + (1|ID), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -2529,8 +2561,8 @@ plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residua
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0)))
-rm <- MCMCglmm(TrialsToSolveNewLoci ~ Condition * ReversalNumber * TrialsToReverseT * TrialsToReverse, random = ~ID, 
-	    family = "poisson", data = improve1, verbose = F, prior = prior, 
+rm <- MCMCglmm(TrialsToSolveNewLoci ~ Condition * ReversalNumber * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 13000, thin = 10, burnin = 3000)
 summary(rm)
 # autocorr(rm$Sol) #Did fixed effects converge?
