@@ -180,7 +180,7 @@ kable_styling(full_width = T, position = "left")
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_AllGrackleExpOrder.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
-colnames(d) <- c("Bird","ID","Sex","Age","Reversal learning (tube)","MAB plastic","MAB log","Detour","Reversal learning (touchscreen)","Go no-go (touchscreen)","Causal (touchscreen)","Demonstrator training","Exploration and boldness (aviaries)","Exploration and boldness (wild)","Focal follows","Radio telemetry","GPX tracks","Nest or territory check")
+colnames(d) <- c("Bird","ID","Sex","Age","Reversal learning (tube)","MAB plastic","MAB log","Detour","Reversal learning (touchscreen)","Go no-go (touchscreen)","Causal (touchscreen)","Demonstrator training","Exploration and boldness (aviaries)","Exploration and boldness (wild)","Focal follows","Radio telemetry","GPX tracks","Had nest (females) or had nest on territory (males)")
 
 library(kableExtra)
 knitr::kable(d) %>%
@@ -1117,7 +1117,56 @@ kable(dredgemw, caption = "")
 
 ### P3b: repeatable across contexts
 
+There was no consistency of flexibility in individuals across contexts: the latency to attempt a differenc locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
 
+```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variable
+d$ID <- as.factor(d$ID)
+
+#remove pilot birds (Fajita and Empanada) and Memela who did not pass the reversal experiment and therefore was not offered the MAB experiments
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada" & !d$ID=="Memela",]
+
+#n=8
+#length(unique(d$ID))
+
+# GLMM color reversal tubes compared with multi-access box plastic
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+rm <- MCMCglmm(LatencyMABplastic ~ ReverseNumber * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 130000, thin = 1000, burnin = 30000)
+summary(rm)
+#                              post.mean l-95% CI u-95% CI eff.samp pMCMC
+#(Intercept)                     2.08708 -4.45451 11.67734      100  0.66
+#ReverseNumber                   1.01476 -2.75484  5.49974      100  0.42
+#TrialsToReverse                 0.01693 -0.09999  0.11593      100  0.58
+#ReverseNumber:TrialsToReverse  -0.01159 -0.07061  0.03283      100  0.42
+#nothing significant so no consistent individual differences across contexts on MAB plastic and trials to reverse
+
+# GLMM color reversal tubes compared with multi-access box wooden
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 130000, thin = 1000, burnin = 30000)
+#summary(rmw)
+#                              post.mean  l-95% CI  u-95% CI eff.samp pMCMC  
+#(Intercept)                    3.622381  0.148743  7.810863    159.0  0.08 .
+#ReverseNumber                  0.211605 -1.843271  2.126334    100.0  0.88  
+#TrialsToReverse                0.032183 -0.019718  0.076067    147.9  0.14  
+#ReverseNumber:TrialsToReverse -0.004685 -0.037464  0.014299    100.0  0.62  
+#nothing significant so no consistent individual differences across contexts on MAB wooden and trials to reverse
+```
 
 
 ### P4: serial reversal learning strategy
@@ -1133,6 +1182,7 @@ kable(dredgemw, caption = "")
 
 **Performance differed between the two multiaccess boxes**, suggesting that box design plays a large role in the outcomes of an experiment. The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. Switch latencies are presumed to measure flexibility, however, if this is the case, switch latency should be relatively independent of box design. There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, and a negative correlation on the plastic multiacces box. The lack of correlation on the wooden multiaccess box could be due to a small sample size. These results generally indicate that the two boxes differ in some way that affects a grackle's solving ability. The two box designs differed in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps the wooden multiaccess box was more ecologically relevant, thus the grackles solved more loci an average than on the plastic multiaccess box.
 
+There was **no consistency of flexibility across contexts**: those individuals who were consistently faster at reversing a color preference in each reversal were not also those who were faster at switching latencies on either multiaccess box. Therefore, flexibility did not generalize to a new context.
 
 
 ## METHODS
@@ -2526,7 +2576,7 @@ Actual power                  	=	0.7083763
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
  
 ```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #remove NAs from the variables that will be in the model
 d <- subset(d,!(is.na(d["TrialsToReverse"])))
@@ -2538,35 +2588,60 @@ d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
 #factor variable
 d$ID <- as.factor(d$ID)
 
-#remove pilot birds
-d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+#remove pilot birds (Fajita and Empanada) and Memela who did not pass the reversal experiment and therefore was not offered the MAB experiments
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada" & !d$ID=="Memela",]
 
-#n=9
+#n=8
 #length(unique(d$ID))
 
-#NOTE: removed touchscreen trials to reverse from the models below because the touchscreen experiment did not end up working out
+#NOTE: removed "touchscreen trials to reverse" from the models below because the touchscreen experiment did not end up working out. Removed "condition" from the models below because this analysis only works on birds that have had serial reversals, which are only those in the manipulated group
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyMABplastic ~ Condition + ReversalNumber + TrialsToReverse + (1|ID), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyMABplastic ~ ReverseNumber + TrialsToReverse + (1|ID), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.744 so no dispersion
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.44
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel. There are patterns
+#January 2021: My interpretation of the patterns is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
 
-# GLMM color reversal tubes compared with multi-access box and reversal on the touchscreen
+
+# GLMM color reversal tubes compared with multi-access box plastic
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0)))
-rm <- MCMCglmm(TrialsToSolveNewLoci ~ Condition * ReversalNumber * TrialsToReverse, random = ~ID, 
+rm <- MCMCglmm(LatencyMABplastic ~ ReverseNumber * TrialsToReverse, random = ~ID, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000)
+	    nitt = 130000, thin = 1000, burnin = 30000)
 summary(rm)
-# autocorr(rm$Sol) #Did fixed effects converge?
-# autocorr(rm$VCV) #Did random effects converge?
+#                              post.mean l-95% CI u-95% CI eff.samp pMCMC
+#(Intercept)                     2.08708 -4.45451 11.67734      100  0.66
+#ReverseNumber                   1.01476 -2.75484  5.49974      100  0.42
+#TrialsToReverse                 0.01693 -0.09999  0.11593      100  0.58
+#ReverseNumber:TrialsToReverse  -0.01159 -0.07061  0.03283      100  0.42
+#nothing significant so no consistent individual differences across contexts on MAB plastic and trials to reverse
+
+#autocorr(rm$Sol) #Did fixed effects converge (<0.1)? yes
+#autocorr(rm$VCV) #Did random effects converge (<0.1)? yes except for 3 values
+
+# GLMM color reversal tubes compared with multi-access box wooden
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 130000, thin = 1000, burnin = 30000)
+#summary(rmw)
+#                              post.mean  l-95% CI  u-95% CI eff.samp pMCMC  
+#(Intercept)                    3.622381  0.148743  7.810863    159.0  0.08 .
+#ReverseNumber                  0.211605 -1.843271  2.126334    100.0  0.88  
+#TrialsToReverse                0.032183 -0.019718  0.076067    147.9  0.14  
+#ReverseNumber:TrialsToReverse -0.004685 -0.037464  0.014299    100.0  0.62  
+#nothing significant so no consistent individual differences across contexts on MAB wooden and trials to reverse
+
+#autocorr(rmw$Sol) #Did fixed effects converge (<0.1)? yes except for 1 value
+#autocorr(rmw$VCV) #Did random effects converge (<0.1)? yes
 ```
 
 #### *P4: learning strategies (for birds in the manipulated group only)*
