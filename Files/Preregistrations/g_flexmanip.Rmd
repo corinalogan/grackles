@@ -1106,20 +1106,15 @@ kable(dredgemw, caption = "")
 #Akaike weights = 0.71 null and <0.15 for the rest, therefore the models with or without motor actions are essentially the same
 ```
 
-
 ### P3a: reversal is repeatable within individuals within a context
 
-
-
-### P3a alternative: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?
-
-
+Reversal learning performance was repeatable within individuals within a context (the context being reversal learning). We obtained a repeatability value of 0.13, which is significantly greater than that expected if birds are performing randomly in each reversal (p=0.001; see analysis details in the R code for Analysis Plan > P3a). Consequently and as preplanned, we did not need to conduct the analysis for P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
 
 ### P3b: repeatable across contexts
 
-There was no consistency of flexibility in individuals across contexts: the latency to attempt a differenc locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
+There was no consistency of flexibility in individuals across contexts: the latency to attempt a different locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
 
-```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r consistent1results, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #remove NAs from the variables that will be in the model
@@ -1182,7 +1177,7 @@ rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID
 
 **Performance differed between the two multiaccess boxes**, suggesting that box design plays a large role in the outcomes of an experiment. The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. Switch latencies are presumed to measure flexibility, however, if this is the case, switch latency should be relatively independent of box design. There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, and a negative correlation on the plastic multiacces box. The lack of correlation on the wooden multiaccess box could be due to a small sample size. These results generally indicate that the two boxes differ in some way that affects a grackle's solving ability. The two box designs differed in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps the wooden multiaccess box was more ecologically relevant, thus the grackles solved more loci an average than on the plastic multiaccess box.
 
-There was **no consistency of flexibility across contexts**: those individuals who were consistently faster at reversing a color preference in each reversal were not also those who were faster at switching latencies on either multiaccess box. Therefore, flexibility did not generalize to a new context.
+There was **repeatability of flexibility performance within a context (reversal learning), but not across contexts (reversal learning and multiaccess boxes)**. Individuals who were faster at reversing in reversal 1 were also generally faster at reversing in subsequent reversals. However, individuals who were consistently faster at reversing a color preference in each reversal were not also those who were faster at switching latencies on either multiaccess box. Therefore, flexibility did not generalize to a new context.
 
 
 ## METHODS
@@ -2449,11 +2444,9 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 serial <- MCMCglmm(log(TrialsToReverse) ~ ReverseNumber, random=~ID, family="gaussian", data=d, verbose=F, prior=prior, nitt=50000, thin=100, burnin=500)
-                  
-                   #nitt=500000, thin=500, burnin=25000)
 summary(serial)
-autocorr(serial$Sol) #Did fixed effects converge (<0.1)? yes
-autocorr(serial$VCV) #Did random effects converge (<0.1)? yes, except for 2
+autocorr(serial$Sol) #Did fixed effects converge (<0.1)? yes, except for 2
+autocorr(serial$VCV) #Did random effects converge (<0.1)? yes, except for 4
 
 
 #REPEATABILITY
@@ -2465,8 +2458,9 @@ var(repeata) #0.02 variance
 posterior.mode(repeata) #-0.0003
 HPDinterval(repeata, 0.95) #5.77e-16 to 0.42, probability=0.95
 
+# ADDED Aug 2021
 #Is 0.13 a statistically significant repeatability? Test whether it is significantly greater than expected at chance by permuting number of trials to reverse among individuals.
-#NOTE: Because the flexibility manipulation require the last two reversals to be less than or equal to 50 trials, and ReverseNumber is significant, indicating birds generally get faster over time, we must permute TrialsToReverse across birds within ReverseNumber.
+#NOTE: Because the flexibility manipulation requires the last two reversals to be less than or equal to 50 trials, and ReverseNumber is significant, indicating birds generally get faster over time, we must permute TrialsToReverse across birds within ReverseNumber.
 
 results = rep(NA, 1000)
 for(i in 1:1000){
@@ -2494,10 +2488,10 @@ for(i in 1:1000){
 hist(results)
 abline(v=0.13,col="red")
 sum(results > 0.13)/1000
-#p = 0.001 - Our repeatability value of 0.13 is significantly greater than that expected if birds are performing randomly in each reversal.
+#p = 0.001 - Our repeatability value of 0.13 is significantly greater than that expected if birds are performing randomly in each reversal
 
 
-
+# WE DID NOT end up using the code below because the above gave us what we needed
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
 vf <- sapply(1:nrow(serial[["Sol"]]), function(i) {
