@@ -2431,6 +2431,7 @@ d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
 #length(unique(d$ID))
 
 # DATA CHECKING
+# ADDED Aug 2021 - Although our dependent variable (number of trials to reverse) is a count variable, the distribution of values was not appropriate for a poisson regression.  When checking the fit of our data to a Poisson model the data were overdispersed and heteroscedastic.  However, when log-transformed the data approximate a normal distribution and pass all of the below data checks, indicating the Gaussian model fits our log-transformed data well.
 library(DHARMa)
 library(lme4)
 simulationOutput <- simulateResiduals(fittedModel = glmer(log(TrialsToReverse) ~ ReverseNumber + (1|ID), family=gaussian, data=d), n=250) #250 simulations, but if want higher precision change n>1000; Log transform because trials does not fit a poisson distribution.
