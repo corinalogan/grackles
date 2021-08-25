@@ -149,9 +149,13 @@ Our methods and analysis plans are described in the peer-reviewed preregistratio
 
 3) We completed our simulation to explore the lower boundary of a minimum sample size and determined that **our sample size for the Arizona study site is above the minimum** (see details and code in [Ability to detect actual effects](http://corinalogan.com/Preregistrations/g_flexmanip.html#ability_to_detect_actual_effects) (17 April 2020).
 
-4) Please see our [Alternative Analyses](#alternative-analyses) section where we describe how we **changed the analysis for P2** and that we are replacing this analysis with the new models in the [Ability to detect actual effects](#ability-to-detect-actual-effects) section (14 May 2020).
+4) Please see our [Alternative Analyses](#alternative-analyses) section where we describe how we **changed the analysis for P2** and that we are replacing this analysis with the new models in the [Ability to detect actual effects](#ability-to-detect-actual-effects) section (14 May 2020). We also describe here that we realized that Condition (manipulated or control) does not need to be a variable in our models because the manipulated birds have, by definition, faster reversal speeds.
 
 5) We originally planned on testing only **adults** to have a better understanding of what the species is capable of, assuming the abilities we are testing are at their optimal levels in adulthood, and so that we could increase our statistical power by eliminating the need to include age as an independent variable in the models. Because the grackles in Arizona were extremely difficult to catch, we ended up testing two juveniles: Taco and Chilaquile. We did not conduct the full test battery with Taco or put him in the flexibility manipulation or control groups (he received 1 reversal and then moved on to the next test) because he was the first juvenile and we wanted to see whether his performance was different from adult performances. His performances were similar to the adults, therefore we decided to put Chilaquile in the full test battery. Chilaquile's performances were also similar to the adults, therefore we decided not to add age as an independent variable in the models to avoid reducing our statistical power. 
+
+**Post data collection, mid-data analysis**
+
+6) We **log transformed** the response variable and changed the GLMM distribution from Poisson to Gaussian in the [P3a analysis](#p3a-repeatable-within-individuals-within-a-context-reversal-learning) (24 Aug 2021).
 
 
 ## RESULTS
@@ -1167,6 +1171,46 @@ rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID
 ### P4: serial reversal learning strategy
 
 
+```{r p4strategyfig, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+d <- d[d$ID=="Chalupa" | d$ID=="Mole" | d$ID=="Habanero" | d$ID=="Diablo" | d$ID=="Burrito" | d$ID=="Adobo" | d$ID=="Chilaquile" | d$ID=="Pollito" | d$ID=="Memela",]
+d$ID <- factor(d$ID)
+#levels(d$ID) #n=9 grackles in manipulated group, including Memela who did not complete the experiment
+
+d$NonOverlappingWindow4TrialBins <- if (d$CorrectChoice==1 | d$CorrectChoice==0) {
+sum(d$CorrectChoice) / length(d$CorrectChoice) 
+  #for each bird 
+  
+  #for this reversal 
+  
+  #for the last 4 (non-overlapping) trials
+  
+}
+
+id1 <- d[d$ID=="Chalupa",]
+id2 <- d[d$ID=="Mole",]
+id3 <- d[d$ID=="Habanero",]
+id4 <- d[d$ID=="Diablo",]
+id5 <- d[d$ID=="Burrito",]
+id6 <- d[d$ID=="Adobo",]
+id7 <- d[d$ID=="Chilaquile",]
+id8 <- d[d$ID=="Pollito",]
+id9 <- d[d$ID=="Memela",]
+
+#add reverse number to each fig
+op <- par(mfrow=c(1,9), mar=c(4,4,1,0.2))
+plot(id1$Trial,id1$NonoverlappingWindow4TrialBins, main="Chalupa", xlab="", ylab="Proportion correct choices", ylim=c(0,1), xlim=c(0,40), pch=19)
+plot(id2$Trial,id2$NonoverlappingWindow4TrialBins, main="Mole", xlab="", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+plot(id3$Trial,id3$NonoverlappingWindow4TrialBins, main="Habanero", xlab="", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+plot(id4$Trial,id4$NonoverlappingWindow4TrialBins, main="Diablo", xlab="", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+plot(id5$Trial,id5$NonoverlappingWindow4TrialBins, main="Burrito", xlab="Trial", ylab="Proportion correct choices", ylim=c(0,1), xlim=c(0,40), pch=19)
+plot(id6$Trial,id6$NonoverlappingWindow4TrialBins, main="Adobo", xlab="Trial", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+plot(id7$Trial,id7$NonoverlappingWindow4TrialBins, main="Chilaquile", xlab="Trial", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+plot(id8$Trial,id8$NonoverlappingWindow4TrialBins, main="Pollito", xlab="Trial", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+plot(id9$Trial,id9$NonoverlappingWindow4TrialBins, main="Memela", xlab="Trial", ylab="", ylim=c(0,1), xlim=c(0,170), pch=19)
+par(op)
+```
 
 
 ## DISCUSSION
@@ -1280,7 +1324,7 @@ Note April 2020: we realized that the average latency to solve a new locus after
 
 3) ID (random effect because repeated measures on the same individuals)
 
-#### *P3a: repeatable within individuals within a context (reversal learning)*
+#### *P3a: repeatable within individuals within a context*
 
 1) Reversal number
 
