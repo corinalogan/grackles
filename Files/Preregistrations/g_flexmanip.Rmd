@@ -1369,6 +1369,9 @@ par(op)
 ![](g_flexmanip_fig_pollito.png){width=100%}
 ![](g_flexmanip_fig_memela.png){width=100%}
 
+There was no correlation between exploration (sampling ratio) or exploitation (acquisition ratio) and reversal number (sampling: reversal estimate=-0.09, SE=0.11, z=-0.86, p=0.39; acquisition: reversal estimate=0.00, SE=0.00, z=-0, p=1.00), indicating that the grackles did not use a particular strategy earlier or later in their serial reversals.
+
+
 ## DISCUSSION
 
 **Serial reversals improved switch latencies on both multiaccess boxes**. Grackles that were faster to reverse a preference in their first and last reversals were also faster to attempt to solve a new locus on the **plastic** multiaccess box, and individuals in the manipulated condition had faster switch times than those in the control condition. This indicates that, while these variables already positively correlate before conducting a manipulation, the serial reversal flexibility manipulation improved multiaccess box switching latencies. In contrast, there was no difference between control and manipulated switching performance on the **wooden** multiaccess box. Instead, serial reversal experience changed the relationship between the number of trials to reverse and switch latencies from being negative in the first reversal to having no relationship in the last reversal. This indicates that the flexibility manipulation had some effect on changing the latency to switch to attempting different loci on the wooden multiaccess box. Because there was no correlation between trials to pass last reversal and the latency to attempt a different locus on the wooden multiaccess box, we added motor diversity (the number of motor actions used on the wooden multiaccess box) to the model as a measure of innovativeness to determine whether switch latencies might measure both flexibility and innovativeness. This addition did not improve the model fit. This indicates that innovativeness is likely not a confound in switch latencies, which were influenced by serial reversals.
@@ -1378,6 +1381,8 @@ par(op)
 **Performance differed between the two multiaccess boxes**, suggesting that box design plays a large role in the outcomes of an experiment. The number of trials to reverse a preference in the first reversal positively correlated with switch latencies on the plastic multiaccess box, and negatively on the wooden multiaccess box, which calls into question what switching latencies actually measure. Switch latencies are presumed to measure flexibility, however, if this is the case, switch latency should be relatively independent of box design. There was no correlation between trials to pass last reversal and the number of loci solved on the wooden multiaccess box, and a negative correlation on the plastic multiacces box. The lack of correlation on the wooden multiaccess box could be due to a small sample size. These results generally indicate that the two boxes differ in some way that affects a grackle's solving ability. The two box designs differed in many ways: the plastic box was human-made with human-made ways of solving it, while the wooden box was made out of a natural log and required opening doors (likely a common thing for a grackle to do in the wild) or a drawer. Perhaps the wooden multiaccess box was more ecologically relevant, thus the grackles solved more loci an average than on the plastic multiaccess box.
 
 Examining only the manipulated grackles, there was **repeatability of flexibility performance within a context (reversal learning), but not across contexts (reversal learning and multiaccess boxes)**. Individuals who were faster at reversing a color preference in reversal 1 were also generally faster at reversing in subsequent reversals. However, individuals who were consistently faster at reversing in each reversal were not also those who were faster at switching latencies on either multiaccess box. Therefore, individual-level flexibility did not generalize to a new context, though the invididual's reinforcement history and motivation levels could play a role, and it is also possible that performance on the multiaccess boxes additionally relies on other cognitive abilities in which individuals differ.
+
+While one third of the grackles switched from an exploratory **strategy** (epsilon-decreasing) to an exploitative strategy (epsilon-first) in their last reversal, there was no correlation between either and reversal number, indicating that the grackles did not use a particular strategy earlier or later in their serial reversals. This could suggest that the grackles did not learn the overarching rule that once food is found in the non-preferred tube, they must switch to preferring that color. Instead, they may learn each preference change as if it was new.
 
 
 ## METHODS
@@ -2889,55 +2894,26 @@ From @logan2016behavioral (emphasis added):
 
 >N is the number of trials given, and epsilon, $$\epsilon$$, represents the subject’s uncertainty about the location of the reward, starting at complete uncertainty ($\epsilon$ = 1) at the beginning of the experiment and decreasing rapidly as individuals gain experience with the task (exploration phase where the rewarded [option] is chosen below or at chance levels) and switch to the exploitative phase (the rewarded [option] is chosen significantly above chance levels). Because the [subjects] needed to learn the rules of the task, they necessarily had an exploration phase. The **epsilon-first strategy** involves an exploration phase followed by an entirely exploitative phase. The optimal strategy overall would be to explore one color in the first trial and the other color in the second trial, and then switch to an exploitative strategy (choose the rewarded [option] significantly above chance levels). In this case there would be no pattern [in the learning curve] in the choices [during] the exploration phase because it would consist of sampling each [option] only once. In the **epsilon-decreasing strategy**, subjects would start by making some incorrect choices and then increase their choice of the rewarded [option] gradually as their uncertainty decreases until they choose the rewarded [option] significantly above chance levels. In this case, a linear pattern emerges [in the learning curve] during the exploration phase. 
 
-We will then quantitatively determine to what degree each bird used the exploration versus exploitation strategy using methods in [federspiel2017adjusting] by calculating the number of 20-trial blocks where birds were choosing “randomly” (6-14 correct choices; called sampling blocks; akin to the exploration phase in our preregistration) was divided by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (15-20 correct choices; akin to the exploitation phase in our preregistration). These ratios, calculated for each bird for their serial reversals, quantitatively discern the exploration from the exploitation phases.
+We will then quantitatively determine to what degree each bird used the exploration versus exploitation strategy using methods in [@federspiel2017adjusting] by calculating the number of 20-trial blocks where birds were choosing “randomly” (6-14 correct choices; called sampling blocks; akin to the exploration phase in our preregistration) was divided by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (15-20 correct choices; akin to the exploitation phase in our preregistration). These ratios, calculated for each bird for their serial reversals, quantitatively discern the exploration from the exploitation phases.
 
-```{r strategy, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
-strat <- read.csv ("/Users/corina/GTGR/data/data_strategy.csv", header=T, sep=",", stringsAsFactors=F) 
+NOTE (Aug 2021): the grackles were tested in 10-trial blocks and not 20-trial blocks as in @federspiel2017adjusting, which would mean that if there were <20 trials in the last block of a reversal, they would be omitted from the analysis. Therefore, we changed the block size to 10 trials and adjusted the sampling blocks to 2-9 correct choices, and the acquisition blocks to 9-10 correct choices using significance levels in the binomial test as did @federspiel2017adjusting.
 
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(ratioExplore ~ ReversalNumber + (1|ID), family=poisson, data=strat), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+```{r strategyratio, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+rr <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseratio.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-# GLMM explore strategy (6-14 correct choices/20 trial block) ratio
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0)))
-st <- MCMCglmm(ratioExplore ~ ReversalNumber, random = ~ID, 
-	    family = "poisson", data = strat, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000)
-summary(st)
-# autocorr(st$Sol) #Did fixed effects converge?
-# autocorr(st$VCV) #Did random effects converge?
+#remove NAs from the variables that will be in the model
+rr <- subset(rr,!(is.na(rr["SamplingRatio"])))
+rr <- subset(rr,!(is.na(rr["AcquisitionRatio"])))
 
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(ratioExploit ~ ReversalNumber + (1|ID), family=poisson, data=strat), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+# GLMM is sampling ratio (exploration) higher earlier in serial reversals?
+rr1 <- glmer(SamplingRatio ~ Reversal + (1|ID), family=binomial, data=rr)
+summary(rr1)
+#There is no significant correlation between reversal number and sampling ratio
 
-# GLMM exploit strategy (6-14 correct choices/20 trial block) ratio
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0)))
-et <- MCMCglmm(ratioExploit ~ ReversalNumber, random = ~ID, 
-	    family = "poisson", data = strat, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000)
-summary(et)
-# autocorr(et$Sol) #Did fixed effects converge?
-# autocorr(et$VCV) #Did random effects converge?
+# GLMM is acquisition ratio (exploitation) higher earlier in serial reversals?
+rr2 <- glmer(AcquisitionRatio ~ Reversal + (1|ID), family=binomial, data=rr)
+summary(rr2)
+#There is no significant correlation between reversal number and acquisition ratio
 ```
 
 #### *Alternative Analyses*
