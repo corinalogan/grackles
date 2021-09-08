@@ -1392,7 +1392,7 @@ check Rcode 14.12 Richard's book on cafes
 
 2) determine whether particular mechanisms of flexibility are relevant for performance on the multiaccess boxes (control and manipulated birds). Does phi or lambda correlate with performance on the multiaccess box? Use Dominik's model in inhibition and apply here
 
-ADD FIGURE FROM WIP of the different levels: cognition, behavior, etc
+For question 1... 
 
 ```{r posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -1409,32 +1409,103 @@ d <- subset(d,!(is.na(d["CorrectChoice"])))
 
 
 #Manipulated individuals only: Nest first vs last reversal inside ID. ID is the control for the unknown starting conditions (e.g. the bird's previous experience that makes them more or less flexible). Is there a consistent change from PhiR1 to PhiRlast or from LambdaR1 to LambdaRlast? 
+```
 
+
+For question 2...
+
+```{r posthocMABplasticLatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+
+# Load data
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
+
+library(rstan)
+
+### Code below copied from Blaisdell et al. 2021
+
+# Prepare Reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+#exclude reversal=0 because this was the initial discrimination and not a reversal
+dflex <- subset(dflex, dflex$Reversal != 0) 
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+#Construct choice variable
+dflex$Choice <- NA
+for (i in 1: nrow(dflex)) {
+  if (dflex$Reversal[i] %in% seq(0, max(unique(dflex$Reversal)), by = 2)){
+    
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 1
+    } else {
+      dflex$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 2
+    } else {
+      dflex$Choice[i] <- 1
+    } 
+  }
+}
+dflex <- dflex[with(dflex, order(dflex$ID)), ]
+
+
+# Prepare MAB data for models
+dmabp <- data.frame(dmabp)
+colnames(dmabp) <- c("ID","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden","Notes")
+
+# Keep only birds who finished the task
+dmabp <- subset(dmabp, is.na(dmabp$AverageLatencyAttemptNewLocusMABplastic) == FALSE)
+
+#Flexibility data for birds with inhibition score
+d <- subset(dflex, dflex$ID %in% dmabp$ID)
+
+# Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
+d <- d[with(d, order(d$ID)), ]
+dmabp   <- dmabp[with(dmabp, order(dmabp$ID)), ]
+
+# Convert bird names into numeric ids
+d$ID <- as.numeric(as.factor(d$ID))
+dmabp$ID <- as.numeric(as.factor(dmabp$ID))
+
+# Keep only the columns we are going to analyze
+d <- subset(d, select = c(ID, Choice, Correct))
 
 
 ### Code below copied from Logan et al. 2020 http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html for comparing multiple sites with a random factor
 
-# Now we run a STAN model with all simulated sites, estimating both means of phi and lambda for each site as well as each individuals' phi and lambda
+# Now we run a STAN model with all simulated sites, estimating both means of phi and lambda for each site as well as each individuals' phi and lambda. 
+#NOTE: site = MAB plastic latency to switch
+
 
 # We set up the data for the model
-dat_full <- as.list(simulatedreversaldata_attractionscores)
-dat_full$N <- nrow(simulatedreversaldata_attractionscores)
-dat_full$N_id <- length(unique(simulatedreversaldata_attractionscores$id))
-dat_full$N_exp <- length(unique(simulatedreversaldata_attractionscores$Site))
-dat_full$Choice <- as.numeric(as.factor(dat_full$Choice))
+dat_full <- as.list(d)
+dat_full$N <- nrow(d)
+dat_full$N_id <- length(unique(d$ID))
+dat_full$Choice <- as.numeric(as.factor(d$Correct))
+# to modify our code for your purposes, insert your response variable here. Replace dmabp$AverageLatencyAttemptNewLocusMABplastic with the column in your data sheet that is the response variable
+dat_full$Response <- dmabp$AverageLatencyAttemptNewLocusMABplastic
+
 
 # This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose.
 
-reinforcement_model_id_site_nonzeroattraction <- "
+reinforcement_model_id_mabplatency_nonzeroattraction <- "
 data{
    int N;
    int N_id;
-   int N_exp;
-   int id[N];
-   int Site[N];
-   int Trial[N];
+   int ID[N];
    int Choice[N];
    int Correct[N];
+   int Response[N_id];
 }
 
 parameters{
@@ -1446,22 +1517,34 @@ parameters{
   vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
   cholesky_factor_corr[2] Rho_ID;
 
-  // Varying effects clustered on experimenter
-  matrix[2,N_exp] z_EXP;
-  vector<lower=0>[2] sigma_EXP;
-  cholesky_factor_corr[2] Rho_EXP;
+  // GLM
+  real alpha;
+  real b_phi;
+  real b_lambda;
+  real b_int;
+  real spread;
 }
 
 transformed parameters{
 matrix[N_id,2] v_ID; // varying effects on individuals
-matrix[N_exp,2] v_EXP; // varying effects on experimenter
 
 v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
-v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
 }
 
 model{
 matrix[N_id,2] A; // attraction matrix
+
+vector[N_id] phi_i;
+vector[N_id] lambda_i;
+
+vector[N_id] phi_i_s ;
+vector[N_id] lambda_i_s ;
+vector[N_id] lambda;
+
+alpha ~ normal(5,0.5);
+b_phi ~ normal(0,0.3);
+b_lambda ~ normal(0,0.3);
+b_int ~ normal(0,0.3);
 
 logit_phi ~  normal(0,1);
 log_L ~  normal(0,1);
@@ -1470,10 +1553,6 @@ log_L ~  normal(0,1);
 to_vector(z_ID) ~ normal(0,1);
 sigma_ID ~ exponential(1);
 Rho_ID ~ lkj_corr_cholesky(4);
-
-to_vector(z_EXP) ~ normal(0,1);
-sigma_EXP ~ exponential(1);
-Rho_EXP ~ lkj_corr_cholesky(4);
 
 // initialize attraction scores
 for ( i in 1:N_id ) {
@@ -1488,21 +1567,31 @@ real L;
 real phi;
 
 // first, what is log-prob of observed choice
-L =  exp(log_L + v_ID[id[i],1]+ v_EXP[Site[i],1]);
-p = softmax(L*A[id[i],1:2]' );
+L =  exp(log_L + v_ID[ID[i],1]);
+p = softmax(L*A[ID[i],1:2]' );
 Choice[i] ~ categorical( p );
 
 // second, update attractions conditional on observed choice
-phi =  inv_logit(logit_phi + v_ID[id[i],2]+ v_EXP[Site[i],2]);
+phi =  inv_logit(logit_phi + v_ID[ID[i],2]);
 pay[1:2] = rep_vector(0,2);
 pay[ Choice[i] ] = Correct[i];
-A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+A[ ID[i] , Choice[i] ] = ( (1-phi)*(A[ ID[i] , Choice[i] ]) + phi*pay[Choice[i]])';
 }//i
+
+// Define bird specific values on the outcome scale and standardize
+lambda_i = exp(log_L + v_ID[,1]);
+phi_i = inv_logit(logit_phi + v_ID[,2]);
+
+lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
+phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
+
+lambda = alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s .* phi_i_s;
+Response ~ poisson(exp(lambda));
 }
 "
 
 # Now we run the STAN model on the full data. This will take a few hours.
-m_simulated_full <- stan( model_code =  reinforcement_model_id_site_nonzeroattraction, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+run_reinforcement_model_id_mabplatency_nonzeroattraction <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 # We extract the posterior from the STAN model
 s <- extract.samples(m_simulated_full)
@@ -1527,11 +1616,15 @@ estimates_pairwisedifferences_phiposteriors<-as.data.frame(precis(pairwisediffer
 
 # We add a column that classifies as true or false whether the estimates crosses zero (as opposed to all values being either smaller or larger than zero)
 estimates_pairwisedifferences_phiposteriors$crosseszero<-ifelse(estimates_pairwisedifferences_phiposteriors$mean>0,estimates_pairwisedifferences_phiposteriors$`5.5%`<0,estimates_pairwisedifferences_phiposteriors$`94.5%`>0)
-
 ```
 
+Considering the flexibility results we have so far obtained from the Arizona population of great-tailed grackles, we are starting to understand how cognition and behavior, using various tests, are related, either correlationally or causally (Figure Y). We now know that flexibility is correlated with self control, a measure of inhibition, in that the birds who are faster to reverse and faster to switch loci on the multiaccess boxes are also the ones to pass go no-go criterion faster [@logan2021inhibition]. We do not have evidence that this species uses causal cognition, and their causal scores did not correlate with flexibility (reversal learning and plastic multiaccess box) [@blaisdell2021causal]. In the current investigation, we were able to make causal conclusions, rather than only correlational: we manipulated reversal learning, which caused changes in a different flexibility measure (multiaccess box switch times) and in an innovativeness measure (multiaccess box loci solved), as well as validating that this manipulation had an effect on the cognitive ability we think of as flexibility.
 
+![](g_flexmanip_figcogbeh.png)
 
+**Figure Y.** A directed acyclic graph (DAG) of the behavioral flexibility results from the Arizona population of great-tailed grackles (2018-2020). There was no relationship between causal cognition scores and performance on their last reversal or the wooden multiaccess box switch times (first reversal and plastic multiaccess box were not investigated) [1: @blaisdell2021causal]. There was no relationship between detour performance and performance on go no-go, first or last reversal, or with wooden or plastic multiaccess box switch times [2: @logan2021inhibition]. There was a positive and a negative correlation between go no-go and first and last reversal performance depending on whether Taquito was included, however the negative relationship in the last reversal was most supported: the faster to reverse were also the faster to pass criterion on go no-go [2: @logan2021inhibition]. Serial reversals improved switch latencies on both multiaccess boxes and improved the number of loci solved on the plastic multiaccess box (but no correlation on the wooden multiaccess box), as well as validating that we were able to causally effect flexibility (3: current investigation). 
+
+That it is possible to manipulate flexibility using a paradigm such as reversal learning opens up many opportunities to better understand what flexibility is and whether and how it is causally related to other behaviors or forms of cognition. Understanding how flexibility causally relates to other traits will allow researchers to develop robust theory about what flexibility is and when to invoke it as a primary driver in a given context, such as a rapid geographic range expansion. Indeed, we are already in the process of testing the latter hypothesis by conducting cross-population research on great-tailed grackles to test whether a population on the range edge is more flexible [@logan2020xpop]. That we were able to manipulate flexibility, which had causal effects on flexibility in a different context (multiaccess box) as well as a different cognitive ability (innovativeness), demonstrates that flexibility manipulations could be useful in training threatened and endangered species in how to be more flexible. If such a flexibility manipulation was successful, it could then change their behavior in this and other domains, giving them a better chance of succeeding in human modified environments.
 
 
 ## METHODS
