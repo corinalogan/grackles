@@ -1415,6 +1415,7 @@ d <- subset(d,!(is.na(d["CorrectChoice"])))
 For question 2...
 
 ```{r posthocMABplasticLatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+#NOTE: CmdStan will help the stan models run faster. Instructions on how to install this are at https://mc-stan.org/cmdstanr/articles/cmdstanr.html
 
 # Load data
 dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -1424,7 +1425,7 @@ library(rstan)
 
 ### Code below copied from Blaisdell et al. 2021
 
-# Prepare Reversal learning data
+# PREPARE reversal learning data
 #exclude yellow tube trials for control birds because we are only interested in reversal data
 dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube") 
 #include only those trials where the bird made a choice (0 or 1)
@@ -1438,7 +1439,7 @@ dflex$Trial <- as.integer(dflex$Trial)
 #exclude NAs from the CorrectChoice column
 dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
 
-#Construct choice variable
+#Construct Choice variable
 dflex$Choice <- NA
 for (i in 1: nrow(dflex)) {
   if (dflex$Reversal[i] %in% seq(0, max(unique(dflex$Reversal)), by = 2)){
@@ -1459,7 +1460,7 @@ for (i in 1: nrow(dflex)) {
 dflex <- dflex[with(dflex, order(dflex$ID)), ]
 
 
-# Prepare MAB data for models
+# PREPARE MAB data for models
 dmabp <- data.frame(dmabp)
 colnames(dmabp) <- c("ID","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden","Notes")
 
@@ -1481,13 +1482,10 @@ dmabp$ID <- as.numeric(as.factor(dmabp$ID))
 d <- subset(d, select = c(ID, Choice, Correct))
 
 
-### Code below copied from Logan et al. 2020 http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html for comparing multiple sites with a random factor
+### RUN the STAN model. Estimates means of phi and lambda for each site as well as each individuals' phi and lambda
+# Code below copied from Logan et al. 2020 http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html and modified to obtain phi and lambda from reversal learning (explanatory variables) and compare with MAB plastic latency to switch (response variable)
 
-# Now we run a STAN model with all simulated sites, estimating both means of phi and lambda for each site as well as each individuals' phi and lambda. 
-#NOTE: site = MAB plastic latency to switch
-
-
-# We set up the data for the model
+# PREPARE the data for the model
 dat_full <- as.list(d)
 dat_full$N <- nrow(d)
 dat_full$N_id <- length(unique(d$ID))
