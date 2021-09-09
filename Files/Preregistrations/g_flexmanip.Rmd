@@ -1415,19 +1415,18 @@ d <- subset(d,!(is.na(d["CorrectChoice"])))
 For question 2...
 
 ```{r posthocMABplasticLatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
-#NOTE: CmdStan will help the stan models run faster. Instructions on how to install this are at https://mc-stan.org/cmdstanr/articles/cmdstanr.html
-
 # Load data
 dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
 dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
 
 library(rstan)
 
+
 ### Code below copied from Blaisdell et al. 2021
 
 # PREPARE reversal learning data
 #exclude yellow tube trials for control birds because we are only interested in reversal data
-dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube") 
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
 #include only those trials where the bird made a choice (0 or 1)
 dflex <- subset(dflex, dflex$CorrectChoice != -1) 
 #reverse number. 0=initial discrimination
@@ -1438,6 +1437,18 @@ dflex$Correct <- as.integer(dflex$CorrectChoice)
 dflex$Trial <- as.integer(dflex$Trial)
 #exclude NAs from the CorrectChoice column
 dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+# Want data ONLY from LAST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$ID))) {
+  thisbird <- unique(dflex$ID)[i]
+  thisbirddata <- dflex[dflex$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==max(thisbirddata$Reversal),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+dflex <- reduceddata
+length(unique(dflex$ID)) #21 birds
 
 #Construct Choice variable
 dflex$Choice <- NA
@@ -1482,10 +1493,9 @@ dmabp$ID <- as.numeric(as.factor(dmabp$ID))
 d <- subset(d, select = c(ID, Choice, Correct))
 
 
-### RUN the STAN model. Estimates means of phi and lambda for each site as well as each individuals' phi and lambda
-# Code below copied from Logan et al. 2020 http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html and modified to obtain phi and lambda from reversal learning (explanatory variables) and compare with MAB plastic latency to switch (response variable)
+### The STAN model. Code below copied from Logan et al. 2020 http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html and modified to obtain phi and lambda from reversal learning (explanatory variables) and MAB plastic latency to switch (response variable)
 
-# PREPARE the data for the model
+# PREPARE the data for the STAN model
 dat_full <- as.list(d)
 dat_full$N <- nrow(d)
 dat_full$N_id <- length(unique(d$ID))
@@ -1496,135 +1506,9 @@ dat_full$Response <- dmabp$AverageLatencyAttemptNewLocusMABplastic
 
 # This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose.
 
-reinforcement_model_id_mabplatency_nonzeroattraction <- "
-data{
-   int N;
-   int N_id;
-   int ID[N];
-   int Choice[N];
-   int Correct[N];
-   int Response[N_id];
-}
+# In case you want to learn how to convert R code to STAN code, you can use the function stancode(). In this case, where we want to use the gamma poisson distribution, we can see the STAN code translation from the rethinking model mplat1 with stancode(mplat1)
 
-parameters{
-  real logit_phi;
-  real log_L;
-
-  // Varying effects clustered on individual
-  matrix[2,N_id] z_ID;
-  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
-  cholesky_factor_corr[2] Rho_ID;
-
-  // GLM
-  real alpha;
-  real b_phi;
-  real b_lambda;
-  real b_int;
-  real spread;
-}
-
-transformed parameters{
-matrix[N_id,2] v_ID; // varying effects on individuals
-
-v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
-}
-
-model{
-matrix[N_id,2] A; // attraction matrix
-
-vector[N_id] phi_i;
-vector[N_id] lambda_i;
-
-vector[N_id] phi_i_s ;
-vector[N_id] lambda_i_s ;
-vector[N_id] lambda;
-
-alpha ~ normal(5,0.5);
-b_phi ~ normal(0,0.3);
-b_lambda ~ normal(0,0.3);
-b_int ~ normal(0,0.3);
-
-logit_phi ~  normal(0,1);
-log_L ~  normal(0,1);
-
-// varying effects
-to_vector(z_ID) ~ normal(0,1);
-sigma_ID ~ exponential(1);
-Rho_ID ~ lkj_corr_cholesky(4);
-
-// initialize attraction scores
-for ( i in 1:N_id ) {
-A[i,1] = 0.1; A[i,2] = 0.1';
-}
-
-// loop over Choices
-for ( i in 1:N ) {
-vector[2] pay;
-vector[2] p;
-real L;
-real phi;
-
-// first, what is log-prob of observed choice
-L =  exp(log_L + v_ID[ID[i],1]);
-p = softmax(L*A[ID[i],1:2]' );
-Choice[i] ~ categorical( p );
-
-// second, update attractions conditional on observed choice
-phi =  inv_logit(logit_phi + v_ID[ID[i],2]);
-pay[1:2] = rep_vector(0,2);
-pay[ Choice[i] ] = Correct[i];
-A[ ID[i] , Choice[i] ] = ( (1-phi)*(A[ ID[i] , Choice[i] ]) + phi*pay[Choice[i]])';
-}//i
-
-// Define bird specific values on the outcome scale and standardize
-lambda_i = exp(log_L + v_ID[,1]);
-phi_i = inv_logit(logit_phi + v_ID[,2]);
-
-lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
-phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
-
-lambda = alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s .* phi_i_s;
-Response ~ poisson(exp(lambda));
-}
-"
-
-# Now we run the STAN model on the full data. This will take a few hours.
-run_reinforcement_model_id_mabplatency_nonzeroattraction <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
-
-# We extract the posterior from the STAN model
-s <- extract.samples(m_simulated_full)
-
-# We calculate the mean phi and lambda for each site as estimated by the STAN model
-lambda <- sapply(1 : dat_full$N_exp, function(x) exp( mean(s$log_L) + mean(s$v_EXP[ ,x, 1])))
-phi <- sapply(1 : dat_full$N_exp, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_EXP[ ,x, 2])))
-
-# We calculate the original mean phi and lambda values for each site. Because we randomly generated 20 individuals per site, these original values will be slightly different than the means we set as starting values for the simulations
-originallambda<-as.vector(as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(ThisBirdsLambda)))[,2])
-originalphi<-(as.data.frame(simulatedreversaldata_attractionscores %>% group_by(Site) %>% summarise(mean(ThisBirdsPhi)))[,2])
-
-
-# We want to know whether the STAN model estimated two sites to be different or not. As criterion for this, we check whether the samples in the posterior for pairs of site overlap or not. That means that, when calculating the difference between the samples in the posterior for a pair of site, they are assumed to be different if the differences are all on one side of zero.
-
-# We first check our power to estimate difference in mean phi between sites
-# We calculate the pairwise differences between sites for the estimated phi means
-pairwisedifferences_phiposteriors<-list(sapply(1 : (dat_full$N_exp * (dat_full$N_exp-1)/2), function(x) (s$v_EXP[ ,combn(1:dat_full$N_exp,m=2)[1,x], 2]-(s$v_EXP[ ,combn(1:dat_full$N_exp,m=2)[2,x], 2]))))
-
-# We convert it into a dataframe for easier manipulation
-estimates_pairwisedifferences_phiposteriors<-as.data.frame(precis(pairwisedifferences_phiposteriors,depth=2))
-
-# We add a column that classifies as true or false whether the estimates crosses zero (as opposed to all values being either smaller or larger than zero)
-estimates_pairwisedifferences_phiposteriors$crosseszero<-ifelse(estimates_pairwisedifferences_phiposteriors$mean>0,estimates_pairwisedifferences_phiposteriors$`5.5%`<0,estimates_pairwisedifferences_phiposteriors$`94.5%`>0)
-
-
-
-
-
-
-# In the result section, we analysed the latency to solve the options in the plastic puzzle box using a gamma-poison distribution. We might want to do this here as well. To understand how to implement it in the STAN code, we can translate the model specification we used above:
-stancode(mplat1)
-
-# From that, we copy the important parts over to the reinforcement learning model
-
+# DEFINE the model in STAN. This model links phi and lambda from reversal learning to the MAB plastic latency to switch data per bird
 reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- "
 data{
    int N;
@@ -1682,7 +1566,7 @@ to_vector(z_ID) ~ normal(0,1);
 sigma_ID ~ exponential(1);
 Rho_ID ~ lkj_corr_cholesky(4);
 
-// initialize attraction scores
+// initialize attraction scores, which are set to 0.1 for both choices (lt gray and dk gray)
 for ( i in 1:N_id ) A[i,1:2] = rep_vector(0.1,2)';
 
 // loop over Choices
@@ -1719,17 +1603,21 @@ Response ~ neg_binomial_2(binomial_lambda, spread);
 }
 "
 
-run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+### Prepare to run the model using cmdstan
+#NOTE: CmdStan will help the stan models run faster. Instructions on how to install this are at https://mc-stan.org/cmdstanr/articles/cmdstanr.html
 
-
-
-# run the model using cmdstan
+# Save where your working directory is so we can reset it to this at the end of the session. You might have to copy and paste the following 2 sections directly into the Console because they sometimes don't otherwise run
 currentlocation<-getwd()
-setwd(cmdstan_path())
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+# access the output file created by the model running the reinforcement model
 write(reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison,file="myowntrial.stan")
 file <- file.path(cmdstan_path(), "myowntrial.stan")
 mod <- cmdstan_model(file)
 options(mc.cores=4)
+
+# RUN the model
 fit <- mod$sample(
   data = dat_full,
   seed = 123,
@@ -1737,11 +1625,20 @@ fit <- mod$sample(
   parallel_chains = 4,
   refresh = 500
 )
+# Extract relevant variables
 outcome<-data.frame(fit$summary())
 rownames(outcome)<-outcome$variable
+
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
-outcome[outcome$variable %in% c("b_phi","b_lambda","b_int"),6:7]
-# We can also plot the distribution of the estimated associations to show that they overlap zero
+drawsarray<-fit$draws()
+drawsdataframe<-as_draws_df(drawsarray)
+drawsdataframe<-data.frame(drawsdataframe)
+HPDI(drawsdataframe$b_lambda)
+HPDI(drawsdataframe$b_phi)
+HPDI(drawsdataframe$b_int)
+# all values cross zero so there is no correlation between mab latencies and phi or lambda
+
+# Plot the distribution of the estimated associations to see whether they overlap zero (if so, then there is no effect)
 library(bayesplot)
 mcmc_hist(fit$draws("b_lambda"))
 mcmc_hist(fit$draws("b_phi"))
@@ -1750,8 +1647,13 @@ mcmc_hist(fit$draws("b_int"))
 # Remove the stan command line file we created for this particular model from your computer
 fn<-"myowntrial"
 file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
 
+
+### NOTE: if you aren't running cmdstan, then run the model with this code instead of the above "fit" model
+run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 ```
 
 Considering the flexibility results we have so far obtained from the Arizona population of great-tailed grackles, we are starting to understand how cognition and behavior, using various tests, are related, either correlationally or causally (Figure Y). We now know that flexibility is correlated with self control, a measure of inhibition, in that the birds who are faster to reverse and faster to switch loci on the multiaccess boxes are also the ones to pass go no-go criterion faster [@logan2021inhibition]. We do not have evidence that this species uses causal cognition, and their causal scores did not correlate with flexibility (reversal learning and plastic multiaccess box) [@blaisdell2021causal]. In the current investigation, we were able to make causal conclusions, rather than only correlational: we manipulated reversal learning, which caused changes in a different flexibility measure (multiaccess box switch times) and in an innovativeness measure (multiaccess box loci solved), as well as validating that this manipulation had an effect on the cognitive ability we think of as flexibility.
