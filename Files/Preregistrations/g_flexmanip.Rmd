@@ -1614,6 +1614,144 @@ estimates_pairwisedifferences_phiposteriors<-as.data.frame(precis(pairwisediffer
 
 # We add a column that classifies as true or false whether the estimates crosses zero (as opposed to all values being either smaller or larger than zero)
 estimates_pairwisedifferences_phiposteriors$crosseszero<-ifelse(estimates_pairwisedifferences_phiposteriors$mean>0,estimates_pairwisedifferences_phiposteriors$`5.5%`<0,estimates_pairwisedifferences_phiposteriors$`94.5%`>0)
+
+
+
+
+
+
+# In the result section, we analysed the latency to solve the options in the plastic puzzle box using a gamma-poison distribution. We might want to do this here as well. To understand how to implement it in the STAN code, we can translate the model specification we used above:
+stancode(mplat1)
+
+# From that, we copy the important parts over to the reinforcement learning model
+
+reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- "
+data{
+   int N;
+   int N_id;
+   int ID[N];
+   int Choice[N];
+   int Correct[N];
+   int Response[N_id];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+
+  // GLM
+  real alpha;
+  real b_phi;
+  real b_lambda;
+  real b_int;
+  real <lower=0> spread;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on individuals
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+vector[N_id] phi_i;
+vector[N_id] lambda_i;
+
+vector[N_id] phi_i_s ;
+vector[N_id] lambda_i_s ;
+vector[N_id] binomial_lambda;
+
+alpha ~ normal(5,0.5);
+b_phi ~ normal(0,0.3);
+b_lambda ~ normal(0,0.3);
+b_int ~ normal(0,0.3);
+spread ~ exponential(1);
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+for ( i in 1:N_id ) A[i,1:2] = rep_vector(0.1,2)';
+
+// loop over Choices
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+L =  exp(log_L + v_ID[ID[i],1]);
+p = softmax(L*A[ID[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+phi =  inv_logit(logit_phi + v_ID[ID[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ ID[i] , Choice[i] ] = ((1-phi)*(A[ ID[i] , Choice[i] ]) + phi*pay[Choice[i]]);
+}//i
+
+// Define bird specific values on the outcome scale and standardize
+lambda_i = exp(log_L + v_ID[,1]);
+phi_i = inv_logit(logit_phi + v_ID[,2]);
+
+lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
+phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
+
+
+binomial_lambda = alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s .* phi_i_s;
+binomial_lambda = exp(binomial_lambda);
+
+Response ~ neg_binomial_2(binomial_lambda, spread);
+}
+"
+
+run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+
+
+# run the model using cmdstan
+currentlocation<-getwd()
+setwd(cmdstan_path())
+write(reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+fit <- mod$sample(
+  data = dat_full,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+outcome<-data.frame(fit$summary())
+rownames(outcome)<-outcome$variable
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+outcome[outcome$variable %in% c("b_phi","b_lambda","b_int"),6:7]
+# We can also plot the distribution of the estimated associations to show that they overlap zero
+library(bayesplot)
+mcmc_hist(fit$draws("b_lambda"))
+mcmc_hist(fit$draws("b_phi"))
+mcmc_hist(fit$draws("b_int"))
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+setwd(currentlocation)
+
 ```
 
 Considering the flexibility results we have so far obtained from the Arizona population of great-tailed grackles, we are starting to understand how cognition and behavior, using various tests, are related, either correlationally or causally (Figure Y). We now know that flexibility is correlated with self control, a measure of inhibition, in that the birds who are faster to reverse and faster to switch loci on the multiaccess boxes are also the ones to pass go no-go criterion faster [@logan2021inhibition]. We do not have evidence that this species uses causal cognition, and their causal scores did not correlate with flexibility (reversal learning and plastic multiaccess box) [@blaisdell2021causal]. In the current investigation, we were able to make causal conclusions, rather than only correlational: we manipulated reversal learning, which caused changes in a different flexibility measure (multiaccess box switch times) and in an innovativeness measure (multiaccess box loci solved), as well as validating that this manipulation had an effect on the cognitive ability we think of as flexibility.
