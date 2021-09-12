@@ -1420,7 +1420,9 @@ dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/ma
 dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
 
 library(rstan)
-
+library(rethinking)
+library(cmdstanr)
+library(posterior)
 
 ### Code below copied from Blaisdell et al. 2021
 
@@ -1484,6 +1486,9 @@ d <- subset(dflex, dflex$ID %in% dmabp$ID)
 # Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
 d <- d[with(d, order(d$ID)), ]
 dmabp   <- dmabp[with(dmabp, order(dmabp$ID)), ]
+
+# Store the bird names in case we want to link their data from here back to other datasets
+birdnames<-unique(d$ID)
 
 # Convert bird names into numeric ids
 d$ID <- as.numeric(as.factor(d$ID))
@@ -1644,6 +1649,23 @@ mcmc_hist(fit$draws("b_lambda"))
 mcmc_hist(fit$draws("b_phi"))
 mcmc_hist(fit$draws("b_int"))
 
+# Calculate the lambda and phi values for each individual
+lambda <- sapply(1 : dat_full$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[ ,36+x])))
+# 2.733134 4.955325 4.195128 3.346893 3.934143 4.651078 3.408593 2.709205 2.763549 3.197556 2.594222
+phi <- sapply(1 : dat_full$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[ ,47+x])))
+# 0.02692541 0.08285155 0.06224467 0.05683807 0.04781117 0.05612348 0.02987072 0.01878873 0.01372789  0.02764422 0.01833556
+
+# Here, for the last reversal data, lambda and phi are correlated across individuals
+plot(lambda~phi)
+
+eachbirdslearningparameters<-matrix(nrow=dat_full$N_id,ncol=4)
+eachbirdslearningparameters<-data.frame(eachbirdslearningparameters)
+colnames(eachbirdslearningparameters)<-c("Bird","Number","phi","lambda")
+eachbirdslearningparameters[,1]<-birdnames
+eachbirdslearningparameters[,2]<-unique(d$ID)
+eachbirdslearningparameters[,3]<-phi
+eachbirdslearningparameters[,4]<-lambda
+
 # Remove the stan command line file we created for this particular model from your computer
 fn<-"myowntrial"
 file.remove(fn)
@@ -1654,6 +1676,85 @@ setwd(currentlocation)
 
 ### NOTE: if you aren't running cmdstan, then run the model with this code instead of the above "fit" model
 run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+
+
+### Now we can link the phi and lambda values we extracted for each bird to the various parameters that measurer their performance on the multi-access boxes
+
+# First, we link it to the latency to switch loci on the plastic multi-access box
+
+d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d3 <- data.frame(d3)
+colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+
+# Remove NAs
+d3 <- subset(d3,!(is.na(d3["AverageLatencyAttemptNewLocusMABplastic"])) & !(is.na(d3["TrialsLastReversal"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d3$AverageLatencyAttemptNewLocusMABplastic)
+
+# make Batch a factor
+d3$Batch <- as.factor(d3$Batch)
+
+# RUN MODELs on the actual data
+library("Rcpp")
+library("rstan")
+library(rethinking)
+library(ggplot2)
+
+# We link the lambda and phi data for each bird 
+d3 <- d3[with(d3, order(d3$Bird)), ]
+d3$phi<-eachbirdslearningparameters$phi
+d3$lambda<-eachbirdslearningparameters$lambda
+
+
+# MODEL phi lat plastic: First, we link the latency to attempt a new locus on the plastic multiaccess box to phi (updating of attraction scores in the last reversal)
+dl_phi <- list(learningphi = standardize(as.numeric(d3$phi)), 
+           latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(d3$Batch)
+           )
+
+mplat1alternative1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1alternative1,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    4.95 0.30  4.46  5.42  1098     1
+# b   -0.38 0.29 -0.83  0.10  1403     1
+# phi  0.89 0.34  0.43  1.48  1340     1
+
+# The parameter b estimates the association between phi and the latency. It crosses zero, so we did not find a clear association
+
+# MODEL lambda lat plastic: Second, we link the latency to attempt a new locus on the plastic multiaccess box to lambda (weighing of attractions in the last reversal)
+dl_lambda <- list(learninglambda = standardize(as.numeric(d3$lambda)), 
+           latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(d3$Batch)
+           )
+
+mplat1alternative2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_lambda, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1alternative2,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    4.98 0.31  4.46  5.45   933     1
+# b   -0.05 0.29 -0.51  0.43  1459     1
+# phi  0.80 0.32  0.38  1.37  1028     1
+
+# The parameter b estimates the association between lambda and the latency. It crosses zero, so we did not find a clear association
+
 ```
 
 Considering the flexibility results we have so far obtained from the Arizona population of great-tailed grackles, we are starting to understand how cognition and behavior, using various tests, are related, either correlationally or causally (Figure Y). We now know that flexibility is correlated with self control, a measure of inhibition, in that the birds who are faster to reverse and faster to switch loci on the multiaccess boxes are also the ones to pass go no-go criterion faster [@logan2021inhibition]. We do not have evidence that this species uses causal cognition, and their causal scores did not correlate with flexibility (reversal learning and plastic multiaccess box) [@blaisdell2021causal]. In the current investigation, we were able to make causal conclusions, rather than only correlational: we manipulated reversal learning, which caused changes in a different flexibility measure (multiaccess box switch times) and in an innovativeness measure (multiaccess box loci solved), as well as validating that this manipulation had an effect on the cognitive ability we think of as flexibility.
