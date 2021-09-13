@@ -1393,23 +1393,468 @@ check Rcode 14.12 Richard's book on cafes
 2) determine whether particular mechanisms of flexibility are relevant for performance on the multiaccess boxes (control and manipulated birds). Does phi or lambda correlate with performance on the multiaccess box? Use Dominik's model in inhibition and apply here
 
 For question 1... 
+```{r posthoc_simulationchecks, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+
+################################################################################################
+# Load previously simulated data from xpop
+################################################################################################
+
+# These two are the sets we decided on, with initial attractions at 0.1 and eight different phi and four different lambda combinations
+simulatedreversaldata_attractionscores_1<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_SimulatedReversalData_Grackles_PhiLambda_Attraction02_Aug2021.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+simulatedreversaldata_attractionscores_2<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_SimulatedReversalData_Grackles_PhiLambda_Attraction04_Aug2021.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+# In both simulations, sites were counted from 1-16; for the second simulation we change this to 17-32
+simulatedreversaldata_attractionscores_2$Site<-simulatedreversaldata_attractionscores_2$Site+16
+
+# In both simulations, individuals were counted from 1-320; for the second population we change the ids to start at 321
+simulatedreversaldata_attractionscores_2$Bird_ID<-simulatedreversaldata_attractionscores_2$Bird_ID+320
+
+# We combine the two data sets for the further analyses
+simulatedreversaldata_attractionscores<-bind_rows(simulatedreversaldata_attractionscores_1,simulatedreversaldata_attractionscores_2)
+
+################################################################################################
+
+# In the simulations, trials were counted continuously for each bird. We now want to change this so that it restarts counting trials from 1 upward once a bird switches to reversal.
+
+for (birds in 1:length(unique(simulatedreversaldata_attractionscores$Bird_ID))){
+  currentbird<-unique(simulatedreversaldata_attractionscores$Bird_ID)[birds]
+  maximuminitial<-max(simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "initial",]$Trial)
+  simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial - maximuminitial
+}
+
+# We need to adjust the coding during the reversal learning so that "correct" now matches whether it is correct or not. 
+simulatedreversaldata_attractionscores$Choice<-as.integer(as.factor(simulatedreversaldata_attractionscores$Choice))
+
+# To use the model to estimate the phi and lambda parameters, we first need to change the column names to match these to the specifications in the model: change Bird_ID  to id; change Reversal to Choice, change CorrectChoice to Correct, change Site to Expid
+
+colnames(simulatedreversaldata_attractionscores)<-c("counter","id","Session","Trial","Reversal","Choice","Correct","Phi_mean","Lambda_mean","Site","Phi_sd","Lambda_sd","ThisBirdsPhi","ThisBirdsLambda","Attraction1","Attraction2")
+
+
+# There are several simulated individuals who never reached the criterion during the initial learning phase. We need to remove these from the dataset
+
+birdswithreversal<-as.data.frame(simulatedreversaldata_attractionscores %>% group_by(id) %>% summarise(experiments=length(unique(Reversal))))
+birdswithreversal<-birdswithreversal[birdswithreversal$experiments==2,]
+simulatedreversaldata_attractionscores<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$id %in% birdswithreversal$id,]
+
+# Next, we need to change the ids of the birds to be continuous again so the STAN model will include them all
+simulatedreversaldata_attractionscores$id<-as.integer(as.factor(simulatedreversaldata_attractionscores$id))
+
+
+# We first focus only on the performance in the reversal trials
+simulatedreversaldata_attractionscores_reversalphase<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Reversal=="reversal",]
+
+# Want data ONLY from performance in last 20 trials
+#### NEED TO CHANGE THIS
+
+
+reduceddata <- matrix(ncol=ncol(simulatedreversaldata_attractionscores_reversalphase),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(simulatedreversaldata_attractionscores_reversalphase$id))) {
+  thisbird <- unique(simulatedreversaldata_attractionscores_reversalphase$id)[i]
+  thisbirddata <- simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==max(thisbirddata$Reversal),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+lastreversal_simulated <- reduceddata
+
+# Let's start with 29 individuals for comparison
+lastreversal_simulated<-lastreversal_simulated[lastreversal_simulated$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]
+
+lastreversal_simulated$id<-as.numeric(as.factor(lastreversal_simulated$id))
+
+
+# Want data ONLY from FIRST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+reduceddata <- matrix(ncol=ncol(simulatedreversaldata_attractionscores_reversalphase),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(simulatedreversaldata_attractionscores_reversalphase$id))) {
+  thisbird <- unique(simulatedreversaldata_attractionscores_reversalphase$id)[i]
+  thisbirddata <- simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==min(thisbirddata$Reversal),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+firstreversal_simulated <- reduceddata
+
+# Let's start with 29 individuals for comparison
+firstreversal_simulated<-firstreversal_simulated[firstreversal_simulated$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]
+
+firstreversal_simulated$id<-as.numeric(as.factor(firstreversal_simulated$id))
+
+# We can now extract the relevant data from the first reversal for the STAN model to estimate phi and lambda at the beginning
+datfirstsimulated <- as.list(firstreversal_simulated)
+datfirstsimulated$N <- nrow(firstreversal_simulated)
+datfirstsimulated$N_id <- length(unique(firstreversal_simulated$id))
+
+
+# We run this model for the first reversal
+m_firstsimulated <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datfirstsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sfirstsimulated <- extract.samples(m_firstsimulated)
+firstreversal_simulatedlambda <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(sfirstsimulated$log_L) + mean(sfirstsimulated$v_ID[ ,x, 1])))
+firstreversal_simulatedphi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(sfirstsimulated$logit_phi) + mean(sfirstsimulated$v_ID[ ,x, 2])))
+
+
+# Next we extract the relevant data from the last reversal for the STAN model to estimate phi and lambda at the end
+datlastsimulated <- as.list(lastreversal_simulated)
+datlastsimulated$N <- nrow(lastreversal_simulated)
+datlastsimulated$N_id <- length(unique(lastreversal_simulated$id))
+
+# We run this model for the last reversal
+m_lastsimulated <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datlastsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+slastsimulated <- extract.samples(m_lastsimulated)
+lastreversal_simulatedlambda <- sapply(1 : datlastsimulated$N_id, function(x) exp( mean(slastsimulated$log_L) + mean(slastsimulated$v_ID[ ,x, 1])))
+lastreversal_simulatedphi <- sapply(1 : datlastsimulated$N_id, function(x) inv_logit( mean(slastsimulated$logit_phi) + mean(slastsimulated$v_ID[ ,x, 2])))
+
+
+# We now can get back the phi and lambda values these 29 individuals were assigned at the beginning of the simulation
+simulatedphis<-unique(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]$ThisBirdsPhi)
+simulatedlambdas<-unique(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]$ThisBirdsLambda)
+
+# 
+plot(firstreversal_simulatedphi~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06))
+plot(lastreversal_simulatedphi~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06))
+
+plot(lastreversal_simulatedphi~firstreversal_simulatedphi)
+
+
+# We can see how skewed the attraction scores were in the simulation at the beginning of the first reversal learning trial and use these values as priors in the STAN model (instead of the current setup where both attraction scores are set to be 0.1)
+median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction1/simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction2)
+
+median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction1)
+
+median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction2)
+# Based on this we want to set it to 0.1 and 0.7
+
+
+
+
+# OPEN QUESTIONS:
+# How did you decide that the manipulation worked? 
+# two consecutive reversals passed in 50 or less trials
+# Can check what phi/lambda has to be so that they pass in 50 or less trials in the simulation
+# Is it easier to change phi or lambda to get at 50 or fewer trials?
+
+# We might want to compare first 20 trials to last 20 trials, both for the simulated data, and for
+# the observed data look at the first and last 20 trials for each the first and the last reversal
+
+# Need to change the priors for the attraction scores 0.1 and 0.7
+
+
+
+```
+
+
+
 
 ```{r posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 library(rethinking)
 library(dplyr)
 library(rethinking)
 
-#remove NAs from the variables that will be in the model
-d <- subset(d,!(is.na(d["CorrectChoice"])))
+### Code below copied from Blaisdell et al. 2021
 
-#n=8: exclude Memela because she did not complete the experiment
-#length(unique(d$ID))
+# PREPARE reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+#n=21: exclude Memela because she did not complete the experiment
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+#exclude reversal=0 because this was the initial discrimination and not a reversal
+dflex <- subset(dflex, dflex$Reversal != 0) 
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
 
+#Construct Choice variable
+dflex$Choice <- NA
+for (i in 1: nrow(dflex)) {
+  if (dflex$Reversal[i] %in% seq(0, max(unique(dflex$Reversal)), by = 2)){
+    
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 1
+    } else {
+      dflex$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 2
+    } else {
+      dflex$Choice[i] <- 1
+    } 
+  }
+}
+dflex <- dflex[with(dflex, order(dflex$ID)), ]
+
+#Include only the manipulated birds 
+dflex <- dflex[dflex$ID=="Chalupa" | dflex$ID=="Mole" | dflex$ID=="Habanero" | dflex$ID=="Diablo" | dflex$ID=="Burrito" | dflex$ID=="Adobo" | dflex$ID=="Chilaquile" | dflex$ID=="Pollito" | dflex$ID=="Memela",]
+
+#Change the column name for id so it matches across the different analyses (e.g. in crosspop) and are consistent for the STAN model
+colnames(dflex)[4]<-"id"
+
+# Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
+dflex <- dflex[with(dflex, order(dflex$id)), ]
+
+# Store the bird names in case we want to link their data from here back to other datasets
+birdnames<-unique(dflex$id)
+
+# Convert bird names into numeric ids so it can be used in the STAN models
+dflex$id <- as.numeric(as.factor(dflex$id))
+
+
+
+# Want data ONLY from LAST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$id))) {
+  thisbird <- unique(dflex$id)[i]
+  thisbirddata <- dflex[dflex$id==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==max(thisbirddata$Reversal),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+lastreversal <- reduceddata
+
+# Keep only the columns we are going to analyze
+lastreversal <- subset(lastreversal, select = c(id, Trial, Choice, Correct))
+
+# Want data ONLY from FIRST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$id))) {
+  thisbird <- unique(dflex$id)[i]
+  thisbirddata <- dflex[dflex$id==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==min(thisbirddata$Reversal),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+firstreversal <- reduceddata
+
+# Keep only the columns we are going to analyze
+firstreversal <- subset(firstreversal, select = c(id, Trial, Choice, Correct))
 
 #Manipulated individuals only: Nest first vs last reversal inside ID. ID is the control for the unknown starting conditions (e.g. the bird's previous experience that makes them more or less flexible). Is there a consistent change from PhiR1 to PhiRlast or from LambdaR1 to LambdaRlast? 
+
+
+# The STAN model is set up to have the inital attraction for each option set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
+reinforcement_model_nonzeroattraction <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
+# We can now extract the relevant data from the first reversal for the STAN model to estimate phi and lambda at the beginning
+datfirst <- as.list(firstreversal)
+datfirst$N <- nrow(firstreversal)
+datfirst$N_id <- length(unique(firstreversal$id))
+
+
+# We run this model for the first reversal
+m_first <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datfirst ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sfirst <- extract.samples(m_first)
+firstreversal_lambda <- sapply(1 : datfirst$N_id, function(x) exp( mean(sfirst$log_L) + mean(sfirst$v_ID[ ,x, 1])))
+firstreversal_phi <- sapply(1 : datfirst$N_id, function(x) inv_logit( mean(sfirst$logit_phi) + mean(sfirst$v_ID[ ,x, 2])))
+
+
+# Next we extract the relevant data from the last reversal for the STAN model to estimate phi and lambda at the end
+datlast <- as.list(lastreversal)
+datlast$N <- nrow(lastreversal)
+datlast$N_id <- length(unique(lastreversal$id))
+
+# We run this model for the last reversal
+m_last <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datlast ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+slast <- extract.samples(m_last)
+lastreversal_lambda <- sapply(1 : datlast$N_id, function(x) exp( mean(slast$log_L) + mean(slast$v_ID[ ,x, 1])))
+lastreversal_phi <- sapply(1 : datlast$N_id, function(x) inv_logit( mean(slast$logit_phi) + mean(slast$v_ID[ ,x, 2])))
+
+# To see the changes, we can plot the values from the first against the values from the last reversal
+# All individuals show a very consistent increase in their phi from the first to the last reversal
+# Lambda also increases for all individuals, but the change is much less consistent
+plot(lastreversal_phi~firstreversal_phi,xlim=c(0,0.1),ylim=c(0,0.1))
+abline(a=0,b=1)
+plot(lastreversal_lambda~firstreversal_lambda,ylim=c(1.0,4.0),xlim=c(1.0,4.0))
+abline(a=0,b=1)
+
+plot(firstreversal_phi~firstreversal_lambda)
+
+plot(lastreversal_phi~lastreversal_lambda)
+
+# We might want to see how phi and lambda link to the number of trials individuals needed to reach the criterion:
+firstreversaltrials<-as.data.frame(firstreversal %>% group_by(id) %>% summarize(TrialsToReverse=max(Trial)))
+
+lastreversaltrials<-as.data.frame(lastreversal %>% group_by(id) %>% summarize(TrialsToReverse=max(Trial)))
+
+# Plotting the trials to reverse for each individuals, we can see that individuals who were already first in their first reversal were also fast in their last reversal, supporting the observation that phi and lambda change for all individuals consistently
+
+plot(lastreversaltrials$TrialsToReverse~firstreversaltrials$TrialsToReverse)
+
+# For the first reversal, both lambda and phi appear to explain the number of trials well
+# For the last reversal however, these associations (especially between phi and the number of trials to reach criterion) appear not as strong
+plot(firstreversaltrials$TrialsToReverse~firstreversal_phi)
+plot(firstreversaltrials$TrialsToReverse~firstreversal_lambda)
+plot(lastreversaltrials$TrialsToReverse~lastreversal_phi)
+plot(lastreversaltrials$TrialsToReverse~lastreversal_lambda)
+
+numberreversals<-as.data.frame(dflex %>% group_by(id) %>% summarize(Reversals=max(Reversal)))
+
+improvementfirstolast<-firstreversaltrials[,2]-lastreversaltrials[,2]
+
+# There is no relationship between how many reversals a bird needed to reach criterion and by how much they improved / how many trials the needed in their first reversal
+
+# Their amount of their improvement in the number of trials they needed (first trials minus last trials) is linked to the change in their phi between the first and last reversal - but not to the difference in the change of their lambda
+phidifference<-lastreversal_phi-firstreversal_phi
+plot(improvementfirstolast~phidifference)
+lambdadifference<-lastreversal_lambda-firstreversal_lambda
+plot(improvementfirstolast~lambdadifference)
+
+
+
+
+
+
+# What do we observe in the initial learning?
+
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+# PREPARE reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+#n=21: exclude Memela because she did not complete the experiment
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+#only include reversal=0 because this was the initial discrimination and not a reversal
+dflex <- subset(dflex, dflex$Reversal == 0) 
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+#Construct Choice variable
+dflex$Choice <- NA
+for (i in 1: nrow(dflex)) {
+  if (dflex$Reversal[i] %in% seq(0, max(unique(dflex$Reversal)), by = 2)){
+    
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 1
+    } else {
+      dflex$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 2
+    } else {
+      dflex$Choice[i] <- 1
+    } 
+  }
+}
+dflex <- dflex[with(dflex, order(dflex$ID)), ]
+
+#Include only the manipulated birds 
+dflex <- dflex[dflex$ID=="Chalupa" | dflex$ID=="Mole" | dflex$ID=="Habanero" | dflex$ID=="Diablo" | dflex$ID=="Burrito" | dflex$ID=="Adobo" | dflex$ID=="Chilaquile" | dflex$ID=="Pollito" | dflex$ID=="Memela",]
+
+#Change the column name for id so it matches across the different analyses (e.g. in crosspop) and are consistent for the STAN model
+colnames(dflex)[4]<-"id"
+
+# Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
+dflex <- dflex[with(dflex, order(dflex$id)), ]
+
+# Store the bird names in case we want to link their data from here back to other datasets
+birdnames<-unique(dflex$id)
+
+# Convert bird names into numeric ids so it can be used in the STAN models
+dflex$id <- as.numeric(as.factor(dflex$id))
+
+# We can now extract the relevant data from the initial assocation for the STAN model to estimate phi and lambda at the beginning
+datinitial <- as.list(dflex)
+datinitial$N <- nrow(dflex)
+datinitial$N_id <- length(unique(dflex$id))
+
+
+# We run this model for the initial association learning
+m_initial <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitial ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sinitial <- extract.samples(m_initial)
+initial_lambda <- sapply(1 : datinitial$N_id, function(x) exp( mean(sinitial$log_L) + mean(sinitial$v_ID[ ,x, 1])))
+initial_phi <- sapply(1 : datinitial$N_id, function(x) inv_logit( mean(sinitial$logit_phi) + mean(sinitial$v_ID[ ,x, 2])))
+
+# The phi values drop ~10 fold between the initial association learning and the first reversal. That seems problematic. The initial assumption in the model is that phi and lambda stay the same for individuals but that reversal learning takes longer because the attraction scores become skewed during the initial association learning.
+plot(initial_phi~firstreversal_phi)
+plot(initial_lambda~firstreversal_lambda)
+
+
 ```
+
+
+
 
 
 For question 2...
