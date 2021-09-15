@@ -1424,7 +1424,7 @@ for (birds in 1:length(unique(simulatedreversaldata_attractionscores$Bird_ID))){
 }
 
 # We need to adjust the coding during the reversal learning so that "correct" now matches whether it is correct or not. 
-simulatedreversaldata_attractionscores$Choice<-as.integer(as.factor(simulatedreversaldata_attractionscores$Choice))
+simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Choice==0,]$Choice<-2
 
 # To use the model to estimate the phi and lambda parameters, we first need to change the column names to match these to the specifications in the model: change Bird_ID  to id; change Reversal to Choice, change CorrectChoice to Correct, change Site to Expid
 
@@ -1444,39 +1444,8 @@ simulatedreversaldata_attractionscores$id<-as.integer(as.factor(simulatedreversa
 # We first focus only on the performance in the reversal trials
 simulatedreversaldata_attractionscores_reversalphase<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Reversal=="reversal",]
 
-# Want data ONLY from performance in last 20 trials
-#### NEED TO CHANGE THIS
-
-
-reduceddata <- matrix(ncol=ncol(simulatedreversaldata_attractionscores_reversalphase),nrow=0)
-reduceddata <- data.frame(reduceddata)
-for (i in 1:length(unique(simulatedreversaldata_attractionscores_reversalphase$id))) {
-  thisbird <- unique(simulatedreversaldata_attractionscores_reversalphase$id)[i]
-  thisbirddata <- simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id==thisbird,]
-  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==max(thisbirddata$Reversal),]
-  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
-}
-lastreversal_simulated <- reduceddata
-
-# Let's start with 29 individuals for comparison
-lastreversal_simulated<-lastreversal_simulated[lastreversal_simulated$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]
-
-lastreversal_simulated$id<-as.numeric(as.factor(lastreversal_simulated$id))
-
-
-# Want data ONLY from FIRST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
-reduceddata <- matrix(ncol=ncol(simulatedreversaldata_attractionscores_reversalphase),nrow=0)
-reduceddata <- data.frame(reduceddata)
-for (i in 1:length(unique(simulatedreversaldata_attractionscores_reversalphase$id))) {
-  thisbird <- unique(simulatedreversaldata_attractionscores_reversalphase$id)[i]
-  thisbirddata <- simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id==thisbird,]
-  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==min(thisbirddata$Reversal),]
-  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
-}
-firstreversal_simulated <- reduceddata
-
-# Let's start with 29 individuals for comparison
-firstreversal_simulated<-firstreversal_simulated[firstreversal_simulated$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]
+# Let's start with 30 individuals for comparison
+firstreversal_simulated<-simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620),]
 
 firstreversal_simulated$id<-as.numeric(as.factor(firstreversal_simulated$id))
 
@@ -1486,6 +1455,94 @@ datfirstsimulated$N <- nrow(firstreversal_simulated)
 datfirstsimulated$N_id <- length(unique(firstreversal_simulated$id))
 
 
+
+# Next, we also look at the estimation of the phi and lambda values based on their performance in the initial association learning phase
+
+# We first focus only on the performance in the reversal trials
+simulatedreversaldata_attractionscores_learningphase<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Reversal=="initial",]
+
+# Let's start with 30 individuals for comparison
+initiallearning_simulated<-simulatedreversaldata_attractionscores_learningphase[simulatedreversaldata_attractionscores_learningphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620),]
+
+initiallearning_simulated$id<-as.numeric(as.factor(initiallearning_simulated$id))
+
+# We can now extract the relevant data from the first reversal for the STAN model to estimate phi and lambda at the beginning
+datinitialsimulated <- as.list(initiallearning_simulated)
+datinitialsimulated$N <- nrow(initiallearning_simulated)
+datinitialsimulated$N_id <- length(unique(initiallearning_simulated$id))
+
+
+
+
+# The STAN model is set up to have the inital attraction for each option set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
+reinforcement_model_nonzeroattraction <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
 # We run this model for the first reversal
 m_firstsimulated <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datfirstsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
@@ -1494,29 +1551,49 @@ firstreversal_simulatedlambda <- sapply(1 : datfirstsimulated$N_id, function(x) 
 firstreversal_simulatedphi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(sfirstsimulated$logit_phi) + mean(sfirstsimulated$v_ID[ ,x, 2])))
 
 
-# Next we extract the relevant data from the last reversal for the STAN model to estimate phi and lambda at the end
-datlastsimulated <- as.list(lastreversal_simulated)
-datlastsimulated$N <- nrow(lastreversal_simulated)
-datlastsimulated$N_id <- length(unique(lastreversal_simulated$id))
+# And we run this model for the initial learning phase
+m_initialsimulated <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
-# We run this model for the last reversal
-m_lastsimulated <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datlastsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
-
-slastsimulated <- extract.samples(m_lastsimulated)
-lastreversal_simulatedlambda <- sapply(1 : datlastsimulated$N_id, function(x) exp( mean(slastsimulated$log_L) + mean(slastsimulated$v_ID[ ,x, 1])))
-lastreversal_simulatedphi <- sapply(1 : datlastsimulated$N_id, function(x) inv_logit( mean(slastsimulated$logit_phi) + mean(slastsimulated$v_ID[ ,x, 2])))
+sinitialsimulated <- extract.samples(m_initialsimulated)
+initiallearning_simulatedlambda <- sapply(1 : datinitialsimulated$N_id, function(x) exp( mean(sinitialsimulated$log_L) + mean(sinitialsimulated$v_ID[ ,x, 1])))
+initiallearning_simulatedphi <- sapply(1 : datinitialsimulated$N_id, function(x) inv_logit( mean(sinitialsimulated$logit_phi) + mean(sinitialsimulated$v_ID[ ,x, 2])))
 
 
-# We now can get back the phi and lambda values these 29 individuals were assigned at the beginning of the simulation
-simulatedphis<-unique(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]$ThisBirdsPhi)
-simulatedlambdas<-unique(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600),]$ThisBirdsLambda)
+
+
+
+
+# We now can get back the phi and lambda values 30 individuals were assigned at the beginning of the simulation
+simulatedphis<-unique(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620),]$ThisBirdsPhi)
+simulatedlambdas<-unique(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620),]$ThisBirdsLambda)
 
 # 
+
+
+# Some of the phi values estimated from the performance during the initial learning are estimated as higher than what the individuals had during the simulation. 
+plot(initiallearning_simulatedphi~simulatedphis,xlim=c(0,0.08),ylim=c(0,0.08))
+abline(a=0,b=1)
+
+# In contrast, some of the lambda values estimated from the performance during the initial learning are estimated as lower than what the individuals had during the simulation
+plot(initiallearning_simulatedlambda~simulatedlambdas)
+abline(a=0,b=1)
+
+# The issue likely arises because the STAN model assumes that the phi and lambda values are correlated - whereas in the simulations they were allowed to vary independently from each other
+plot(initiallearning_simulatedphi~initiallearning_simulatedlambda)
+plot(simulatedphis~simulatedlambdas)
+
+# In the simulation, we set some high lambda values and low phi values - because of the assumed correlation, the STAN model estimates higher phi values than simulated in cases when lambda was high, and lower lambda values than simulated when phi was low
+
+plot(initiallearning_simulatedphi[simulatedlambdas<5]~simulatedphis[simulatedlambdas<5],xlim=c(0,0.08),ylim=c(0,0.08))
+points(initiallearning_simulatedphi[simulatedlambdas>5]~simulatedphis[simulatedlambdas>5],xlim=c(0,0.08),ylim=c(0,0.08),col="red")
+abline(a=0,b=1)
+
+
+
+
+# The phi values for the first reversal are systematically underestimated. This likely results from the model assuming that the attraction scores for both options are initially equal, while in reality there will be a skewed attraction towards the option that was rewarded during the initial learning. According, the birds seem to change their behaviour very slowly (because in the estimation they do not have to overcome their initially biased attraction) leading to the model estimating much lower phi values than those that the birds really had.
 plot(firstreversal_simulatedphi~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06))
-plot(lastreversal_simulatedphi~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06))
-
-plot(lastreversal_simulatedphi~firstreversal_simulatedphi)
-
+abline(a=0,b=1)
 
 # We can see how skewed the attraction scores were in the simulation at the beginning of the first reversal learning trial and use these values as priors in the STAN model (instead of the current setup where both attraction scores are set to be 0.1)
 median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction1/simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction2)
@@ -1525,6 +1602,77 @@ median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldat
 
 median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldata_attractionscores_reversalphase$Trial==1,]$Attraction2)
 # Based on this we want to set it to 0.1 and 0.7
+
+
+# Try different priors to reduce the correlation between estimated phis and lambdas
+
+reinforcement_model_nonzeroattraction_alternativepriors <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[N_id,2] v_ID;
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(v_ID) ~ normal(0,1);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
+m_initialsimulated_alternativepriors <- stan( model_code =  reinforcement_model_nonzeroattraction_alternativepriors, data=datinitialsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sinitialsimulatedalternativepriors <- extract.samples(m_initialsimulated_alternativepriors)
+initiallearning_simulatedlambda_alternativepriors <- sapply(1 : datinitialsimulated$N_id, function(x) exp( mean(sinitialsimulatedalternativepriors$log_L) + mean(sinitialsimulatedalternativepriors$v_ID[ ,x, 1])))
+initiallearning_simulatedphi_alternativepriors <- sapply(1 : datinitialsimulated$N_id, function(x) inv_logit( mean(sinitialsimulatedalternativepriors$logit_phi) + mean(sinitialsimulatedalternativepriors$v_ID[ ,x, 2])))
+
+
+
 
 
 
@@ -1540,6 +1688,84 @@ median(simulatedreversaldata_attractionscores_reversalphase[simulatedreversaldat
 
 # Need to change the priors for the attraction scores 0.1 and 0.7
 
+
+# Based on this information, we can now modify the STAN model to have the prior for the attraction for option set 1 (the option rewarded during the initial learning) to 0.7 and for option 2 set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
+reinforcement_model_nonzeroattraction_skewedpriorattraction <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.7; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
+# We run this model for the last reversal
+m_firstsimulated_skewedpriorattraction <- stan( model_code =  reinforcement_model_nonzeroattraction_skewedpriorattraction, data=datfirstsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sfirstsimulatedskewedpriorattraction <- extract.samples(m_firstsimulated_skewedpriorattraction)
+firstreversalsimulated_lambda_skewedpriorattraction <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(sfirstsimulatedskewedpriorattraction$log_L) + mean(sfirstsimulatedskewedpriorattraction$v_ID[ ,x, 1])))
+firstreversalsimulated_phi_skewedpriorattraction <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(sfirstsimulatedskewedpriorattraction$logit_phi) + mean(sfirstsimulatedskewedpriorattraction$v_ID[ ,x, 2])))
+
+plot(firstreversalsimulated_phi_skewedpriorattraction~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06))
 
 
 ```
@@ -1640,7 +1866,7 @@ firstreversal <- subset(firstreversal, select = c(id, Trial, Choice, Correct))
 
 
 # The STAN model is set up to have the inital attraction for each option set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
-reinforcement_model_nonzeroattraction <- "
+reinforcement_model_nonzeroattraction_skewedpriorattraction <- "
 
 data{
    int N;
@@ -1680,7 +1906,7 @@ Rho_ID ~ lkj_corr_cholesky(4);
 // initialize attraction scores
 
 for ( i in 1:N_id ) {
-A[i,1] = 0.1; A[i,2] = 0.1';
+A[i,1] = 0.7; A[i,2] = 0.1';
 }
 
 // loop over Choices
@@ -1715,7 +1941,7 @@ datfirst$N_id <- length(unique(firstreversal$id))
 
 
 # We run this model for the first reversal
-m_first <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datfirst ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+m_first <- stan( model_code =  reinforcement_model_nonzeroattraction_skewedpriorattraction, data=datfirst ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 sfirst <- extract.samples(m_first)
 firstreversal_lambda <- sapply(1 : datfirst$N_id, function(x) exp( mean(sfirst$log_L) + mean(sfirst$v_ID[ ,x, 1])))
@@ -1728,7 +1954,7 @@ datlast$N <- nrow(lastreversal)
 datlast$N_id <- length(unique(lastreversal$id))
 
 # We run this model for the last reversal
-m_last <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datlast ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+m_last <- stan( model_code =  reinforcement_model_nonzeroattraction_skewedpriorattraction, data=datlast ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 slast <- extract.samples(m_last)
 lastreversal_lambda <- sapply(1 : datlast$N_id, function(x) exp( mean(slast$log_L) + mean(slast$v_ID[ ,x, 1])))
@@ -1837,6 +2063,75 @@ dflex$id <- as.numeric(as.factor(dflex$id))
 datinitial <- as.list(dflex)
 datinitial$N <- nrow(dflex)
 datinitial$N_id <- length(unique(dflex$id))
+
+
+reinforcement_model_nonzeroattraction <- "
+
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
 
 
 # We run this model for the initial association learning
