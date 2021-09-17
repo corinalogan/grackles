@@ -1758,7 +1758,7 @@ A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]
 }
 "
 
-# We run this model for the last reversal
+# We run this model for the first reversal
 m_firstsimulated_skewedpriorattraction <- stan( model_code =  reinforcement_model_nonzeroattraction_skewedpriorattraction, data=datfirstsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 sfirstsimulatedskewedpriorattraction <- extract.samples(m_firstsimulated_skewedpriorattraction)
@@ -1766,6 +1766,34 @@ firstreversalsimulated_lambda_skewedpriorattraction <- sapply(1 : datfirstsimula
 firstreversalsimulated_phi_skewedpriorattraction <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(sfirstsimulatedskewedpriorattraction$logit_phi) + mean(sfirstsimulatedskewedpriorattraction$v_ID[ ,x, 2])))
 
 plot(firstreversalsimulated_phi_skewedpriorattraction~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06))
+
+
+
+
+
+# In these estimations based on the performance during single setups (either just the initial learning or the first reversal learning) the model always estimates that lambda and phi are correlated. This likely reflects equifinality - individuals can achieve the same performance with a range of phis and lambdas, and the model will slide to the middle along the line for each individual:
+
+plot(x="lambda",y="phi",xlim=c(0,10),ylim=c(0,0.1))
+# Individuals who needed a long time to learn the association will be in the bottom left corner
+abline(a=0.04,b=-0.01,lty=2)
+abline(a=0.06,b=-0.01,lty=2)
+abline(a=0.08,b=-0.01,lty=2)
+# Individuals who needed a short time to learn the association will be in the top right corner
+abline(a=0.10,b=-0.01,lty=2)
+abline(a=0.12,b=-0.01,lty=2)
+abline(a=0.14,b=-0.01,lty=2)
+
+points(x=1,y=0.03,cex=2)
+points(x=2,y=0.04,cex=2)
+points(x=3,y=0.05,cex=2)
+points(x=4,y=0.06,cex=2)
+points(x=5,y=0.07,cex=2)
+points(x=6,y=0.08,cex=2)
+abline(a=0.02,b=0.01,col="red",lwd=1.5)
+points(initiallearning_simulatedphi~initiallearning_simulatedlambda,pch=2)
+
+
+
 
 
 ```
@@ -2145,6 +2173,37 @@ initial_phi <- sapply(1 : datinitial$N_id, function(x) inv_logit( mean(sinitial$
 plot(initial_phi~firstreversal_phi)
 plot(initial_lambda~firstreversal_lambda)
 
+
+
+
+
+
+# Maybe the model can better separate the lambda and phi values when combining data from multiple runs - in the case of the simulations that means combining the data from the initial learning with the data of the first reversal
+simulatedreversaldata_attractionscores_reversalphase<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Reversal=="reversal",]
+
+# Let's start with 30 individuals for comparison
+initialandreversal_simulated<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$id %in% c(20,40,60,80,100,120,140,160,180,200,220,240,260,300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620),]
+
+initialandreversal_simulated$id<-as.numeric(as.factor(initialandreversal_simulated$id))
+
+# We can now extract the relevant data from the first reversal for the STAN model to estimate phi and lambda at the beginning
+datinitialandreversalsimulated <- as.list(initialandreversal_simulated)
+datinitialandreversalsimulated$N <- nrow(initialandreversal_simulated)
+datinitialandreversalsimulated$N_id <- length(unique(initialandreversal_simulated$id))
+
+
+m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialandreversalsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sinitialandreversal <- extract.samples(m_initialandreversal)
+initialandreversal_lambda <- sapply(1 : datinitialandreversalsimulated$N_id, function(x) exp( mean(sinitialandreversal$log_L) + mean(sinitialandreversal$v_ID[ ,x, 1])))
+initialandreversal_phi <- sapply(1 : datinitialandreversalsimulated$N_id, function(x) inv_logit( mean(sinitialandreversal$logit_phi) + mean(sinitialandreversal$v_ID[ ,x, 2])))
+
+plot(initialandreversal_phi~simulatedphis)
+abline(a=0,b=1)
+plot(initialandreversal_lambda~simulatedlambdas)
+abline(a=0,b=1)
+
+plot(initialandreversal_phi~initialandreversal_lambda)
 
 ```
 
