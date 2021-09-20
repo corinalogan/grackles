@@ -2205,7 +2205,205 @@ abline(a=0,b=1)
 
 plot(initialandreversal_phi~initialandreversal_lambda)
 
+
+
+
+# Using OBSERVED not simulated data 
+
+# We want to estimate lambda and phi differently. For the initial values, we combine the data from the first association learning with the first reversal.
+
+
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+library(rstan)
+library(rethinking)
+library(cmdstanr)
+library(posterior)
+
+### Code below copied from Blaisdell et al. 2021
+
+# PREPARE reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+# Want data ONLY from initial learning and first reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$ID))) {
+  thisbird <- unique(dflex$ID)[i]
+  thisbirddata <- dflex[dflex$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c(0,1),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+dflex_beginning <- reduceddata
+
+# We want to remove the birds who did not go through at least the first reversal trial
+birdscompletedreversal<-unique(dflex_beginning[dflex_beginning$Reversal==1,]$ID)
+
+dflex_beginning<-dflex_beginning[dflex_beginning$ID %in% birdscompletedreversal,]
+
+length(unique(dflex_beginning$ID)) #21 birds
+
+#Construct Choice variable
+dflex_beginning$Choice <- NA
+for (i in 1: nrow(dflex_beginning)) {
+  if (dflex_beginning$Reversal[i] %in% seq(0, max(unique(dflex_beginning$Reversal)), by = 2)){
+    
+    if (dflex_beginning$Correct[i] == 1){
+      dflex_beginning$Choice[i] <- 1
+    } else {
+      dflex_beginning$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex_beginning$Correct[i] == 1){
+      dflex_beginning$Choice[i] <- 2
+    } else {
+      dflex_beginning$Choice[i] <- 1
+    } 
+  }
+}
+dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$ID)), ]
+
+colnames(dflex_beginning)[4]<-"id"
+
+# Sort birds alphabetically
+dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$id)), ]
+birdnames<-unique(dflex_beginning$id)
+
+# Convert bird names into numeric ids
+dflex_beginning$id <- as.numeric(as.factor(dflex_beginning$id))
+
+
+datinitialandfirstreversal <- as.list(dflex_beginning)
+datinitialandfirstreversal$N <- nrow(dflex_beginning)
+datinitialandfirstreversal$N_id <- length(unique(dflex_beginning$id))
+
+m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialandfirstreversal ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sinitialandreversal <- extract.samples(m_initialandreversal)
+initialandreversal_lambda <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp( mean(sinitialandreversal$log_L) + mean(sinitialandreversal$v_ID[ ,x, 1])))
+initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit( mean(sinitialandreversal$logit_phi) + mean(sinitialandreversal$v_ID[ ,x, 2])))
+
+plot(initialandreversal_phi~initialandreversal_lambda)
+
+
+
+# We want to remove the birds who did not go through at least the first reversal trial
+birdscompletedreversal<-unique(dflex[dflex$Reversal==1,]$ID)
+
+dflex_completed<-dflex[dflex$ID %in% birdscompletedreversal,]
+
+length(unique(dflex_completed$ID)) #21 birds
+
+# Want data ONLY from last two reversals
+reduceddata <- matrix(ncol=ncol(dflex_completed),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex_completed$ID))) {
+  thisbird <- unique(dflex_completed$ID)[i]
+  thisbirddata <- dflex_completed[dflex_completed$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c((max(thisbirddata$Reversal)-1),max(thisbirddata$Reversal)),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+dflex_last <- reduceddata
+
+
+
+#Construct Choice variable
+dflex_last$Choice <- NA
+for (i in 1: nrow(dflex_last)) {
+  if (dflex_last$Reversal[i] %in% seq(0, max(unique(dflex_last$Reversal)), by = 2)){
+    
+    if (dflex_last$Correct[i] == 1){
+      dflex_last$Choice[i] <- 1
+    } else {
+      dflex_last$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex_last$Correct[i] == 1){
+      dflex_last$Choice[i] <- 2
+    } else {
+      dflex_last$Choice[i] <- 1
+    } 
+  }
+}
+dflex_last <- dflex_last[with(dflex_last, order(dflex_last$ID)), ]
+
+colnames(dflex_last)[4]<-"id"
+
+# Sort birds alphabetically
+dflex_last <- dflex_last[with(dflex_last, order(dflex_last$id)), ]
+birdnames<-unique(dflex_last$id)
+
+# Convert bird names into numeric ids
+dflex_last$id <- as.numeric(as.factor(dflex_last$id))
+
+
+datlasterversals <- as.list(dflex_last)
+datlasterversals$N <- nrow(dflex_last)
+datlasterversals$N_id <- length(unique(dflex_last$id))
+
+m_lastreversals <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datlasterversals ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+slastreversals <- extract.samples(m_lastreversals)
+lastreversals_lambda <- sapply(1 : datlasterversals$N_id, function(x) exp( mean(slastreversals$log_L) + mean(slastreversals$v_ID[ ,x, 1])))
+lastreversals_phi <- sapply(1 : datlasterversals$N_id, function(x) inv_logit( mean(slastreversals$logit_phi) + mean(slastreversals$v_ID[ ,x, 2])))
+
+plot(lastreversals_phi~lastreversals_lambda)
+
+plot(lastreversals_phi~initialandreversal_phi)
+plot(lastreversals_lambda~initialandreversal_lambda)
+
+eachbirdslearningparameters<-matrix(nrow=datlasterversals$N_id,ncol=9)
+eachbirdslearningparameters<-data.frame(eachbirdslearningparameters)
+colnames(eachbirdslearningparameters)<-c("Bird","Number","beginningphi","beginninglambda","lastphi","lastlambda")
+eachbirdslearningparameters[,1]<-birdnames
+eachbirdslearningparameters[,2]<-unique(dflex_last$id)
+eachbirdslearningparameters[,3]<-initialandreversal_phi
+eachbirdslearningparameters[,4]<-initialandreversal_lambda
+eachbirdslearningparameters[,5]<-lastreversals_phi
+eachbirdslearningparameters[,6]<-lastreversals_lambda
+
+d3_match<- subset(d3, d3$Bird !="Memela") 
+d3_match <- d3_match[with(d3_match, order(d3_match$Bird)), ]
+
+combinedreversaldata<-left_join(d3_match,eachbirdslearningparameters,by="Bird")
+
+manipulatedbirds<-subset(combinedreversaldata,combinedreversaldata$ReversalsToPass != "Control" )
+manipulatedbirds<-subset(manipulatedbirds,manipulatedbirds$ReversalsToPass != "(Control)" )
+
+plot(TrialsLastReversal~lastphi,data=combinedreversaldata)
+
+plot(TrialsLastReversal~lastlambda,data=combinedreversaldata)
+
+plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata,xlim=c(0,0.20),ylim=c(0,160))
+points(TrialsLastReversal~lastphi,data=combinedreversaldata,col="red")
+
+plot(TrialsFirstReversal~beginningphi,data=manipulatedbirds,xlim=c(0,0.20),ylim=c(0,160))
+points(TrialsLastReversal~lastphi,data=manipulatedbirds,col="red")
+
+plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata)
+
+plot(TrialsFirstReversal~beginninglambda,data=manipulatedbirds,xlim=c(0,10),ylim=c(0,160))
+points(TrialsLastReversal~lastlambda,data=manipulatedbirds,col="red")
+
+combinedreversaldata$phiimprovement<-combinedreversaldata$lastphi-combinedreversaldata$beginningphi
+combinedreversaldata$lambdaimprovement<-combinedreversaldata$lastlambda-combinedreversaldata$beginninglambda
+combinedreversaldata$performanceimprovement<-combinedreversaldata$TrialsLastReversal-combinedreversaldata$TrialsFirstReversal
+
+
+
 ```
+
+
 
 
 
@@ -2239,13 +2437,13 @@ dflex$Trial <- as.integer(dflex$Trial)
 #exclude NAs from the CorrectChoice column
 dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
 
-# Want data ONLY from LAST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+# Want data ONLY from LAST TWO reversals to compare with main results from the other model in the Results section (which were from the last reversal)
 reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
 reduceddata <- data.frame(reduceddata)
 for (i in 1:length(unique(dflex$ID))) {
   thisbird <- unique(dflex$ID)[i]
   thisbirddata <- dflex[dflex$ID==thisbird,]
-  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal==max(thisbirddata$Reversal),]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c((max(thisbirddata$Reversal)-1),max(thisbirddata$Reversal)),]
   reduceddata <- rbind(reduceddata,thisbirdslastreversal)
 }
 dflex <- reduceddata
@@ -2457,13 +2655,6 @@ phi <- sapply(1 : dat_full$N_id, function(x) inv_logit( mean(drawsdataframe$logi
 # Here, for the last reversal data, lambda and phi are correlated across individuals
 plot(lambda~phi)
 
-eachbirdslearningparameters<-matrix(nrow=dat_full$N_id,ncol=4)
-eachbirdslearningparameters<-data.frame(eachbirdslearningparameters)
-colnames(eachbirdslearningparameters)<-c("Bird","Number","phi","lambda")
-eachbirdslearningparameters[,1]<-birdnames
-eachbirdslearningparameters[,2]<-unique(d$ID)
-eachbirdslearningparameters[,3]<-phi
-eachbirdslearningparameters[,4]<-lambda
 
 # Remove the stan command line file we created for this particular model from your computer
 fn<-"myowntrial"
@@ -2509,9 +2700,13 @@ d3$lambda<-eachbirdslearningparameters$lambda
 
 
 # MODEL phi lat plastic: First, we link the latency to attempt a new locus on the plastic multiaccess box to phi (updating of attraction scores in the last reversal)
-dl_phi <- list(learningphi = standardize(as.numeric(d3$phi)), 
-           latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
-           batch = as.integer(d3$Batch)
+eachbirdslearningparameters$AverageLatencyAttemptNewLocusMABplastic<-combinedreversaldata$AverageLatencyAttemptNewLocusMABplastic
+
+inputdata_philatencyplastic<-eachbirdslearningparameters[is.na(eachbirdslearningparameters$AverageLatencyAttemptNewLocusMABplastic)==FALSE,]
+
+dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencyplastic$lastphi)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
            )
 
 mplat1alternative1 <- ulam(alist(
@@ -2525,16 +2720,14 @@ mplat1alternative1 <- ulam(alist(
 precis(mplat1alternative1,depth=2)
 
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-# a    4.95 0.30  4.46  5.42  1098     1
-# b   -0.38 0.29 -0.83  0.10  1403     1
-# phi  0.89 0.34  0.43  1.48  1340     1
+# a    4.95 0.30  4.46  5.40  1405     1
+# b   -0.43 0.28 -0.87  0.01  1518     1
+# phi  0.93 0.37  0.43  1.60  1448     1
 
-# The parameter b estimates the association between phi and the latency. It crosses zero, so we did not find a clear association
 
-# MODEL lambda lat plastic: Second, we link the latency to attempt a new locus on the plastic multiaccess box to lambda (weighing of attractions in the last reversal)
-dl_lambda <- list(learninglambda = standardize(as.numeric(d3$lambda)), 
-           latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
-           batch = as.integer(d3$Batch)
+dl_lambda <- list(learninglambda = standardize(as.numeric(inputdata_philatencyplastic$lastlambda)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
            )
 
 mplat1alternative2 <- ulam(alist(
@@ -2547,12 +2740,15 @@ mplat1alternative2 <- ulam(alist(
 
 precis(mplat1alternative2,depth=2)
 
-#      mean   sd  5.5% 94.5% n_eff Rhat4
-# a    4.98 0.31  4.46  5.45   933     1
-# b   -0.05 0.29 -0.51  0.43  1459     1
-# phi  0.80 0.32  0.38  1.37  1028     1
+#     mean   sd 5.5% 94.5% n_eff Rhat4
+# a   4.86 0.26 4.43  5.27  1255     1
+# b   0.76 0.27 0.33  1.18  1129     1
+# phi 1.29 0.54 0.59  2.25  1216     1
 
-# The parameter b estimates the association between lambda and the latency. It crosses zero, so we did not find a clear association
+# The parameter b estimates the association between lambda and the latency. It's compatibility interval does not cross zero, so there appears to be a positive association between the lambda we estimate from the last trials in the reversal learning experiment and the latency to approach a new locus on the plastic multi-access box
+
+plot(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic~inputdata_philatencyplastic$lastlambda)
+
 
 ```
 
