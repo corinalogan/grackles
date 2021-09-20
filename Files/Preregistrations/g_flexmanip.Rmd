@@ -2357,20 +2357,104 @@ slastreversals <- extract.samples(m_lastreversals)
 lastreversals_lambda <- sapply(1 : datlasterversals$N_id, function(x) exp( mean(slastreversals$log_L) + mean(slastreversals$v_ID[ ,x, 1])))
 lastreversals_phi <- sapply(1 : datlasterversals$N_id, function(x) inv_logit( mean(slastreversals$logit_phi) + mean(slastreversals$v_ID[ ,x, 2])))
 
-plot(lastreversals_phi~lastreversals_lambda)
 
-plot(lastreversals_phi~initialandreversal_phi)
-plot(lastreversals_lambda~initialandreversal_lambda)
+# combine initial with last reversal (same way as initial with first reversal)
 
-eachbirdslearningparameters<-matrix(nrow=datlasterversals$N_id,ncol=9)
+# We want to remove the birds who did not go through at least the first reversal trial
+birdscompletedreversal<-unique(dflex[dflex$Reversal==1,]$ID)
+
+dflex_completed<-dflex[dflex$ID %in% birdscompletedreversal,]
+
+length(unique(dflex_completed$ID)) #21 birds
+
+# Want data ONLY from initial learning AND last reversal
+reduceddata <- matrix(ncol=ncol(dflex_completed),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex_completed$ID))) {
+  thisbird <- unique(dflex_completed$ID)[i]
+  thisbirddata <- dflex_completed[dflex_completed$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c(0,max(thisbirddata$Reversal)),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+dflex_initialandlast <- reduceddata
+
+
+
+#Construct Choice variable
+dflex_initialandlast$Choice <- NA
+for (i in 1: nrow(dflex_initialandlast)) {
+  if (dflex_initialandlast$Reversal[i] %in% seq(0, max(unique(dflex_last$Reversal)), by = 2)){
+    
+    if (dflex_initialandlast$Correct[i] == 1){
+      dflex_initialandlast$Choice[i] <- 1
+    } else {
+      dflex_initialandlast$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex_initialandlast$Correct[i] == 1){
+      dflex_initialandlast$Choice[i] <- 2
+    } else {
+      dflex_initialandlast$Choice[i] <- 1
+    } 
+  }
+}
+dflex_initialandlast <- dflex_initialandlast[with(dflex_initialandlast, order(dflex_initialandlast$ID)), ]
+
+colnames(dflex_initialandlast)[4]<-"id"
+
+# Sort birds alphabetically
+dflex_initialandlast <- dflex_initialandlast[with(dflex_initialandlast, order(dflex_initialandlast$id)), ]
+birdnames<-unique(dflex_initialandlast$id)
+
+# Convert bird names into numeric ids
+dflex_initialandlast$id <- as.numeric(as.factor(dflex_initialandlast$id))
+
+
+datinitialandlast <- as.list(dflex_initialandlast)
+datinitialandlast$N <- nrow(dflex_initialandlast)
+datinitialandlast$N_id <- length(unique(dflex_initialandlast$id))
+
+m_initialandlast <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialandlast ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sinitialandlast <- extract.samples(m_initialandlast)
+initialandlast_lambda <- sapply(1 : datinitialandlast$N_id, function(x) exp( mean(sinitialandlast$log_L) + mean(sinitialandlast$v_ID[ ,x, 1])))
+initialandlast_phi <- sapply(1 : datinitialandlast$N_id, function(x) inv_logit( mean(sinitialandlast$logit_phi) + mean(sinitialandlast$v_ID[ ,x, 2])))
+
+
+# Need to do the analysis for the last two reversals with the skewed priors for the attraction values for the manipulated birds.
+
+# link manipulatedbirdids to birdnames
+
+manipulatedbirdids<-unique(dflex_last$id)[birdnames %in% manipulatedbirdids]
+dflex_last_manipulated<-dflex_last[dflex_last$id %in% manipulatedbirdids,]
+
+dflex_last_manipulated$id<-as.integer(as.factor(dflex_last_manipulated$id))
+
+datlasterversalsskewed <- as.list(dflex_last_manipulated)
+datlasterversalsskewed$N <- nrow(dflex_last_manipulated)
+datlasterversalsskewed$N_id <- length(unique(dflex_last_manipulated$id))
+
+m_lastreversals_skewed <- stan( model_code =  reinforcement_model_nonzeroattraction_skewedpriorattraction, data=datlasterversalsskewed ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+slastreversals_skewed <- extract.samples(m_lastreversals_skewed)
+lastreversals_lambda_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) exp( mean(slastreversals_skewed$log_L) + mean(slastreversals_skewed$v_ID[ ,x, 1])))
+lastreversals_phi_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) inv_logit( mean(slastreversals_skewed$logit_phi) + mean(slastreversals_skewed$v_ID[ ,x, 2])))
+
+
+
+
+eachbirdslearningparameters<-matrix(nrow=datlasterversals$N_id,ncol=8)
 eachbirdslearningparameters<-data.frame(eachbirdslearningparameters)
-colnames(eachbirdslearningparameters)<-c("Bird","Number","beginningphi","beginninglambda","lastphi","lastlambda")
+colnames(eachbirdslearningparameters)<-c("Bird","Number","beginningphi","beginninglambda","lastphi","lastlambda","initialandlastphi","initialandlastlambda")
 eachbirdslearningparameters[,1]<-birdnames
 eachbirdslearningparameters[,2]<-unique(dflex_last$id)
 eachbirdslearningparameters[,3]<-initialandreversal_phi
 eachbirdslearningparameters[,4]<-initialandreversal_lambda
 eachbirdslearningparameters[,5]<-lastreversals_phi
 eachbirdslearningparameters[,6]<-lastreversals_lambda
+eachbirdslearningparameters[,7]<-initialandlast_phi
+eachbirdslearningparameters[,8]<-initialandlast_lambda
+
 
 d3_match<- subset(d3, d3$Bird !="Memela") 
 d3_match <- d3_match[with(d3_match, order(d3_match$Bird)), ]
@@ -2380,24 +2464,40 @@ combinedreversaldata<-left_join(d3_match,eachbirdslearningparameters,by="Bird")
 manipulatedbirds<-subset(combinedreversaldata,combinedreversaldata$ReversalsToPass != "Control" )
 manipulatedbirds<-subset(manipulatedbirds,manipulatedbirds$ReversalsToPass != "(Control)" )
 
+manipulatedbirds$lastskewedlambda<-lastreversals_lambda_skewed
+manipulatedbirds$lastskewedphi<-lastreversals_phi_skewed
+
+manipulatedbirdids<-unique(manipulatedbirds$Bird)
+
+plot(lastreversals_phi~lastreversals_lambda)
+
+plot(lastreversals_phi~initialandreversal_phi)
+plot(lastreversals_lambda~initialandreversal_lambda)
+
+
 plot(TrialsLastReversal~lastphi,data=combinedreversaldata)
 
 plot(TrialsLastReversal~lastlambda,data=combinedreversaldata)
 
 plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata,xlim=c(0,0.20),ylim=c(0,160))
 points(TrialsLastReversal~lastphi,data=combinedreversaldata,col="red")
+points(TrialsLastReversal~initialandlastphi,data=combinedreversaldata,col="blue")
 
 plot(TrialsFirstReversal~beginningphi,data=manipulatedbirds,xlim=c(0,0.20),ylim=c(0,160))
 points(TrialsLastReversal~lastphi,data=manipulatedbirds,col="red")
+points(TrialsLastReversal~initialandlastphi,data=manipulatedbirds,col="blue")
 
 plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata)
 
 plot(TrialsFirstReversal~beginninglambda,data=manipulatedbirds,xlim=c(0,10),ylim=c(0,160))
 points(TrialsLastReversal~lastlambda,data=manipulatedbirds,col="red")
+points(TrialsLastReversal~initialandlastlambda,data=manipulatedbirds,col="blue")
 
 combinedreversaldata$phiimprovement<-combinedreversaldata$lastphi-combinedreversaldata$beginningphi
 combinedreversaldata$lambdaimprovement<-combinedreversaldata$lastlambda-combinedreversaldata$beginninglambda
 combinedreversaldata$performanceimprovement<-combinedreversaldata$TrialsLastReversal-combinedreversaldata$TrialsFirstReversal
+
+
 
 
 
