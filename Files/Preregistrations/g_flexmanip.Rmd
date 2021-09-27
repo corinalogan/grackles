@@ -580,7 +580,7 @@ kable_styling(full_width = T, position = "left")
 
 #### Problem solving: number of loci solved on the multiaccess box (wooden) ~ trials to reverse
 
-The estimate for the association between the number of loci solved on the wooden multiaccess box (average=3.2, sd=1.3) and the number of trials to reverse a preference (in their last reversal: average=59 trials, sd=38) crossed zero (Figure F; Model 6, Table C; n=11 grackles: 5 in manipulated condition, 6 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). This could mean that there is no association, however our simulations showed that if the effect is small, we would expect that with our sample size, we are not able to reliably estimate that such a small effect is different from zero (correlation test suggests effect size of 0.2; Table 2p). Aviary batch was excluded because of what we learned in the previous section. There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, indicating the conditions did not differ from each other (Table C: Model 7, wooden), or between the number of trials to reverse in the first reversal (average=74 trials, sd=34) and the number of loci solved on the multiaccess box (Table C: Model 8, wooden; unregistered analysis). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
+The estimate for the association between the number of loci solved on the wooden multiaccess box (average=3.2, sd=1.3) and the number of trials to reverse a preference (in their last reversal: average=59 trials, sd=38) crossed zero (Figure F; Model 6, Table C; n=12 grackles: 6 in manipulated condition, 6 in control condition). This could mean that there is no association, however our simulations showed that if the effect is small, we would expect that with our sample size, we are not able to reliably estimate that such a small effect is different from zero (correlation test suggests effect size of 0.2; Table 2p). Aviary batch was excluded because of what we learned in the previous section. We did find a correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, indicating the reversal manipulation appears to have affected the birds. The model estimates that manipulated birds solved on average 1.2 loci more than birds in the control condition (Table C: Model 7, wooden; 89% PI 0.34 - 2.14; n=12 grackles: 6 in manipulated condition, 6 in control condition). However, there is no association between the number of trials to reverse in the first reversal (average=74 trials, sd=34) or in the last reversal (average=59 trials, sd=36) and the number of loci solved on the multiaccess box (Table C: Model 8, wooden; unregistered analysis). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table C).
 
 ```{r p2mablog, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -593,13 +593,10 @@ d2 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/maste
 d2 <- data.frame(d2)
 colnames(d2) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden)","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
 
-# Exclude Mole and Habanero from this analysis because they were given the put together plastic box during habituation (due to experimenter error)
-d2 <- d2[!d2$Bird=="Mole" & !d2$Bird=="Habanero",]
-
 # Remove NAs
 d2 <- subset(d2,!(is.na(d2["TotalLociSolvedMABwooden"])) & !(is.na(d2["TrialsLastReversal"])))
 
-# n=11: 5 in manipulated group, 6 in control group
+# n=12: 6 in manipulated group, 6 in control group
 #length(d2$TotalLociSolvedMABwooden)
 
 # make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
@@ -636,9 +633,18 @@ m6 <- ulam( alist(
 
 precis(m6,depth=2)
 #   mean   sd  5.5% 94.5% n_eff Rhat4
-#a 0.97 0.29  0.53  1.43  1180     1
-#b 0.44 0.43 -0.18  1.19  1254     1
+#a 1.04 0.28  0.61  1.48  1423     1
+#b 0.39 0.41 -0.24  1.09  1517     1
 #the confidence interval for b (the slope) crosses 0, which indicates that there is no correlation between number of loci solved and trials to reverse
+
+#In case you rerun the model and want to add the new estimates for a and b to the table (Table C referenced above), use this code
+# This will go to the respective columns 2-7 that have the output information, in lines 21 and 22 which have the information for the a and for the b from this model, and fill it in with the precis output. The first line of the precis output is the information for a so it goes in line 21, the second line in the precis output is for b, so it goes into line 22. We also want to round the output values to what is in the table, 2 decimal places 
+table[21,2:7]<-round(precis(m6,depth=2)[1,],2)
+table[22,2:7]<-round(precis(m6,depth=2)[2,],2)
+# For the number of effective samples, we actually want no decimal places, so we can adjust that at the end
+table$n_eff<-round(table$n_eff,0)
+# You can save the changed table as
+# write.csv(table,file="g_flexmanip_table_modeloutputs.csv")
 
 #check posterior for p to look at the distribution of probabilities that are probable
 postm6 <- extract.samples(m6)
@@ -678,8 +684,8 @@ m7 <- ulam( alist(
 ) , data=dat2 , chains=4 , log_lik=TRUE )
 #precis(m7,depth=2)
 #     mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1] -0.44 0.39 -1.06  0.18  1501     1
-#a[2]  0.53 0.43 -0.18  1.21  1314     1
+#a[1] -0.45 0.40 -1.10  0.18  1161     1
+#a[2]  0.77 0.41  0.13  1.44  1302     1
 #Condition does not correlate with performance on the MAB bc both CIs cross zero
 
 # contrasts between conditions: the log odds differences in solving a locus between batches. Value = log odds of solving a locus (p.331 & 341 Rethinking)
@@ -707,8 +713,8 @@ m8 <- ulam( alist(
 
 precis(m8,depth=2)
 #     mean   sd  5.5% 94.5% n_eff Rhat4
-#a -0.01 0.26 -0.42  0.40  1258     1
-#b -0.50 0.37 -1.11  0.06  1379     1
+#a  0.11 0.26 -0.30  0.52  1221     1
+#b -0.50 0.35 -1.09  0.04  1234     1
 #b crosses zero so there is no correlation between number of loci solved and number of trials to reverse on the first reversal. This means that reversal in general doesn't correlate with MAB loci. You actually have to DO something to flexibility to make it matter for MAB loci
 
 
@@ -723,19 +729,21 @@ datw$locisolvedp <- (datw$locisolved/4)
 trialsw_seq <- seq( from=-0.96 , to=2.7 , length.out=30 )
 
 op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
-plot(datw$locisolvedp ~ datw$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Probability of solving a locus on the multiaccess box (wooden)" , xlim=c(-1.2,3.1), cex.lab=2, cex.axis=2, cex=2 )
+png("g_flexmanip_figp2mablog.png")
+plot(jitter(datw$locisolvedp) ~ jitter(datw$trials) , pch=1 , col="black" ,
+     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Probability of solving a locus on the multiaccess box (wooden)" , xlim=c(-1.2,3.1), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( m6 , data=data.frame( trials=trialsw_seq ) )
 mu_mean <- apply( mu , 2 , mean )
 mu_ci <- apply( mu , 2 , PI , prob=0.97 )
 lines( trialsw_seq , mu_mean , lwd=2 )
 shade( mu_ci , trialsw_seq , col=col.alpha(rangi2,0.3) )
+dev.off()
 par(op)
 ```
 
 ![](g_flexmanip_figp2mablog.png){width=100%}
 
-**Figure F.** The probability of solving a locus on the wooden multiaccess box is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles, shading = 97% prediction interval). 
+**Figure F.** The probability of solving a locus on the wooden multiaccess box is not correlated with the number of trials to pass their last reversal (n = 12 grackles, shading = 97% prediction interval; estimate of slope includes zero). 
 
 
 #### Rule switching: latency to attempt a new locus on the multiaccess box (plastic) ~ trials to reverse
@@ -1395,8 +1403,6 @@ check Rcode 14.12 Richard's book on cafes
 Manipulated individuals only: Nest first vs last reversal inside ID. ID is the control for the unknown starting conditions (e.g. the bird's previous experience that makes them more or less flexible). Is there a consistent change from PhiR1 to PhiRlast or from LambdaR1 to LambdaRlast? 
 
 
-2) determine whether particular mechanisms of flexibility are relevant for performance on the multiaccess boxes (control and manipulated birds). Does phi or lambda correlate with performance on the multiaccess box? Use Dominik's model in inhibition and apply here
-
 For question 1... 
 ```{r posthoc_simulationchecks, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
@@ -1894,7 +1900,7 @@ dflex$id <- as.numeric(as.factor(dflex$id))
 
 
 
-# Want data ONLY from LAST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
+# We want data ONLY from LAST reversal to compare with main results from the other model in the Results section (which were from the last reversal)
 reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
 reduceddata <- data.frame(reduceddata)
 for (i in 1:length(unique(dflex$id))) {
@@ -2333,9 +2339,6 @@ for (i in 1: nrow(dflex_last_manipulated)) {
     } 
   }
 }
-dflex_last_manipulated <- dflex_last_manipulated[with(dflex_last_manipulated, order(dflex_last_manipulated$ID)), ]
-
-colnames(dflex_last_manipulated)[4]<-"id"
 
 
 
@@ -2364,17 +2367,28 @@ lastreversals_phi_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) 
 
 
 
-
-eachbirdslearningparameters<-matrix(nrow=datinitialandfirstreversal$N_id,ncol=6)
+# We can now combine the information on the estimated phis and lambdas for the initial performance of all birds and the last performance of the manipulated birds into a single table
+eachbirdslearningparameters<-matrix(nrow=datinitialandfirstreversal$N_id,ncol=8)
 eachbirdslearningparameters<-data.frame(eachbirdslearningparameters)
-colnames(eachbirdslearningparameters)<-c("Bird","Number","beginningphi","beginninglambda","lastphi","lastlambda")
+colnames(eachbirdslearningparameters)<-c("Bird","Number","beginningphi","beginninglambda","manipulatedphi","manipulatedlambda","lastphi","lastlambda")
 eachbirdslearningparameters[,1]<-birdnames
 eachbirdslearningparameters[,2]<-unique(dflex_beginning$id)
 eachbirdslearningparameters[,3]<-initialandreversal_phi
 eachbirdslearningparameters[,4]<-initialandreversal_lambda
 eachbirdslearningparameters[eachbirdslearningparameters$Bird %in% birdnames_manipulated,5]<-lastreversals_phi_skewed
 eachbirdslearningparameters[eachbirdslearningparameters$Bird %in% birdnames_manipulated,6]<-lastreversals_lambda_skewed
+for(i in 1:nrow(eachbirdslearningparameters)){
+  if(is.na(eachbirdslearningparameters[i,]$manipulatedphi)==T) {
+    eachbirdslearningparameters[i,]$lastphi<- eachbirdslearningparameters[i,]$beginningphi
+    eachbirdslearningparameters[i,]$lastlambda<- eachbirdslearningparameters[i,]$beginninglambda}
+  if(is.na(eachbirdslearningparameters[i,]$manipulatedphi)==F) {
+    eachbirdslearningparameters[i,]$lastphi<- eachbirdslearningparameters[i,]$manipulatedphi
+    eachbirdslearningparameters[i,]$lastlambda<- eachbirdslearningparameters[i,]$manipulatedlambda}
+}
 
+
+
+write.csv(eachbirdslearningparameters,file="g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv")
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -2390,11 +2404,13 @@ colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","
 # make Batch a factor
 d3$Batch <- as.factor(d3$Batch)
 
-
+# Need to fix spelling mistake in a bird name to match it to the other data
+d3[d3$Bird=="Huachinago",]$Bird<-"Huachinango"
 
 d3_match<- subset(d3, d3$Bird !="Memela") 
 d3_match <- d3_match[with(d3_match, order(d3_match$Bird)), ]
 
+library(dplyr)
 combinedreversaldata<-left_join(d3_match,eachbirdslearningparameters,by="Bird")
 
 
@@ -2429,19 +2445,555 @@ combinedreversaldata$performanceimprovement<-combinedreversaldata$TrialsLastReve
 
 
 
+
+
+
+2) determine whether particular mechanisms of flexibility are relevant for performance on the multiaccess boxes (control and manipulated birds). Does phi or lambda correlate with performance on the multiaccess box? Use Dominik's model in inhibition and apply here
+
+The findings from the simulated data indicated that lambda and phi can only be estimated accurately when calculating them across at least one switch (initial learning plus initial reversal or final two reversals). We therefore determined whether the final (initial learning plus first reversal for unmanipulated birds and last two reversals for manipulated birds) or the initial (initial learning plus first reversal for all birds) lambda and phi estimates for each bird are associated with their performance in the other tasks. We did not find an association between any phi or lambda and the latency to switch loci on the plastic multi-access box. This is different from the finding when we estimated the birds' performance in the reversal learning task based on the number of trials they needed in their last reversal. This difference in inference presumably arises because performance estimated from a single reversal does not necessarily reflect that estimated from across a switch.
+
+
+
+
+
+
 For question 2...
 
 ```{r posthocMABplasticLatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
-# Load data
-dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
-dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
+
 
 library(rstan)
 library(rethinking)
 library(cmdstanr)
 library(posterior)
+library("Rcpp")
+library(ggplot2)
+
+### Now we can link the phi and lambda values we extracted for each bird to the various parameters that measure their performance on the multi-access boxes
+
+# First, we link it to the latency to switch loci on the plastic multi-access box
+
+d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d3 <- data.frame(d3)
+colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
+
+# Keep only birds who finished the task
+d3 <- subset(d3,!(is.na(d3["AverageLatencyAttemptNewLocusMABplastic"])) & !(is.na(d3["TrialsLastReversal"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d3$AverageLatencyAttemptNewLocusMABplastic)
+
+# make Batch a factor
+d3$Batch <- as.factor(d3$Batch)
+
+# Need to fix spelling mistake in a bird name to match it to the other data
+d3[d3$Bird=="Huachinago",]$Bird<-"Huachinango"
+
+d3_match<- subset(d3, d3$Bird !="Memela") 
+d3_match <- d3_match[with(d3_match, order(d3_match$Bird)), ]
+
+eachbirdslearningparameters<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=F, sep=",", stringsAsFactors=F)
+
+library(dplyr)
+combinedreversaldata<-left_join(d3_match,eachbirdslearningparameters,by="Bird")
+
+
+
+# Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
+combinedreversaldata <- combinedreversaldata[with(combinedreversaldata, order(combinedreversaldata$Bird)), ]
+
+
+# Store the bird names in case we want to link their data from here back to other datasets
+birdnames<-unique(combinedreversaldata$Bird)
+
+
+# MODEL phi lat plastic: First, we link the latency to attempt a new locus on the plastic multiaccess box to phi (updating of attraction scores in the last reversal)
+
+inputdata_philatencyplastic<-combinedreversaldata[is.na(combinedreversaldata$AverageLatencyAttemptNewLocusMABplastic)==FALSE,]
+
+#inputdata_philatencyplastic <- inputdata_philatencyplastic[!inputdata_philatencyplastic$Bird=="Mole" & !inputdata_philatencyplastic$Bird=="Habanero",]
+
+# Based on last reversal
+
+dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencyplastic$lastphi)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
+           )
+
+mplat1alternative1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1alternative1,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    4.99 0.31  4.51  5.48  1354     1
+# b   -0.07 0.24 -0.45  0.31  1769     1
+# phi  0.80 0.31  0.39  1.34  1527     1
+# The parameter b estimates the association between phi and the latency. It's compatibility interval crosses zero, so there appears to be no association between the phi we estimate from the last trials in the reversal learning experiment and the latency to approach a new locus on the plastic multi-access box
+
+
+
+
+dl_lambda <- list(learninglambda = standardize(as.numeric(inputdata_philatencyplastic$lastlambda)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
+           )
+
+mplat1alternative2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_lambda, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1alternative2,depth=2)
+
+#    mean   sd 5.5% 94.5% n_eff Rhat4
+# a   4.77 0.26 4.37  5.18  1264     1
+# b   0.83 0.27 0.40  1.24  1207     1
+# phi 1.44 0.65 0.60  2.65   960     1
+
+# The parameter b estimates the association between lambda and the latency. It's compatibility interval crosses zero, so there appears to be no association between the lambda we estimate from the last trials in the reversal learning experiment and the latency to approach a new locus on the plastic multi-access box
+
+
+dl_lambda_phi <- list(learninglambda = standardize(as.numeric(inputdata_philatencyplastic$lastlambda)), 
+                      learningphi = standardize(as.numeric(inputdata_philatencyplastic$lastphi)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
+           )
+
+mplat1alternative3 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda + c * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  c ~ dnorm(0, 1),
+  phi ~ dexp(1)
+  ), data = dl_lambda_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1alternative3,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    4.99 0.31  4.52  5.46  1183     1
+# b    0.33 0.27 -0.09  0.76  1736     1
+# c   -0.01 0.26 -0.41  0.42  1556     1
+# phi  0.83 0.32  0.39  1.42  1321     1
+
+dl_lambda_phi <- list(learninglambda = standardize(as.numeric(inputdata_philatencyplastic$lastlambda)), 
+                      learningphi = standardize(as.numeric(inputdata_philatencyplastic$lastphi)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
+           )
+
+mplat1alternative4 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1),
+  phi ~ dexp(1)
+  ), data = dl_lambda_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat1alternative4,depth=2)
+
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+# a   5.02 0.31  4.51  5.49   886     1
+# b   0.07 0.21 -0.25  0.42  1256     1
+# phi 0.80 0.30  0.39  1.33  1493     1
+
+
+
+# Based on first reversal
+
+dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencyplastic$beginningphi)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
+           )
+
+mplat2alternative1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat2alternative1,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a   4.97 0.30  4.49  5.44  1105     1
+# b   0.16 0.26 -0.24  0.60  1376     1
+# phi 0.80 0.30  0.39  1.32  1218     1
+
+
+dl_lambda <- list(learninglambda = standardize(as.numeric(inputdata_philatencyplastic$beginninglambda)), 
+           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
+           batch = as.integer(inputdata_philatencyplastic$Batch)
+           )
+
+mplat2alternative2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_lambda, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mplat2alternative2,depth=2)
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+# a   4.95 0.34  4.40  5.47  1284     1
+# b   0.20 0.44 -0.53  0.88  1334     1
+# phi 0.80 0.34  0.36  1.41  1614     1
+
+
+
+# MODEL phi lat wooden: Second, we link the latency to attempt a new locus on the wooden multiaccess box to phi (updating of attraction scores in the last reversal)
+
+inputdata_philatencywooden<-combinedreversaldata[is.na(combinedreversaldata$AverageLatencyAttemptNewLocusMABwooden)==FALSE,]
+
+#inputdata_philatencywooden <- inputdata_philatencywooden[!inputdata_philatencywooden$Bird=="Mole" & !inputdata_philatencywooden$Bird=="Habanero",]
+
+# Based on last reversal
+
+dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencywooden$lastphi)), 
+           latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
+           batch = as.integer(inputdata_philatencywooden$Batch)
+           )
+
+mwood1alternative1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwood1alternative1,depth=2)
+
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+# a   5.73 0.28  5.27  6.16  1019     1
+# b   0.48 0.31 -0.02  0.97  1434     1
+# phi 1.06 0.43  0.47  1.85  1268     1
+# The parameter b estimates the association between phi and the latency. It's compatibility interval crosses zero, so there appears to be no association between the phi we estimate from the last trials in the reversal learning experiment and the latency to approach a new locus on the plastic multi-access box
+
+
+
+
+dl_lambda <- list(learninglambda = standardize(as.numeric(inputdata_philatencywooden$lastlambda)), 
+           latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
+           batch = as.integer(inputdata_philatencywooden$Batch)
+           )
+
+mwood1alternative2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_lambda, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwood1alternative2,depth=2)
+
+    mean   sd  5.5% 94.5% n_eff Rhat4
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    5.76 0.30  5.28  6.21  1373     1
+# b   -0.25 0.25 -0.63  0.16  1415     1
+# phi  0.96 0.37  0.45  1.62  1532     1
+
+# The parameter b estimates the association between lambda and the latency. It's compatibility interval crosses zero, so there appears to be no association between the lambda we estimate from the last trials in the reversal learning experiment and the latency to approach a new locus on the plastic multi-access box
+
+
+dl_lambda_phi <- list(learninglambda = standardize(as.numeric(inputdata_philatencywooden$lastlambda)), 
+                      learningphi = standardize(as.numeric(inputdata_philatencywooden$lastphi)), 
+           latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
+           batch = as.integer(inputdata_philatencywooden$Batch)
+           )
+
+mwood1alternative3 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda + c * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  c ~ dnorm(0, 1),
+  phi ~ dexp(1)
+  ), data = dl_lambda_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwood1alternative3,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    5.72 0.28  5.27  6.16  1174     1
+# b   -0.29 0.28 -0.73  0.15  1712     1
+# c    0.47 0.29  0.01  0.93  1642     1
+# phi  1.07 0.45  0.49  1.89  1642     1
+
+dl_lambda_phi <- list(learninglambda = standardize(as.numeric(inputdata_philatencywooden$lastlambda)), 
+                      learningphi = standardize(as.numeric(inputdata_philatencywooden$lastphi)), 
+           latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
+           batch = as.integer(inputdata_philatencywooden$Batch)
+           )
+
+mwood1alternative4 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1),
+  phi ~ dexp(1)
+  ), data = dl_lambda_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwood1alternative4,depth=2)
+
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+# a   5.80 0.30  5.31  6.23  1259     1
+# b   0.15 0.24 -0.22  0.56  1448     1
+# phi 0.92 0.35  0.44  1.54  1342     1
+
+
+
+# Based on first reversal
+
+dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencywooden$beginningphi)), 
+           latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
+           batch = as.integer(inputdata_philatencywooden$Batch)
+           )
+
+mwood2alternative1 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learningphi, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_phi, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwood2alternative1,depth=2)
+
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a   5.75 0.30  5.27  6.22  1172     1
+# b   0.30 0.33 -0.22  0.82  1467     1
+# phi 0.95 0.40  0.43  1.65  1216     1
+
+
+dl_lambda <- list(learninglambda = standardize(as.numeric(inputdata_philatencywooden$beginninglambda)), 
+           latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
+           batch = as.integer(inputdata_philatencywooden$Batch)
+           )
+
+mwood2alternative2 <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * learninglambda, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dl_lambda, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mwood2alternative2,depth=2)
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+# a    5.76 0.30  5.28  6.21  1250     1
+# b   -0.21 0.26 -0.60  0.21  1233     1
+# phi  0.94 0.37  0.45  1.59  1537     1
+
+
+
+
+
+
+# MODEL phi loci plastic: Third, we link the number of loci sovled on the plastic multiaccess box to phi (updating of attraction scores in the last reversal)
+
+inputdata_philociplastic<-combinedreversaldata[is.na(combinedreversaldata$TotalLociSolvedMABplastic)==FALSE,]
+
+# Exclude Mole and Habanero from this analysis because they were given the put together plastic box during habituation (due to experimenter error)
+inputdata_philociplastic <- inputdata_philociplastic[!inputdata_philociplastic$Bird=="Mole" & !inputdata_philociplastic$Bird=="Habanero",]
+
+# Remove NAs
+inputdata_philociplastic <- subset(inputdata_philociplastic,!(is.na(inputdata_philociplastic["TotalLociSolvedMABplastic"])) & !(is.na(inputdata_philociplastic["TrialsLastReversal"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d2$TotalLociSolvedMABwooden)
+
+# make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
+inputdata_philociplastic$Batch <- as.factor(inputdata_philociplastic$Batch)
+levels(inputdata_philociplastic$Batch)[c(2)] <- c("3")
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+            learninglambda = standardize(as.numeric(inputdata_philatencywooden$beginninglambda)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m1plasticloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m1plasticloci,depth=2)
+#   mean   sd  5.5% 94.5% n_eff Rhat4
+# a 0.01 0.28 -0.42  0.46  1516     1
+# b 0.10 0.26 -0.30  0.51  1382     1
+
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+            learningphi = standardize(as.numeric(inputdata_philatencywooden$beginningphi)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m2plasticloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m2plasticloci,depth=2)
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+# a  0.00 0.29 -0.45  0.45  1414     1
+# b -0.06 0.25 -0.45  0.33  1282     1
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+            learninglambda = standardize(as.numeric(inputdata_philatencywooden$lastlambda)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m3plasticloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m3plasticloci,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+# a -0.01 0.30 -0.48  0.48  1288     1
+# b -0.34 0.26 -0.76  0.07  1348     1
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+            learningphi = standardize(as.numeric(inputdata_philatencywooden$lastphi)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m4plasticloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m4plasticloci,depth=2)
+#  mean   sd  5.5% 94.5% n_eff Rhat4
+# a 0.02 0.30 -0.45  0.50  1153     1
+# b 0.24 0.26 -0.16  0.65  1463     1
+
+
+
+
+
+# MODEL phi loci wooden: Fourth, we link the number of loci solved on the wooden multiaccess box to phi (updating of attraction scores in the last reversal)
+
+inputdata_philociwooden<-combinedreversaldata[is.na(combinedreversaldata$TotalLociSolvedMABwooden)==FALSE,]
+
+# Exclude Mole and Habanero from this analysis because they were given the put together plastic box during habituation (due to experimenter error)
+inputdata_philociwooden <- inputdata_philociwooden[!inputdata_philociwooden$Bird=="Mole" & !inputdata_philociwooden$Bird=="Habanero",]
+
+# Remove NAs
+inputdata_philociwooden <- subset(inputdata_philociwooden,!(is.na(inputdata_philociwooden["TotalLociSolvedMABwooden"])) & !(is.na(inputdata_philociwooden["TrialsLastReversal"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d2$TotalLociSolvedMABwooden)
+
+# make Batch numeric (assigned Taco to batch 3 because 3a doesn't work with the model)
+inputdata_philociwooden$Batch <- as.factor(inputdata_philociwooden$Batch)
+levels(inputdata_philociwooden$Batch)[c(2)] <- c("3")
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
+            learninglambda = standardize(as.numeric(inputdata_philatencywooden$beginninglambda)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m1woodenloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m1woodenloci,depth=2)
+#   mean   sd  5.5% 94.5% n_eff Rhat4
+# a 1.26 0.34  0.73  1.83  1290     1
+# b 0.20 0.28 -0.23  0.63  1264     1
+
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABwooden),
+            learningphi = standardize(as.numeric(inputdata_philatencywooden$beginningphi)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m2woodenloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m2woodenloci,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+# a  1.28 0.36  0.71  1.85  1441     1
+# b -0.43 0.28 -0.87  0.02  1348     1
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABwooden),
+            learninglambda = standardize(as.numeric(inputdata_philatencywooden$lastlambda)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m3woodenloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m3woodenloci,depth=2)
+#     mean   sd  5.5% 94.5% n_eff Rhat4
+# a  1.26 0.35  0.72  1.81  1171     1
+# b -0.16 0.28 -0.62  0.28  1313     1
+
+
+dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABwooden),
+            learningphi = standardize(as.numeric(inputdata_philatencywooden$lastphi)),
+            batch = as.numeric(as.factor(as.numeric(inputdata_philatencywooden$Batch)))
+              )
+m4woodenloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
+  a ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 )
+
+precis(m4woodenloci,depth=2)
+#  mean   sd  5.5% 94.5% n_eff Rhat4
+# a  1.26 0.36  0.70  1.85  1126     1
+# b -0.20 0.29 -0.66  0.24  1142     1
+
+
+
+
+
+
+
+
+
+
+### Below is an alternative approach where phi and lambda are estimated in the same STAN model in which their association with other parameters is assessed.
+
 
 ### Code below copied from Blaisdell et al. 2021
+
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
 
 # PREPARE reversal learning data
 #exclude yellow tube trials for control birds because we are only interested in reversal data
@@ -2688,86 +3240,6 @@ setwd(currentlocation)
 run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 
-
-### Now we can link the phi and lambda values we extracted for each bird to the various parameters that measurer their performance on the multi-access boxes
-
-# First, we link it to the latency to switch loci on the plastic multi-access box
-
-d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-
-d3 <- data.frame(d3)
-colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","Notes")
-
-# Remove NAs
-d3 <- subset(d3,!(is.na(d3["AverageLatencyAttemptNewLocusMABplastic"])) & !(is.na(d3["TrialsLastReversal"])))
-
-# n=11: 5 in manipulated group, 6 in control group
-#length(d3$AverageLatencyAttemptNewLocusMABplastic)
-
-# make Batch a factor
-d3$Batch <- as.factor(d3$Batch)
-
-# RUN MODELs on the actual data
-library("Rcpp")
-library("rstan")
-library(rethinking)
-library(ggplot2)
-
-# We link the lambda and phi data for each bird 
-d3 <- d3[with(d3, order(d3$Bird)), ]
-d3$phi<-eachbirdslearningparameters$phi
-d3$lambda<-eachbirdslearningparameters$lambda
-
-
-# MODEL phi lat plastic: First, we link the latency to attempt a new locus on the plastic multiaccess box to phi (updating of attraction scores in the last reversal)
-eachbirdslearningparameters$AverageLatencyAttemptNewLocusMABplastic<-combinedreversaldata$AverageLatencyAttemptNewLocusMABplastic
-
-inputdata_philatencyplastic<-eachbirdslearningparameters[is.na(eachbirdslearningparameters$AverageLatencyAttemptNewLocusMABplastic)==FALSE,]
-
-dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencyplastic$lastphi)), 
-           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
-           batch = as.integer(inputdata_philatencyplastic$Batch)
-           )
-
-mplat1alternative1 <- ulam(alist(
-  latency ~ dgampois(lambda, phi), 
-  log(lambda) <- a + b * learningphi, 
-  a ~ dnorm(1, 1), 
-  b ~ dnorm(0, 1), 
-  phi ~ dexp(1)
-  ), data = dl_phi, chains=4, log_lik = TRUE, messages = FALSE)
-
-precis(mplat1alternative1,depth=2)
-
-#      mean   sd  5.5% 94.5% n_eff Rhat4
-# a    4.95 0.30  4.46  5.40  1405     1
-# b   -0.43 0.28 -0.87  0.01  1518     1
-# phi  0.93 0.37  0.43  1.60  1448     1
-
-
-dl_lambda <- list(learninglambda = standardize(as.numeric(inputdata_philatencyplastic$lastlambda)), 
-           latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
-           batch = as.integer(inputdata_philatencyplastic$Batch)
-           )
-
-mplat1alternative2 <- ulam(alist(
-  latency ~ dgampois(lambda, phi), 
-  log(lambda) <- a + b * learninglambda, 
-  a ~ dnorm(1, 1), 
-  b ~ dnorm(0, 1), 
-  phi ~ dexp(1)
-  ), data = dl_lambda, chains=4, log_lik = TRUE, messages = FALSE)
-
-precis(mplat1alternative2,depth=2)
-
-#     mean   sd 5.5% 94.5% n_eff Rhat4
-# a   4.86 0.26 4.43  5.27  1255     1
-# b   0.76 0.27 0.33  1.18  1129     1
-# phi 1.29 0.54 0.59  2.25  1216     1
-
-# The parameter b estimates the association between lambda and the latency. It's compatibility interval does not cross zero, so there appears to be a positive association between the lambda we estimate from the last trials in the reversal learning experiment and the latency to approach a new locus on the plastic multi-access box
-
-plot(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic~inputdata_philatencyplastic$lastlambda)
 
 
 ```
