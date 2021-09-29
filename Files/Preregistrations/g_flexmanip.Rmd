@@ -1402,16 +1402,18 @@ We conducted a **post-hoc exploratory analysis** on the serial reversal learning
 
 1) What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
 
-Start in line 2208
+Simulations
 
-check Rcode 14.12 Richard's book on cafes
 
-Manipulated individuals only: Nest first vs last reversal inside ID. ID is the control for the unknown starting conditions (e.g. the bird's previous experience that makes them more or less flexible). Is there a consistent change from PhiR1 to PhiRlast or from LambdaR1 to LambdaRlast? 
+Data
+Phi is more consistently associated with the performance, and phi changes more than lambda for the manipulated birds. However, both changes in phi and lambda both independently explain changes in the improvement in performance of the manipulated birds from the first  to the last reversal.
+
+check Rcode 14.12 Richard's book on cafes - shows that there is indeed a negative correlation between the phi during the initial reversal and the change in phi towards the last reversal. A bird who was already good at reversal because it had a high phi in the beginning did not change it's phi as much as a bird that started with a slow performance because of a low phi, with all manipulated birds ending up with similar phi values.
 
 
 ![](g_flexmanip_figchangemanipulatedbirds.png)
 
-**Figure Z.** Comparisons of the different measures of performance in the reversal task for each of the 19 birds. The figure shows the trials to reverse (a, top) during the initial reversal (yellow) and the final reversal (for manipulated birds, blue), the phi value reflecting their updating of their attractions during those trials (b, middle), and the lambda values reflecting their exploration during those trials (c, bottom). Individual birds have the same position along the x-axis in all three panels. Birds that only needed few trials to reverse generally have higher phi values whereas lambda reflects more whether any choices of the unrewarded tube occurred throughout or only at the beginning, though the values do not match perfectly because the phi and lambda values are estimated across two rather than just the one reversal (e.g. bird 2, Mofongo, has a very high phi because he only needed 20 trials during the initial association learning). For the manipulated birds, their phi values change more consistently than their lambda values, and the phi values of the manipulated individuals are generally higher than those observed in the control group while their lambda values remain within the range also observed in the control group.
+**Figure Z.** Comparisons of the different measures of performance in the reversal task for each of the 19 birds. The figure shows the trials to reach the association criterion after the reversal (a, top) during the initial reversal (for all birds, yellow) and the final reversal (for manipulated birds, blue), the phi value reflecting their updating of their information about the two options during those trials and the trials before (initial = initial association plus first reversal; manipulated = last two reversals) (b, middle), and the lambda values reflecting their exploration of the two options during those trials (c, bottom). Individual birds have the same position along the x-axis in all three panels. Birds that only needed few trials to reverse their preference to the new association generally have higher phi values, whereas lambda appears to reflect more whether any choices of the unrewarded tube occurred throughout the trials or only at the beginning. The values do not align perfectly because the phi and lambda values are estimated across two rather than just the one reversal (e.g. bird 2, Mofongo, has a very high phi because he only needed 20 trials during the initial association learning). For the manipulated birds, their phi values change more consistently than their lambda values, and the phi values of the manipulated individuals are generally higher than those observed in the control group while their lambda values remain within the range also observed in the control group.
 
 
 
@@ -1697,19 +1699,6 @@ initiallearning_simulatedphi_alternativepriors <- sapply(1 : datinitialsimulated
 
 
 
-
-
-
-
-# OPEN QUESTIONS:
-# How did you decide that the manipulation worked? 
-# two consecutive reversals passed in 50 or less trials
-# Can check what phi/lambda has to be so that they pass in 50 or less trials in the simulation
-# Is it easier to change phi or lambda to get at 50 or fewer trials?
-
-# We might want to compare first 20 trials to last 20 trials, both for the simulated data, and for
-# the observed data look at the first and last 20 trials for each the first and the last reversal
-
 # Need to change the priors for the attraction scores 0.1 and 0.7
 
 
@@ -1845,6 +1834,47 @@ abline(a=0,b=1)
 plot(initialandreversal_phi~initialandreversal_lambda)
 
 
+
+
+
+
+# OPEN QUESTIONS:
+# How did you decide that the manipulation worked? 
+# two consecutive reversals passed in 50 or less trials
+# Can check what phi/lambda has to be so that they pass in 50 or less trials in the simulation
+# Is it easier to change phi or lambda to get at 50 or fewer trials?
+
+# We might want to compare first 20 trials to last 20 trials, both for the simulated data, and for
+# the observed data look at the first and last 20 trials for each the first and the last reversal
+#
+
+
+summarysimulateddata<-matrix(nrow=length(unique(simulatedreversaldata_attractionscores$id)),ncol=5)
+summarysimulateddata<-as.data.frame(summarysimulateddata)
+colnames(summarysimulateddata)<-c("id","ThisBirdsPhi","ThisBirdsLambda","TrialsInitial","TrialsReversal")
+
+summarysimulateddata$id<-unique(simulatedreversaldata_attractionscores$id)
+
+for (i in 1:nrow(summarysimulateddata)){
+summarysimulateddata[i,]$TrialsInitial<-max(filter(simulatedreversaldata_attractionscores,id==unique(simulatedreversaldata_attractionscores$id)[i],Reversal=="initial")$Trial)
+}
+
+for (i in 1:nrow(summarysimulateddata)){
+summarysimulateddata[i,]$TrialsReversal<-max(filter(simulatedreversaldata_attractionscores,id==unique(simulatedreversaldata_attractionscores$id)[i],Reversal=="reversal")$Trial)
+}
+
+for (i in 1:nrow(summarysimulateddata)){
+summarysimulateddata[i,]$ThisBirdsPhi<-max(filter(simulatedreversaldata_attractionscores,id==unique(simulatedreversaldata_attractionscores$id)[i])$ThisBirdsPhi)
+}
+
+for (i in 1:nrow(summarysimulateddata)){
+summarysimulateddata[i,]$ThisBirdsLambda<-max(filter(simulatedreversaldata_attractionscores,id==unique(simulatedreversaldata_attractionscores$id)[i])$ThisBirdsLambda)
+}
+
+
+plot(summarysimulateddata$TrialsReversal~summarysimulateddata$ThisBirdsPhi)
+
+plot(summarysimulateddata$TrialsReversal~summarysimulateddata$ThisBirdsLambda)
 
 
 ```
@@ -2226,6 +2256,30 @@ plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata[is.na(combine
 points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],col="red")
 
 
+
+
+# # # # # # # # 
+
+# What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
+
+
+
+# Questions:
+# 1) Effect of manipulation
+# Say that manipulation reduces number of trials birds needed to reverse (trials ~ reversal) - on average, by how many trials did they improve?
+# 1a) Did manipulation change phi and lambda? (phi ~ reversal (first vs last); lambda ~ reversal)
+# 1b) Does extent of change depend on how the birds started? Expect that birds that were already good initially needed to change less (cafe visiting model model m14.1: phi ~ id +id*manipulation)
+
+
+# 2) Is improvement in performance mainly due to change in phi or in lambda? 
+# 2a) (model mimprovement: trialimprovement ~ lambdaimprovement + phiimprovement)
+# 2b) cafe waiting model for trials to reverse, with morning/afternoon as first/last, and slope depends on phi improvement and lambda improvement
+# 2c) Can we estimate all changes simultaneously?  mallchanges, maybe run with just phi and just lambda because of their correlation in last
+
+
+
+
+
 improvementdata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==F,]
 
 improvementdata$phiimprovement<-improvementdata$lastphi-improvementdata$beginningphi
@@ -2265,6 +2319,55 @@ mimprovementphi <- ulam(alist(
 precis(mimprovementphi,depth=2)
 
 
+
+dat_allchanges<- list(
+  TrialsLast = standardize(improvementdata$TrialsLastReversal),
+  TrialsFirst = standardize(improvementdata$TrialsFirstReversal),
+  philast = standardize(improvementdata$lastphi),
+  lambdalast = standardize(improvementdata$lastlambda),
+  phifirst = standardize(improvementdata$beginningphi),
+  lambdafirst = standardize(improvementdata$beginninglambda)
+)
+
+mallchanges <- ulam(alist(
+TrialsLast ~ dnorm(mutrialslast,sigmaltrialslast), 
+mutrialslast <- x*TrialsFirst + a*philast + b*lambdalast,
+TrialsFirst ~ dnorm(mutrialsfirst,sigmatrialsfirst),
+mutrialsfirst<-  c*phifirst + d*lambdafirst,
+philast ~ dnorm(muphilast,sigmaphilast),
+muphilast<-  e*phifirst,
+lambdalast ~ dnorm(mulambdalast,sigmalambdalast),
+mulambdalast<-  f*lambdafirst,
+x ~ dnorm(0,1),
+a ~ dnorm(0,1),
+b ~ dnorm(0,1),
+c ~ dnorm(0,1),
+d ~ dnorm(0,1),
+e ~ dnorm(0,1),
+f ~ dnorm(0,1),
+sigmaltrialslast~dexp(1),
+sigmatrialsfirst~dexp(1),
+sigmaphilast~dexp(1),
+sigmalambdalast~dexp(1)
+), data = dat_allchanges, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mallchanges,depth=2)
+
+#                   mean   sd  5.5% 94.5% n_eff Rhat4
+# x                 0.62 0.36  0.04  1.17  1166     1
+# a                -0.28 0.51 -1.07  0.54  1095     1
+# b                -0.22 0.48 -0.98  0.55  1278     1
+# c                -1.04 0.15 -1.26 -0.80  1059     1
+# d                -0.18 0.16 -0.41  0.06   890     1
+# e                 0.29 0.37 -0.31  0.86  1696     1
+# f                 0.19 0.38 -0.41  0.79  1806     1
+# sigmaltrialslast  0.85 0.28  0.52  1.33  1185     1
+# sigmatrialsfirst  0.33 0.13  0.19  0.52   778     1
+# sigmaphilast      1.03 0.29  0.67  1.56  1283     1
+# sigmalambdalast   1.06 0.29  0.70  1.59  1824     1
+
+
+
 improvementdata<-as.data.frame(improvementdata)
 
 dat_change <- list(
@@ -2272,7 +2375,6 @@ dat_change <- list(
       bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
       reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
            )
-
 
 m14.1 <- ulam(
     alist(
@@ -2295,20 +2397,40 @@ R <- rlkjcorr( 1e4 , K=2 , eta=2 )    # prior
 dens( R[,1,2] , add=TRUE , lty=2 )
 
 
+
+
+
+
+
+
+
+
+
 # For plotting
 
-library(cowplot)
-dat_for_plotting_reversals <- list(
-      trials = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
-      bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata)))
-           )
+combinedreversaldata$TrialsLastButOneReversal<-NA
+for (i in 1:length(unique(combinedreversaldata$Bird))){
+  combinedreversaldata[combinedreversaldata$Bird==unique(combinedreversaldata$Bird)[i],]$TrialsLastButOneReversal<-max((filter(dflex,ID==unique(combinedreversaldata$Bird)[i],Reversal==max(dflex[dflex$ID==unique(combinedreversaldata$Bird)[i],]$Reversal)-1))$Trial)
+}
 
+improvementdata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==F,]
+
+improvementdata$phiimprovement<-improvementdata$lastphi-improvementdata$beginningphi
+improvementdata$lambdaimprovement<-improvementdata$lastlambda-improvementdata$beginninglambda
+improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal -improvementdata$TrialsLastReversal
+
+singlereversaldata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==T,]
+singlereversaldata<-singlereversaldata[is.na(singlereversaldata$TrialsFirstReversal)==F,]
+
+
+library(cowplot)
+
+## Plotting trials across a switch (initial = initial association learning plus first reversal; manipulated = last two reversals) - with this the phi and lambda match more closely the performance but the changes are not as clearly visible
 dat_for_plotting_reversals <- list(
-      trials = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
+      trials = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsLastReversal+improvementdata$TrialsLastButOneReversal), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
       reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
-      reversalforsorting = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsFirstReversal)
+      reversalforsorting = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn')
            )
 
 
@@ -2325,7 +2447,98 @@ trialsplot<-dat_for_plotting_reversals %>%
   ggplot(aes(plotid,trials)) +
   geom_point(aes(color=reversal),size=4) +
   geom_line(aes(group = bird),color="darkgrey")+
-  ylim(0,170)+
+  ylim(0,280)+
+  scale_colour_manual(values=c("#E69F00","#56B4E9"))+
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
+
+
+
+dat_for_plotting_phi <- list(
+      phi = c(singlereversaldata$beginningphi,improvementdata$beginningphi,improvementdata$manipulatedphi), 
+      bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversalforsorting = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn')
+           )
+
+dat_for_plotting_phi<-as.data.frame(dat_for_plotting_phi)
+dat_for_plotting_phi <- arrange(dat_for_plotting_phi,reversalforsorting,bird)
+dat_for_plotting_phi$plotid<-NA
+count<-0
+for(i in 1:nrow(dat_for_plotting_phi)){
+  if(dat_for_plotting_phi[i,]$reversal=="initial"){count<-count+1}
+  dat_for_plotting_phi[i,]$plotid<-count  
+}
+
+phiplot<-dat_for_plotting_phi %>%
+  ggplot(aes(plotid,phi)) +
+  geom_point(aes(color=reversal),size=4) +
+  geom_line(aes(group = bird),color="darkgrey")+
+  ylim(0,0.125)+
+  scale_colour_manual(values=c("#E69F00","#56B4E9"))+
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
+
+
+
+dat_for_plotting_lambda <- list(
+      lambda = c(singlereversaldata$beginninglambda,improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
+      bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversalforsorting = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn')
+           )
+
+dat_for_plotting_lambda<-as.data.frame(dat_for_plotting_lambda)
+dat_for_plotting_lambda <- arrange(dat_for_plotting_lambda,reversalforsorting,bird)
+dat_for_plotting_lambda$plotid<-NA
+count<-0
+for(i in 1:nrow(dat_for_plotting_lambda)){
+  if(dat_for_plotting_lambda[i,]$reversal=="initial"){count<-count+1}
+  dat_for_plotting_lambda[i,]$plotid<-count  
+}
+
+lambdaplot<-dat_for_plotting_lambda %>%
+  ggplot(aes(plotid,lambda)) +
+  geom_point(aes(color=reversal),size=4) +
+  geom_line(aes(group = bird),color="darkgrey")+
+  ylim(0,7.5)+
+  scale_colour_manual(values=c("#E69F00","#56B4E9"))+
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,3.5), "lines"))
+
+
+plot_grid(trialsplot,
+          phiplot,
+          lambdaplot,
+          labels = c('a) Trials to reverse','b) Estimated phi','c) Estimated lambda'),
+          label_x = 0.31,
+          label_size	= 20,
+          hjust = -0.05,
+          ncol = 1,
+          rel_heights = c(1,1,1))
+
+
+
+
+## Plotting trials only for first reversal (initial) or for last reversal (manipulated) - with this the phi and lambda might not fully reflect the performance but the changes are more clearly visible.
+dat_for_plotting_reversals <- list(
+      trials = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
+      bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversalforsorting = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsFirstReversal)
+        )
+
+dat_for_plotting_reversals<-as.data.frame(dat_for_plotting_reversals)
+dat_for_plotting_reversals <- arrange(dat_for_plotting_reversals,reversalforsorting,bird)
+dat_for_plotting_reversals$plotid<-NA
+count<-0
+for(i in 1:nrow(dat_for_plotting_reversals)){
+  if(dat_for_plotting_reversals[i,]$reversal=="initial"){count<-count+1}
+  dat_for_plotting_reversals[i,]$plotid<-count  
+}
+
+trialsplot<-dat_for_plotting_reversals %>%
+  ggplot(aes(plotid,trials)) +
+  geom_point(aes(color=reversal),size=4) +
+  geom_line(aes(group = bird),color="darkgrey")+
+  ylim(0,180)+
   scale_colour_manual(values=c("#E69F00","#56B4E9"))+
   theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
 
@@ -2357,6 +2570,8 @@ phiplot<-dat_for_plotting_phi %>%
 
 
 
+# NOTE: take inverse of lambda to make it rate of deviating. With inverse, larger values means you deviate more from the learned associations.
+
 dat_for_plotting_lambda <- list(
       lambda = c(singlereversaldata$beginninglambda,improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
@@ -2385,13 +2600,12 @@ lambdaplot<-dat_for_plotting_lambda %>%
 plot_grid(trialsplot,
           phiplot,
           lambdaplot,
-          labels = c('a) Trials to reverse','b) Estimated phi','c) Estimated lambda'),
-          label_x = 0.31,
+          labels = c('a) Trials to reach association criterion','b) Phi: rate of updating learned attractions','c) Lambda: rate of deviating from learned attractions'),
+          label_x = 0.1,
           label_size	= 20,
           hjust = -0.05,
           ncol = 1,
           rel_heights = c(1,1,1))
-
 
 ```
 
