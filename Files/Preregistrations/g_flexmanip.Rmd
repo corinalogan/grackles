@@ -1419,6 +1419,23 @@ check Rcode 14.12 Richard's book on cafes - shows that there is indeed a negativ
 
 
 For question 1... 
+
+Trials last depend on trials first
+Trials last depend on phi improvement
+Phi improvement depends on trials first
+Trials first depend on phi
+Phi improvement depends on phi
+
+
+
+
+Trials last - Trials first
+     |	       /
+Phi improvement
+
+hyperprior model
+
+
 ```{r posthoc_simulationchecks, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 ################################################################################################
@@ -2207,6 +2224,25 @@ write.csv(eachbirdslearningparameters,file="g_flexmanip_ArizonaBirds_EstimatedPh
 
 
 
+# # # # # # # # 
+
+# What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
+
+
+
+# Questions:
+# 1) Effect of manipulation
+# Say that manipulation reduces number of trials birds needed to reverse (trials ~ reversal) - on average, by how many trials did they improve?
+# 1a) Did manipulation change phi and lambda? (phi ~ reversal (first vs last); lambda ~ reversal)
+# 1b) Does extent of change depend on how the birds started? Expect that birds that were already good initially needed to change less (cafe visiting model model m14.1: phi ~ id +id*manipulation)
+
+
+# 2) Is improvement in performance mainly due to change in phi or in lambda? 
+# 2a) (model mimprovement: trialimprovement ~ lambdaimprovement + phiimprovement)
+# 2b) cafe waiting model for trials to reverse, with morning/afternoon as first/last, and slope depends on phi improvement and lambda improvement
+# 2c) Can we estimate all changes simultaneously?  mallchanges, maybe run with just phi and just lambda because of their correlation in last
+
+library(rethinking)
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -2256,30 +2292,6 @@ plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata[is.na(combine
 points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],col="red")
 
 
-
-
-# # # # # # # # 
-
-# What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
-
-
-
-# Questions:
-# 1) Effect of manipulation
-# Say that manipulation reduces number of trials birds needed to reverse (trials ~ reversal) - on average, by how many trials did they improve?
-# 1a) Did manipulation change phi and lambda? (phi ~ reversal (first vs last); lambda ~ reversal)
-# 1b) Does extent of change depend on how the birds started? Expect that birds that were already good initially needed to change less (cafe visiting model model m14.1: phi ~ id +id*manipulation)
-
-
-# 2) Is improvement in performance mainly due to change in phi or in lambda? 
-# 2a) (model mimprovement: trialimprovement ~ lambdaimprovement + phiimprovement)
-# 2b) cafe waiting model for trials to reverse, with morning/afternoon as first/last, and slope depends on phi improvement and lambda improvement
-# 2c) Can we estimate all changes simultaneously?  mallchanges, maybe run with just phi and just lambda because of their correlation in last
-
-
-
-
-
 improvementdata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==F,]
 
 improvementdata$phiimprovement<-improvementdata$lastphi-improvementdata$beginningphi
@@ -2290,13 +2302,65 @@ singlereversaldata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedp
 singlereversaldata<-singlereversaldata[is.na(singlereversaldata$TrialsFirstReversal)==F,]
 
 
+
+
+
+# 1)
+dat_change_trials <- list(
+      trials = standardize(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)), 
+      bird = c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)), 
+      reversal = c(rep(0,nrow(improvementdata)),rep(1,nrow(improvementdata)))
+           )
+
+mchangetrials <- ulam(alist(
+  trials ~ dnorm(mu, sigma), 
+  mu <- a[bird]+b[bird]*reversal, 
+  a[bird] ~ dnorm(100, 50), 
+  b[bird] ~ dnorm(0, 10),
+  sigma ~ dexp(1)
+  ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE)
+precis(mchangetrials,depth=2)
+
+
+mchangetrialspool <- ulam(alist(
+  trials ~ dnorm(mu, sigma), 
+  mu <- a[bird]+b[bird]*reversal, 
+  a[bird] ~ dnorm(100, 50), 
+  b[bird] ~ dnorm(b_bar, sigma_bar),
+  b_bar~dnorm(0,1.5),
+  sigma ~ dexp(1),
+  sigma_bar ~ dexp(1)
+  ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE)
+precis(mchangetrialspool,depth=2)
+
+
+
+mchangetrialscorr <- ulam(
+    alist(
+        trials ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(0,1),
+        b ~ normal(0,1),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_change_trials , chains=4 , cores=4 )
+precis(mchangetrialscorr,depth=2)
+
+
+
+
+
+
+# 2a) is improvement in trials to reverse linked to improvement in phi and/or lambda?
 dat_improvement <- list(
       lambdaimprovement = standardize(as.numeric(improvementdata$lambdaimprovement)), 
       phiimprovement = standardize(as.numeric(improvementdata$phiimprovement)), 
            performanceimprovement = as.integer(improvementdata$performanceimprovement)
            )
 
-mimprovement <- ulam(alist(
+mimprovementboth <- ulam(alist(
   performanceimprovement ~ dnorm(mu, sigma), 
   mu <- a + b * phiimprovement + c * lambdaimprovement, 
   a ~ dnorm(40, 10), 
@@ -2304,19 +2368,10 @@ mimprovement <- ulam(alist(
   c ~ dnorm(10, 5),
   sigma ~ dexp(1)
   ), data = dat_improvement, chains=4, log_lik = TRUE, messages = FALSE)
+precis(mimprovementboth,depth=2)
 
-precis(mimprovement,depth=2)
+# Changes in both phi and lambda appear asscociated with the changes in the number of trials needed to reverse a preference. The estimate for phi is however twice as high as the estimate for lambda (both are standardized)
 
-
-mimprovementphi <- ulam(alist(
-  performanceimprovement ~ dnorm(mu, sigma), 
-  mu <- a + b * phiimprovement , 
-  a ~ dnorm(40, 10), 
-  b ~ dnorm(10, 5),
-  sigma ~ dexp(1)
-  ), data = dat_improvement, chains=4, log_lik = TRUE, messages = FALSE)
-
-precis(mimprovementphi,depth=2)
 
 
 
@@ -2365,6 +2420,185 @@ precis(mallchanges,depth=2)
 # sigmatrialsfirst  0.33 0.13  0.19  0.52   778     1
 # sigmaphilast      1.03 0.29  0.67  1.56  1283     1
 # sigmalambdalast   1.06 0.29  0.70  1.59  1824     1
+
+
+
+dat_allchanges_improvement<- list(
+  TrialsLast = standardize(improvementdata$TrialsLastReversal),
+  TrialsFirst = standardize(improvementdata$TrialsFirstReversal),
+  phiimprovement = standardize(improvementdata$phiimprovement),
+  lambdaimprovement = standardize(improvementdata$lambdaimprovement),
+  phifirst = standardize(improvementdata$beginningphi),
+  lambdafirst = standardize(improvementdata$beginninglambda),
+  philast = standardize(improvementdata$lastphi),
+  lambdalast = standardize(improvementdata$lastlambda)
+)
+
+mallchanges_improvement <- ulam(alist(
+TrialsLast ~ dnorm(mutrialslast,sigmaltrialslast), 
+mutrialslast <- x*TrialsFirst + a*phiimprovement + b*lambdaimprovement,
+TrialsFirst ~ dnorm(mutrialsfirst,sigmatrialsfirst),
+mutrialsfirst<-  c*phifirst + d*lambdafirst,
+x ~ dnorm(0,1),
+a ~ dnorm(0,1),
+b ~ dnorm(0,1),
+c ~ dnorm(0,1),
+d ~ dnorm(0,1),
+sigmaltrialslast~dexp(1),
+sigmatrialsfirst~dexp(1)
+), data = dat_allchanges_improvement, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mallchanges_improvement,depth=2)
+
+#                   mean   sd  5.5% 94.5% n_eff Rhat4
+# x                 0.41 0.52 -0.42  1.23  1078     1
+# a                 0.32 0.58 -0.58  1.26  1052     1
+# b                 0.00 0.40 -0.63  0.63  1094     1
+# c                -1.03 0.16 -1.25 -0.77   783     1
+# d                -0.18 0.16 -0.41  0.08   725     1
+# sigmaltrialslast  0.84 0.27  0.52  1.34  1229     1
+# sigmatrialsfirst  0.33 0.13  0.19  0.54   814     1
+
+
+dat_allchanges_improvement<- list(
+  TrialsLast = (improvementdata$TrialsLastReversal),
+  TrialsFirst = (improvementdata$TrialsFirstReversal),
+  phiimprovement = standardize(improvementdata$phiimprovement),
+  lambdaimprovement = standardize(improvementdata$lambdaimprovement),
+  phifirst = standardize(improvementdata$beginningphi),
+  lambdafirst = standardize(improvementdata$beginninglambda),
+  philast = standardize(improvementdata$lastphi),
+  lambdalast = standardize(improvementdata$lastlambda)
+)
+
+mallchanges_improvement <- ulam(alist(
+TrialsLast ~ dnorm(mutrialslast,sigmaltrialslast), 
+mutrialslast <- x*TrialsFirst + a*phiimprovement + b*lambdaimprovement,
+TrialsFirst ~ dnorm(mutrialsfirst,sigmatrialsfirst),
+mutrialsfirst<-  c*phifirst + d*lambdafirst,
+x ~ dnorm(0,1),
+a ~ dnorm(0,1),
+b ~ dnorm(0,1),
+c ~ dnorm(0,1),
+d ~ dnorm(0,1),
+sigmaltrialslast~dexp(1),
+sigmatrialsfirst~dexp(1)
+), data = dat_allchanges_improvement, chains=4, log_lik = TRUE, messages = FALSE)
+
+precis(mallchanges_improvement,depth=2)
+
+
+
+dat_trialsimprovement<- list(
+  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal),
+  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird))),
+  reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
+  phiimprovement = c(improvementdata$phiimprovement,improvementdata$phiimprovement)
+)
+
+m14.trials.reversals <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_trialsimprovement , chains=4 , cores=4 )
+
+precis(m14.trials.reversals,depth=2)
+
+
+
+dat_trialsimprovement<- list(
+  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal),
+  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird))),
+  reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
+  phi = standardize(c(improvementdata$beginningphi,improvementdata$lastphi))
+)
+
+m14.trials.phi <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*phi,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_trialsimprovement , chains=4 , cores=4,iter=10000 )
+
+precis(m14.trials.phi,depth=2)
+
+dat_trialsimprovement<- list(
+  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal),
+  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird))),
+  reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
+  lambda = standardize(c(improvementdata$beginninglambda,improvementdata$lastlambda))
+)
+
+m14.trials.lambda <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*lambda+c_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho_lambda , sigma_bird_lambda ),
+        c(a_bird,c_bird)[bird]~ multi_normal( c(d,e) , Rho_reversal , sigma_bird_reversal ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        d ~ normal(5,2),
+        e ~ normal(-1,0.5),
+        sigma_bird_lambda ~ exponential(1),
+        sigma_bird_reversal ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho_lambda ~ lkj_corr(2),
+        Rho_reversal~ lkj_corr(2)
+    ) , data=dat_trialsimprovement , chains=4 , cores=4,iter=10000 )
+
+precis(m14.trials.lambda,depth=2)
+
+
+
+
+
+m14.trials.lambda.direct <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*lambda+c_bird[bird]*reversal,
+        a_bird[bird] ~ normal(5,2),
+        b_bird[bird] ~ normal(0,2),
+        c_bird[bird] ~ normal(0,2),
+        sigma ~ exponential(1)
+    ) , data=dat_trialsimprovement , chains=4 , cores=4,iter=10000 )
+
+precis(m14.trials.lambda.direct,depth=2)
+
+
+
+
+
+m14.trials <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(mub,sigmab),
+        mub <- x*phiimprovement,
+        x~normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        sigmab ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_trialsimprovement , chains=4 , cores=4 )
+
+precis(m14.trials,depth=2)
+
+
+
+
 
 
 
