@@ -2275,18 +2275,9 @@ combinedreversaldata <- combinedreversaldata[with(combinedreversaldata, order(co
 # Store the bird names in case we want to link their data from here back to other datasets
 birdnames<-unique(combinedreversaldata$Bird)
 
-
-
-plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata,xlim=c(0,0.15),ylim=c(0,160))
-points(TrialsLastReversal~lastphi,data=combinedreversaldata,col="red")
-
-
 plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,0.15),ylim=c(0,160))
 points(TrialsLastReversal~lastphi,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],col="red")
 
-
-plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata,xlim=c(0,10),ylim=c(0,160))
-points(TrialsLastReversal~lastlambda,data=combinedreversaldata,col="red")
 
 plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,10),ylim=c(0,160))
 points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],col="red")
@@ -2312,16 +2303,6 @@ dat_change_trials <- list(
       reversal = c(rep(0,nrow(improvementdata)),rep(1,nrow(improvementdata)))
            )
 
-mchangetrials <- ulam(alist(
-  trials ~ dnorm(mu, sigma), 
-  mu <- a[bird]+b[bird]*reversal, 
-  a[bird] ~ dnorm(100, 50), 
-  b[bird] ~ dnorm(0, 10),
-  sigma ~ dexp(1)
-  ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE)
-precis(mchangetrials,depth=2)
-
-
 mchangetrialspool <- ulam(alist(
   trials ~ dnorm(mu, sigma), 
   mu <- a[bird]+b[bird]*reversal, 
@@ -2332,6 +2313,28 @@ mchangetrialspool <- ulam(alist(
   sigma_bar ~ dexp(1)
   ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE)
 precis(mchangetrialspool,depth=2)
+
+#            mean   sd  5.5% 94.5% n_eff Rhat4
+# a[1]       1.79 0.35  1.17  2.21   210  1.03
+# a[2]       0.10 0.33 -0.45  0.59  1381  1.01
+# a[3]       1.44 0.32  0.92  1.90   720  1.01
+# a[4]      -0.53 0.37 -1.00  0.12   149  1.03
+# a[5]       0.99 0.32  0.46  1.45   861  1.01
+# a[6]       0.98 0.32  0.42  1.42   922  1.01
+# a[7]       0.72 0.33  0.26  1.33   607  1.02
+# a[8]       0.27 0.33 -0.16  0.80   738  1.01
+# b[1]      -1.88 0.43 -2.42 -1.16    32  1.09
+# b[2]      -1.55 0.33 -2.03 -0.99   555  1.02
+# b[3]      -1.63 0.35 -2.10 -1.05   150  1.03
+# b[4]      -0.87 0.46 -1.65 -0.28    32  1.09
+# b[5]      -1.64 0.35 -2.14 -1.07   148  1.03
+# b[6]      -1.64 0.35 -2.07 -1.08    97  1.05
+# b[7]      -1.12 0.37 -1.75 -0.65    68  1.06
+# b[8]      -1.12 0.38 -1.75 -0.66   133  1.03
+# b_bar     -1.44 0.28 -1.84 -1.01    42  1.11
+# sigma      0.32 0.23  0.03  0.72    13  1.22
+# sigma_bar  0.52 0.29  0.10  0.97   156  1.03
+
 
 
 
@@ -2347,6 +2350,70 @@ mchangetrialscorr <- ulam(
         Rho ~ lkj_corr(2)
     ) , data=dat_change_trials , chains=4 , cores=4 )
 precis(mchangetrialscorr,depth=2)
+
+
+
+
+dat_change_trials_noncentered <- list(
+      trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
+      bird = c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)), 
+      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
+           )
+
+m14.3 <- ulam(
+    alist(
+        trials ~ normal(mu,sigma),
+        mu <- a_reversal[reversal] + b_reversal[bird,reversal],
+        # adaptive priors - non-centered
+        transpars> matrix[bird,2]:b_reversal <-
+                compose_noncentered( sigma_reversal , L_Rho_reversal , z_reversal ),
+        matrix[2,bird]:z_reversal ~ normal( 0 , 1 ),
+        # fixed priors
+        a_reversal[reversal] ~ normal(0,1),
+        sigma ~ exponential(1),
+        vector[2]:sigma_reversal ~ dexp(1),
+        cholesky_factor_corr[2]:L_Rho_reversal ~ lkj_corr_cholesky( 2 ),
+        # compute ordinary correlation matrixes from Cholesky factors
+        gq> matrix[2,2]:Rho_actor <<- Chol_to_Corr(L_Rho_reversal)
+    ) , data=dat_change_trials_noncentered , chains=4 , cores=4 , log_lik=TRUE,cmdstan=T )
+
+# compute mean for each actor in each treatment
+pl <- by( c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal) , list( c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)) , c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))) ) , mean )
+# generate posterior predictions using link
+datp <- list(
+    bird=rep(1:8,each=2) ,
+    reversal=rep(1:2,times=8)  )
+p_post <- link( m14.3 , data=datp )
+p_mu <- apply( p_post , 2 , mean )
+p_ci <- apply( p_post , 2 , PI )
+# set up plot
+plot( NULL , xlim=c(1,16) , ylim=c(0,160) , xlab="" ,
+    ylab="proportion left lever" , xaxt="n" , yaxt="n" )
+axis( 2 , at=c(0,50,100,150) , labels=c(0,50,100,150) )
+abline( h=80 , lty=2 )
+for ( j in 1:8 ) abline( v=(j-1)*2+4.5 , lwd=0.5 )
+for ( j in 1:8 ) text( (j-1)*2+2.5 , 150 , concat("bird ",j) , xpd=TRUE )
+xo <- 0.01 # offset distance to stagger raw data and predictions
+# raw data
+for ( j in (1:8)[-2] ) {
+    lines( (j-1)*2+c(1,2)-xo , pl[j,c(1,2)] , lwd=2 , col=rangi2 )
+}
+points( 1:16-xo , t(pl) , pch=16 , col="white" , cex=1.7 )
+points( 1:16-xo , t(pl) , pch=c(1,1,16,16) , col=rangi2 , lwd=2 )
+yoff <- 0.175
+text( 1-xo , pl[1,1]-yoff , "R/N" , pos=1 , cex=0.8 )
+text( 2-xo , pl[1,2]+yoff , "L/N" , pos=3 , cex=0.8 )
+text( 3-xo , pl[1,3]-yoff , "R/P" , pos=1 , cex=0.8 )
+text( 4-xo , pl[1,4]+yoff , "L/P" , pos=3 , cex=0.8 )
+# posterior predictions
+for ( j in (1:8)[-2] ) {
+    lines( (j-1)*2+c(1,2)+xo , p_mu[(j-1)+c(1,3)] , lwd=2 )
+}
+for ( i in 1:28 ) lines( c(i,i)+xo , p_ci[,i] , lwd=1 )
+points( 1:28+xo , p_mu , pch=16 , col="white" , cex=1.3 )
+points( 1:28+xo , p_mu , pch=c(1,1,16,16) )
+
+
 
 
 
