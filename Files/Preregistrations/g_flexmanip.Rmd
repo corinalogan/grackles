@@ -1405,37 +1405,6 @@ We conducted a **post-hoc exploratory analysis** on the serial reversal learning
 Simulations
 
 
-Data
-Phi is more consistently associated with the performance, and phi changes more than lambda for the manipulated birds. However, both changes in phi and lambda both independently explain changes in the improvement in performance of the manipulated birds from the first  to the last reversal.
-
-check Rcode 14.12 Richard's book on cafes - shows that there is indeed a negative correlation between the phi during the initial reversal and the change in phi towards the last reversal. A bird who was already good at reversal because it had a high phi in the beginning did not change it's phi as much as a bird that started with a slow performance because of a low phi, with all manipulated birds ending up with similar phi values.
-
-
-![](g_flexmanip_figchangemanipulatedbirds.png)
-
-**Figure Z.** Comparisons of the different measures of performance in the reversal task for each of the 19 birds. The figure shows the trials to reach the association criterion after the reversal (a, top) during the initial reversal (for all birds, yellow) and the final reversal (for manipulated birds, blue), the phi value reflecting their updating of their information about the two options during those trials and the trials before (initial = initial association plus first reversal; manipulated = last two reversals) (b, middle), and the lambda values reflecting their exploration of the two options during those trials (c, bottom). Individual birds have the same position along the x-axis in all three panels. Birds that only needed few trials to reverse their preference to the new association generally have higher phi values, whereas lambda appears to reflect more whether any choices of the unrewarded tube occurred throughout the trials or only at the beginning. The values do not align perfectly because the phi and lambda values are estimated across two rather than just the one reversal (e.g. bird 2, Mofongo, has a very high phi because he only needed 20 trials during the initial association learning). For the manipulated birds, their phi values change more consistently than their lambda values, and the phi values of the manipulated individuals are generally higher than those observed in the control group while their lambda values remain within the range also observed in the control group.
-
-
-
-
-For question 1... 
-
-Trials last depend on trials first
-Trials last depend on phi improvement
-Phi improvement depends on trials first
-Trials first depend on phi
-Phi improvement depends on phi
-
-
-
-
-Trials last - Trials first
-     |	       /
-Phi improvement
-
-hyperprior model
-
-
 ```{r posthoc_simulationchecks, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 ################################################################################################
@@ -1899,6 +1868,55 @@ plot(summarysimulateddata$TrialsReversal~summarysimulateddata$ThisBirdsLambda)
 
 
 
+
+
+
+
+
+Data
+
+Manipulated birds improved from needing a median of 75 trials during their first reversal (nonmanipulated birds 70 trials) to needing a median of 40 trials during their last reversal. A pooled model estimates that birds can expect to improve by about 30 trials (89% PI 25-36). While all birds improve, those birds that already needed fewer trials in the initial reversal improve less than the birds that initially needed many trials. However, the initially worse performing birds still do not catch up such that the bird who needed the fewest trials to reverse initially also needed the fewest trials to reverse in the last reversal, but the difference to birds performing worse is reduced in the last reversal. Trials in the last reversal equals roughly (Trials first reversal)^2 / 200
+
+
+Their estimated phi more than doubled from 0.03 (nonmanipulated 0.03) to 0.07 in their last reversal, while their lambda went slightly down from 4.2 (nonmanipulated 4.3) to 3.2. Increases however were not linear, with five of the eight manipulated birds showing the highest number of trials necessary to reverse after their first trial. 
+
+Across both manipulated and control birds, phi is more consistently associated with the performance, and phi changes more than lambda for the manipulated birds (Figure Z). However, both changes in phi and lambda  independently explain changes in the improvement in performance of the manipulated birds from the first  to the last reversal. 
+
+
+This means that knowing how a bird performed initially will tell us how they performed in the last reversal - it will tell us how much they improved. In this case, we can calculate the trials in the last reversal as
+
+check Rcode 14.12 Richard's book on cafes - shows that there is indeed a negative correlation between the phi during the initial reversal and the change in phi towards the last reversal. A bird who was already good at reversal because it had a high phi in the beginning did not change it's phi as much as a bird that started with a slow performance because of a low phi, with all manipulated birds ending up with similar phi values.
+
+
+![](g_flexmanip_figchangemanipulatedbirds.png)
+
+**Figure Z.** Comparisons of the different measures of performance in the reversal task for each of the 19 birds. The figure shows the trials to reach the association criterion after the reversal (a, top) during the initial reversal (for all birds, yellow) and the final reversal (for manipulated birds, blue), the phi value reflecting their updating of their information about the two options during those trials and the trials before (initial = initial association plus first reversal; manipulated = last two reversals) (b, middle), and the lambda values reflecting their exploration of the two options during those trials (c, bottom). Individual birds have the same position along the x-axis in all three panels. Birds that only needed few trials to reverse their preference to the new association generally have higher phi values, whereas lambda appears to reflect more whether any choices of the unrewarded tube occurred throughout the trials or only at the beginning. The values do not align perfectly because the phi and lambda values are estimated across two rather than just the one reversal (e.g. bird 2, Mofongo, has a very high phi because he only needed 20 trials during the initial association learning). For the manipulated birds, their phi values change more consistently than their lambda values, and the phi values of the manipulated individuals are generally higher than those observed in the control group while their lambda values remain within the range also observed in the control group.
+
+
+
+
+For question 1... 
+
+Trials last depend on trials first
+Trials last depend on phi improvement
+Phi improvement depends on trials first
+Trials first depend on phi
+Phi improvement depends on phi
+
+
+
+ there is indeed a negative correlation between the phi during the initial reversal and the change in phi towards the last reversal. A bird who was already good at reversal because it had a high phi in the beginning did not change it's phi as much as a bird that started with a slow performance because of a low phi, with all manipulated birds ending up with similar phi values.
+
+
+Trials last - Trials first
+     |	       /
+Phi improvement
+
+hyperprior model
+
+
+
+
 ```{r posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 ### Code below copied from Blaisdell et al. 2021
@@ -2224,6 +2242,45 @@ write.csv(eachbirdslearningparameters,file="g_flexmanip_ArizonaBirds_EstimatedPh
 
 
 
+#################
+# Is there a linear improvement?
+
+performanceimprovement <- matrix(ncol=10,nrow=length(unique(dflex$ID)))
+performanceimprovement<-as.data.frame(performanceimprovement)
+colnames(performanceimprovement)<-c("Bird","initialassociation", "reversal1","reversal2","reversal3","reversal4","reversal5","reversal6","reversal7","reversal8")
+
+for (i in 1:length(unique(dflex$ID))) {
+  thisbird <- unique(dflex$ID)[i]
+  thisbirddata <- dflex[dflex$ID==thisbird,]
+ for (k in 1:length(unique(thisbirddata$Reversal))){ 
+  thisbirdcurrentreversal <- thisbirddata[thisbirddata$Reversal %in% unique(thisbirddata$Reversal)[k],]
+performanceimprovement[i,1]<-thisbird
+performanceimprovement[i,k+1]<-max(thisbirdcurrentreversal$Trial)
+	}
+}
+
+colourstoplot<-c("red","blue","red","black","yellow","red","red","black","blue","red","red","red","red","yellow","red","blue",rep("red",6))
+plot( NULL , xlim=c(1,9) , ylim=c(0,200) , xlab="Reversal" ,
+    ylab="Trials" , xaxt="n" , yaxt="n" )
+for (j in 1:nrow(performanceimprovement)) {lines( c(1:9) , performanceimprovement[j,2:10] , lwd=2 , col=colourstoplot[j] )}
+
+manipulatedperformanceimprovement<-performanceimprovement[is.na(performanceimprovement$reversal2)==F,]
+manipulatedperformanceimprovement<-mutate(manipulatedperformanceimprovement,maximumreversal=pmax(reversal1,reversal2,reversal3,reversal4,reversal5,reversal6,reversal7,reversal8,na.rm=T))
+
+smallimprovementdata<-select(improvementdata,Bird,lastphi,lastlambda,beginningphi,beginninglambda)
+largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,by="Bird")
+
+# first	last	max
+# 40	  30	  90
+# 60	  23	  110
+# 60	  40	  90
+# 70	  50	  110
+# 80	  40	  80
+# 80	  40	  170
+# 90	  50	  90
+# 100	  50	  100
+
+
 # # # # # # # # 
 
 # What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
@@ -2243,6 +2300,9 @@ write.csv(eachbirdslearningparameters,file="g_flexmanip_ArizonaBirds_EstimatedPh
 # 2c) Can we estimate all changes simultaneously?  mallchanges, maybe run with just phi and just lambda because of their correlation in last
 
 library(rethinking)
+
+# if you have cmdstan installed, use the following:
+# set_ulam_cmdstan(TRUE)
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -2276,19 +2336,23 @@ combinedreversaldata <- combinedreversaldata[with(combinedreversaldata, order(co
 birdnames<-unique(combinedreversaldata$Bird)
 
 plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,0.15),ylim=c(0,160))
-points(TrialsLastReversal~lastphi,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],col="red")
+points(TrialsLastReversal~lastphi,data=combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==FALSE,],col="red")
 
 
 plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,10),ylim=c(0,160))
-points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],col="red")
+points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==FALSE,],col="red")
 
 
+# Filter the dataset to only include those birds that experienced the reversal manipulation
 improvementdata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==F,]
 
+
+# For these birds, we can calculate how much they changed from beginning to end
 improvementdata$phiimprovement<-improvementdata$lastphi-improvementdata$beginningphi
 improvementdata$lambdaimprovement<-improvementdata$lastlambda-improvementdata$beginninglambda
 improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal -improvementdata$TrialsLastReversal
 
+# Filter the dataset a second time to only include the control birds
 singlereversaldata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==T,]
 singlereversaldata<-singlereversaldata[is.na(singlereversaldata$TrialsFirstReversal)==F,]
 
@@ -2296,9 +2360,38 @@ singlereversaldata<-singlereversaldata[is.na(singlereversaldata$TrialsFirstRever
 
 
 
-# 1)
+
+# How much did birds change that experienced the manipulation?
+
+median(improvementdata$beginningphi)
+#  0.03
+median(improvementdata$manipulatedphi)
+# 0.07
+median(improvementdata$beginninglambda)
+# 4.2
+median(improvementdata$manipulatedlambda)
+# 3.2
+
+median(singlereversaldata$beginningphi)
+# 0.03
+median(singlereversaldata$beginninglambda)
+# 4.3
+
+median(improvementdata$TrialsFirstReversal)
+# 75
+median(improvementdata$TrialsLastReversal)
+# 40
+median(singlereversaldata$TrialsFirstReversal)
+# 70
+
+
+
+
+# 1) First, we want to model the changes that happened during the manipulations
+
+# How did the number of trials change - is there a difference between first and last reversal and how much could we expect new birds to change?
 dat_change_trials <- list(
-      trials = standardize(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)), 
+      trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
       bird = c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)), 
       reversal = c(rep(0,nrow(improvementdata)),rep(1,nrow(improvementdata)))
            )
@@ -2308,59 +2401,46 @@ mchangetrialspool <- ulam(alist(
   mu <- a[bird]+b[bird]*reversal, 
   a[bird] ~ dnorm(100, 50), 
   b[bird] ~ dnorm(b_bar, sigma_bar),
-  b_bar~dnorm(0,1.5),
+  b_bar~dnorm(30,20),
   sigma ~ dexp(1),
   sigma_bar ~ dexp(1)
   ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE)
 precis(mchangetrialspool,depth=2)
 
-#            mean   sd  5.5% 94.5% n_eff Rhat4
-# a[1]       1.79 0.35  1.17  2.21   210  1.03
-# a[2]       0.10 0.33 -0.45  0.59  1381  1.01
-# a[3]       1.44 0.32  0.92  1.90   720  1.01
-# a[4]      -0.53 0.37 -1.00  0.12   149  1.03
-# a[5]       0.99 0.32  0.46  1.45   861  1.01
-# a[6]       0.98 0.32  0.42  1.42   922  1.01
-# a[7]       0.72 0.33  0.26  1.33   607  1.02
-# a[8]       0.27 0.33 -0.16  0.80   738  1.01
-# b[1]      -1.88 0.43 -2.42 -1.16    32  1.09
-# b[2]      -1.55 0.33 -2.03 -0.99   555  1.02
-# b[3]      -1.63 0.35 -2.10 -1.05   150  1.03
-# b[4]      -0.87 0.46 -1.65 -0.28    32  1.09
-# b[5]      -1.64 0.35 -2.14 -1.07   148  1.03
-# b[6]      -1.64 0.35 -2.07 -1.08    97  1.05
-# b[7]      -1.12 0.37 -1.75 -0.65    68  1.06
-# b[8]      -1.12 0.38 -1.75 -0.66   133  1.03
-# b_bar     -1.44 0.28 -1.84 -1.01    42  1.11
-# sigma      0.32 0.23  0.03  0.72    13  1.22
-# sigma_bar  0.52 0.29  0.10  0.97   156  1.03
+# The relevant estimate here is for b_bar, showing that birds on average improve by between 25-36 trials
+
+#              mean   sd   5.5%  94.5% n_eff Rhat4
+# a[1]       91.62 5.80  82.51 100.10    33  1.14
+# a[2]       57.85 4.98  49.48  65.18   739  1.01
+# a[3]       85.83 5.14  77.61  94.23   184  1.03
+# a[4]       48.63 6.66  36.69  58.57    26  1.19
+# a[5]       76.55 5.32  67.81  85.57    66  1.07
+# a[6]       75.77 5.14  68.18  83.18   100  1.04
+# a[7]       74.20 5.59  66.82  83.56   108  1.05
+# a[8]       64.34 5.46  56.13  73.21    85  1.06
+# b[1]      -32.76 6.84 -49.77 -24.93    11  1.55
+# b[2]      -31.16 4.13 -37.24 -24.74    33  1.15
+# b[3]      -31.56 4.65 -40.11 -24.73    20  1.23
+# b[4]      -27.79 6.96 -35.22 -10.13    10  1.67
+# b[5]      -31.53 4.68 -40.12 -24.74    20  1.23
+# b[6]      -31.49 4.65 -39.90 -24.53    21  1.22
+# b[7]      -29.00 4.78 -35.47 -19.93    16  1.31
+# b[8]      -29.01 4.71 -35.34 -20.07    16  1.31
+# b_bar     -30.30 3.51 -35.65 -24.65   109  1.06
+# sigma       6.54 2.42   0.23   9.41    10  1.60
+# sigma_bar   2.13 2.93   0.17   9.77     9  1.73
 
 
 
-
-mchangetrialscorr <- ulam(
-    alist(
-        trials ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(0,1),
-        b ~ normal(0,1),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_change_trials , chains=4 , cores=4 )
-precis(mchangetrialscorr,depth=2)
-
-
-
+# We might expect that birds who took many trials during their first reversal had to improve more to reach the criterion. This means that we can expect that there is a correlation between the intercept and the slope of change of each bird. We built a model that incorporates that potential correlation
 
 dat_change_trials_noncentered <- list(
-      trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
+      trials = standardize(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)), 
       bird = c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)), 
       reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
            )
 
-m14.3 <- ulam(
+mchangetrialnoncentered <- ulam(
     alist(
         trials ~ normal(mu,sigma),
         mu <- a_reversal[reversal] + b_reversal[bird,reversal],
@@ -2369,77 +2449,194 @@ m14.3 <- ulam(
                 compose_noncentered( sigma_reversal , L_Rho_reversal , z_reversal ),
         matrix[2,bird]:z_reversal ~ normal( 0 , 1 ),
         # fixed priors
-        a_reversal[reversal] ~ normal(0,1),
+        a_reversal[reversal] ~ normal(0,20),
         sigma ~ exponential(1),
         vector[2]:sigma_reversal ~ dexp(1),
         cholesky_factor_corr[2]:L_Rho_reversal ~ lkj_corr_cholesky( 2 ),
         # compute ordinary correlation matrixes from Cholesky factors
         gq> matrix[2,2]:Rho_actor <<- Chol_to_Corr(L_Rho_reversal)
-    ) , data=dat_change_trials_noncentered , chains=4 , cores=4 , log_lik=TRUE,cmdstan=T )
+    ) , data=dat_change_trials_noncentered , chains=4 , cores=4 , log_lik=TRUE )
 
-# compute mean for each actor in each treatment
+precis(mchangetrialnoncentered,depth=4)
+
+# Is there a correlation between the initial trials to reverse and how much they improve? Yes, it appears there is, with the posterior showing a clear peak around +0.22 - so birds with higher initial values improve more.
+
+post <- extract.samples(mchangetrialnoncentered)
+dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
+R <- rlkjcorr( 1e4 , K=2 , eta=2 )    # prior
+dens( R[,1,2] , add=TRUE , lty=2 )
+
+PI(post$Rho[,1,2],0.10)
+
+
+# We can plot the observed and estimated changes for each birdr with the following block of code. This shows that for birds that needed many trials during the initial reversal, the slope is much steeper than for birds who needed only few trials initially; and that the model estimates that overall birds are relatively similar such that their slopes are less extreme in all cases because there is in addition the general effect of the treatment (not shown here)
+
+# compute mean for each bird in each treatment
 pl <- by( c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal) , list( c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)) , c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))) ) , mean )
+pl<-pl[c(1,3,5,6,2,7,8,4),]
 # generate posterior predictions using link
 datp <- list(
     bird=rep(1:8,each=2) ,
     reversal=rep(1:2,times=8)  )
-p_post <- link( m14.3 , data=datp )
+p_post <- link( mchangetrialnoncentered , data=datp )
 p_mu <- apply( p_post , 2 , mean )
+p_mu<-p_mu[c(1,2,5,6,9,10,11,12,3,4,13,14,15,16,7,8)]
 p_ci <- apply( p_post , 2 , PI )
+p_ci<-p_ci[,c(1,2,5,6,9,10,11,12,3,4,13,14,15,16,7,8)]
 # set up plot
-plot( NULL , xlim=c(1,16) , ylim=c(0,160) , xlab="" ,
-    ylab="proportion left lever" , xaxt="n" , yaxt="n" )
-axis( 2 , at=c(0,50,100,150) , labels=c(0,50,100,150) )
-abline( h=80 , lty=2 )
-for ( j in 1:8 ) abline( v=(j-1)*2+4.5 , lwd=0.5 )
-for ( j in 1:8 ) text( (j-1)*2+2.5 , 150 , concat("bird ",j) , xpd=TRUE )
+plot( NULL , xlim=c(1,16) , ylim=c(0,130) , xlab="" ,
+    ylab="Trials to reverse" , xaxt="n" , yaxt="n" )
+axis( 2 , at=c(0,25,50,75,100) , labels=c(0,25,50,75,100) )
+abline( h=25 , lty=2, col="grey90" )
+abline( h=50 , lty=2, col="grey90" )
+abline( h=75 , lty=2, col="grey90" )
+abline( h=100 , lty=2, col="grey90" )
+abline( h=120 , lty=1 )
+for ( j in 1:8 ) abline( v=(j*2+0.5) , lwd=0.5 )
+improvementdatabirds<-improvementdata[c(1,3,5,6,2,7,8,4),]$Bird
+for ( j in 1:8 ) text( (j-1)*2+1.5 , 125 , improvementdatabirds[j] , xpd=TRUE )
 xo <- 0.01 # offset distance to stagger raw data and predictions
 # raw data
-for ( j in (1:8)[-2] ) {
+for ( j in (1:8) ) {
     lines( (j-1)*2+c(1,2)-xo , pl[j,c(1,2)] , lwd=2 , col=rangi2 )
 }
 points( 1:16-xo , t(pl) , pch=16 , col="white" , cex=1.7 )
-points( 1:16-xo , t(pl) , pch=c(1,1,16,16) , col=rangi2 , lwd=2 )
-yoff <- 0.175
-text( 1-xo , pl[1,1]-yoff , "R/N" , pos=1 , cex=0.8 )
-text( 2-xo , pl[1,2]+yoff , "L/N" , pos=3 , cex=0.8 )
-text( 3-xo , pl[1,3]-yoff , "R/P" , pos=1 , cex=0.8 )
-text( 4-xo , pl[1,4]+yoff , "L/P" , pos=3 , cex=0.8 )
+points( 1:16-xo , t(pl) , pch=c(1,16,1,16) , col=rangi2 , lwd=2 )
+yoff <- 12
+text( 1+0.8 , pl[1,1]+1 , "Observed in first" , pos=1 , cex=0.8, col=rangi2 )
+text( 2-0.9 , pl[1,2]-2 , "Observed in last" , pos=3 , cex=0.8 , col=rangi2)
+text( 2-0.7 , pl[1,2]-12 , "Model estimate" , pos=3 , cex=0.8 , col="black")
+
 # posterior predictions
-for ( j in (1:8)[-2] ) {
-    lines( (j-1)*2+c(1,2)+xo , p_mu[(j-1)+c(1,3)] , lwd=2 )
+for ( j in (1:8) ) {
+    lines( (j-1)*2+c(1,2)+xo , p_mu[(j-1)*2+c(1,2)]*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , lwd=2 )
 }
-for ( i in 1:28 ) lines( c(i,i)+xo , p_ci[,i] , lwd=1 )
-points( 1:28+xo , p_mu , pch=16 , col="white" , cex=1.3 )
-points( 1:28+xo , p_mu , pch=c(1,1,16,16) )
+for ( i in 1:16 ) lines( c(i,i)+xo , p_ci[,i]*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , lwd=1,col="grey50" )
+points( 1:16+xo , p_mu*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , pch=16 , col="white" , cex=1.3 )
+points( 1:16+xo , p_mu*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , pch=c(1,16,1,16) )
 
 
 
 
 
+
+
+# We can similarly check whether phi and lambda changed between the first and the last reversal, and again whether the values during the first reversal are linked to how much they change
+
+# Phi increases for the manipulated birds by +0.02 - +0.05, whereas lambda decreases by-1.63 - -0.56. For phi, we observe the same correlation between the initial value and the change (-0.4; 50% HPDI all negative), there is no such obvious relationship for lambda (-0.15; 50% HPDI spans zero).
+
+dat_change_phi <- list(
+      phi = c(improvementdata$beginningphi,improvementdata$manipulatedphi), 
+      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
+           )
+
+mchangephi <- ulam(
+    alist(
+        phi ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_change_phi , chains=4 , cores=4,iter=10000 )
+
+precis(mchangephi,depth=4)
+
+
+post <- extract.samples(mchangephi)
+dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
+R <- rlkjcorr( 1e4 , K=2 , eta=2 )    # prior
+dens( R[,1,2] , add=TRUE , lty=2 )
+
+HPDI( post$Rho[,1,2],0.5)
+
+
+dat_change_lambda <- list(
+      lambda = c(improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
+      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
+           )
+
+mchangelambda <- ulam(
+    alist(
+        lambda ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_change_lambda , chains=4 , cores=4 )
+
+precis(mchangelambda,depth=2)
+
+
+post <- extract.samples(mchangelambda)
+dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
+R <- rlkjcorr( 1e4 , K=2 , eta=2 )    # prior
+dens( R[,1,2] , add=TRUE , lty=2 )
+HPDI(post$Rho[,1,2],0.5)
+
+
+
+
+
+# Both phi and lambda change during the manipulation. Is there a systematic change in how birds attempt to solve the task? We might expect that in the end lambda and phi are correlated as birds focus on slightly different strategies to achieve the criterion
+
+
+dat_change_phi_correlated_lambda <- list(
+      lambda = c(improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
+      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
+      phi = standardize(c(improvementdata$beginningphi,improvementdata$manipulatedphi))
+           )
+
+mchangelambda <- ulam(
+    alist(
+        lambda ~ normal( mu , sigma ),
+        mu <- aphi*phi ,
+        aphi ~ normal(0,5),
+        b_reversal[reversal] ~ normal(0,2),
+        sigma ~ exponential(1)
+    ) , data=dat_change_phi_correlated_lambda , chains=4 , cores=4 )
+
+precis(mchangelambda,depth=2)
 
 
 
 # 2a) is improvement in trials to reverse linked to improvement in phi and/or lambda?
+
+improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal-improvementdata$TrialsLastReversal
+
 dat_improvement <- list(
       lambdaimprovement = standardize(as.numeric(improvementdata$lambdaimprovement)), 
       phiimprovement = standardize(as.numeric(improvementdata$phiimprovement)), 
-           performanceimprovement = as.integer(improvementdata$performanceimprovement)
+      performanceimprovement = as.integer(improvementdata$performanceimprovement)
            )
 
 mimprovementboth <- ulam(alist(
   performanceimprovement ~ dnorm(mu, sigma), 
   mu <- a + b * phiimprovement + c * lambdaimprovement, 
   a ~ dnorm(40, 10), 
-  b ~ dnorm(10, 5),
-  c ~ dnorm(10, 5),
+  b ~ dnorm(0, 10),
+  c ~ dnorm(0, 10),
   sigma ~ dexp(1)
   ), data = dat_improvement, chains=4, log_lik = TRUE, messages = FALSE)
 precis(mimprovementboth,depth=2)
 
-# Changes in both phi and lambda appear asscociated with the changes in the number of trials needed to reverse a preference. The estimate for phi is however twice as high as the estimate for lambda (both are standardized)
+# Changes in both phi (11, 6-15) and lambda (6, 1-10) appear asscociated with the changes in the number of trials needed to reverse a preference. The estimate for phi is however twice as high as the estimate for lambda (both are standardized)
 
 
+
+
+# Before we saw that how much a bird improves depends on where they started off from - birds that needed more trials in the first reversal improved more than birds that needed fewer trials initially. However, it appeared that the birds that needed more trials initially did not fully catch up. So we want to see whether there are consistent individual differences, where the starting point of a bird influences where they end up, both potentially influenced by their phi and lambda.
+# We can now try to bring it all together in one model.
+
+# This model shows that trials needed in the last reversral is influenced by  trials in the first reversal and trials in the first reversals are influenced by the initial phi of an bird. No other links appear.
 
 
 dat_allchanges<- list(
@@ -2490,218 +2687,34 @@ precis(mallchanges,depth=2)
 
 
 
-dat_allchanges_improvement<- list(
-  TrialsLast = standardize(improvementdata$TrialsLastReversal),
-  TrialsFirst = standardize(improvementdata$TrialsFirstReversal),
-  phiimprovement = standardize(improvementdata$phiimprovement),
-  lambdaimprovement = standardize(improvementdata$lambdaimprovement),
-  phifirst = standardize(improvementdata$beginningphi),
-  lambdafirst = standardize(improvementdata$beginninglambda),
-  philast = standardize(improvementdata$lastphi),
-  lambdalast = standardize(improvementdata$lastlambda)
+
+
+# We now want to know whether the number of trials a bird needed in either the initial or the last reversal is influenced more by phi or more by lambda. The results indicate that phi is more related to the number of trials - lambda is more related to when birds make "mistakes", whether at the beginning (high lambda) or throughout (low lambda). So the manipulation makes birds less fixated on small differences (smaller lambda) because they now quickly vote one option up or down (larger phi)
+
+dat_trialsphiandlambda<- list(
+  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal,singlereversaldata$TrialsFirstReversal),
+  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird)),9:19),
+  phi = standardize(c(improvementdata$beginningphi,improvementdata$lastphi,singlereversaldata$beginningphi)),
+  lambda = standardize(c(improvementdata$beginninglambda,improvementdata$lastlambda,singlereversaldata$beginninglambda))
 )
 
-mallchanges_improvement <- ulam(alist(
-TrialsLast ~ dnorm(mutrialslast,sigmaltrialslast), 
-mutrialslast <- x*TrialsFirst + a*phiimprovement + b*lambdaimprovement,
-TrialsFirst ~ dnorm(mutrialsfirst,sigmatrialsfirst),
-mutrialsfirst<-  c*phifirst + d*lambdafirst,
-x ~ dnorm(0,1),
-a ~ dnorm(0,1),
-b ~ dnorm(0,1),
-c ~ dnorm(0,1),
-d ~ dnorm(0,1),
-sigmaltrialslast~dexp(1),
-sigmatrialsfirst~dexp(1)
-), data = dat_allchanges_improvement, chains=4, log_lik = TRUE, messages = FALSE)
-
-precis(mallchanges_improvement,depth=2)
-
-#                   mean   sd  5.5% 94.5% n_eff Rhat4
-# x                 0.41 0.52 -0.42  1.23  1078     1
-# a                 0.32 0.58 -0.58  1.26  1052     1
-# b                 0.00 0.40 -0.63  0.63  1094     1
-# c                -1.03 0.16 -1.25 -0.77   783     1
-# d                -0.18 0.16 -0.41  0.08   725     1
-# sigmaltrialslast  0.84 0.27  0.52  1.34  1229     1
-# sigmatrialsfirst  0.33 0.13  0.19  0.54   814     1
-
-
-dat_allchanges_improvement<- list(
-  TrialsLast = (improvementdata$TrialsLastReversal),
-  TrialsFirst = (improvementdata$TrialsFirstReversal),
-  phiimprovement = standardize(improvementdata$phiimprovement),
-  lambdaimprovement = standardize(improvementdata$lambdaimprovement),
-  phifirst = standardize(improvementdata$beginningphi),
-  lambdafirst = standardize(improvementdata$beginninglambda),
-  philast = standardize(improvementdata$lastphi),
-  lambdalast = standardize(improvementdata$lastlambda)
-)
-
-mallchanges_improvement <- ulam(alist(
-TrialsLast ~ dnorm(mutrialslast,sigmaltrialslast), 
-mutrialslast <- x*TrialsFirst + a*phiimprovement + b*lambdaimprovement,
-TrialsFirst ~ dnorm(mutrialsfirst,sigmatrialsfirst),
-mutrialsfirst<-  c*phifirst + d*lambdafirst,
-x ~ dnorm(0,1),
-a ~ dnorm(0,1),
-b ~ dnorm(0,1),
-c ~ dnorm(0,1),
-d ~ dnorm(0,1),
-sigmaltrialslast~dexp(1),
-sigmatrialsfirst~dexp(1)
-), data = dat_allchanges_improvement, chains=4, log_lik = TRUE, messages = FALSE)
-
-precis(mallchanges_improvement,depth=2)
-
-
-
-dat_trialsimprovement<- list(
-  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal),
-  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird))),
-  reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
-  phiimprovement = c(improvementdata$phiimprovement,improvementdata$phiimprovement)
-)
-
-m14.trials.reversals <- ulam(
+trials.phiandlambda <- ulam(
     alist(
         Trials ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(5,2),
-        b ~ normal(-1,0.5),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_trialsimprovement , chains=4 , cores=4 )
-
-precis(m14.trials.reversals,depth=2)
-
-
-
-dat_trialsimprovement<- list(
-  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal),
-  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird))),
-  reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
-  phi = standardize(c(improvementdata$beginningphi,improvementdata$lastphi))
-)
-
-m14.trials.phi <- ulam(
-    alist(
-        Trials ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*phi,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(5,2),
-        b ~ normal(-1,0.5),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_trialsimprovement , chains=4 , cores=4,iter=10000 )
-
-precis(m14.trials.phi,depth=2)
-
-dat_trialsimprovement<- list(
-  Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal),
-  bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird))),
-  reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata))),
-  lambda = standardize(c(improvementdata$beginninglambda,improvementdata$lastlambda))
-)
-
-m14.trials.lambda <- ulam(
-    alist(
-        Trials ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*lambda+c_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho_lambda , sigma_bird_lambda ),
-        c(a_bird,c_bird)[bird]~ multi_normal( c(d,e) , Rho_reversal , sigma_bird_reversal ),
-        a ~ normal(5,2),
-        b ~ normal(-1,0.5),
-        d ~ normal(5,2),
-        e ~ normal(-1,0.5),
-        sigma_bird_lambda ~ exponential(1),
-        sigma_bird_reversal ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho_lambda ~ lkj_corr(2),
-        Rho_reversal~ lkj_corr(2)
-    ) , data=dat_trialsimprovement , chains=4 , cores=4,iter=10000 )
-
-precis(m14.trials.lambda,depth=2)
-
-
-
-
-
-m14.trials.lambda.direct <- ulam(
-    alist(
-        Trials ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*lambda+c_bird[bird]*reversal,
-        a_bird[bird] ~ normal(5,2),
-        b_bird[bird] ~ normal(0,2),
-        c_bird[bird] ~ normal(0,2),
+        mu <- a + b*phi+c*lambda,
+        a ~ normal(70,40),
+        b ~ normal(0,20),
+        c ~ normal(0,20),
         sigma ~ exponential(1)
-    ) , data=dat_trialsimprovement , chains=4 , cores=4,iter=10000 )
+    ) , data=dat_trialsphiandlambda , chains=4 , cores=4,iter=10000 )
 
-precis(m14.trials.lambda.direct,depth=2)
+precis(trials.phiandlambda,depth=2)
 
-
-
-
-
-m14.trials <- ulam(
-    alist(
-        Trials ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(5,2),
-        b ~ normal(mub,sigmab),
-        mub <- x*phiimprovement,
-        x~normal(-1,0.5),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        sigmab ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_trialsimprovement , chains=4 , cores=4 )
-
-precis(m14.trials,depth=2)
-
-
-
-
-
-
-
-improvementdata<-as.data.frame(improvementdata)
-
-dat_change <- list(
-      phi = c(improvementdata$beginningphi,improvementdata$manipulatedphi), 
-      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
-           )
-
-m14.1 <- ulam(
-    alist(
-        phi ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(5,2),
-        b ~ normal(-1,0.5),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_change , chains=4 , cores=4 )
-
-precis(m14.1,depth=2)
-
-
-post <- extract.samples(m14.1)
-dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
-R <- rlkjcorr( 1e4 , K=2 , eta=2 )    # prior
-dens( R[,1,2] , add=TRUE , lty=2 )
-
-
-
-
-
-
+#         mean   sd   5.5%  94.5% n_eff Rhat4
+# a      65.34 2.69  61.04  69.60 19803     1
+# b     -23.38 2.98 -28.15 -18.62 18077     1
+# c      -0.04 2.98  -4.83   4.75 19159     1
+# sigma  13.88 1.53  11.66  16.51 19522     1
 
 
 
