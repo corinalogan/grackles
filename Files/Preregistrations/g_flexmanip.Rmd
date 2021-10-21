@@ -1398,28 +1398,16 @@ Examining only the manipulated grackles, there was **repeatability of flexibilit
 
 While one third of the grackles switched from an exploratory **strategy** (epsilon-decreasing) to an exploitative strategy (epsilon-first) in their last reversal, there was no correlation between either strategy and reversal number, indicating that the grackles did not use a particular strategy earlier or later in their serial reversals. This could suggest that the grackles did not learn the overarching rule that once food is not present in the preferred tube, they must switch to preferring the other color. Instead, they may learn each preference change as if it was new.
 
-We conducted a **post-hoc exploratory analysis** on the serial reversal learning data to better understand the effect the flexibility manipulation had on performance. We used the version of the Bayesian model that was developed by @blaisdell2021causal and modified by @logan2020xpop [see Analysis Plan > Flexibility analysis in @logan2020xpop for model specifications and validation]. This model uses data from every trial of reversal learning (rather than only using the total number of trials to pass criterion) and represents behavioral flexibility using two parameters: the learning rate of attraction to either option ($\phi$) and the rate of deviating from learned attractions ($\lambda$). We first run the Bayesion model on simulated data to better understand how the two parameters might lead to differences in performance and whether we would be able to detect meaningful differences between control and manipulated birds. The settings for the simulations were based on the previous analysis of data from birds in a different population (Santa Barbara, @blaisdell2021causal). 
-When we used only the choices simulated individuals made during their one reversal, the estimated phi and lambda values did not match those individuals had been assigned. We realized that phi and lambda values were consistently shifted in a correlated way. With only a single performance, there was equifinality with multiple combinations of the two parameters phi and lambda leading to the performance of birds during the reversal. However, when we combined data from across at least one switch in the colour of the rewarded option, either combining initial association learning with the first reversal or taking the choices from the last two reversals, the model accurately recovered the phi and lambda values that simulated individuals had been assigned.
-The number of trials birds needed to reverse an association in the simulations is more strongly influenced by the phi value they were assigned then by their assigned lambda value (estimated association with standardized values for phi: -21, 89%PI:-22 - -19; for lambda -14, 89PI: -16 - -13). In particular, low numbers of trials to reverse can be observed across the full range of lambda value, though when lambda is smaller than 8 simulated birds can need 150 or more trials to reverse a preference. In contrast, there is a more linear relationship between phi and the number of trials to reverse, with birds needing fewer trials the larger their phi.
-
-
-
-
-
-
+We conducted a **post-hoc exploratory analysis** on the serial reversal learning data to better understand the effect the flexibility manipulation had on performance. We used the version of the Bayesian model that was developed by @blaisdell2021causal and modified by @logan2020xpop [see Analysis Plan > Flexibility analysis in @logan2020xpop for model specifications and validation]. This model uses data from every trial of reversal learning (rather than only using the total number of trials to pass criterion) and represents behavioral flexibility using two parameters: the learning rate of attraction to either option ($\phi$) and the rate of deviating from learned attractions ($\lambda$). 
 
 *Using simulations to check models estimating potential factors underlying performance in reversal tests*
+We first run the Bayesian model on simulated data to better understand how the two parameters might lead to differences in performance and whether we would be able to detect meaningful differences between control and manipulated birds. The settings for the simulations were based on the previous analysis of data from birds in a different population (Santa Barbara, @blaisdell2021causal). When we used only the choices simulated individuals made during their one reversal, the estimated phi and lambda values did not match those individuals had been assigned. We realized that phi and lambda values were consistently shifted in a correlated way. With only a single performance, there was equifinality with multiple combinations of the two parameters phi and lambda leading to the performance of birds during the reversal. However, when we combined data from across at least one switch in the color of the rewarded option, either combining initial association learning with the first reversal or taking the choices from the last two reversals, the model accurately recovered the phi and lambda values that simulated individuals had been assigned. In terms of the influence of the two parameters phi and lambda on the number of trials birds needed to reverse an association, we see that the phi value assigned to simulated individuals have a stronger influence than the lambda values (estimated association with standardized values for phi: -21, 89%PI:-22 - -19; for lambda -14, 89PI: -16 - -13). In particular, low numbers of trials to reverse can be observed across the full range of lambda value, though when lambda is smaller than 8 simulated birds can need 150 or more trials to reverse a preference (Figure AB). In contrast, there is a more linear relationship between phi and the number of trials to reverse, with birds needing fewer trials the larger their phi.
 
 
-# OPEN QUESTIONS:
-# How did you decide that the manipulation worked? 
-# two consecutive reversals passed in 50 or less trials
-# Can check what phi/lambda has to be so that they pass in 50 or less trials in the simulation
-# Is it easier to change phi or lambda to get at 50 or fewer trials?
+![](g_flexmanip_figsimulationsphilambda.png)
 
-# We might want to compare first 20 trials to last 20 trials, both for the simulated data, and for
-# the observed data look at the first and last 20 trials for each the first and the last reversal
-#
+**Figure AB.** In the simulations, the phi values assigned to individuals (green) have a clearer influence on the number of trials these individuals needed in their reversal than their lambda values (green). Both phi and lambda values have been standardised for direct comparison. In general, individuals need fewer trials if they have larger phi and lambda values. However, for individuals with relatively small lambda values are found across the range of performances, whereas there is a more clear distinction in phi. 
+
 
 ```{r posthoc_simulationchecks, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
@@ -1439,6 +1427,7 @@ simulatedreversaldata_attractionscores_2$Site<-simulatedreversaldata_attractions
 simulatedreversaldata_attractionscores_2$Bird_ID<-simulatedreversaldata_attractionscores_2$Bird_ID+320
 
 # We combine the two data sets for the further analyses
+library(dplyr)
 simulatedreversaldata_attractionscores<-bind_rows(simulatedreversaldata_attractionscores_1,simulatedreversaldata_attractionscores_2)
 
 ################################################################################################
@@ -1955,7 +1944,7 @@ summarysimulateddata_forplotting<-as.data.frame(summarysimulateddata_forplotting
 colnames(summarysimulateddata_forplotting)<-c("TrialsReversal","Predictor","Value")
 summarysimulateddata_forplotting$TrialsReversal<-c(summarysimulateddata$TrialsReversal,summarysimulateddata$TrialsReversal)
 summarysimulateddata_forplotting$Predictor<-c(rep("phi",nrow(summarysimulateddata)),rep("lambda",nrow(summarysimulateddata)))
-summarysimulateddata_forplotting$Value<-c(200*summarysimulateddata$ThisBirdsPhi,summarysimulateddata$ThisBirdsLambda)
+summarysimulateddata_forplotting$Value<-c(standardize(summarysimulateddata$ThisBirdsPhi),standardize(summarysimulateddata$ThisBirdsLambda))
 
 
 summarysimulateddata_forplotting[summarysimulateddata_forplotting$TrialsReversal>181,]$TrialsReversal<-8
@@ -1971,7 +1960,20 @@ summarysimulateddata_forplotting$TrialsReversal<-as.factor(summarysimulateddata_
 library(ggplot2)
 
 ggplot(summarysimulateddata_forplotting, aes(x=TrialsReversal, y=Value, fill=Predictor)) + 
-  geom_boxplot()
+  geom_boxplot()+xlab("Trials simulated individuals needed in reversal")+scale_y_continuous(name = "Standardised phi/lambda of simulated individuals") + theme_classic()+scale_x_discrete(name="Trials simulated individuals needed in reversal",breaks=1:8, labels=c("31-50","51-70","71-90","91-110","111-130","131-150","151-180","181-220"))+theme(axis.text.x = element_text(size = 14, colour ="black",
+                                              hjust = 0.5,
+                                              angle = 0)) + 
+    theme(axis.title.x = element_text(size = 18, colour ="black", face = "bold",
+                                              hjust = 0.5,
+                                              vjust = -0.5,
+                                              angle = 0))+
+   theme(axis.text.y = element_text(size = 14, colour ="black",
+                                              hjust = 0.5,
+                                              angle = 0)) +
+   theme(axis.title.y = element_text(size = 16, colour ="black", face = "bold",
+                                              hjust = 0.5,
+                                              angle = 90)) + theme(legend.title = element_text(size = 13))
+
 
 
 ```
@@ -1980,10 +1982,9 @@ ggplot(summarysimulateddata_forplotting, aes(x=TrialsReversal, y=Value, fill=Pre
 
 
 
-With this approach, we wanted to address the following questions: 1) What did the manipulation change? Can we determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials. In the analyses above, it was unclear how it occurred that there was an effect on innovation and flexibility on the multiaccess boxes when, in some cases, there was no difference between the control and manipulated conditions. Therefore, for both the control and manipulated groups, we investigated whether the learning rate and rate of deviating from learned attractions differed between a bird's first 10 trials of the first and last reversals.
+With this Bayesian estimation of the parameters phi and lambda which underlie the performance in the reversal learning task, we wanted to address the following questions: 1) What did the manipulation change? Can we determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on? We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. 2) Do the manipulations shift birds beyond what is naturally observed and does it make them more similar? In the analyses above, it was unclear how it occurred that there was an effect on innovation and flexibility on the multiaccess boxes when, in some cases, there was no difference between the control and manipulated conditions. Therefore, for both the control and manipulated groups, we investigated whether the learning rate and rate of deviating from learned attractions differed between a bird's first 10 trials of the first and last reversals and whether what we observe among the manipulated birds at the end might already naturally present in some birds of the control group. In addition, we want to know if the manipulations affect all birds equally or if we can still detect variation. 3) Are phi or lambda, the two two components of behavioural flexibility in the reversal learning, associated with performance on the multiaccess boxes across control and manipulated birds? In the analyses above, we detected some associations between a bird's performance in the reversal learning task and on the multi-access boxes. Looking at the two parameters phi and lambda separately might offer a more detailed understanding of potential abilities that might influence performance in the different tasks.
 
-*Observed effects of manipulation on performance, phi and lambda*
-
+*1) Observed effects of manipulation on performance, phi and lambda*
 Manipulated birds improved from needing a median of 75 trials during their first reversal (nonmanipulated birds 70 trials) to needing a median of 40 trials during their last reversal. A pooled model estimates that birds can expect to improve by about 30 trials (89% PI 25-36) (Figure Y). While all birds improve, those birds that already needed fewer trials in the initial reversal improve less than the birds that initially needed many trials (posterior peak indicating a correlation between initial value and improvement of +0.22). However, the initially worse performing birds still do not catch up such that the bird who needed the fewest trials to reverse initially also needed the fewest trials to reverse in the last reversal, but the difference to birds performing worse is reduced in the last reversal. For these manipulated birds, the trials they needed in the last reversal equals roughly (trials first reversal)^2 / 200. This means that also among the manipulated birds, we still detect variation in their performance, and this variation in performance appears bird specific. Their performance in the last reversal and how much they improved is not linked to how many reversals they needed to reach criterion. Interestingly, most birds performed worse during the middle of the manipulation before improving and reaching the criterion.
 
 ![](gflexmanip_figure_manipulatedbirdstrialimprovement.png)
@@ -1995,6 +1996,7 @@ The findings from the simulated data indicated that lambda and phi can only be e
 
 For the phi values, we also observe the same correlation between the initial value and the change toward the phi in the last reversal (-0.4; 50% HPDI all negative), while there is no such obvious relationship for lambda (-0.15; 50% HPDI spans zero). We can see that the manipulation changes both phi and lambda, so that across all birds there is a negative correlation between phi and lambda. In addition, for the manipulated birds, there is also a clear negative correlation among the phi and lambdas during their final reversal.
 
+*2) Variation in performance, phi and lambda*
 The values for the number of trials, phi, and lambda we observed after the manipulation in the last reversal fall within the variation we observe among the control birds in their first and only reversal. This means that the manipulation did not push birds to new levels but changed them within the boundaries that are induced in their natural environment. This fits with the observation that, for the correlations with performance on the multi-access box, there was generally no difference between the control and the manipulated birds and that instead their performance in the last trial before they attempted these other tasks (first reversal for control, final reversal for manipulated) showed associations with some of the other behaviors.
 
 Across both manipulated and control birds, phi is more consistently associated with the number of trials individuals needed to reverse, and phi changes more than lambda for the manipulated birds (Figure Z). However, both changes in phi and lambda independently explain changes in the improvement in performance of the manipulated birds from the first to the last reversal (association of change in number of trials from first to last trial with standardized change in phi: 11, 89%PI:6-15 and with standardized lambda: 6, 89%PI:1-10).
@@ -3044,8 +3046,7 @@ plot_grid(trialsplot,
 
 
 
-*Are phi or lambda, the two two components of behavioural flexibility in the reversal learning, associated with performance on the multiaccess boxes across control and manipulated birds?*
-
+*3) Association between phi and lambda with performance on the multiaccess boxes*
 We modified the analyses assessing potential links between reversal learning and performance on the multi-access boxes by by replacing the number of trials it took individuals to reverse with phi (rate of updating previous attractions) and lambda (deviation from learned attractions) estimated from the reversal performances. The modified analyses aligned only with one of the three previously detected correlations between reversal learning and the performance on the two multi-access boxes and they indicated no additional correlations. The latency to attempt a new locus on the wooden multiaccess box is positively correlated with the phi during the last reversal, indicating that individuals who are quicker to update their associations in the reversal learning (higher phi, therefore need fewer reversals) take more time to attempt a new locus. As mentioned above, we are not sure what the latency to attempt a new locus reflects. Even though lambda, and in particular phi, are closely associated with the number of trials a bird needs to reach the reversal criterion, we presumably could not recover the other two correlations (latency to attempt locus on plastic multiaccess box; number of loci solved on the plastic multiaccess box) because of our small sample sizes in combination with difference in which data were used to calculate phi and lambda. As mentioned above, we calculated phi and lambda across at least one reversal (initial learning plus first reversal or last two reversals for manipulated birds), whereas the previous analyses using the number of trials to reverse were based on a single reversal (first or last reversal).
 
 In the analyses above about the changes during the reversal manipulation we found that phi and lambda are negatively correlated across individuals. If birds can reach a solution on the multi-access boxes with either of these abilities, we might expect that it will be birds with intermediate values who perform worse. We might also expect that birds with intermediate values potentially perform worse on the multi-access boxes because in this set-up birds can learn that a previous option is no longer rewarded at the same time as they can explore new options, so birds that either quickly devalue options or are likely to deviate from previous attractions might be more likely to solve a new locus. Our data shows that for the number of loci solved on both the plastic and the wooden multi-access box there is a U-shaped association in particular with lambda values of individuals during the last reversal (Figure AA), with birds with intermediate values of lambda solving fewer loci both on the plastic and the wooden multi-access boxes. For the latencies to solve a new locus, there is also a U-shaped association, herer in particular with phi, with birds with intermediate phis showing shorter latencies to switch to a new locus. Given that there is a positive correlation between number of loci solved and the latencies, there might indeed be a trade-off, where birds with extreme phis and lambdas solve more loci but need long for this, whereas birds with intermediate values have shorter latencies but solve fewer loci.
