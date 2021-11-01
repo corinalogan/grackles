@@ -1130,7 +1130,7 @@ Reversal learning performance was repeatable within individuals within a context
 
 ### P3b: repeatable across contexts
 
-There was no consistency of flexibility in individuals across contexts: the latency to attempt a different locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
+There was no consistency of flexibility in individuals across contexts: the latency to attempt a different locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (plastic: posterior mean=0.02, p=0.58; wooden: posterior mean=0.03, p=0.14; n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
 
 ```{r consistent1results, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -1151,14 +1151,16 @@ d <- d[!d$ID=="Fajita" & !d$ID=="Empanada" & !d$ID=="Memela",]
 #n=8
 #length(unique(d$ID))
 
-# GLMM color reversal tubes compared with multi-access box plastic
+# GLMM color reversal tubes compared with multi-access box
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0)))
+
+# plastic
 rm <- MCMCglmm(LatencyMABplastic ~ ReverseNumber * TrialsToReverse, random = ~ID, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 130000, thin = 1000, burnin = 30000)
-summary(rm)
+#summary(rm)
 #                              post.mean l-95% CI u-95% CI eff.samp pMCMC
 #(Intercept)                     2.08708 -4.45451 11.67734      100  0.66
 #ReverseNumber                   1.01476 -2.75484  5.49974      100  0.42
@@ -1166,9 +1168,7 @@ summary(rm)
 #ReverseNumber:TrialsToReverse  -0.01159 -0.07061  0.03283      100  0.42
 #nothing significant so no consistent individual differences across contexts on MAB plastic and trials to reverse
 
-# GLMM color reversal tubes compared with multi-access box wooden
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0)))
+# wooden
 rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 130000, thin = 1000, burnin = 30000)
@@ -1179,6 +1179,44 @@ rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID
 #TrialsToReverse                0.032183 -0.019718  0.076067    147.9  0.14  
 #ReverseNumber:TrialsToReverse -0.004685 -0.037464  0.014299    100.0  0.62  
 #nothing significant so no consistent individual differences across contexts on MAB wooden and trials to reverse
+
+
+# Make a table with the outputs from both models (following https://gkhajduk.github.io/2017-10-25-cleanMCMCglmm/ )
+library(dplyr)
+
+# for 1 model
+clean.MCMC <- function(x) {
+    sols <- summary(rmw)$solutions  ## pull out relevant info from model summary
+    Gcovs <- summary(rmw)$Gcovariances
+    Rcovs <- summary(rmw)$Rcovariances
+    fixed <- data.frame(row.names(sols), sols, row.names = NULL)  ## convert to dataframes with the row.names as the first col
+    random <- data.frame(row.names(Gcovs), Gcovs, row.names = NULL)
+    residual <- data.frame(row.names(Rcovs), Rcovs, row.names = NULL)
+    names(fixed)[names(fixed) == "row.names.sols."] <- "variable"  ## change the columns names to variable, so they all match
+    names(random)[names(random) == "row.names.Gcovs."] <- "variable"
+    names(residual)[names(residual) == "row.names.Rcovs."] <- "variable"
+    fixed$effect <- "fixed"  ## add ID column for type of effect (fixed, random, residual)
+    random$effect <- "random"
+    residual$effect <- "residual"
+    modelTerms <- as.data.frame(bind_rows(fixed, random, residual))  # merge it all together
+}
+
+# for multiple models - it works
+getName.MCMC <- function(rmw) deparse(substitute(rmw))  # add the model name
+
+# check for one model - it works
+#oneModel <- clean.MCMC(rmw)  # get all the info from summary(modelName)
+#oneModel$modelName <- getName.MCMC(rmw)  # add the model's name in a new column
+#oneModel  # check out the created dataframe
+
+# check for multiple models - it works
+dataList <- list(rm, rmw)
+dataListNames <- list("Plastic", "Wooden")
+readyList <- mapply(cbind, lapply(dataList, clean.MCMC), "modelName" = dataListNames, SIMPLIFY = F)
+mcmcOutputs <- as.data.frame(do.call(rbind, readyList), stringsAsFactors = FALSE)
+
+library(stargazer)
+stargazer(mcmcOutputs, type = "html", summary = FALSE)
 ```
 
 
