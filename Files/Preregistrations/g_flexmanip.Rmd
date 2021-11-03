@@ -38,7 +38,7 @@ header-includes:
   - \usepackage{fancyhdr}
 ---
 
-Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data]()
+Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data](https://knb.ecoinformatics.org/view/corina_logan.84.42)
 
 \addtolength{\headheight}{0.1cm}
 \pagestyle{fancyplain}
@@ -270,14 +270,16 @@ d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
 #sd(d$TrialsToReverse) #28
 
 #figure
-plot(d$TrialsToReverse ~ d$ReverseNumber)
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(jitter(d$TrialsToReverse) ~ jitter(d$ReverseNumber), xlab="Reversal number", ylab="Number of trials to reverse", xlim=c(0.9,11.1), ylim=c(19,171), cex.lab=2, cex.axis=2, cex=2)
+par(op)
 ```
 
 **Figure 2.** Individuals in the manipulated condition (who received serial reversals) did not linearly decrease their reversal passing speeds with increasing reversal number (n=9 grackles in the manipulated condition).
 
 **Table 4.** Do individuals in the manipulated condition pass their last reversal in fewer trials than control individuals? Yes: the Akaike weight of full model was >0.89, indicating that it is more reliable than the null model.
 
-```{r p1last, eval=T, warning=F, results='asis', echo=T, include=T}
+```{r p1last, eval=T, warning=F, results='asis', echo=T, include=T, message=FALSE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
@@ -330,7 +332,10 @@ d$ReversalsToPass <- as.factor(d$ReversalsToPass)
 levels(d$ReversalsToPass)[c(1,2,3,4)] <- c("Control","Manipulated","Manipulated","Manipulated")
 
 #figure
-plot(d$TrialsLastReversal ~ d$ReversalsToPass)
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(jitter(d$TrialsLastReversal) ~ d$ReversalsToPass, xlab="", ylab="Number of trials to pass (last reversal)", ylim=c(19,161), cex.lab=1.5, cex.axis=2, cex=2)
+points(jitter(d$TrialsLastReversal) ~ d$ReversalsToPass, cex=2)
+par(op)
 ```
 
 **Figure 3.** Individuals in the manipulated condition (who received serial reversals) passed their last reversal in fewer trials than individuals in the control condition (who only received 1 reversal). n=19 grackles: 8 in the manipulated condition, 11 in the control condition.
@@ -1115,7 +1120,7 @@ sd(dts$TrialsFirstReversal) #14 trials
 
 Because there was no correlation between the number of trials to reverse in the last reversal and the latency to attempt a different locus on the wooden multiaccess box, we conducted this additional analysis to determine whether the model fit was improved when adding the number of motor actions as an explanatory variable. Adding the number of motor actions (wooden: average=13, sd=4) did not improve the model fit when examining the relationship between the latency to switch loci on the plastic and wooden multiaccess boxes (wooden: average=463, sd=481) and the number of trials to reverse in the last reversal (wooden: average=60, sd=38) because the Akaike weights were similar for both models (wooden: n=11 grackles: 5 in the manipulated group, 6 in the control group; Table 6).
 
-Table 6. GLM output for the average latency to attempt a new option on the wooden multiaccess box.
+**Table 6.** GLM output for the average latency to attempt a new option on the wooden multiaccess box.
 
 ```{r diversity1Wresults, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE, message=FALSE}
 # WOODEN MULTI-ACCESS BOX (W)
@@ -1160,9 +1165,9 @@ Reversal learning performance was repeatable within individuals within a context
 
 ### P3b: repeatable across contexts
 
-There was no consistency of flexibility in individuals across contexts: the latency to attempt a different locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (Table 7; plastic: posterior mean=0.02, p=0.58; wooden: posterior mean=0.03, p=0.14; n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
+There was no consistency of flexibility in individuals across contexts: the latency to attempt a different locus on both multiaccess boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (Table 7; n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multiaccess box experiments).
 
-Table 7. MCMCglmm output for the multiaccess box plastic and wooden models.
+**Table 7.** MCMCglmm output for the multiaccess box plastic and wooden models.
 
 ```{r consistent1results, eval=T, warning=F, results='asis', echo=T, include=T, message=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -1218,9 +1223,9 @@ library(dplyr)
 
 # for 1 model
 clean.MCMC <- function(x) {
-    sols <- summary(rmw)$solutions  ## pull out relevant info from model summary
-    Gcovs <- summary(rmw)$Gcovariances
-    Rcovs <- summary(rmw)$Rcovariances
+    sols <- summary(x)$solutions  ## pull out relevant info from model summary
+    Gcovs <- summary(x)$Gcovariances
+    Rcovs <- summary(x)$Rcovariances
     fixed <- data.frame(row.names(sols), sols, row.names = NULL)  ## convert to dataframes with the row.names as the first col
     random <- data.frame(row.names(Gcovs), Gcovs, row.names = NULL)
     residual <- data.frame(row.names(Rcovs), Rcovs, row.names = NULL)
@@ -1232,9 +1237,6 @@ clean.MCMC <- function(x) {
     residual$effect <- "residual"
     modelTerms <- as.data.frame(bind_rows(fixed, random, residual))  # merge it all together
 }
-
-# for multiple models - it works
-getName.MCMC <- function(rmw) deparse(substitute(rmw))  # add the model name
 
 # check for one model - it works
 #oneModel <- clean.MCMC(rmw)  # get all the info from summary(modelName)
@@ -3907,7 +3909,7 @@ NOTE (Oct 2020): Touchscreen training data and a summary of the training process
 
 #### **Open data**
 
-When the study is complete, the data will be published in the Knowledge Network for Biocomplexity's data repository.
+The data are available at the Knowledge Network for Biocomplexity's data repository: [https://knb.ecoinformatics.org/view/corina_logan.84.42](https://knb.ecoinformatics.org/view/corina_logan.84.42).
 
 #### **Randomization and counterbalancing** 
 
