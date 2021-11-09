@@ -71,7 +71,7 @@ Aurélie Coulon (2019) Can context changes improve behavioral flexibility? Towar
 
 ## ABSTRACT
 
-Behavioral flexibility, the ability to adapt behavior to new circumstances, is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range. However, behavioral flexibility is rarely directly tested in species in a way that would allow us to determine how it works and how we can make predictions about a species' ability to adapt their behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years. We attempted to manipulate grackle behavioral flexibility (color tube reversal learning) to determine whether their flexibility is generalizable across contexts (touch screen reversal learning and multi-access box), whether it is repeatable within individuals and across contexts, and what learning strategies they employ. We found that we were able to manipulate flexibility: birds in the experimental group reversed in fewer trials by the end of their serial reversals compared to control birds who had only one reversal. Flexibility was repeatable within individuals, but not across contexts (multi-access box). The touchscreen experiment did not end up working; we speculate as to why. One third of the grackles in the serial reversal learning group switched from one learning strategy (epsilon-decreasing where they have a long exploration period) to a different strategy (epsilon-first where they quickly shift their preference). A separate analysis showed that the grackles did not use a particular strategy earler or later in their serial reversals. Posthoc analyses using a more powerful model showed that learning rates (phi) more consistently correlated with reversal performance than the rate of deviating from learned attractions (lambda) in simulations and in the data from the grackles: learning rates in the manipulated grackles doubled by the end of the manipulation compared to control grackles, while the rate of deviation slightly decreased. Grackles with intermediate rates of deviation in their last reversal solved fewer loci on the plastic and wooden multi-access boxes, and those with intermediate learning rates in their last reversal were faster to attempt a new locus on both multi-access boxes. This investigation allowed us to make causal conclusions, rather than only correlational: we manipulated reversal learning, which caused changes in a different flexibility measure (multi-access box switch times) and in an innovativeness measure (multi-access box loci solved), as well as validating that this manipulation had an effect on the cognitive ability we think of as flexibility. Understanding how flexibility causally relates to other traits will allow researchers to develop robust theory about what flexibility is and when to invoke it as a primary driver in a given context, such as a rapid geographic range expansion. Given our results, flexibility manipulations could be useful in training threatened and endangered species in how to be more flexible. If such a flexibility manipulation was successful, it could then change their behavior in this and other domains, giving them a better chance of succeeding in human modified environments.
+Behavioral flexibility, the ability to adapt behavior to new circumstances, is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range. However, behavioral flexibility is rarely directly tested in species in a way that would allow us to determine how it works and how we can make predictions about a species' ability to adapt their behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years. We attempted to manipulate grackle behavioral flexibility (color tube reversal learning) to determine whether their flexibility is generalizable across contexts (touch screen reversal learning and multi-access box), whether it is repeatable within individuals and across contexts, and what learning strategies they employ. We found that we were able to manipulate flexibility: birds in the experimental group reversed in fewer trials by the end of their serial reversals compared to control birds who had only one reversal. Flexibility was repeatable within individuals, but not across contexts (multi-access box). The touchscreen experiment did not end up working; we speculate as to why. One third of the grackles in the serial reversal learning group switched from one learning strategy (epsilon-decreasing where they have a long exploration period) to a different strategy (epsilon-first where they quickly shift their preference). A separate analysis showed that the grackles did not use a particular strategy earlier or later in their serial reversals. Posthoc analyses using a model that breaks down the performance on the reversal learning task into different components showed that learning of attraction to an option (phi) more consistently correlated with reversal performance than the rate of deviating from learned reward attractions (lambda) in simulations and in the data from the grackles: learning rates in the manipulated grackles doubled by the end of the manipulation compared to control grackles, while the rate of deviation slightly decreased. Grackles with intermediate rates of deviation in their last reversal solved fewer loci on the plastic and wooden multi-access boxes, and those with intermediate learning rates in their last reversal were faster to attempt a new locus on both multi-access boxes. This investigation allowed us to make causal conclusions, rather than only correlational: we manipulated reversal learning, which caused changes in a different flexibility measure (multi-access box switch times) and in an innovativeness measure (multi-access box loci solved), as well as validating that this manipulation had an effect on the cognitive ability we think of as flexibility. Understanding how flexibility causally relates to other traits will allow researchers to develop robust theory about what flexibility is and when to invoke it as a primary driver in a given context, such as a rapid geographic range expansion. Given our results, flexibility manipulations could be useful in training threatened and endangered species in how to be more flexible. If such a flexibility manipulation was successful, it could then change their behavior in this and other domains, giving them a better chance of succeeding in human modified environments.
 
 ## [Video summary](https://youtu.be/bALXB2S4OpI)
 
@@ -1645,6 +1645,50 @@ sfirstsimulated <- extract.samples(m_firstsimulated)
 firstreversal_simulatedlambda <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(sfirstsimulated$log_L) + mean(sfirstsimulated$v_ID[ ,x, 1])))
 firstreversal_simulatedphi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(sfirstsimulated$logit_phi) + mean(sfirstsimulated$v_ID[ ,x, 2])))
 
+
+# alternative using cmdstan
+library(cmdstanr)
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+# access the output file created by the model running the reinforcement model
+write(reinforcement_model_nonzeroattraction,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+datfirstsimulated$Reversal<-as.numeric(as.factor(datfirstsimulated$Reversal))
+
+# RUN the model
+fit <- mod$sample(
+  data = datfirstsimulated,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+# Extract relevant variables
+outcome<-data.frame(fit$summary())
+rownames(outcome)<-outcome$variable
+
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+library(posterior)
+library(rethinking)
+drawsarray<-fit$draws()
+drawsdataframe<-as_draws_df(drawsarray)
+drawsdataframe<-data.frame(drawsdataframe)
+initialandreversal_lambda <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[,x+3])))
+initialandreversal_phi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[,x+33])))
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+
 # And we run this model for the initial learning phase
 m_initialsimulated <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialsimulated ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
@@ -2030,7 +2074,7 @@ With this Bayesian estimation of the parameters phi and lambda which underlie th
 
 #### 1) Observed effects of manipulation on reversal performance, phi, and lambda
 
-Manipulated birds improved from needing a median of 75 trials during their first reversal (control birds 70 trials) to needing a median of 40 trials during their last reversal. A pooled model estimates that birds can expect to improve by about 30 trials (89% PI: 25-36) (Figure 10). While all birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.22 between the first reversal value and the improvement achieved by the last reversal). However, the birds who performed worse in the first reversal do not become as fast at reversing as those who were already fast in the first reversal by the end of their manipulation: those who were the fastest in the first reversal, were also the fastest in the last reversal. But the difference between the slower and faster reversers is reduced in the last reversal. The passing criterion for the manipulated grackles (reversing in 50 trials or fewer in their last two reversals) resulted in the number of trials in the last reversal equaling roughly (trials first reversal)^2 / 200. This means that, also among the manipulated birds, we still detect variation in their performance, and this variation in performance appears to be specific to the individual. Their performance in the last reversal and how much they improved is not linked to how many reversals they needed to reach criterion. Most grackles performed worse the middle of the manipulation before improving and reaching criterion.
+The birds in the manipulated group required a similar number of trials during their first reversal (R1 median 75 trials) than the birds in the control group needed during their first and only reversal (R1  median 70 trials). The manipulated birds improved during the reversal manipulation to needing a median of 40 trials during their last reversal. A pooled model estimates that birds can expect to improve by about 30 trials (89% PI: 25-36) (Figure 10) after completing the multiple reversals to reach the criterion. While all manipulated birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.22 between the first reversal value and the improvement achieved by the last reversal). However, the birds who performed worse in the first reversal do not become as fast at reversing as those who were already fast in the first reversal by the end of their manipulation: those who were the fastest in the first reversal, were also the fastest in the last reversal. But the difference between the slower and faster reversers is reduced in the last reversal. The passing criterion for the manipulated grackles (reversing in 50 trials or fewer in their last two reversals) resulted in the number of trials in the last reversal equaling roughly (trials first reversal)^2 / 200. This means that, also among the manipulated birds, we still detect variation in their performance, and this variation in performance appears to be specific to the individual across the whole manipulation. Their performance in the last reversal and how much they improved is not linked to how many reversals they needed to reach criterion. Most grackles performed worse the middle of the manipulation before improving and reaching criterion.
 
 ![](gflexmanip_figure_manipulatedbirdstrialimprovement.png)
 
@@ -2038,7 +2082,7 @@ Manipulated birds improved from needing a median of 75 trials during their first
 
 The findings from the simulated data indicated that lambda and phi can only be estimated accurately when calculating them across at least one switch (initial learning plus initial reversal or final two reversals). For the manipulated birds, the estimated phi more than doubled from 0.03 in their first reversal (control grackles: 0.03) to 0.07 in their last reversal (model estimate of expected average change: +0.02 to +0.05), while their lambda went slightly down from 4.2 (control grackles: 4.3) to 3.2 (model estimate of average change -1.63 to -0.56). For phi, this pattern fits with the observations in the simulations: larger phi values are associated with fewer trials to reverse. However, in the simulations we saw a negative correlation between lambda and the number of trials to reverse, whereas, for the birds here, lambda in the last reversal when birds needed fewer trials is smaller than their lambda for the first reversal. This fits with the observation that lambda seems to be a constraint rather than a direct linear influence on the number of trials to reverse, and that, in combination with the correct phi value, birds only need few trials to reverse even if they have a smaller lambda (see also below).
 
-For the phi values, we also observe the same correlation between the initial value and the change toward the phi in the last reversal (-0.4; 50% highest posterior density intervals (HPDI) all negative), while there is no such obvious relationship for lambda (-0.15; 50% HPDI crosses zero). The manipulation changed both phi and lambda, such that, across all birds, there is a negative correlation between phi and lambda. In addition, for the manipulated birds, there is also a clear negative correlation between phi and lambda in their last reversal.
+For the phi values, we also observe a correlation between the phi estimated from individuals' performances in the first reversal and how much their phi changed towards the value for their performance in the last reversal (-0.4; 50% highest posterior density intervals (HPDI) all negative), while there is no such obvious relationship for lambda (-0.15; 50% HPDI crosses zero). For both phi and lambda, we do not see  The manipulation changed both phi and lambda, such that, across all birds, there is a negative correlation between phi and lambda. In addition, for the manipulated birds, there is also a clear negative correlation between the phis and lambdas estimated from their last reversals.
 
 #### 2) Variation in reversal performance, phi, and lambda
 
@@ -2046,7 +2090,7 @@ The values for the number of trials to reverse, phi, and lambda that we observed
 
 Across both manipulated and control birds, phi is more consistently associated with the number of trials individuals needed to reverse, and phi changes more than lambda for the manipulated birds (Figure 11). However, changes in phi and lambda independently explain changes in the improvement in performance of the manipulated birds from the first to the last reversal (association of change in number of trials from first to last trial with standardized change in phi: 11, 89% PI: 6-15 and with standardized lambda: 6, 89% PI: 1-10).
 
-As mentioned above, birds who needed fewer trials than other birds during the first reversal also needed fewer trials during the last reversal. Combining all of these relationships into a single model suggests that the initial phi determines the number of trials individuals need during the first reversal, which, in turn, explains how many trials they need during their last reversal. The phi for the last reversal does not appear to provide any additional information about the number of trials during the last reversal, and lambda is not associated with the number of trials birds need to reverse.
+As mentioned above, birds who needed fewer trials than other birds during the first reversal also needed fewer trials during the last reversal. Combining all of these relationships into a single model suggests that the phi during the initial learning and first reversal determines the number of trials individuals need during the first reversal, which, in turn, explains how many trials they need during their last reversal. The phi for the last reversal does not appear to provide any additional information about the number of trials during the last reversal, and lambda is not associated with the number of trials birds need to reverse.
 
 ![](g_flexmanip_figchangemanipulatedbirds.png)
 
@@ -2657,6 +2701,30 @@ dens( R[,1,2] , add=TRUE , lty=2 )
 
 HPDI( post$Rho[,1,2],0.5)
 
+
+
+# The phis of the individuals from their first reversal are not correlated with the phis from their last reversal (estimate of a crosses zero)
+dat_phi_correlated<-list(
+  phifirst = improvementdata$beginningph,
+  philast = standardize(improvementdata$manipulatedphi)
+)
+
+mchangephi_correlated <- ulam(
+    alist(
+        phifirst ~ normal( mu , sigma ),
+        mu <- a*philast,
+        a ~ normal(0,1),
+        sigma ~ exponential(1)
+    ) , data=dat_phi_correlated , chains=4 , cores=4,iter=10000,cmdstan=T )
+
+precis(mchangephi_correlated)
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#a     0.01 0.02 -0.03  0.04  7519     1
+#sigma 0.06 0.02  0.03  0.09  6230     1  
+
+
+
+
 dat_change_lambda <- list(
       lambda = c(improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
       bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
@@ -3004,7 +3072,7 @@ plot_grid(trialsplot,
           phiplot,
           lambdaplot,
           labels = c('a) Trials to reach association criterion','b) Phi: rate of updating learned attractions','c) Lambda: rate of deviating from learned attractions'),
-          label_x = 0.1,
+          label_x = 0.05,
           label_size	= 20,
           hjust = -0.05,
           ncol = 1,
@@ -3013,9 +3081,9 @@ plot_grid(trialsplot,
 
 #### 3) Association between phi and lambda with performance on the multi-access boxes
 
-We modified the analyses from the Results section that assessed potential links between reversal learning and performance on the multi-access boxes by replacing the number of trials it took individuals to reverse with phi (rate of updating previous attractions) and lambda (rate of deviation from learned attractions) estimated from the reversal performances. The modified analyses aligned only with one of the three previously detected correlations between reversal learning and the performance on the two multi-access boxes and they indicated no additional correlations. The latency to attempt a new locus on the wooden multi-access box was positively correlated with phi during the last reversal, indicating that individuals who were faster to update their associations in reversal learning (higher phi, therefore need fewer reversals) take more time to attempt a new locus. As mentioned above, we are not sure what the latency to attempt a new locus reflects. Even though lambda, and in particular phi, are closely associated with the number of trials a bird needs to reach the reversal criterion, we presumably could not recover the other two correlations (latency to attempt a locus on the plastic multi-access box; number of loci solved on the plastic multi-access box) because of our small sample sizes in combination with difference in which data were used to calculate phi and lambda. As mentioned above, we calculated phi and lambda across at least one reversal (initial discrimination plus first reversal or last two reversals for manipulated birds), whereas the previous analyses using the number of trials to reverse were based on a single reversal (first or last reversal).
+We modified the analyses from the Results section that assessed potential links between reversal learning and performance on the multi-access boxes by replacing the number of trials it took individuals to reverse with phi (rate of updating previous attractions) and lambda (rate of deviation from learned attractions) estimated from the reversal performances. The modified analyses aligned only with one of the three previously detected correlations between reversal learning and the performance on the two multi-access boxes and they indicated no additional correlations. The latency to attempt a new locus on the wooden multi-access box was positively correlated with phi during the last reversal, indicating that individuals who were faster to update their associations in reversal learning (higher phi, therefore need fewer trials in their last reversal) take more time to attempt a new locus. As mentioned above, we are not sure what the latency to attempt a new locus reflects. Even though phi is closely associated with the number of trials a bird needs to reach the reversal criterion, we presumably could not recover the other two correlations (latency to attempt a locus on the plastic multi-access box; number of loci solved on the plastic multi-access box) because of our small sample sizes. In addition, we estimated phi and lambda across at least one reversal (initial discrimination plus first reversal or last two reversals for manipulated birds), whereas the previous analyses using the number of trials to reverse were based on a single reversal (first or last reversal).
 
-In the analyses above about the changes during the reversal manipulation we found that phi and lambda are negatively correlated across individuals. If birds can reach a solution on the multi-access boxes with either of these abilities, we might expect that it will be birds with intermediate values who perform worse. We might also expect that birds with intermediate values potentially perform worse on the multi-access boxes because in this scenario, birds can learn that a previous option is no longer rewarded while exploring new options. Therefore, birds that either quickly devalue options or are likely to deviate from previous attractions might be more likely to attempt a new locus faster. Our data shows that, for the number of loci solved on both the plastic and the wooden multi-access box, there is a U-shaped association, particularly with lambda values in the last reversal (Figure 12), with birds with intermediate values of lambda solving fewer loci on the plastic and the wooden multi-access boxes. For the latency to attempt a new locus, there is also a U-shaped association, particularly with phi, with birds with intermediate phis showing shorter latencies to attenpt a new locus. Given that there is a positive correlation between number of loci solved and the latency to attempt a new locus, there might indeed be a trade off, where birds with extreme phis and lambdas solve more loci, but need more time, whereas birds with intermediate values have shorter latencies, but solve fewer loci.
+For the manipulated birds, we found that during their last reversal there was a negative correlation between phi and lambda, with individuals who have higher phi values also showing higher lambda values. If birds can reach a solution on the multi-access boxes with either of these abilities, we might expect that it will be birds with intermediate values who perform worse. We might also expect that birds with intermediate values potentially perform worse on the multi-access boxes because in this scenario, birds can learn that a previous option is no longer rewarded while exploring new options. Therefore, birds that either quickly devalue options or are likely to deviate from previous attractions might be more likely to attempt a new locus faster. Our data shows that, for the number of loci solved on both the plastic and the wooden multi-access box, there is a U-shaped association, particularly with lambda values in the last reversal (Figure 12), with birds with intermediate values of lambda solving fewer loci on the plastic and the wooden multi-access boxes. For the latency to attempt a new locus, there is also a U-shaped association, particularly with phi, with birds with intermediate phis showing shorter latencies to attenpt a new locus. Given that there is a positive correlation between number of loci solved and the latency to attempt a new locus, there might indeed be a trade off, where birds with extreme phis and lambdas solve more loci, but need more time, whereas birds with intermediate values have shorter latencies, but solve fewer loci.
 
 ![](g_flexmanip_numberofloci_lambda.png)
 
@@ -3592,17 +3660,62 @@ dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$T
             learninglambda = (standardize(as.numeric(inputdata_philociplastic$lastlambda)))
               )
 
-plot( NULL , xlim=c(-1.7,1.9) , ylim=c(0,5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
+par(mfrow=c(2,2))
+
+plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
 rect(xleft=-0.66,ybottom=-0.5,xright=0.77,ytop=5.5,col="grey90",border="NA")
 
 points(dat_loci_wooden_both$locisolved~dat_loci_wooden_both$learninglambda,col="black",pch=16,cex=2)
 points(dat_loci_plastic_both$locisolved~dat_loci_plastic_both$learninglambda,col="red",pch=16,cex=2)
 
-legend(x="bottomright", legend=c(pch16="Wooden MAB", pch16="Plastic MAB"), pch=c(16,16), col=c("black","red"), box.lty=0, cex=0.9,pt.cex=1.8)
+legend(x="bottomleft", legend=c(pch16="Wooden MAB", pch16="Plastic MAB"), pch=c(16,16), col=c("black","red"), box.lty=0, cex=0.7,pt.cex=1.7)
 
 mtext("central third of lambda values", side=3,line=-2,font=3)
-mtext("Number of loci solved" , side=2,font=2,cex=1.7,line=2.4)
-mtext("Lambda from last reversal (standardized)",side=1,font=2,cex=1.7,line=3)
+mtext("a)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
+mtext("Lambda from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+
+
+
+plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
+rect(xleft=-0.7,ybottom=-0.5,xright=0.7,ytop=5.5,col="grey90",border="NA")
+
+points(dat_loci_wooden_both$locisolved~dat_loci_wooden_both$learningphi,col="black",pch=16,cex=2)
+points(dat_loci_plastic_both$locisolved~dat_loci_plastic_both$learningphi,col="red",pch=16,cex=2)
+
+mtext("central third of phi values", side=3,line=-2,font=3)
+mtext("b)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
+mtext("Phi from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+
+
+plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
+rect(xleft=-0.7,ybottom=-0.5,xright=0.7,ytop=1805.5,col="grey90",border="NA")
+
+points(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden~standardize(inputdata_philatencywooden$lastlambda),col="black",pch=16,cex=2)
+points(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic~standardize(inputdata_philatencyplastic$lastlambda),col="red",pch=16,cex=2)
+
+mtext("central third of lambda values", side=3,line=-2,font=3)
+mtext("c)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
+mtext("Lambda from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+
+
+plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
+rect(xleft=-0.7,ybottom=-0.5,xright=0.7,ytop=1805.5,col="grey90",border="NA")
+
+points(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden~standardize(inputdata_philatencywooden$lastphi),col="black",pch=16,cex=2)
+points(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic~standardize(inputdata_philatencyplastic$lastphi),col="red",pch=16,cex=2)
+
+mtext("central third of phi values", side=3,line=-2,font=3)
+mtext("d)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
+mtext("Phi from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+
+
+
+
+
 
 
 
