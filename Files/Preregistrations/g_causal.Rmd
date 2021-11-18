@@ -11,14 +11,14 @@ author:
 date: '`r Sys.Date()`'
 always_allow_html: yes
 output:
-  word_document:
-    toc: no
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
+  word_document:
+    toc: no
   md_document: 
     toc: true
   pdf_document:
@@ -30,7 +30,7 @@ header-includes:
     - \usepackage{fancyhdr}
 urlcolor: blue
 bibliography: MyLibrary.bib
-csl: https://raw.githubusercontent.com/citation-style-language/styles/master/apa.csl
+csl: Peer-Community-Journal-PCI.csl
 ---
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_causal.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data](https://doi.org/10.5063/2V2DH4)
@@ -697,7 +697,7 @@ The parameter $\lambda_j$ represents the *random choice rate* of an individual (
 
 We validated this computational model by analyzing data previously collected from great-tailed grackles in Santa Barbara, California [@logan2016flexibilityproblem]. The following code first prepares the Santa Barbara data for the reinforcement learning model, runs the model, and extracts samples from the posterior distribution. We then use those population estimates of both learning parameters, $\phi_j$ and $\lambda_j$, to simulate experimental data for 8 new birds. Finally, this code plots the empirical and simulated learning curves (see figure 4).
 
-```{r reinforcement, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r reinforcement, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
 
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_data_SBreverse.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -913,7 +913,7 @@ mtext(side = 2, "Proportion Correct", line = 0.5, outer = TRUE, cex = 1.2)
 
 This computational analysis yields posterior distributions for $\phi_j$ and $\lambda_j$ for each individual bird. To use these estimates in a linear model that predicts Grackles' causal score, we need to propagate the full *uncertainty* from the reinforcement learning model, which is achieved by directly passing the variables to the linear model within a single large *stan* model. We include both parameters ($\phi_j$ and $\lambda_j$) as predictors and estimate their respective independent effect on causal score as well as an interaction term. To account for potential differences between experimenters, we also included experimenter ID as a random effect (omitted from previous equations to enhance readability, but available in the code below). 
 
-```{r reinforcement_comb, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r reinforcement_comb, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 #Load data
 cause <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_causal_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -1151,7 +1151,7 @@ mCause <- stan( model_code  = combined_reinforcement_GLM , data=dat ,iter = 5000
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-```{r cause2, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r cause2, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #cause <- [no file path because experiment 2 was not conducted because they did not pass experiment 1]
 
 #Select only data from Experiment 2
