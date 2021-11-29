@@ -1265,16 +1265,24 @@ library(cowplot)
 all <- ggplot(d[which(!is.na(d$NonOverlappingWindow4TrialBins)),], 
               aes(Trial, NonOverlappingWindow4TrialBins, color=Reversal)) +
   geom_line(size = 2, alpha = 0.8,position=position_jitter(w=0.02, h=0)) + 
-  facet_wrap(.~ID,ncol = 2) +
+  facet_wrap(.~ID,ncol = 2,as.table = F) +
   scale_colour_manual(values=Palette) +
-  guides(col = guide_legend(nrow = 4, byrow = TRUE)) +
+  guides(col = guide_legend(nrow = 3, byrow = TRUE)) +
   theme_classic() +
+  theme(legend.key.size = unit(0.7, 'cm'),
+        legend.key.height = unit(0.5, 'cm'),
+        legend.title = element_text(size = 18),
+        legend.text = element_text(size = 14),
+        legend.title.align=0.5,
+        axis.title = element_text(size = 18),
+        axis.text = element_text( size = 14 ),
+        strip.text = element_text(size = 20,face = "bold")) +
   xlab("Trials") + ylab("Proportion correct")
 
 b <- get_legend(all)
 
 ggdraw(all + theme(legend.position = "none")) +
-  draw_plot(b, 0.7,0.7,0,0)
+  draw_plot(b, 0.75,0.91,0,0)
 
 
 #### Old #### 
