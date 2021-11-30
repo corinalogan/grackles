@@ -336,7 +336,7 @@ To determine whether the serial reversal manipulation affected flexibility gener
 Grackles that were faster to reverse a preference in their **last reversal** (average 52 trials, sd=23) were also faster to attempt to solve a new locus on the plastic multi-access box (after just having passed criterion on a different locus; average=208 seconds, sd=226; Figure 5; Table 4: Model 9; n=11 grackles: 6 in manipulated condition, 5 in control condition; 6 subjects completed this experiment but did not solve enough loci to have switching times (i.e., solved 0 loci or 1 locus)). We also found that individuals in the flexibility manipulation had faster switch latencies than those in the control condition (Table 4: Model 10). There was a positive correlation between the number of trials to reverse in the **first reversal** (average=70 trials, sd=21) and the average switch latency on the multi-access box (Table 4: Model 11; unregistered analysis).
 
 
-```{r p2mabplasticlat, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2mabplasticlat, eval=F, echo=TRUE, warning=FALSE, include=TRUE, results='asis'}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -391,6 +391,8 @@ mplat1 <- ulam(alist(
   b ~ dnorm(0, 1), 
   phi ~ dexp(1)
   ), data = dl, chains=4, log_lik = TRUE, messages = FALSE)
+#This causes KM's R session to crash every time
+
 
 precis(mplat1,depth=2)
 #   mean   sd  5.5% 94.5% n_eff Rhat4
@@ -492,9 +494,9 @@ shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 par(op)
 ```
 
-![](g_flexmanip_figp2latmabplastic.png){width=100%}
+![](g_flexmanip_P2comboFig.png){width=100%}
 
-**Figure 5.** The average latency (seconds) to attempt to solve a different locus on the plastic multi-access box after having previously successfully solved a locus is positively correlated with the number of trials to pass their last reversal (n = 11 grackles, shading = 97% prediction interval). 
+**Figure 5.** The average latency (seconds) to attempt to solve a different locus after having previously successfully solved a locus on a) the plastic multi-access box (MAB) is positively correlated with the number of trials to pass their last reversal (n = 11 grackles), but on b) the wooden MAB it is not correlated with the number of trials to pass their last reversal (n = 11 grackles). Additionally, the probability of solving a locus on c) the plastic MAB is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles), but on d) the wooden MAB it is not correlated with the number of trials to pass their last reversal (n = 12 grackles, estimate of slope includes zero). Shading represents the 97% prediction intervals.
 
 
 #### Rule switching: latency to attempt a new locus on the multi-access box (wooden) ~ trials to reverse
@@ -657,14 +659,11 @@ shade( mu_ci , trialsw_seq , col=col.alpha(rangi2,0.3) )
 par(op)
 ```
 
-![](g_flexmanip_figp2latmablog.png){width=100%}
-
-**Figure 6.** The average latency (seconds) to attempt to solve a different locus on the wooden multi-access box after having previously successfully solved a locus is not correlated with the number of trials to pass their last reversal (n = 11 grackles, shading = 97% prediction interval). 
 
 
 #### Innovativeness: number of loci solved on the multi-access box (plastic) ~ trials to reverse
 
-Grackles that were faster to reverse a preference in their **last reversal** (average 62 trials, sd=34), where grackles in the control condition received only one reversal which served as their first and last reversal, solved more loci on the plastic multi-access box (average=2 loci, sd=1.6; Figure 7; Table 4: Model 2; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to (Table 4: Model 4). There was also no correlation between the number of trials to reverse in the **first reversal** (average=75 trials, sd=31) and the number of loci solved on the multi-access box (Table 4: Model 5; unregistered analysis). 
+Grackles that were faster to reverse a preference in their **last reversal** (average 62 trials, sd=34), where grackles in the control condition received only one reversal which served as their first and last reversal, solved more loci on the plastic multi-access box (average=2 loci, sd=1.6; Figure 5c; Table 4: Model 2; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to (Table 4: Model 4). There was also no correlation between the number of trials to reverse in the **first reversal** (average=75 trials, sd=31) and the number of loci solved on the multi-access box (Table 4: Model 5; unregistered analysis). 
 
 ```{r p2mabplastic, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 library(rethinking)
@@ -883,8 +882,6 @@ plot( precis(diffsmcondition), xlim=c(-1.5,0.5), xlab="Difference in number of l
 par(op)
 ```
 
-![](g_flexmanip_figp2mabplastic.png){width=100%}
-**Figure 7.** The probability of solving a locus on the plastic multi-access box is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles, shading = 97% prediction interval). 
 
 **Table 4.** Model outputs for the number of loci solved and latency to switch loci after passing criterion on a different locus on the plastic (models 1-5) and wooden (models 6-8) multi-access boxes. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and number of trials to pass reversal.
 
@@ -898,6 +895,8 @@ library(kableExtra)
 knitr::kable(table) %>%
 kable_styling(full_width = T, position = "left")
 ```
+
+
 
 #### Innovativeness: number of loci solved on the multi-access box (wooden) ~ trials to reverse
 
@@ -1068,9 +1067,6 @@ par(op)
 #but the png doesn't look good so I will make the png by hand again
 ```
 
-![](g_flexmanip_figp2mablog.png){width=100%}
-
-**Figure 8.** The probability of solving a locus on the wooden multi-access box is not correlated with the number of trials to pass their last reversal (n = 12 grackles, shading = 97% prediction interval; estimate of slope includes zero). 
 
 
 #### Reversal learning experiments: discriminating shapes on the touchscreen compared with color using tubes
