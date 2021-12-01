@@ -1,28 +1,28 @@
 ---
 title: Behavioral flexibility is manipulatable and it improves flexibility and problem solving in a new context.
 author: 
+- 'Johnson-Ulrich Z^3^'
+- 'Sevchik A^4^'
 - '[Logan CJ](http://CorinaLogan.com)^1^*'
 - '[Blaisdell AP](http://pigeonrat.psych.ucla.edu)^2^'
-- 'Johnson-Ulrich Z^3^'
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^*'
 - '[MacPherson M](http://maggiepmacpherson.com)^3^'
 - '[Seitz B](https://benjaminseitz.wixsite.com/mysite)^2^'
-- 'Sevchik A^4^'
 - '[McCune KB](https://www.kelseymccune.com)^3^'
 date: '`r Sys.Date()`'
 always_allow_html: yes
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  github_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
-  github_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   md_document: 
     toc: true
 bibliography: MyLibrary.bib
@@ -221,7 +221,7 @@ base <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch,
 
 library(kableExtra)
 knitr::kable(base)  %>%
-  column_spec(column = 1:7, width = "6em; min-width: 6em;") %>%
+  column_spec(column = 1:7, width = "6em") %>%
   scroll_box(width = "100%")
 
 #UNREGISTERED ANALYSIS: compare control vs manipulated group reversal speeds using only last reversals
@@ -292,7 +292,7 @@ aw <- dredge(glm(d$TrialsLastReversal~d$ReversalsToPass))
 
 library(kableExtra)
 knitr::kable(aw)  %>%
-  column_spec(column = 1:7, width = "6em; min-width: 6em;") %>%
+  column_spec(column = 1:7, width = "6em") %>%
   scroll_box(width = "100%")
 #the full model has an Akaike weight >0.9 so it is reliable. This means that condition explains differences in the number of trials to pass the last reversal, with the manipulated group being faster than the control group
 ```
@@ -1925,6 +1925,8 @@ As mentioned above, birds who needed fewer trials than other birds during the fi
 
 **Figure 9.** Comparisons of the different measures of performance in the reversal task for each of the 19 birds. The figure shows the trials to reach the association criterion after the reversal (a, top) during the initial (first) reversal (for all birds, orange) and the last reversal (for manipulated birds, blue); the $\phi$ values reflecting the updating of their information about the two options during those trials and during the trials before (initial = initial discrimination plus first reversal; manipulated = last two reversals) (b, middle); and the $\lambda$ values reflecting their rate of deviation from the two options during those trials (c, bottom). Individual birds have the same position along the x-axis in all three panels. Birds that needed fewer trials to reverse their preference generally had higher $\phi$ values, whereas $\lambda$ appears to reflect more whether any choices of the unrewarded tube occurred throughout the trials or only at the beginning. The values do not align perfectly because the $\phi$ and $\lambda$ values are estimated across two rather than just the one reversal (e.g. bird 2, Mofongo, has a very high $\phi$ because he only needed 20 trials during the initial discrimination). For the manipulated birds, their $\phi$ values changed more consistently than their $\lambda$ values, and the $\phi$ values of the manipulated individuals were generally higher than those observed in the control individuals, while their $\lambda$ values remained within the range also observed in the control group.
 
+
+
 ```{r posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 ### Code below copied from Blaisdell et al. 2021
@@ -2279,6 +2281,12 @@ largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,
 # 90	  50	  90
 # 100	  50	  100
 
+
+```
+
+```{r posthoc_changes, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+
+
 # # # # # # # # 
 
 # What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
@@ -2612,7 +2620,9 @@ precis(mchangelambda,depth=2)
 # b[manipulated last]    -2.01 0.78 -3.28 -0.77   835     1
 # b[control]              0.18 0.24 -0.20  0.57  1716     1
 # sigma                   0.77 0.12  0.61  0.97  1275     1
+```
 
+```{r posthoc_improvement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 # 2a) is improvement in trials to reverse linked to improvement in phi and/or lambda?
 
@@ -3549,7 +3559,9 @@ mtext("Phi from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
 
 
+```
 
+```{r posthoc_alternative, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 ### Below is an alternative approach where phi and lambda are estimated in the same STAN model in which their association with other parameters is assessed.
 

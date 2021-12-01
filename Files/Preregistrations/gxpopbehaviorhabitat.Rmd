@@ -1,26 +1,26 @@
 ---
 title: Implementing a rapid geographic range expansion - the role of behavior and habitat changes
 author: 
-- '[Logan CJ](http://CorinaLogan.com)^1^*'
-- '[McCune KB](https://www.kelseymccune.com/)^2^'
 - 'Marfori Z^1^'
 - 'LeGrande-Rolls C^1^'
 - 'Summers J^3^'
+- '[Logan CJ](http://CorinaLogan.com)^1^*'
+- '[McCune KB](https://www.kelseymccune.com/)^2^'
 - '[Chen N](https://popgenchenlab.github.io)^3^'
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^'
 date: '`r Sys.Date()`'
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  md_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 5
     toc_float: 
       collapsed: false
     code_folding: hide 
-  md_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: MyLibrary.bib
@@ -660,7 +660,12 @@ write.csv(rem_simulatedreversaldata,file="SimulatedReversalData_Grackles_PhiLamb
 ################################################################################################
 # End of the simulation
 ################################################################################################
+```
 
+
+```{r load_sim_power_philambda, eval=F, warning=FALSE, results='asis', echo=T, include=TRUE}
+library(rethinking)
+library(dplyr)
 
 
 ################################################################################################
@@ -1314,7 +1319,12 @@ shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
 par(op)
 mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj=0.5,at=3.5,cex=1.5)
 
+```
 
+
+```{r sim_samplesize_philambda, eval=F, warning=FALSE, results='asis', echo=T, include=TRUE}
+library(rethinking)
+library(dplyr)
 
 #############################################################################################
 # We have an addition simulation for a more direct assessment of how sample size influences our ability to tell whether two populations have different mean phi values. Here, we do not generate the whole performance in the learning and reversal trials, but assume that we have estimated a phi for each individual in each population. Values from a single population are specified by a mean and variation. To represent values within populations, we thought that the distribution of phi values among individuals within a population most likely represents that of the gamma distribution: values have to be larger than zero, and only few individuals are expected to have very large values.
@@ -1628,9 +1638,9 @@ dat <- list(locisolved = sites[,1],
               )
 
 m1 <- ulam( alist(
-  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-  logit(p) <- a[site] , #site=random effect
-  a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
+  locisolved ~ dbinom(4,p) , # 4 loci, p=probability of solving a locus
+  logit(p) <- a[site] , # site=random effect
+  a[site] ~ dnorm(0,1) # each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
 ) , data=dat , chains=4 , log_lik=TRUE )
 
 precis(m1,depth=2)
