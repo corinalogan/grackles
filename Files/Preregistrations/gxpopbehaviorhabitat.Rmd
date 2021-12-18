@@ -3,9 +3,6 @@ title: Implementing a rapid geographic range expansion - the role of behavior an
 author: 
 - '[Logan CJ](http://CorinaLogan.com)^1^*'
 - '[McCune KB](https://www.kelseymccune.com/)^2^'
-- 'LeGrande-Rolls C^1^'
-- 'Marfori Z^1^'
-- 'Summers J^3^'
 - '[Chen N](https://popgenchenlab.github.io)^3^'
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^'
 date: '`r Sys.Date()`'
@@ -58,9 +55,9 @@ Esther Sebastián González (2020) The role of behavior and habitat availability
 
 ![](logoPCIecology.png){width=50%}
 
-**Cite as:** Logan CJ, McCune KB, LeGrande-Rolls C, Marfori Z, Summers J, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)** (http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html) In principle acceptance by *PCI Ecology* of the version on 6 Oct 2020 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd).
+**Cite as:** Logan CJ, McCune KB, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)** (http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html) In principle acceptance by *PCI Ecology* of the version on 16 Dec 2021 [https://github.com/corinalogan/grackles/blob/0fb956040a34986902a384a1d8355de65010effd/Files/Preregistrations/gxpopbehaviorhabitat.Rmd](https://github.com/corinalogan/grackles/blob/0fb956040a34986902a384a1d8355de65010effd/Files/Preregistrations/gxpopbehaviorhabitat.Rmd).
 
-*See the easy-to-read [HTML](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html) version and the reproducible manuscript ([Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd)) version for the code*
+*See the easy-to-read [HTML](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html) version and the reproducible manuscript ([Rmd](https://github.com/corinalogan/grackles/blob/0fb956040a34986902a384a1d8355de65010effd/Files/Preregistrations/gxpopbehaviorhabitat.Rmd)) version for the code*
 
 &nbsp;
 
@@ -660,12 +657,7 @@ write.csv(rem_simulatedreversaldata,file="SimulatedReversalData_Grackles_PhiLamb
 ################################################################################################
 # End of the simulation
 ################################################################################################
-```
 
-
-```{r load_sim_power_philambda, eval=F, warning=FALSE, results='asis', echo=T, include=TRUE}
-library(rethinking)
-library(dplyr)
 
 
 ################################################################################################
@@ -694,7 +686,7 @@ for (birds in 1:length(unique(simulatedreversaldata_attractionscores$Bird_ID))){
 }
 
 # We need to adjust the coding during the reversal learning so that "correct" now matches whether it is correct or not. 
-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Choice==0,]$Choice<-2
+simulatedreversaldata_attractionscores$Choice<-as.integer(as.factor(simulatedreversaldata_attractionscores$Choice))
 
 # To use the model to estimate the phi and lambda parameters, we first need to change the column names to match these to the specifications in the model: change Bird_ID  to id; change Reversal to Choice, change CorrectChoice to Correct, change Site to Expid
 
@@ -962,8 +954,6 @@ par(op)
 
 
 # Now we run a STAN model with all simulated sites, estimating both means of phi and lambda for each site as well as each individuals' phi and lambda
-
-# THIS IS THE MODEL TO RUN ON THE DATA WHEN CONDUCTING ANALYSES (lines 960-1055)
 
 # We set up the data for the model
 dat_full <- as.list(simulatedreversaldata_attractionscores)
@@ -1319,12 +1309,7 @@ shade( mu_ci , inv_sequence_mean_differences , col=col.alpha(rangi2,0.3) )
 par(op)
 mtext("Power to detect site differences with n=20 birds/site",side=3, line=2,adj=0.5,at=3.5,cex=1.5)
 
-```
 
-
-```{r sim_samplesize_philambda, eval=F, warning=FALSE, results='asis', echo=T, include=TRUE}
-library(rethinking)
-library(dplyr)
 
 #############################################################################################
 # We have an addition simulation for a more direct assessment of how sample size influences our ability to tell whether two populations have different mean phi values. Here, we do not generate the whole performance in the learning and reversal trials, but assume that we have estimated a phi for each individual in each population. Values from a single population are specified by a mean and variation. To represent values within populations, we thought that the distribution of phi values among individuals within a population most likely represents that of the gamma distribution: values have to be larger than zero, and only few individuals are expected to have very large values.
@@ -1523,13 +1508,6 @@ mtext("Probability model estimates difference could be zero",side=2,line=3)
 
 We will analyze our data using the above model once all of the data have been collected.
 
-##### Add code block:
-- add data preparation from flexmanip to correct the choice variable
-- make sure to only take the first reversal
-- set up data frame for STAN model
-- take STAN model from line 960 onwards
-- set up calculation of posterior contrasts of site differences
-
 
 ##### Innovation analysis
 
@@ -1636,9 +1614,9 @@ dat <- list(locisolved = sites[,1],
               )
 
 m1 <- ulam( alist(
-  locisolved ~ dbinom(4,p) , # 4 loci, p=probability of solving a locus
-  logit(p) <- a[site] , # site=random effect
-  a[site] ~ dnorm(0,1) # each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[site] , #site=random effect
+  a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
 ) , data=dat , chains=4 , log_lik=TRUE )
 
 precis(m1,depth=2)
@@ -2221,6 +2199,6 @@ We, the authors, declare that we have no financial conflicts of interest with th
 
 ### J. ACKNOWLEDGEMENTS
 
-We thank Kristine Johnson for technical advice on great-tailed grackles; Julia Cissewski and Sophie Kaube for tirelessly solving problems involving financial transactions and contracts; Richard McElreath for project support; Alexis Breen for coding exploration videos; and Aaron Blackwell and Ken Kosik for being the UCSB sponsors of the Cooperation Agreement with the Max Planck Institute for Evolutionary Anthropology.
+We thank Kristine Johnson for technical advice on great-tailed grackles; Julia Cissewski and Sophie Kaube for tirelessly solving problems involving financial transactions and contracts; Richard McElreath for project support; and Aaron Blackwell and Ken Kosik for being the UCSB sponsors of the Cooperation Agreement with the Max Planck Institute for Evolutionary Anthropology.
 
 ### K. REFERENCES
