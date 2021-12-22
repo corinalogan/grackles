@@ -1341,6 +1341,23 @@ Across both manipulated and control birds, $\phi$ was more consistently associat
 
 
 
+
+**Table 5.** Model outputs for the number of loci solved and the latency to switch loci after passing criterion on a different locus on the plastic (models 1-5) and wooden (models 6-8) multi-access boxes. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and number of trials to pass reversal.
+
+```{r posthocoutputs, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs_posthoc.csv"), header=T, sep=",", stringsAsFactors=F)
+
+table <- data.frame(table)
+colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
+
+library(kableExtra)
+options(knitr.kable.NA = '')
+knitr::kable(table) %>%
+kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 5)
+```
+
+
+
 ```{r posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 
 ### Code below copied from Blaisdell et al. 2021
@@ -1805,6 +1822,7 @@ dat_change_trials <- list(
       reversal = c(rep(0,nrow(improvementdata)),rep(1,nrow(improvementdata)))
            )
 
+# Model 15
 mchangetrialspool <- ulam(alist(
   trials ~ dnorm(mu, sigma), 
   mu <- a[bird]+b[bird]*reversal, 
@@ -1847,6 +1865,7 @@ dat_change_trials_noncentered <- list(
       reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
            )
 
+# Model 16
 mchangetrialnoncentered <- ulam(
     alist(
         trials ~ normal(mu,sigma),
@@ -1932,7 +1951,7 @@ dat_change_phi <- list(
       bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
       reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
            )
-
+# Model 17
 mchangephi <- ulam(
     alist(
         phi ~ normal( mu , sigma ),
@@ -1947,6 +1966,32 @@ mchangephi <- ulam(
 
 precis(mchangephi,depth=4)
 
+#                mean   sd  5.5% 94.5% n_eff Rhat4
+# b_bird[1]      0.03 0.01  0.02  0.05   338  1.01
+# b_bird[2]      0.03 0.01  0.01  0.05   282  1.00
+# b_bird[3]      0.03 0.01  0.02  0.05   338  1.01
+# b_bird[4]      0.03 0.02  0.00  0.05   296  1.00
+# b_bird[5]      0.04 0.01  0.02  0.06   423  1.01
+# b_bird[6]      0.03 0.01  0.01  0.05   230  1.01
+# b_bird[7]      0.04 0.01  0.02  0.05   373  1.01
+# b_bird[8]      0.03 0.01  0.01  0.05   213  1.00
+# a_bird[1]     -0.01 0.02 -0.04  0.02  1455  1.00
+# a_bird[2]      0.01 0.02 -0.01  0.05   501  1.00
+# a_bird[3]      0.00 0.02 -0.03  0.03   589  1.00
+# a_bird[4]      0.02 0.03 -0.02  0.08   225  1.00
+# a_bird[5]      0.00 0.02 -0.04  0.03  1122  1.00
+# a_bird[6]      0.00 0.02 -0.03  0.03  1249  1.00
+# a_bird[7]      0.00 0.02 -0.03  0.03  1117  1.00
+# a_bird[8]      0.01 0.02 -0.02  0.04   153  1.01
+# a              0.00 0.02 -0.02  0.03   620  1.00
+# b              0.03 0.01  0.02  0.05   207  1.01
+# sigma_bird[1]  0.02 0.01  0.00  0.04   726  1.00
+# sigma_bird[2]  0.01 0.01  0.00  0.02   516  1.00
+# sigma          0.02 0.01  0.01  0.03   184  1.01
+# Rho[1,1]       1.00 0.00  1.00  1.00   NaN   NaN
+# Rho[1,2]      -0.29 0.46 -0.93  0.52  1492  1.00
+# Rho[2,1]      -0.29 0.46 -0.93  0.52  1492  1.00
+# Rho[2,2]       1.00 0.00  1.00  1.00   NaN   NaN
 
 post <- extract.samples(mchangephi)
 dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
@@ -1984,7 +2029,7 @@ dat_change_lambda <- list(
       bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
       reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
            )
-
+# Model 18
 mchangelambda <- ulam(
     alist(
         lambda ~ normal( mu , sigma ),
@@ -1998,6 +2043,35 @@ mchangelambda <- ulam(
     ) , data=dat_change_lambda , chains=4 , cores=4 )
 
 precis(mchangelambda,depth=2)
+
+#                mean   sd  5.5% 94.5% n_eff Rhat4
+# b_bird[1]     -1.09 0.36 -1.64 -0.52   338  1.01
+# b_bird[2]     -1.21 0.40 -1.86 -0.60   346  1.01
+# b_bird[3]     -1.07 0.36 -1.62 -0.48   368  1.01
+# b_bird[4]     -1.14 0.37 -1.71 -0.55   355  1.01
+# b_bird[5]     -1.07 0.41 -1.70 -0.45   332  1.01
+# b_bird[6]     -0.93 0.41 -1.52 -0.22   264  1.02
+# b_bird[7]     -1.21 0.37 -1.83 -0.65   382  1.01
+# b_bird[8]     -1.09 0.37 -1.66 -0.47   342  1.01
+# a_bird[1]      5.42 0.61  4.51  6.37   338  1.01
+# a_bird[2]      4.93 0.72  3.76  6.03   287  1.00
+# a_bird[3]      5.43 0.61  4.51  6.42   363  1.01
+# a_bird[4]      5.29 0.63  4.32  6.27   358  1.00
+# a_bird[5]      5.79 0.74  4.75  7.00   319  1.01
+# a_bird[6]      5.50 0.66  4.47  6.51   307  1.01
+# a_bird[7]      5.21 0.63  4.24  6.23   382  1.00
+# a_bird[8]      5.26 0.63  4.23  6.26   341  1.01
+# a              5.36 0.51  4.57  6.18   255  1.01
+# b             -1.10 0.30 -1.57 -0.64   260  1.01
+# sigma_bird[1]  0.51 0.35  0.09  1.12   240  1.00
+# sigma_bird[2]  0.26 0.20  0.03  0.63   220  1.03
+# sigma          0.85 0.20  0.58  1.19   648  1.01
+# Rho[1,1]       1.00 0.00  1.00  1.00   NaN   NaN
+# Rho[1,2]      -0.08 0.44 -0.77  0.64   566  1.00
+# Rho[2,1]      -0.08 0.44 -0.77  0.64   566  1.00
+# Rho[2,2]       1.00 0.00  1.00  1.00   NaN   NaN
+
+
 
 post <- extract.samples(mchangelambda)
 dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
@@ -2048,6 +2122,7 @@ dat_improvement <- list(
       performanceimprovement = as.integer(improvementdata$performanceimprovement)
            )
 
+# Model 19
 mimprovementboth <- ulam(alist(
   performanceimprovement ~ dnorm(mu, sigma), 
   mu <- a + b * phiimprovement + c * lambdaimprovement, 
@@ -2057,6 +2132,12 @@ mimprovementboth <- ulam(alist(
   sigma ~ dexp(1)
   ), data = dat_improvement, chains=4, log_lik = TRUE, messages = FALSE)
 precis(mimprovementboth,depth=2)
+
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+# a     32.74 2.52 28.76 36.79  1362     1
+# b     10.63 3.09  5.68 15.31  1155     1
+# c      5.58 3.03  0.73 10.20  1223     1
+# sigma  7.22 1.36  5.31  9.56  1322     1
 
 # Changes in both phi (11, 6-15) and lambda (6, 1-10) appear asscociated with the changes in the number of trials needed to reverse a preference. The estimate for phi is however twice as high as the estimate for lambda (both are standardized)
 
@@ -2075,6 +2156,7 @@ dat_allchanges<- list(
   lambdafirst = standardize(improvementdata$beginninglambda)
 )
 
+# Model 20 combined
 mallchanges <- ulam(alist(
 TrialsLast ~ dnorm(mutrialslast,sigmaltrialslast), 
 mutrialslast <- x*TrialsFirst + a*philast + b*lambdalast,
@@ -2345,6 +2427,25 @@ For the manipulated birds, we found that during their last reversal there was a 
 
 **Figure 10.** Relationships between phi and lambda from the last reversal and performance on the wooden (black dots) and plastic (red dots) multi-access boxes. Birds with intermediate $\lambda$ values during their last reversal (a) are less likely to solve all four loci on the multi-access boxes than birds with either high or low $\lambda$ values. Birds who solved two or fewer loci on either box all fall within the central third of the $\lambda$ values observed for the last reversal, while 12 of the 14 birds who solved all four loci fall outside this central range. $\lambda$ values do not perfectly match between the two boxes because not all individuals were tested on both boxes, which led to slight shifts during the standardization of the $\lambda$ values. There are no clear relationships between lambda and (b) the latency to attempt a locus, or between phi and either (c) the number of loci solved or (d) the latency to attempt a new locus.
 
+
+**Table 6.** Model outputs for the number of loci solved and the latency to switch loci after passing criterion on a different locus on the plastic (models 1-5) and wooden (models 6-8) multi-access boxes. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and number of trials to pass reversal.
+
+```{r posthoc2outputs, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs_posthoc_associations.csv"), header=T, sep=",", stringsAsFactors=F)
+
+table <- data.frame(table)
+colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
+
+library(kableExtra)
+options(knitr.kable.NA = '')
+knitr::kable(table) %>%
+kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 5)
+```
+
+
+
+
+
 ```{r posthocMABplasticLatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
 library(rstan)
 library(rethinking)
@@ -2400,7 +2501,7 @@ birdnames<-unique(combinedreversaldata$Bird)
       dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencyplastic$lastphi)), 
               latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic),               batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+# Model 21      
       mplat1alternative1 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learningphi, 
@@ -2421,7 +2522,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                  latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
                  batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+# Model 22      
       mplat1alternative2 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learninglambda, 
@@ -2444,7 +2545,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                  latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
                  batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+# Model 23      
       mplat1alternative3 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learninglambda + c * learningphi, 
@@ -2467,7 +2568,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                  latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
                  batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+# Model 24      
       mplat1alternative4 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learninglambda * learningphi, 
@@ -2491,7 +2592,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                  latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
                  batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+# Model 25      
       mplat1alternative5 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learninglambda + c * learningphi, 
@@ -2516,7 +2617,7 @@ birdnames<-unique(combinedreversaldata$Bird)
       dl_phi <- list(learningphi = standardize(as.numeric(inputdata_philatencyplastic$beginningphi)), 
               latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic),               batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+ # Model 26     
       mplat2alternative1 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learningphi, 
@@ -2537,7 +2638,7 @@ birdnames<-unique(combinedreversaldata$Bird)
             latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic), 
             batch = as.integer(inputdata_philatencyplastic$Batch)
                  )
-      
+ # Model 27     
       mplat2alternative2 <- ulam(alist(
         latency ~ dgampois(lambda, phi), 
         log(lambda) <- a + b * learninglambda, 
@@ -2564,7 +2665,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+  # Model 28      
         mwood1alternative1 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learningphi, 
@@ -2586,7 +2687,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+# Model 29        
         mwood1alternative2 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learninglambda, 
@@ -2611,7 +2712,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+# Model 30        
         mwood1alternative3 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learninglambda + c * learningphi, 
@@ -2634,7 +2735,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+# Model 31        
         mwood1alternative4 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learninglambda * learningphi, 
@@ -2658,7 +2759,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+ # Model 32       
         mwood1alternative5 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learninglambda + c * learningphi, 
@@ -2682,7 +2783,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+   # Model 33     
         mwood2alternative1 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learningphi, 
@@ -2703,7 +2804,7 @@ birdnames<-unique(combinedreversaldata$Bird)
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
                    batch = as.integer(inputdata_philatencywooden$Batch)
                    )
-        
+  # Model 34      
         mwood2alternative2 <- ulam(alist(
           latency ~ dgampois(lambda, phi), 
           log(lambda) <- a + b * learninglambda, 
@@ -2731,11 +2832,28 @@ birdnames<-unique(combinedreversaldata$Bird)
         inputdata_philociplastic <- subset(inputdata_philociplastic,!(is.na(inputdata_philociplastic["TotalLociSolvedMABplastic"])) & !(is.na(inputdata_philociplastic["TrialsLastReversal"])))
         
         # n=15
+       
+        dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+                    learningphi = standardize(as.numeric(inputdata_philociplastic$beginningphi))
+                      )
+# Model 40        
         
+        m2plasticloci <- ulam( alist(
+          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+          logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
+          a ~ dnorm(0,1) , 
+          b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+        ) , data=dat , chains=4 )
+        
+        precis(m2plasticloci,depth=2)
+        #   ean   sd  5.5% 94.5% n_eff Rhat4
+        # a 0.02 0.26 -0.41  0.42  1313     1
+        # b 0.20 0.22 -0.16  0.54  1624     1 
+                
         
         dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
                     learninglambda = standardize(as.numeric(inputdata_philociplastic$beginninglambda))
-                      )
+ # Model 41                     )
         m1plasticloci <- ulam( alist(
           locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
           logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
@@ -2748,39 +2866,7 @@ birdnames<-unique(combinedreversaldata$Bird)
         # a 0.01 0.26 -0.41  0.42  1346     1
         # b 0.29 0.23 -0.08  0.66  1536     1
         
-        
-        
-        dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
-                    learningphi = standardize(as.numeric(inputdata_philociplastic$beginningphi))
-                      )
-        m2plasticloci <- ulam( alist(
-          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-          logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
-          a ~ dnorm(0,1) , 
-          b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-        ) , data=dat , chains=4 )
-        
-        precis(m2plasticloci,depth=2)
-        #   ean   sd  5.5% 94.5% n_eff Rhat4
-        # a 0.02 0.26 -0.41  0.42  1313     1
-        # b 0.20 0.22 -0.16  0.54  1624     1 
-        
-        
-        dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
-                    learninglambda = standardize(as.numeric(inputdata_philociplastic$lastlambda))
-                      )
-        m3plasticloci <- ulam( alist(
-          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-          logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
-          a ~ dnorm(0,1) , #each batch gets its own intercept
-          b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-        ) , data=dat , chains=4 )
-        
-        precis(m3plasticloci,depth=2)
-        #   mean   sd  5.5% 94.5% n_eff Rhat4
-        # a 0.00 0.25 -0.40  0.41  1369     1
-        # b 0.14 0.22 -0.21  0.49  1200     1
-        
+ # Model 35       
         
         dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
                     learningphi = standardize(as.numeric(inputdata_philociplastic$lastphi))
@@ -2795,7 +2881,46 @@ birdnames<-unique(combinedreversaldata$Bird)
         precis(m4plasticloci,depth=2)
         #  mean   sd  5.5% 94.5% n_eff Rhat4
         # a 0.02 0.30 -0.45  0.50  1153     1
-        # b 0.24 0.26 -0.16  0.65  1463     1
+        # b 0.24 0.26 -0.16  0.65  1463     1 
+        
+        dat <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+                    learninglambda = standardize(as.numeric(inputdata_philociplastic$lastlambda))
+                      )
+      # Model 36
+        m3plasticloci <- ulam( alist(
+          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+          logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
+          a ~ dnorm(0,1) , #each batch gets its own intercept
+          b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+        ) , data=dat , chains=4 )
+        
+        precis(m3plasticloci,depth=2)
+        #   mean   sd  5.5% 94.5% n_eff Rhat4
+        # a 0.00 0.25 -0.40  0.41  1369     1
+        # b 0.14 0.22 -0.21  0.49  1200     1
+ 
+        
+        
+        dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
+                    learningphi = standardize(as.numeric(inputdata_philociplastic$lastphi)),
+                    learninglambda = standardize(as.numeric(inputdata_philociplastic$lastlambda))
+                      )
+        
+  # Model 37
+        m5plasticloci <- ulam( alist(
+          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+          logit(p) <- a+ b*learningphi+c*learninglambda , #batch=random effect, standardize trials so 0=mean
+          a ~ dnorm(0,1) , #each batch gets its own intercept
+          b ~ dnorm(0,0.4),#our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+          c ~ dnorm(0,0.4)
+        ) , data=dat_loci_plastic_both , chains=4 )
+        
+        precis(m5plasticloci,depth=2)       
+
+# mean   sd  5.5% 94.5% n_eff Rhat4
+# a 0.01 0.25 -0.39  0.40  1653     1
+# b 0.23 0.24 -0.16  0.62  1571     1
+# c 0.20 0.25 -0.19  0.60  1266     1
         
         
         
@@ -2803,6 +2928,8 @@ birdnames<-unique(combinedreversaldata$Bird)
                     learningphi = standardize(as.numeric(inputdata_philociplastic$lastphi)),
                     learninglambda = standardize(as.numeric(inputdata_philociplastic$lastlambda))
                       )
+        
+  # Model 38
         m5plasticloci <- ulam( alist(
           locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
           logit(p) <- a+ b*learningphi*learninglambda , #batch=random effect, standardize trials so 0=mean
@@ -2812,7 +2939,31 @@ birdnames<-unique(combinedreversaldata$Bird)
         
         precis(m5plasticloci,depth=2)
 
-
+       
+        dl_lambda_phi_U <- list(learninglambda = abs(standardize(as.numeric(inputdata_philociplastic$lastlambda))), 
+                              learningphi = abs(standardize(as.numeric(inputdata_philociplastic$lastphi))), 
+                   locisolved = as.integer(inputdata_philociplastic$TotalLociSolvedMABplastic), 
+                   batch = as.integer(inputdata_philociplastic$Batch)
+                   )
+ # Model 39       
+        mplastic1alternative5 <- ulam(alist(
+          locisolved ~ dbinom(4,p), 
+          logit(p) <- a + b * learninglambda + c * learningphi, 
+          a ~ dnorm(1, 1), 
+          b ~ dnorm(0, 1),
+          c ~ dnorm(0, 1)
+          ), data = dl_lambda_phi_U, chains=4, log_lik = TRUE, messages = FALSE)
+        
+        precis(mplastic1alternative5,depth=2)
+        
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+# a -0.66 0.50 -1.45  0.15   947     1
+# b  1.51 0.60  0.61  2.48   845     1
+# c -0.55 0.58 -1.45  0.37   861     1
+        
+        
+        
+        
 # MODEL phi loci wooden: 
 # Fourth, we link the number of loci solved on the wooden multi-access box to phi (updating of attraction scores in the last reversal)
 
@@ -2822,6 +2973,9 @@ birdnames<-unique(combinedreversaldata$Bird)
         inputdata_philociwooden <- subset(inputdata_philociwooden,!(is.na(inputdata_philociwooden["TotalLociSolvedMABwooden"])) & !(is.na(inputdata_philociwooden["TrialsLastReversal"])))
         
         # n=12
+
+        
+# Model 48
         
         dat <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
                     learninglambda = standardize(as.numeric(inputdata_philociwooden$beginninglambda))
@@ -2842,6 +2996,7 @@ birdnames<-unique(combinedreversaldata$Bird)
         dat <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
                     learningphi = standardize(as.numeric(inputdata_philociwooden$beginningphi)))
                       )
+  # Model 47
         m2woodenloci <- ulam( alist(
           locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
           logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
@@ -2858,6 +3013,8 @@ birdnames<-unique(combinedreversaldata$Bird)
         dat <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
                     learninglambda = standardize(as.numeric(inputdata_philociwooden$lastlambda)))
                       )
+
+# Model 43
         m3woodenloci <- ulam( alist(
           locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
           logit(p) <- a+ b*learninglambda , #batch=random effect, standardize trials so 0=mean
@@ -2874,6 +3031,7 @@ birdnames<-unique(combinedreversaldata$Bird)
         dat <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
                     learningphi = standardize(as.numeric(inputdata_philociwooden$lastphi)))
                       )
+# Model 42
         m4woodenloci <- ulam( alist(
           locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
           logit(p) <- a+ b*learningphi , #batch=random effect, standardize trials so 0=mean
@@ -2889,11 +3047,12 @@ birdnames<-unique(combinedreversaldata$Bird)
         
         # Phi and lambda are negatively correlated,  so we could expect that birds with intermediate values perform better on other tasks if these rely on a combination of these activities. Alternatively, we could also expect that for the multi-access boxes birds perform best if they
         
-        dat_loci_wooden_both <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABplastic),
+        dat_loci_wooden_both <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
                     learningphi = abs(standardize(as.numeric(inputdata_philociwooden$lastphi))),
                     learninglambda = abs(standardize(as.numeric(inputdata_philociwooden$lastlambda)))
                       )
-        m6plasticloci <- ulam( alist(
+# Model 44
+        m6woodenloci <- ulam( alist(
           locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
           logit(p) <- a+ b*learningphi+c*learninglambda , #batch=random effect, standardize trials so 0=mean
           a ~ dnorm(0,1) , #each batch gets its own intercept
@@ -2901,9 +3060,54 @@ birdnames<-unique(combinedreversaldata$Bird)
            c ~ dnorm(0,0.4)
         ) , data=dat_loci_wooden_both , chains=4 )
         
-        precis(m6plasticloci,depth=2)
+        precis(m6woodenloci,depth=2)
 
+#  mean   sd  5.5% 94.5% n_eff Rhat4
+# a 0.75 0.42  0.07  1.43  1186     1
+# b 0.37 0.34 -0.18  0.92  1354     1
+# c 0.56 0.36 -0.01  1.14  1131     1
+        
+  
+ # Model 45
+        m6woodenloci_interaction <- ulam( alist(
+          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+          logit(p) <- a+ b*learningphi*learninglambda , #batch=random effect, standardize trials so 0=mean
+          a ~ dnorm(0,1) , #each batch gets its own intercept
+          b ~ dnorm(0,0.4)
+        ) , data=dat_loci_wooden_both , chains=4 )
+        
+        precis(m6woodenloci_interaction,depth=2)       
 
+#  mean   sd 5.5% 94.5% n_eff Rhat4
+# a 0.92 0.38 0.34  1.53   966     1
+# b 0.67 0.32 0.17  1.19   952     1 
+ 
+             
+        dl_lambda_phi_U <- list(learninglambda = abs(standardize(as.numeric(inputdata_philociwooden$lastlambda))), 
+                              learningphi = abs(standardize(as.numeric(inputdata_philociwooden$lastphi))), 
+                   locisolved = as.integer(inputdata_philociwooden$TotalLociSolvedMABwooden), 
+                   batch = as.integer(inputdata_philociwooden$Batch)
+                   )
+ # Model 46       
+        mwooden1alternative5 <- ulam(alist(
+          locisolved ~ dbinom(4,p), 
+          logit(p) <- a + b * learninglambda + c * learningphi, 
+          a ~ dnorm(1, 1), 
+          b ~ dnorm(0, 1),
+          c ~ dnorm(0, 1)
+          ), data = dl_lambda_phi_U, chains=4, log_lik = TRUE, messages = FALSE)
+        
+        precis(mwooden1alternative5,depth=2)
+        
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+#a 0.40 0.50 -0.43  1.20   902     1
+#b 1.52 0.75  0.33  2.70   827     1
+#c 0.43 0.67 -0.60  1.52  1002     1      
+        
+        
+        
+      
+        
 #  Create a plot that shows the U-shaped relationship
 
 dat_loci_wooden_both <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
