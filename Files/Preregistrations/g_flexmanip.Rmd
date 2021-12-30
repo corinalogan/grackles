@@ -1721,15 +1721,9 @@ largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,
 # 80	  40	  170
 # 90	  50	  90
 # 100	  50	  100
-
-
 ```
 
 ```{r posthoc_changes, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-
-
-# # # # # # # # 
-
 # What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
 
 # Questions:
@@ -1737,7 +1731,6 @@ largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,
 # Say that manipulation reduces number of trials birds needed to reverse (trials ~ reversal) - on average, by how many trials did they improve?
 # 1a) Did manipulation change phi and lambda? (phi ~ reversal (first vs last); lambda ~ reversal)
 # 1b) Does extent of change depend on how the birds started? Expect that birds that were already good initially needed to change less (cafe visiting model model m14.1: phi ~ id +id*manipulation)
-
 
 # 2) Is improvement in performance mainly due to change in phi or in lambda? 
 # 2a) (model mimprovement: trialimprovement ~ lambdaimprovement + phiimprovement)
@@ -2121,9 +2114,7 @@ precis(mchangelambda,depth=2)
 ```
 
 ```{r posthoc_improvement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-
 # 2a) is improvement in trials to reverse linked to improvement in phi and/or lambda?
-
 improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal-improvementdata$TrialsLastReversal
 
 dat_improvement <- list(
@@ -2343,7 +2334,7 @@ plot_grid(trialsplot,
 dat_for_plotting_reversals <- list(
       trials = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversal = c(rep("first",nrow(singlereversaldata)),rep("first",nrow(improvementdata)),rep("last",nrow(improvementdata))),
       reversalforsorting = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsFirstReversal)
         )
 
@@ -2352,7 +2343,7 @@ dat_for_plotting_reversals <- arrange(dat_for_plotting_reversals,reversalforsort
 dat_for_plotting_reversals$plotid<-NA
 count<-0
 for(i in 1:nrow(dat_for_plotting_reversals)){
-  if(dat_for_plotting_reversals[i,]$reversal=="initial"){count<-count+1}
+  if(dat_for_plotting_reversals[i,]$reversal=="first"){count<-count+1}
   dat_for_plotting_reversals[i,]$plotid<-count  
 }
 
@@ -2368,7 +2359,7 @@ trialsplot<-dat_for_plotting_reversals %>%
 dat_for_plotting_phi <- list(
       phi = c(singlereversaldata$beginningphi,improvementdata$beginningphi,improvementdata$manipulatedphi), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversal = c(rep("first",nrow(singlereversaldata)),rep("first",nrow(improvementdata)),rep("last",nrow(improvementdata))),
       reversalforsorting = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsFirstReversal)
            )
 
@@ -2377,7 +2368,7 @@ dat_for_plotting_phi <- arrange(dat_for_plotting_phi,reversalforsorting,bird)
 dat_for_plotting_phi$plotid<-NA
 count<-0
 for(i in 1:nrow(dat_for_plotting_phi)){
-  if(dat_for_plotting_phi[i,]$reversal=="initial"){count<-count+1}
+  if(dat_for_plotting_phi[i,]$reversal=="first"){count<-count+1}
   dat_for_plotting_phi[i,]$plotid<-count  
 }
 
@@ -2395,7 +2386,7 @@ phiplot<-dat_for_plotting_phi %>%
 dat_for_plotting_lambda <- list(
       lambda = c(singlereversaldata$beginninglambda,improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversal = c(rep("first",nrow(singlereversaldata)),rep("first",nrow(improvementdata)),rep("last",nrow(improvementdata))),
       reversalforsorting = c(singlereversaldata$TrialsFirstReversal,improvementdata$TrialsFirstReversal,improvementdata$TrialsFirstReversal)
            )
 
@@ -2404,7 +2395,7 @@ dat_for_plotting_lambda <- arrange(dat_for_plotting_lambda,reversalforsorting,bi
 dat_for_plotting_lambda$plotid<-NA
 count<-0
 for(i in 1:nrow(dat_for_plotting_lambda)){
-  if(dat_for_plotting_lambda[i,]$reversal=="initial"){count<-count+1}
+  if(dat_for_plotting_lambda[i,]$reversal=="first"){count<-count+1}
   dat_for_plotting_lambda[i,]$plotid<-count  
 }
 
@@ -2419,7 +2410,7 @@ lambdaplot<-dat_for_plotting_lambda %>%
 plot_grid(trialsplot,
           phiplot,
           lambdaplot,
-          labels = c('a) Trials to reach association criterion','b) Phi: rate of updating learned attractions','c) Lambda: rate of deviating from learned attractions'),
+          labels = c('a) Number of trials to to pass criterion','b) Phi: learning rate of attraction to either option','c) Lambda: rate of deviating from learned attractions'),
           label_x = 0.05,
           label_size	= 20,
           hjust = -0.05,
