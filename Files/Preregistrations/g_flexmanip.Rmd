@@ -2226,7 +2226,112 @@ precis(trials.phiandlambda,depth=2)
 
 # Given that phi and lambda are negatively correlated, bird with intermediate values might do best on other tasks
 
+
+
+
+##########################################################################################
+##########################################################################################
 # For plotting
+##########################################################################################
+
+d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d3 <- data.frame(d3)
+colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(d3$AverageLatencyAttemptNewLocusMABplastic)
+
+# make Batch a factor
+d3$Batch <- as.factor(d3$Batch)
+
+# Need to fix spelling mistake in a bird name to match it to the other data
+d3[d3$Bird=="Huachinago",]$Bird<-"Huachinango"
+
+d3_match<- subset(d3, d3$Bird !="Memela") 
+d3_match <- d3_match[with(d3_match, order(d3_match$Bird)), ]
+
+eachbirdslearningparameters<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
+
+library(dplyr)
+combinedreversaldata<-left_join(d3_match,eachbirdslearningparameters,by="Bird")
+
+
+# Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
+combinedreversaldata <- combinedreversaldata[with(combinedreversaldata, order(combinedreversaldata$Bird)), ]
+
+
+# Store the bird names in case we want to link their data from here back to other datasets
+birdnames<-unique(combinedreversaldata$Bird)
+
+plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,0.15),ylim=c(0,160))
+points(TrialsLastReversal~lastphi,data=combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==FALSE,],col="red")
+
+plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,10),ylim=c(0,160))
+points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==FALSE,],col="red")
+
+
+# Filter the dataset to only include those birds that experienced the reversal manipulation
+improvementdata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==F,]
+
+# For these birds, we can calculate how much they changed from beginning to end
+improvementdata$phiimprovement<-improvementdata$lastphi-improvementdata$beginningphi
+improvementdata$lambdaimprovement<-improvementdata$lastlambda-improvementdata$beginninglambda
+improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal -improvementdata$TrialsLastReversal
+
+
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
+
+# PREPARE reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+#exclude reversal=0 because this was the initial discrimination and not a reversal
+dflex <- subset(dflex, dflex$Reversal != 0) 
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+# Want data ONLY from LAST TWO reversals to compare with main results from the other model in the Results section (which were from the last reversal)
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$ID))) {
+  thisbird <- unique(dflex$ID)[i]
+  thisbirddata <- dflex[dflex$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c((max(thisbirddata$Reversal)-1),max(thisbirddata$Reversal)),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+dflex <- reduceddata
+length(unique(dflex$ID)) #21 birds
+
+#Construct Choice variable
+dflex$Choice <- NA
+for (i in 1: nrow(dflex)) {
+  if (dflex$Reversal[i] %in% seq(0, max(unique(dflex$Reversal)), by = 2)){
+    
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 1
+    } else {
+      dflex$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex$Correct[i] == 1){
+      dflex$Choice[i] <- 2
+    } else {
+      dflex$Choice[i] <- 1
+    } 
+  }
+}
+dflex <- dflex[with(dflex, order(dflex$ID)), ]
+
+
+
+
 
 combinedreversaldata$TrialsLastButOneReversal<-NA
 for (i in 1:length(unique(combinedreversaldata$Bird))){
@@ -2248,7 +2353,7 @@ library(cowplot)
 dat_for_plotting_reversals <- list(
       trials = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsLastReversal+improvementdata$TrialsLastButOneReversal), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversal = c(rep("first",nrow(singlereversaldata)),rep("first",nrow(improvementdata)),rep("last",nrow(improvementdata))),
       reversalforsorting = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn')
            )
 
@@ -2257,7 +2362,7 @@ dat_for_plotting_reversals <- arrange(dat_for_plotting_reversals,reversalforsort
 dat_for_plotting_reversals$plotid<-NA
 count<-0
 for(i in 1:nrow(dat_for_plotting_reversals)){
-  if(dat_for_plotting_reversals[i,]$reversal=="initial"){count<-count+1}
+  if(dat_for_plotting_reversals[i,]$reversal=="first"){count<-count+1}
   dat_for_plotting_reversals[i,]$plotid<-count  
 }
 
@@ -2273,7 +2378,7 @@ trialsplot<-dat_for_plotting_reversals %>%
 dat_for_plotting_phi <- list(
       phi = c(singlereversaldata$beginningphi,improvementdata$beginningphi,improvementdata$manipulatedphi), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversal = c(rep("first",nrow(singlereversaldata)),rep("first",nrow(improvementdata)),rep("last",nrow(improvementdata))),
       reversalforsorting = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn')
            )
 
@@ -2282,7 +2387,7 @@ dat_for_plotting_phi <- arrange(dat_for_plotting_phi,reversalforsorting,bird)
 dat_for_plotting_phi$plotid<-NA
 count<-0
 for(i in 1:nrow(dat_for_plotting_phi)){
-  if(dat_for_plotting_phi[i,]$reversal=="initial"){count<-count+1}
+  if(dat_for_plotting_phi[i,]$reversal=="first"){count<-count+1}
   dat_for_plotting_phi[i,]$plotid<-count  
 }
 
@@ -2298,7 +2403,7 @@ phiplot<-dat_for_plotting_phi %>%
 dat_for_plotting_lambda <- list(
       lambda = c(singlereversaldata$beginninglambda,improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
       bird = c(as.integer(as.factor(singlereversaldata$Bird))+max(as.integer(as.factor(improvementdata$Bird))),as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep("initial",nrow(singlereversaldata)),rep("initial",nrow(improvementdata)),rep("manipulated",nrow(improvementdata))),
+      reversal = c(rep("first",nrow(singlereversaldata)),rep("first",nrow(improvementdata)),rep("last",nrow(improvementdata))),
       reversalforsorting = c(singlereversaldata$TrialsFirstReversal+singlereversaldata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn',improvementdata$TrialsFirstReversal+improvementdata$'Trials to learn')
            )
 
@@ -2307,7 +2412,7 @@ dat_for_plotting_lambda <- arrange(dat_for_plotting_lambda,reversalforsorting,bi
 dat_for_plotting_lambda$plotid<-NA
 count<-0
 for(i in 1:nrow(dat_for_plotting_lambda)){
-  if(dat_for_plotting_lambda[i,]$reversal=="initial"){count<-count+1}
+  if(dat_for_plotting_lambda[i,]$reversal=="first"){count<-count+1}
   dat_for_plotting_lambda[i,]$plotid<-count  
 }
 
@@ -2353,7 +2458,7 @@ trialsplot<-dat_for_plotting_reversals %>%
   geom_line(aes(group = bird),color="darkgrey")+
   ylim(0,180)+
   scale_colour_manual(values=c("#E69F00","#56B4E9"))+
-  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.y = element_text(size=rel(1.5)))+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
 
 
 dat_for_plotting_phi <- list(
@@ -2378,7 +2483,7 @@ phiplot<-dat_for_plotting_phi %>%
   geom_line(aes(group = bird),color="darkgrey")+
   ylim(0,0.125)+
   scale_colour_manual(values=c("#E69F00","#56B4E9"))+
-  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.y = element_text(size=rel(1.5)))+ theme(plot.margin = unit(c(2,1,2,2), "lines"))
 
 
 # NOTE: take inverse of lambda to make it rate of deviation. With inverse, larger values means you deviate more from the learned associations.
@@ -2405,7 +2510,7 @@ lambdaplot<-dat_for_plotting_lambda %>%
   geom_line(aes(group = bird),color="darkgrey")+
   ylim(0,7.5)+
   scale_colour_manual(values=c("#E69F00","#56B4E9"))+
-  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank())+ theme(plot.margin = unit(c(2,1,2,3.5), "lines"))
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.y = element_text(size=rel(1.5)))+ theme(plot.margin = unit(c(2,1,2,3.5), "lines"))
 
 plot_grid(trialsplot,
           phiplot,
