@@ -12,17 +12,17 @@ author:
 date: '`r Sys.Date()`'
 always_allow_html: yes
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  github_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
-  github_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   md_document: 
     toc: true
 bibliography: MyLibrary.bib
@@ -39,11 +39,6 @@ header-includes:
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data](https://doi.org/10.5063/F1862DWC)
 
-\addtolength{\headheight}{0.1cm}
-\pagestyle{fancyplain}
-\lhead{\includegraphics[height=1.2cm]{logoPCIecology.png}}
-\renewcommand{\headrulewidth}{0pt}
-
 &nbsp;
 
 **Affiliations:** 1) Max Planck Institute for Evolutionary Anthropology, Leipzig, Germany, 2) University of California Los Angeles, USA, 3) University of California Santa Barbara, USA, 4) Arizona State University, Tempe, AZ USA. *Corresponding author: corina_logan@eva.mpg.de
@@ -52,10 +47,11 @@ Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%}
 library(knitr)
 library(formatR)
 knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE) 
-#Make code wrap text so it doesn't go off the page when Knitting to PDF
+#Make code chunks wrap text so it doesn't go off the page when knitting to PDF
 
-knitr::opts_chunk$set(echo = TRUE) 
+knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
+#set echo=F for knitting to PDF, and echo=T for knitting to HTML
 ```
 
 &nbsp;
@@ -66,7 +62,7 @@ Aurélie Coulon (2019) Can context changes improve behavioral flexibility? Towar
 
 **Preregistration:** [html](http://corinalogan.com/Preregistrations/g_flexmanip.html), [pdf](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_flexmanip.Rmd)
 
-**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 3 Jan 2022): [html](http://corinalogan.com/Preregistrations/g_flexmanip2.html), [pdf](), [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd)
+**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 3 Jan 2022): [html](http://corinalogan.com/Preregistrations/g_flexmanip2.html), pdf (at EcoEvoRxiv), [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd)
 
 
 ## ABSTRACT
@@ -172,7 +168,7 @@ Although 22 grackles completed their initial colored tube discrimination, only 2
 
 **Table 1.** Summarized results per bird in the reversal learning (tube and touchscreen) and multi-access box (plastic and wooden) experiments. Reversals to pass indicates how many serial reversals it took a bird to pass criterion if they were in the flexibility manipulation condition. Note: Tapa did not finish the MAB log experiment; Marisco's MAB log experiment ended too early due to experimenter error (timed out on 2 consecutive sessions, not 3); Mole and Habanero: do not count MAB plastic number of options solved because they were given the box fully put together for habituation due to experimenter error; Taco was the first juvenile we tested and we did not put him in the flexibility experiment: he received 1 reversal and moved on to his next test, therefore he was essentially a control bird without the matched yellow tube experience.
 
-```{r summary, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r summary, eval=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
@@ -196,7 +192,7 @@ The birds in the manipulated group required a similar number of trials during th
 
 **Table 2.** The number of trials to reverse decreases with increasing reversal number.
 
-```{r p1table, eval=T, warning=F, results='asis', echo=T, include=T, message=FALSE}
+```{r p1table, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
 d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
 
@@ -253,7 +249,7 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 #autocorr(serial$VCV)
 ```
 
-```{r p1fig, eval=T, warning=F, results='asis', echo=T, include=T}
+```{r p1fig, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
 d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
 
@@ -271,7 +267,7 @@ d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
 
 #figure
 op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
-plot(jitter(d$TrialsToReverse) ~ jitter(d$ReverseNumber), xlab="Reversal number", ylab="Number of trials to reverse", xlim=c(0.9,11.1), ylim=c(19,171), cex.lab=2, cex.axis=2, cex=2)
+plot(jitter(d$TrialsToReverse) ~ jitter(d$ReverseNumber), xlab="Reversal number", ylab="Number of trials to reverse", xlim=c(0.9,11.1), ylim=c(19,171), cex.lab=1.8, cex.axis=1.8, cex=1.8)
 par(op)
 ```
 
@@ -279,7 +275,7 @@ par(op)
 
 **Table 3.** Individuals in the manipulated condition pass their last reversal in fewer trials than control individuals. The Akaike weight of the full model was >0.89, indicating that it is more reliable than the null model.
 
-```{r p1last, eval=T, warning=F, results='asis', echo=T, include=T, message=FALSE}
+```{r p1last, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
@@ -312,7 +308,7 @@ knitr::kable(aw)  %>%
 #the full model has an Akaike weight >0.9 so it is reliable. This means that condition explains differences in the number of trials to pass the last reversal, with the manipulated group being faster than the control group
 ```
 
-```{r p1figlast, eval=T, warning=F, results='asis', echo=T, include=T}
+```{r p1figlast, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d <- data.frame(d)
@@ -335,7 +331,7 @@ levels(d$ReversalsToPass)[c(1,2,3,4)] <- c("Control","Manipulated","Manipulated"
 
 #figure
 op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
-plot(jitter(d$TrialsLastReversal) ~ d$ReversalsToPass, xlab="", ylab="Number of trials to pass last reversal", ylim=c(19,161), cex.lab=1.5, cex.axis=2, cex=2)
+plot(jitter(d$TrialsLastReversal) ~ d$ReversalsToPass, xlab="", ylab="Number of trials to pass last reversal", ylim=c(19,161), cex.lab=1.3, cex.axis=1.8, cex=1.8)
 points(jitter(d$TrialsLastReversal) ~ d$ReversalsToPass, cex=2)
 par(op)
 ```
@@ -354,7 +350,7 @@ To determine whether the serial reversal manipulation affected flexibility gener
 
 Grackles that were faster to reverse a preference in their **last reversal** (average 52 trials, sd=23), where grackles in the control condition received only one reversal which served as their first and last reversal, were also faster to attempt to solve a new locus on the plastic multi-access box (after just having passed criterion on a different locus; average=208 seconds, sd=226; Figure 5a; Table 4: Model 9; n=11 grackles: 6 in manipulated condition, 5 in control condition; 6 subjects completed this experiment but solved 0 loci or 1 locus and so did not have switching times). We also found that individuals in the flexibility manipulation had faster switch latencies than those in the control condition (Table 4: Model 10). There was a positive correlation between the number of trials to reverse in the **first reversal** (average=70 trials, sd=21) and the average switch latency on the plastic multi-access box (Table 4: Model 11). A correlation was determined to be present if the prediction interval for the slope (b) in the model output did not cross zero (Table 4). This criterion was used throughout the analyses for P2.
 
-```{r p2mabplasticlat, eval=F, echo=TRUE, warning=FALSE, include=TRUE, results='asis'}
+```{r p2mabplasticlat, eval=F}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -520,7 +516,7 @@ par(op)
 
 There was no correlation between the number of trials to reverse a preference in their **last reversal** (average 60 trials, sd=38) and the latency to attempt to solve a new locus on the wooden multi-access box (after just having passed criterion on a different locus; average=463 seconds, sd=481; Figure 5b; Table 4: Model 12; n=11 grackles: 5 in manipulated condition, 6 in control condition; Diablo also completed this experiment and solved 1 locus, but did not attempt another locus after that, thus he does not have any switching times to analyze). We additionally found that there was no difference in the average latency to switch between individuals in the flexibility manipulation and those in the control condition (Table 4: Model 13). There was a negative correlation between the number of trials to reverse in the **first reversal** (average=73 trials, sd=34) and the average switch latency on the multi-access box (Table 4: Model 14). 
 
-```{r p2mabloglat, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2mabloglat, eval=F}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -681,7 +677,7 @@ par(op)
 
 Grackles that were faster to reverse a preference in their **last reversal** (average 62 trials, sd=34) solved more loci on the plastic multi-access box (average=2 loci, sd=1.6; Figure 5c; Table 4: Model 2; n=15 grackles: 6 in manipulated condition, 9 in control condition; this number excludes Mole and Habanero who were, due to experimenter error, given the fully put together box during habituation and could have learned how to solve the loci at that time). There was no correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to (Table 4: Model 4). There was also no correlation between the number of trials to reverse in the **first reversal** (average=75 trials, sd=31) and the number of loci solved on the multi-access box (Table 4: Model 5). 
 
-```{r p2mabplastic, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2mabplastic, eval=F}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -900,7 +896,7 @@ par(op)
 
 **Table 4.** Model outputs for the number of loci solved and the latency to switch loci after passing criterion on a different locus on the plastic (models 1-5 and 9-11) and wooden (models 6-8 and 12-14) multi-access boxes. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and the number of trials to pass the reversal.
 
-```{r p2outputs, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2outputs, eval=T}
 table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs.csv"), header=T, sep=",", stringsAsFactors=F)
 
 table <- data.frame(table)
@@ -909,8 +905,8 @@ colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
 library(kableExtra)
 options(knitr.kable.NA = '')
 knitr::kable(table) %>%
-kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 10)
-#for html change font size to 10. For pdf, change font size to 5
+kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 5)
+#for html, change font size to 10. For pdf, change font size to 5
 ```
 
 
@@ -918,7 +914,7 @@ kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "conden
 The prediction interval for the estimate for the association between the number of loci solved on the wooden multi-access box (average=3.2, sd=1.3) and the number of trials to reverse a preference in their **last reversal** (average=59 trials, sd=38) crossed zero (Figure 5d; Model 6, Table 4; n=12 grackles: 6 in manipulated condition, 6 in control condition). This could mean that there is no association, however our simulations showed that we would not be able to reliably distinguish whether a small effect is different from zero with our sample size (correlation test suggests effect size of 0.2; Table M2). We did find a correlation between the number of loci solved and which reversal condition a grackle was randomly assigned to, indicating the reversal manipulation appears to have affected performance on the wooden multi-access box. The model estimates that manipulated birds solved on average 1.2 more loci than birds in the control condition (Table 4: Model 7, wooden; 89% prediction intervals=0.34-2.14; n=12 grackles: 6 in manipulated condition, 6 in control condition). However, there is no association between the number of trials to reverse in the first reversal (average=74 trials, sd=34) and the number of loci solved on the multi-access box (Table 4: Model 8, wooden).
 
 
-```{r p2mablog, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2mablog, eval=F}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -1088,7 +1084,7 @@ par(op)
 
 In the tube experiment, it took four grackles an average of 40 trials (sd=12) in the initial discrimination phase to learn to prefer a color, while it took the same individuals an average of 390 trials (sd=59) to learn to prefer a shape using the touchscreen (Queso, Mole, Habanero, and Tapa). The two individuals who were faster to learn in the tube experiment were slower to learn in the touchscreen experiment. For the reversal, it took three of these individuals (Queso, Mole, and Habanero) an average of 80 trials (sd=14) to reverse their colored tube preference, and an average of 362 trials (sd=111) to reverse their shape preference on the touchscreen (Tapa had to be released back to the wild before finishing the experiment, but was on trial 629 in reversal one of the touchscreen experiment at the time of release. In the tube experiment, she was also the slowest of the four to reverse at 100 trials). All three individuals were about equally fast at the reversal in the tube experiment, while their reversal learning speeds differed on the touchscreen. 
 
-```{r touchscreen, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r touchscreen, eval=F}
 dts <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 dts <- data.frame(dts)
@@ -1123,7 +1119,7 @@ Because there was no correlation between the number of trials to reverse in the 
 
 **Table 5.** Adding the number of motor actions used to the analysis of the average latency to attempt a new option on the wooden multi-access box and the number of trials to reverse in the last reversal does not improve the model fit.
 
-```{r diversity1Wresults, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE, message=FALSE}
+```{r diversity1Wresults, eval=T}
 # WOODEN MULTI-ACCESS BOX (W)
 dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -1173,7 +1169,7 @@ There was no consistency of flexibility in individuals across contexts: the late
 
 **Table 6.** No repeatability across contexts. MCMCglmm output for the multi-access box plastic and wooden models.
 
-```{r consistent1results, eval=T, warning=F, results='asis', echo=T, include=T, message=F}
+```{r consistent1results, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #remove NAs from the variables that will be in the model
@@ -1253,16 +1249,16 @@ dataListNames <- list("Plastic", "Wooden")
 readyList <- mapply(cbind, lapply(dataList, clean.MCMC), "modelName" = dataListNames, SIMPLIFY = F)
 mcmcOutputs <- as.data.frame(do.call(rbind, readyList), stringsAsFactors = FALSE)
 
-# NOTE: change to type='html' when preparing the html output and to type='latex' when preparing the pdf output (https://stackoverflow.com/questions/14670299/using-stargazer-with-rstudio-and-knitr , stargazer cheatsheet: https://www.jakeruss.com/cheatsheets/stargazer/#html-formatting)
+# NOTE: for html, change to type='html', for pdf, change to type='latex' (https://stackoverflow.com/questions/14670299/using-stargazer-with-rstudio-and-knitr , stargazer cheatsheet: https://www.jakeruss.com/cheatsheets/stargazer/#html-formatting)
 library(stargazer)
-stargazer(mcmcOutputs, summary=FALSE, header=FALSE, type='html', digits=1) 
+stargazer(mcmcOutputs, summary=FALSE, header=FALSE, type='latex', digits=1) 
 ```
 
 ### P4: serial reversal learning strategy
 
 Three out of nine grackles switched from an epsilon-decreasing to an epsilon-first strategy in their last reversal (Diablo reversal 8, Burrito reversal 8, and Chilaquile reversal 6; Figure 6). The rest continued to rely on an epsilon-decreasing strategy throughout their reversals.
 
-```{r p4strategyfig, eval=F, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p4strategyfig, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
 d$Trial = as.numeric(d$Trial)
 
@@ -1309,6 +1305,7 @@ ggdraw(all + theme(legend.position = "none")) +
 ```
 
 ![](g_flexmanip_strategies.png)
+
 **Figure 6.** The proportion of trials correct by trial number and reversal for each bird.
 
 We additionally quantitatively determined to what degree each bird used the exploration versus exploitation strategy using methods in @federspiel2017adjusting by calculating the number of 10-trial blocks where birds were choosing “randomly” (2-9 correct choices; called sampling blocks; akin to the exploration strategy) divided by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (9-10 correct choices; akin to the exploitation strategy). There was no correlation between exploration (sampling ratio) or exploitation (acquisition ratio) and reversal number (sampling: reversal estimate=-0.09, SE=0.11, z=-0.86, p=0.39; acquisition: reversal estimate=0.00, SE=0.00, z=-0, p=1.00), indicating that the grackles did not use a particular strategy earlier or later in their serial reversals.
@@ -1320,6 +1317,8 @@ In addition to the planned analyses, we conducted post-hoc exploratory analyses 
 #### 1) Observed effects of the manipulation on reversal performance, $\phi$, and $\lambda$
 
 A pooled model of performance across all reversals estimates that birds can expect to improve by about 30 trials (89% prediction interval (PI): 25-36; Table 7: Model 15) after completing the serial reversals. While all manipulated birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.64, with highest posterior density intervals (HPDI) all positive, between the first reversal value and the improvement achieved by the last reversal; Table 7: Model 16). However, the birds who were the fastest in the first reversal, were also the fastest in the last reversal, but the difference between the slower and faster reversers is reduced (Figure 7). 
+
+\newpage
 
 ![](gflexmanip_figure_manipulatedbirdstrialimprovement.png)
 
@@ -1336,6 +1335,8 @@ The values we observed after the manipulation in the last reversal for the numbe
 
 Across both manipulated and control birds, $\phi$ was more consistently associated with the number of trials individuals needed to reverse, and $\phi$ changed more than $\lambda$ across reversals for the manipulated birds (Figure 8). However, changes in $\phi$ and $\lambda$ independently correlated with changes in the improvement in performance of the manipulated birds from the first to the last reversal (association of change in number of trials from first to last reversal with standardized change in $\phi$: 11, 89% PI: 6-15 and with standardized $\lambda$: 6, 89% PI: 1-10; Table 7: Model 19). 
 
+\newpage
+
 ![](g_flexmanip_figchangemanipulatedbirds.png)
 
 **Figure 8.** Comparisons of the different measures of performance in the reversal task for each of the 19 birds. The figure shows a) the number of trials to pass criterion for the first reversal (orange; all birds) and the last reversal (blue; only manipulated birds); b) the $\phi$ values reflecting the learning rate of attraction to the two options from the initial discrimination and first reversal (orange; all birds) and from the last two reversals (blue; manipulated birds); and c) the $\lambda$ values reflecting the rate of deviating from the learned attractions to the two options from the initial discrimination and first reversal (orange; all birds) and from the last two reversals (blue; manipulated birds). Individual birds have the same position along the x-axis in all three panels. Birds that needed fewer trials to reverse their preference generally had higher $\phi$ values, whereas $\lambda$ appeared to reflect whether any choices of the unrewarded color occurred throughout the trials or only at the beginning. For the manipulated birds, their $\phi$ values changed more consistently than their $\lambda$ values, and the $\phi$ values of the manipulated individuals were generally higher than those observed in the control individuals, while their $\lambda$ values remained within the range also observed in the control group.
@@ -1349,13 +1350,17 @@ The pairwise analyses above indicate that the number of trials in the last rever
 
 Results from this simultaneous estimation of the potential pathways shows that the $\phi$ from the initial learning and first reversal determines the number of trials to pass the first reversal, which, in turn, explains how many trials they need to pass their last reversal. The $\phi$ for the last reversal does not appear to provide any additional information about the number of trials in the last reversal, and $\lambda$ is not directly associated with the number of trials birds need to reverse (Table 7: Model 20) (Figure 9).
 
+\newpage
+
 ![](g_flexmanipCausalGraph.png)
 
 **Figure 9.** Causal graph showing the relationships between the number of trials to pass a reversal, $\phi$, $\lambda$, and the flexibility manipulation. In the pairwise assessments (dotted lines), most of the variables are indicated as being associated with each other. The combined model identifies which of these associations are likely to be direct (solid lines with arrows). The results from the combined model indicate that a) the manipulation worked, b) $\phi$ has a more direct influence on performance in the reversals than $\lambda$ does, and c) individuals have some consistency both in their abilities and in their performance.
 
+\newpage
+
 **Table 7.** Model outputs for the pairwise comparisons (models 15-19) and for the combined model (model 20) explaining the changes during the manipulation. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal).
 
-```{r posthocoutputs, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r posthocoutputs, eval=T}
 table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs_posthoc.csv"), header=T, sep=",", stringsAsFactors=F)
 
 table <- data.frame(table)
@@ -1364,11 +1369,11 @@ colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
 library(kableExtra)
 options(knitr.kable.NA = '')
 knitr::kable(table) %>%
-kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 10)
-#for html change font size to 10. For pdf, change font size to 5
+kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 5)
+#for html, change font size to 10. For pdf, change font size to 5
 ```
 
-```{r posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r posthoc, eval=F}
 
 ### Code below copied from Blaisdell et al. 2021
 
@@ -1723,7 +1728,7 @@ largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,
 # 100	  50	  100
 ```
 
-```{r posthoc_changes, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r posthoc_changes, eval=F}
 # What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
 
 # Questions:
@@ -2113,7 +2118,7 @@ precis(mchangelambda,depth=2)
 # sigma                   0.77 0.12  0.61  0.97  1275     1
 ```
 
-```{r posthoc_improvement, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r posthoc_improvement, eval=F}
 # 2a) is improvement in trials to reverse linked to improvement in phi and/or lambda?
 improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal-improvementdata$TrialsLastReversal
 
@@ -2529,14 +2534,18 @@ We modified the analyses from the preregistered analyses in the Results section 
 
 For the manipulated birds, we found that during their last reversal there was a positive correlation between $\phi$ and $\lambda$, with individuals with higher $\phi$ values also showing higher $\lambda$ values. This positive correlation could lead to worse performance on the multi-access boxes for birds with intermediate values. There could be two alternative routes to better performances on the multi-access boxes with some birds solving a new locus faster because they quickly update previously learned associations (higher $\phi$) despite also deviating more from learned associations (higher lambda), while other birds might attempt a new locus faster because they are more likely to deviate from learned associations (lower $\lambda$) despite also not updating information as quickly (lower $\phi$). Our data shows that, for the number of loci solved on both the plastic and the wooden multi-access boxes, there is a U-shaped association, particularly with $\lambda$ values in the last reversal (Table 8: models 39 & 46) (Figure 10), with birds with intermediate values of $\lambda$ solving fewer loci on both multi-access boxes (Figure 4). For the latency to attempt a new locus, there is also a U-shaped association, particularly with $\phi$, with birds with intermediate values of $\phi$ showing shorter latencies to attempt a new locus (Table 8: models 25 & 32). Given that there is also a positive correlation between number of loci solved and the latency to attempt a new locus, there might be a trade off, where birds with extreme $\phi$ and $\lambda$ values solve more loci, but need more time, whereas birds with intermediate values have shorter latencies, but solve fewer loci.
 
+\newpage
+
 ![](gflexmanip_fig_MAB_philambda.png)
 
 **Figure 10.** Relationships between phi and lambda from the last reversal and performance on the wooden (black dots) and plastic (red dots) multi-access boxes. Birds with intermediate $\lambda$ values in their last reversal (a) were less likely to solve all four loci on the multi-access boxes than birds with either high or low $\lambda$ values. Birds who solved two or fewer loci on either box all fall within the central third of the $\lambda$ values observed for the last reversal, while 12 of the 14 birds who solved all four loci fall outside this central range. An individual's $\phi$ and $\lambda$ values change slightly between the top and bottom rows because values were standardized for each plot and not all individuals were tested on both boxes, therefore values changed relative to the mean of the points included in each plot. There are no clear relationships between (b) $\phi$ and the number of loci solved, (c) $\lambda$ and the latency to attempt a locus, or (d) $\phi$ and the latency to attempt a new locus.
 
-**Table 8.** Model outputs for the number of loci solved and the latency to switch loci after passing criterion on a different locus on the plastic (models 21-27 and 35-41) and wooden (models 28-34 and 42-48) multi-access boxes in relation to $\phi$ and $\lambda$. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and $\phi$ or $\lambda$.
+\newpage
 
-```{r posthoc2outputs, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs_posthoc_associations.csv"), header=T, sep=",", stringsAsFactors=F)
+**Table 8.** Model outputs for the **latency** to switch loci after passing criterion on a different locus on the plastic (models 21-27) and wooden (models 28-34) multi-access boxes in relation to $\phi$ and $\lambda$. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and $\phi$ or $\lambda$.
+
+```{r posthoc2outputslatency, eval=T}
+table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs_posthoc_associationslatency.csv"), header=T, sep=",", stringsAsFactors=F)
 
 table <- data.frame(table)
 colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
@@ -2544,11 +2553,28 @@ colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
 library(kableExtra)
 options(knitr.kable.NA = '')
 knitr::kable(table) %>%
-kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 10)
+kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 4)
 #for html, change font size to 10. For pdf, change font size to 5
 ```
 
-```{r posthocMABplasticLatency, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+\newpage
+
+**Table 9.** Model outputs for the **number of loci solved** on the plastic (models 35-41) and wooden (models 42-48) multi-access boxes in relation to $\phi$ and $\lambda$. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and $\phi$ or $\lambda$.
+
+```{r posthoc2outputsloci, eval=T}
+table <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_modeloutputs_posthoc_associationsloci.csv"), header=T, sep=",", stringsAsFactors=F)
+
+table <- data.frame(table)
+colnames(table) <- c("","Mean","SD","5.5%","94.5%","n_eff","Rhat4")
+
+library(kableExtra)
+options(knitr.kable.NA = '')
+knitr::kable(table) %>%
+kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "condensed", font_size = 5)
+#for html, change font size to 10. For pdf, change font size to 5
+```
+
+```{r posthocMABplasticLatency, eval=F}
 library(rstan)
 library(rethinking)
 library(cmdstanr)
@@ -3281,7 +3307,7 @@ mtext("Phi from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
 ```
 
-```{r posthoc_alternative, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r posthoc_alternative, eval=F}
 
 ### Below is an alternative approach where phi and lambda are estimated in the same STAN model in which their association with other parameters is assessed.
 
@@ -3775,7 +3801,7 @@ Interobserver reliability scores (minimum 20% of the videos) were as follows:
 These scores indicate that the dependent variables are repeatable to a high or extremely high degree given our instructions and training.
 
 
-```{r ior, eval=F, warning=F, results='asis', echo=T, include=T}
+```{r ior, eval=F}
 # Inter/intra-rater reliability using Cohen's kappa when the variable is categorical (scale=1+) or intra-class correlation coefficient when the variable is continuous (Mandrekar 2011 J Thoracic Oncology 6(1):6-7 https://doi.org/10.1097/JTO.0b013e318200f983)
 
 # Intra-class correlation / reliability coefficient / the # degree of bias in the regression slope (Hutcheon et al. 2010. Random measurement error and regression dilution bias  www.bmj.com/content/340/bmj.c2289). 'The ratio of variation in error-free (true) X values to the variation in the observed error-prone (observed) values is known as the reliability coefficient, attenuation factor, or intra-class correlation.'
@@ -3919,7 +3945,7 @@ In terms of the influence of the two parameters $\phi$ and $\lambda$ on the numb
 
 **Figure M1.** In the simulations, the $\phi$ values assigned to individuals (green) had a clearer influence on the number of trials these individuals needed to reverse than their $\lambda$ values (red). $\phi$ and $\lambda$ values were standardized for direct comparison. In general, individuals needed fewer trials to reverse if they had larger $\phi$ and $\lambda$ values. However, relatively small $\lambda$ values could be found across the range of reversal performances, whereas there was a more clear distinction with $\phi$ values. 
 
-```{r posthoc_simulationchecks, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r posthoc_simulationchecks, eval=F}
 
 ################################################################################################
 # Load previously simulated data from xpop
@@ -4526,7 +4552,7 @@ $\beta$ ~ Normal(0,5) *[$\beta$ prior]*
 
 We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means [see Figure 10.6 in @mcelreath2018statistical]. For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean). 
 
-```{r modelparameters1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r modelparameters1, eval=F}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -4680,7 +4706,7 @@ $\beta$ ~ Normal(0,5) *[$\beta$ prior]*
 
 We used a gamma-Poisson distribution for latency because it constrains the values to be positive and to primarily occur sooner rather than later, which is what we expect from the grackles [based on data from New Caledonian crows and kea in @auersperg_flexibility_2011]. For $\phi$, we used an exponential distribution because it is standard for this paramter. We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means [see Figure 10.6 in @mcelreath2018statistical]. For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean).
 
-```{r modelparameters2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r modelparameters2, eval=F}
 library(rethinking)
 library(rstan)
 library(formatR)
@@ -4768,7 +4794,7 @@ Where r is the Pearson product moment correlation and SD is the standard deviati
 
 **Table M1.** The connection between $\beta$ and effect sizes (SDx=standard deviation of x, which is the number of loci solved; SDy=standard deviation of y, which is the number of trials to reverse; R^2^=R squared).
 
-```{r tableeffect, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r tableeffect, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_simtoeffectsize.csv"), header=F, sep=",", stringsAsFactors=F)
 
 library(reactable)
@@ -4786,7 +4812,7 @@ We then used the simulations to run **models** on simulated data to estimate the
 
 **Table M2.** Simulation outputs from varying $\beta$, sample size (n), $\sigma$, and whether the actual range of multi-access box [MAB] loci solved were 0-2 or 0-4 **(we did not know how many loci the grackles would be able to solve before we started collecting data so we ran two simulations. The grackles ended up being able to solve all four loci on both multi-access boxes, therefore we must use only those rows associated with "Range of MAB loci solved" = 0-4). This table is useful for the analyses involving the number of loci solved on the multi-access box, but not the latency to switch to attempting a new locus on the multi-access box, which uses a different (gamma poisson) model.**
 
-```{r tableparam, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r tableparam, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_minsamplesizesim.csv"), header=F, sep=",", stringsAsFactors=F)
 
 library(reactable)
@@ -4826,7 +4852,7 @@ Due to delays in setting up the field site, we were only able to test two grackl
 
 We do not need a power analysis to estimate our ability to detect actual effects because, by definition, the individuals that complete this experiment must get faster at reversing in order to be able to pass the stopping criterion (two consecutive reversals in 50 trials or less). According to previous grackle data (from the pilot and from Santa Barbara), the fastest grackle passed their first reversal in 70 trials, which means that passing our serial reversal stopping criterion would require them to have improved their passing speed.
 
-```{r serial, eval=F, warning=F, results='asis', echo=T, include=T}
+```{r serial, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
 d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
 
@@ -4917,7 +4943,7 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 
 We will first determine whether the total loci solved, the latency to solve or attempt at new loci are correlated across the two distinct multi-access boxes. If there is a positive correlation, then we will only use the variables for the plastic multi-access box (for which we will likely have more data), as presented below. If there is no correlation, we will incorporate the total loci solved, the latencies to solve and attempt at new loci for each of the multi-access boxes as independent variables in our model.
 
-```{r improves, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r improves, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 ##### This is the model code from the ability to detect actual effects section, copied here for clarity
@@ -5146,7 +5172,7 @@ We will perform separate models for each multi-access box (plastic and wooden).
 
 NOTE (Aug 2021): when attempting to run the below model, we realized the model has to be a GLM and not a GLMM because there is only one data point per bird, so we changed this accordingly.
 
-```{r diversity1P, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r diversity1P, eval=F}
 #Latency to attempt to solve a new locus
 dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -5218,7 +5244,7 @@ library(knitr)
 kable(base1, caption = "")
 ```
 
-```{r diversity1W, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r diversity1W, eval=F}
 # WOODEN MULTI-ACCESS BOX (W)
 dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -5287,7 +5313,7 @@ library(knitr)
 kable(base1, caption = "")
 ```
 
-```{r diversity2P, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r diversity2P, eval=F}
 #Latency to solve a new locus
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -5326,7 +5352,7 @@ library(knitr)
 kable(base1, caption = "")
 ```
 
-```{r diversity2W, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r diversity2W, eval=F}
 #Latency to solve a new locus
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -5399,7 +5425,7 @@ Actual power                  	=	0.7083763
 
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
 
-```{r repeatableR, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r repeatableR, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
 
 #remove NAs from the variables that will be in the model
@@ -5532,7 +5558,7 @@ Actual power                  	=	0.7113216
 
 This means that, with our sample size of 32, we have a 71% chance of detecting a large effect [approximated at f^2^=0.35 by @cohen1988statistical]. 
 
-```{r motivation, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r motivation, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 d <- d[d$Reversal==1,]
@@ -5592,7 +5618,7 @@ Actual power                  	=	0.7083763
 
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
  
-```{r consistent1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r consistent1, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #remove NAs from the variables that will be in the model
@@ -5679,7 +5705,7 @@ We will then quantitatively determine to what degree each bird used the explorat
 
 NOTE (Aug 2021): the grackles were tested in 10-trial blocks and not 20-trial blocks as in @federspiel2017adjusting, which would mean that if there were <20 trials in the last block of a reversal, they would be omitted from the analysis. Therefore, we changed the block size to 10 trials and adjusted the sampling blocks to 2-9 correct choices, and the acquisition blocks to 9-10 correct choices using significance levels in the binomial test as did @federspiel2017adjusting.
 
-```{r strategyratio, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r strategyratio, eval=F}
 rr <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseratio.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #remove NAs from the variables that will be in the model
@@ -5747,4 +5773,4 @@ We, the authors, declare that we have no financial conflicts of interest with th
 
 We thank our PCI Ecology recommender, Aurelie Coulon, and reviewers, Maxime Dahirel and Andrea Griffin, for their feedback on this preregistration; Kevin Langergraber for serving as our ASU IACUC PI; Ben Trumble and Angela Bond for logistical support; Melissa Wilson for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; Sophie Kaube for logistical support; Richard McElreath for project support; Aaron Blackwell and Ken Kosik for being the UCSB sponsors of the Cooperation Agreement with the Max Planck Institute for Evolutionary Anthropology; Tiana Lam, Anja Becker, and Brynna Hood for interobserver reliability video coding: Sawyer Lung for field support;  Alexis Breen for coding multi-access box videos; and our research assistants: Aelin Mayer, Nancy Rodriguez, Brianna Thomas, Aldora Messinger, Elysia Mamola, Michael Guillen, Rita Barakat, Adriana Boderash, Olateju Ojekunle, August Sevchik, Justin Huynh, Jennifer Berens, Amanda Overholt, Michael Pickett, Sam Munoz, Sam Bowser, Emily Blackwell, Kaylee Delcid, Sofija Savic, Brynna Hood, Sierra Planck, and Elise Lange.
 
-### K. [REFERENCES](MyLibrary.bib)
+### K. REFERENCES
