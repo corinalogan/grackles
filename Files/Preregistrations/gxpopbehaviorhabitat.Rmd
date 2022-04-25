@@ -5,19 +5,19 @@ author:
 - '[McCune KB](https://www.kelseymccune.com/)^2^'
 - '[Chen N](https://popgenchenlab.github.io)^3^'
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^'
-date: '`r Sys.Date()`'
+date: '16 December 2021'
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  md_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 5
     toc_float: 
       collapsed: false
     code_folding: hide 
-  md_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: MyLibrary.bib
@@ -32,8 +32,9 @@ library(knitr)
 knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE) 
 #Make code wrap text so it doesn't go off the page when Knitting to PDF
 
-knitr::opts_chunk$set(echo = TRUE) 
+knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
+#set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
 ```
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review
@@ -114,7 +115,7 @@ We may decide to present the results from different hypotheses in separate artic
 
 **Table 1.** Population characteristics for each of the three field sites in Q1 and Q2. The number of generations at a site is based on a generation length of 5.6 years for this species [@GTGRbirdlife2018; note that this species starts breeding at age 1], and on the first year in which this species was reported (or estimated) to breed at each location (Woodland, California: Yolo Audubon Society's newsletter *The Burrowing Owl* (July 2004), which Steve Hampton shared with Logan; Tempe, Arizona: estimated based on 1945 first-sighting report in nearby Phoenix, Arizona [@wehtje2004thesis] to which we added 6 years, which is the average time between first-sighting and first-breeding - see Table 3 in [@wehtje2003range]; Central America: there is no data on the first year in which they started breeding because this species originates in this region, therefore we used the age of the species: 800,000 years [@johnsoncicero2004new]).
 
-```{r table1, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r table1, eval=TRUE, warning=FALSE, results='asis', include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table1.csv"), header=F, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Site","Range position","Breeding since","Number of years breeding","Average number of generations","Citation")
@@ -164,7 +165,7 @@ While the above is our ideal plan, due to restrictions around COVID-19, it may n
 
 **Table 2.** A summary of the measure of interest in each experiment, the distribution used for the analysis, the minimum detectable difference between site means, and the minimum sample size that goes with the minimum detectable difference.
 
-```{r tableN, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r tableN, eval=TRUE, warning=FALSE, results='asis', include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_TableMinSampleSize.csv"), header=F, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Experiment","Measurement","Distribution","Minimum difference between site means","Minimum sample size")
@@ -251,7 +252,7 @@ Interobserver reliability scores (minimum 20% of the videos: 5/? birds) were as 
 
  - Exploration: latency to land on the ground unweighted Cohen's Kappa=0.998 (confidence boundaries=0.997-0.999, n=32 data points)
 
-```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r ior, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(irr) #ICC package
 library(psych) #Cohen's kappa package
 
@@ -377,7 +378,7 @@ As in @blaisdell2021causal, we, too, used previously published data on reversal 
 
 We first reanalyzed the Santa Barbara grackle data to obtain the phi and lambda values with this revised model, which informed our expectations of what a site’s mean and variance might be. Then we ran simulations, where we determined that we wanted to make the previously mentioned modificatio9s to the stan [@stan2019stan] model [in R, current version `r getRversion()`; @rcoreteam]. This model will be used to analyze the actual data after it is collected. 
 
-```{r sim_power_philambda, eval=F, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r sim_power_philambda, eval=F, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
 library(dplyr)
 
@@ -1525,7 +1526,7 @@ $\alpha$ ~ Normal(0,1) *[$\alpha$ prior]*
 
 We used a normal distribution for $\alpha$ because it is a sum (see Figure 10.6 in @statrethinkingbook) and a logit link to ensure the values are between 0 and 1. We set the mean to 0 on a logit scale, which means an individual solves 2 loci on average on the actual scale at a probability of 0.5.
 
-```{r innovation, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r innovation, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
 library(rstan)
 
@@ -1654,7 +1655,7 @@ We then ran the **mathematical model** and performed pairwise contrasts and dete
 
 **Table 3.** Simulation outputs from **varying sample size (n), and $\alpha$ means and standard deviations**. We calculate pairwise contrasts between the estimated means from the posterior distribution: if for a large sample the difference is both positive and negative and crosses zero (yes), then we are not able to detect differences between the two sites. If the differences between the means are all on one side of zero for 89% of the posterior samples (no), then we are able to detect differences between the two sites. We chose the 89% interval based on [@statrethinkingbook]. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites.
 
-```{r tableparam, eval=TRUE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r tableparam, eval=TRUE, warning=FALSE, results='asis', include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_table_simoutputs.csv"), header=F, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Response variable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","Difference crosses zero? S1-S2","Difference crosses zero? S1-S3","Difference crosses zero? S2-S3","Notes")
@@ -1667,7 +1668,7 @@ kable_styling(full_width = T, position = "left")
 
 Because the mean and the variance are linked in the binomial distribution, and because the variance simulations in the flexibility analysis showed that we will not be able to robustly detect differences in variance between sites, we will plot the variance in the number of loci solved between sites to determine whether the edge population has a wider or narrower spread than the other two populations.
 
-```{r figInnovationMinN, eval=F, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r figInnovationMinN, eval=F, warning=FALSE, results='asis', include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_dataforfigminn.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("ResponseVariable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","Difference crosses zero? S1-S2","Difference crosses zero? S1-S3","Difference crosses zero? S2-S3")
@@ -1719,7 +1720,7 @@ $\alpha$ ~ Normal(1350,500) *[$\alpha$ prior]*
 
 We used a gamma-Poisson distribution for latency because it constrains the values to be positive. For $\phi$, we used an exponential distribution because it is standard for this paramter. We used a normal distribution for $\alpha$ because it is a sum with a large mean (see Figure 10.6 in @statrethinkingbook). We estimate that the grackles might approach the object at any time in the session, therefore we held the $\alpha$ mean of 1350 sec in mind as we conducted the modeling. We set the $\alpha$ standard deviation to 500 because this puts the range of seconds for the distribution in the possible range.
 
-```{r exploration, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r exploration, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
 library(rstan)
 library(Rcpp)
@@ -1858,7 +1859,7 @@ $\alpha$ ~ Normal(0,0.5) *[$\alpha$ prior]*
 
 We used a normal distribution for $\alpha$ because it is a sum (see Figure 10.6 in @statrethinkingbook). We set the mean to 0 (on a logit scale, which is a probability of 0.5 that a bird will participate in every other trial on average on the actual scale).
 
-```{r modelpersistence, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r modelpersistence, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
 library(rstan)
 library(Rcpp)
@@ -1959,7 +1960,7 @@ We will analyze our data using the above model once all of the data have been co
 
 **Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (bird ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary.
 
-```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 #Persistence
 per <- read.csv(url(""), header=T, sep=",", stringsAsFactors=F) 
 
@@ -2010,7 +2011,7 @@ posterior.mode(repeata)
 HPDinterval(repeata, 0.95) 
 ```
 
-```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 #Exploration of novel object
 eo <- read.csv(url(""), header=T, sep=",", stringsAsFactors=F) 
 
@@ -2138,7 +2139,7 @@ If we are able to find data for these variables before 1970 across the Americas,
 
 **Analysis 4 (P4: habitat breadth):** has the habitat breadth of both species changed over time? We will count the number of different land cover categories each species is or was present in for 1970 and 2018. To determine whether this influences their distributions, we will calculate how much area in the Americas is in each land cover category, which would then indicate how much habitat is suitable (based solely on land cover) for each species.
 
-```{r hab, eval=FALSE, warning=FALSE, results='asis', echo=T, include=TRUE}
+```{r hab, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 #Load packages
 library(auk)
 library(dismo)
