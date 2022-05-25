@@ -682,6 +682,27 @@ head(bol)  #Check to make sure it looks right
 bol$LatencyFirstTouchToFood = as.numeric(bol$LatencyFirstTouchToFood)
 # NAs in Latency replaced with ceiling value of 3001 seconds
 bol$LatencyFirstTouchToFood[is.na(bol$LatencyFirstTouchToFood)]<- 3001
+# only aviary data
+bol = bol[which(bol$AviaryOrWild == "Aviary"),]
+
+# add column identifying whether bird was in the flexibility manipulation or control groups
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d$ID <- as.factor(d$ID)
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+#extract just bird name and flex group
+flexID = unique(d[,c(4,5)])
+colnames(flexID) = c("Name","FlexGroup")
+
+# Add band ID bird names to data frame to merge it with boldness data
+biometrics = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Data/data_biometricsAZ.csv"), header=T, sep=",", stringsAsFactors=F)
+biometrics = unique(biometrics[,c(1,2)])
+flexID = merge(flexID, biometrics, by = "Name")
+
+bol = merge(bol, flexID, by = "BirdID", all = T)
+# remove NA birds that were in the aviaries but did not complete boldness assays (4 birds)
+bol = bol[-which(is.na(bol$TrialDate)),]
 
 # DATA CHECKING
 library(DHARMa)
@@ -742,7 +763,8 @@ HPDinterval(repeata, 0.95) # 0.01 - 0.30
 
 ```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Persistence
-per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header=T, sep=",", stringsAsFactors=F) 
+per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_AZ_aviaryExpMotPers.csv", header=T, sep=",", stringsAsFactors=F) 
+colnames(per)[16] <- "NoTouches" # simplify column name from "SumTotalTouchesAcrossAllVideos"
 
 # DATA CHECKING
 library(DHARMa)
