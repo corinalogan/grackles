@@ -679,35 +679,65 @@ Note: The power analysis is the same as for P3 (below) because there are the sam
 #Boldness
 bol <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_boldness.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(bol)  #Check to make sure it looks right
+bol$LatencyFirstTouchToFood = as.numeric(bol$LatencyFirstTouchToFood)
+# NAs in Latency replaced with ceiling value of 3001 seconds
+bol$LatencyFirstTouchToFood[is.na(bol$LatencyFirstTouchToFood)]<- 3001
+# only aviary data
+bol = bol[which(bol$AviaryOrWild == "Aviary"),]
+
+# add column identifying whether bird was in the flexibility manipulation or control groups
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d$ID <- as.factor(d$ID)
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+#extract just bird name and flex group
+flexID = unique(d[,c(4,5)])
+colnames(flexID) = c("Name","FlexGroup")
+
+# Add band ID bird names to data frame to merge it with boldness data
+biometrics = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Data/data_biometricsAZ.csv"), header=T, sep=",", stringsAsFactors=F)
+biometrics = unique(biometrics[,c(1,2)])
+flexID = merge(flexID, biometrics, by = "Name")
+
+bol = merge(bol, flexID, by = "BirdID", all = T)
+# remove NA birds that were in the aviaries but did not complete boldness assays (4 birds)
+bol = bol[-which(is.na(bol$TrialDate)),]
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyToFeed ~ Condition + (1|ID), family=poisson, data=bol), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(LatencyFirstTouchToFood+1) ~ Condition + (1|BirdID), family=gaussian, data=bol, na.action = na.omit), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+# not a flat distribution, line at top from ceiling values
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# p = 0.5 so NOT over/under-dispersed
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p < 2.2e-16 so NOT zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p=0.05.
+# p = 1.4e-7 so heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+#plotResiduals(bol$LatencyFirstTouchToFood, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #REPEATABILITY
 #GLMM
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-bold <- MCMCglmm(LatencyToFeed ~ Condition, random=~ID, family="poisson", data=bol, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+bold <- MCMCglmm(log(LatencyFirstTouchToFood+1) ~ Condition, random=~BirdID, family="gaussian", data=bol, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(bold)
-#autocorr(bold$Sol) #Did fixed effects converge?
-#autocorr(bold$VCV) #Did random effects converge?
+autocorr(bold$Sol) #Did fixed effects converge? (<0.1)? yes
+autocorr(bold$VCV) #Did random effects converge? (<0.1)? yes
 
 #Advice from Maxime Dahirel in the review for flexmanip on how to calculate repeatability from MCMCglmm (https://ecology.peercommunityin.org/public/rec?id=17&reviews=True). Dahirel says: “7- In P3a, you use a linear mixed model (lmer) to estimate repeatability when a generalized linear mixed model (glmer) should be used, as the dependent variable is a count. This would lead to potentially wrong estimates of repeatability, first because the individual variance will probably be wrongly estimated, and then because the residual/overdispersion variance is not the same for a Gaussian vs a Poisson model (Nakagawa & Schielzeth, 2010). If you want to extract correct repeatabilities from a lme4 (G)LMM (and their 95% CI) on both the response and latent scales, you can use the rptR package (Stoffel, Nakagawa, & Schielzeth, 2017). However, since you plan to fit your GLMM using MCMCglmm you actually don’t need that at all, since the latent scale adjusted repeatability and its credible interval can simply be obtained by mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]+mod$VCV[,any other included random effect]). For the raw repeatability, simply fit a model with no covariates. For the repeatability on the response scale, see (P. de Villemereuil, Morrissey, Nakagawa, & Schielzeth, 2018; Pierre de Villemereuil, Schielzeth, Nakagawa, & Morrissey, 2016) and the QGglmm R package.”
 #Therefore, because MCMCglmm can easily calculate repeatability on the latent scale, there is no need to transform this back to the observed scale.
 
-repeata <- bold$VCV[,"ID"]/(bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) 
-var(repeata) 
-posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) 
+repeata <- bold$VCV[,"BirdID"]/(bold$VCV[,"BirdID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # 0.16
+var(repeata) # 0.006
+posterior.mode(repeata) #0.1
+HPDinterval(repeata, 0.95) # 0.01 - 0.30
+# R = 0.16 (CI: 0.01, 0.30)
+# get almost exact same results with rptR. both p values significant in rpt output
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -715,22 +745,26 @@ vf <- sapply(1:nrow(bold[["Sol"]]), function(i) {
    var(predict(bold, it=i))  
 }) #estimates for each iteration of the MCMC
 
-repeataF <- (vf+bold$VCV[,"ID"])/(vf+bold$VCV[,"ID"]+bold$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) 
-HPDinterval(repeataF, 0.95)
+repeataF <- (vf+bold$VCV[,"BirdID"])/(vf+bold$VCV[,"BirdID"]+bold$VCV[,"units"]) #latent scale adjusted + data scale
+mean(repeataF) # 0.17
+posterior.mode(repeataF) # 0.14
+HPDinterval(repeataF, 0.95) # 0.02 - 0.30
 
 # Now compare with the raw repeatability: null model
-boldraw <- MCMCglmm(LatencyToFeed ~ 1, random=~ID, family="poisson", data=bol, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+boldraw <- MCMCglmm(log(LatencyFirstTouchToFood+1) ~ 1, random=~BirdID, family="gaussian", data=bol, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(boldraw)
 
-repeataraw <- boldraw$VCV[,"ID"]/(boldraw$VCV[,"ID"]+boldraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata)
-HPDinterval(repeata, 0.95) 
+repeataraw <- boldraw$VCV[,"BirdID"]/(boldraw$VCV[,"BirdID"]+boldraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeataraw) # 0.19
+posterior.mode(repeata) # 0.1
+HPDinterval(repeata, 0.95) # 0.01 - 0.30
+# these values are nearly the exact same. All this means is Condition has no effect/accounts for no variance?
 ```
 
 ```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Persistence
-per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header=T, sep=",", stringsAsFactors=F) 
+per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_AZ_aviaryExpMotPers.csv", header=T, sep=",", stringsAsFactors=F) 
+colnames(per)[16] <- "NoTouches" # simplify column name from "SumTotalTouchesAcrossAllVideos"
 
 # DATA CHECKING
 library(DHARMa)
