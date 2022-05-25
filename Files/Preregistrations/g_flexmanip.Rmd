@@ -211,7 +211,7 @@ d$ID <- as.factor(d$ID)
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
 	    nu = 0), G2 = list(V = 1, nu = 0)))
-serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):ID+Batch, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 300000, thin = 500, burnin = 90000)
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation? Yes
@@ -219,6 +219,11 @@ serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch,
 #              post.mean l-95% CI u-95% CI eff.samp  pMCMC   
 #(Intercept)     4.43636  4.25434  4.62631    635.3 <0.002 **
 #ReverseNumber  -0.05523 -0.08775 -0.02024    499.9 <0.002 **
+
+#25 May 2022: nested ID within reverse number as a random effect per reviewer comment and the results are the same
+#             post.mean l-95% CI u-95% CI eff.samp   pMCMC   
+#(Intercept)     4.46585  4.28078  4.66648    349.0 < 0.002 **
+#ReverseNumber  -0.06401 -0.11447 -0.02273    273.9 0.00952 **
 
 #Did fixed effects converge (<0.1)? Yes
 #autocorr(serial$Sol) 
@@ -233,20 +238,42 @@ colnames(tb) <- c("","Posterior mean","Lower 95% confidence interval","Upper 95%
 library(kableExtra)
 knitr::kable(tb) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
+```
 
+```{r p1tablecondition, eval=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+# Remove NAs
+d <- subset(d,!(is.na(d["TrialsLastReversal"])))
+
+# exclude the bird who didn't pass serial and the pilot birds
+d <- d[!d$Bird=="Memela" & !d$Bird=="Fajita" & !d$Bird=="Empanada",]
+
+#make 2 groups: group '0' for control and group '1' for manipulated
+d$Condition <- 1 #n=8
+d[d$ReversalsToPass=="Control",]$Condition <- 0 #n=11
+
+#factor variables
+d$Batch <- as.factor(d$Batch)
+d$Bird <- as.factor(d$Bird)
+
+# GLMM
+library(MCMCglmm)
 
 #UNREGISTERED ANALYSIS: compare control vs manipulated group reversal speeds using only last reversals
-#prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-#	    nu = 0), G2 = list(V = 1, nu = 0)))
-#serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-#	    family = "poisson", data = d, verbose = F, prior = prior, 
-#	    nitt = 300000, thin = 500, burnin = 90000)
+prior2 = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0)))
+serial2 <- MCMCglmm(TrialsLastReversal ~ Condition, random = ~Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior2, 
+	    nitt = 300000, thin = 500, burnin = 90000)
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
-#summary(serial)
+#summary(serial2)
 #Did fixed effects converge (<0.1)? Yes
-#autocorr(serial$Sol) 
+#autocorr(serial2$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
-#autocorr(serial$VCV)
+#autocorr(serial2$VCV)
 ```
 
 ```{r p1fig, eval=T}
@@ -273,40 +300,6 @@ par(op)
 
 **Figure 2.** Individuals in the manipulated condition (who received serial reversals) did not linearly decrease their reversal passing speeds with increasing reversal number (n=9 grackles).
 
-**Table 3.** Individuals in the manipulated condition pass their last reversal in fewer trials than control individuals. The Akaike weight of the full model was >0.89, indicating that it is more reliable than the null model.
-
-```{r p1last, eval=T}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-
-d <- data.frame(d)
-colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
-
-# Remove NAs
-d <- subset(d,!(is.na(d["TrialsLastReversal"])))
-
-# exclude the bird who didn't pass serial
-d <- d[!d$Bird=="Memela",]
-
-# make ReversalsToPass a factor that has only 2 levels: level 1 = control, level 2 = manipulated
-d$ReversalsToPass <- as.factor(d$ReversalsToPass)
-levels(d$ReversalsToPass)[c(1,2,3,4)] <- c("Control","Manipulated","Manipulated","Manipulated")
-
-#UNREGISTERED ANALYSIS: compare control vs manipulated group reversal speeds using only last reversals
-last <- glm(d$TrialsLastReversal~d$ReversalsToPass)
-#manipulated group has significantly fewer trials to reverse in last reversal, as expected due to the manipulation
-#summary(last)
-
-#AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-aw <- dredge(glm(d$TrialsLastReversal~d$ReversalsToPass))
-
-library(kableExtra)
-knitr::kable(aw)  %>%
-  column_spec(column = 1:7, width = "5em") %>%
-  scroll_box(width = "100%")
-#the full model has an Akaike weight >0.9 so it is reliable. This means that condition explains differences in the number of trials to pass the last reversal, with the manipulated group being faster than the control group
-```
 
 ```{r p1figlast, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -337,6 +330,17 @@ par(op)
 ```
 
 **Figure 3.** Individuals in the manipulated condition (who received serial reversals) passed their last reversal in fewer trials than individuals in the control condition (who only received 1 reversal). n=19 grackles: 11=control, 8=manipulated.
+
+
+A pooled model of performance across all reversals estimates that birds can expect to improve by about 30 trials (89% prediction interval (PI): 25-36; Table 7: Model 15) after completing the serial reversals. While all manipulated birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.64, with highest posterior density intervals (HPDI) all positive, between the first reversal value and the improvement achieved by the last reversal; Table 7: Model 16). However, the birds who were the fastest in the first reversal, were also the fastest in the last reversal, but the difference between the slower and faster reversers is reduced (Figure 7). 
+
+\newpage
+
+![](gflexmanip_figure_manipulatedbirdstrialimprovement.png)
+
+**Figure 7.** All eight manipulated birds needed fewer trials to reverse in their last reversal than in their first. Their improvement depended on their starting value, with steeper slopes for those birds that needed more trials to reverse in the first reversal (blue = observed values and changes, black = model estimates). However, birds who needed more trials in the first reversal did not completely catch up, such that the birds that needed more trials in their first reversal also needed more trials in their last reversal relative to other grackles.
+
+DIETER ADD CODE
 
 ### P2: serial reversals improve rule switching and problem solving on the MAB
 
@@ -1315,14 +1319,6 @@ We additionally quantitatively determined to what degree each bird used the expl
 In addition to the planned analyses, we conducted post-hoc exploratory analyses on the serial reversal learning data to better understand the effect the flexibility manipulation had on performance. We used the version of the Bayesian model that was developed by @blaisdell2021causal and modified by @logan2020xpop [see their Analysis Plan > "Flexibility analysis" for model specifications and validation]. This model uses data from every trial of reversal learning (rather than only using the total number of trials to pass criterion) and represents behavioral flexibility using two parameters: the learning rate of attraction to either option ($\phi$) and the rate of deviating from learned attractions ($\lambda$). We wanted to address the following questions: 1) What did the manipulation change? 2) Do the manipulations shift birds beyond what is naturally observed and does it make them more similar? 3) Are $\phi$ or $\lambda$, the two components of flexibility in reversal learning, associated with performance on the multi-access boxes across control and manipulated birds? 
 
 #### 1) Observed effects of the manipulation on reversal performance, $\phi$, and $\lambda$
-
-A pooled model of performance across all reversals estimates that birds can expect to improve by about 30 trials (89% prediction interval (PI): 25-36; Table 7: Model 15) after completing the serial reversals. While all manipulated birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.64, with highest posterior density intervals (HPDI) all positive, between the first reversal value and the improvement achieved by the last reversal; Table 7: Model 16). However, the birds who were the fastest in the first reversal, were also the fastest in the last reversal, but the difference between the slower and faster reversers is reduced (Figure 7). 
-
-\newpage
-
-![](gflexmanip_figure_manipulatedbirdstrialimprovement.png)
-
-**Figure 7.** All eight manipulated birds needed fewer trials to reverse in their last reversal than in their first. Their improvement depended on their starting value, with steeper slopes for those birds that needed more trials to reverse in the first reversal (blue = observed values and changes, black = model estimates). However, birds who needed more trials in the first reversal did not completely catch up, such that the birds that needed more trials in their first reversal also needed more trials in their last reversal relative to other grackles.
 
 The findings from the simulated data indicated that $\lambda$ and $\phi$ can only be estimated accurately when calculated across at least one switch (initial discrimination plus first reversal or final two reversals). For the manipulated birds, the estimated $\phi$ more than doubled from 0.03 (for reference, control grackles=0.03) in the beginning to 0.07 in their last two reversals (model estimate of expected average change: +0.02 to +0.05; Table 7: Model 17), while their $\lambda$ went slightly down from 4.2 (for reference, control grackles=4.3) to 3.2 (model estimate of average change -1.63 to -0.56; Table 7: Model 18). For $\phi$, this pattern fits with the observations in the simulations: larger $\phi$ values are associated with fewer trials to reverse. However, while in the simulations individuals needed fewer trials to reverse when we increased $\lambda$ (less deviation from the learned association), the birds in the manipulation showed an increased $\lambda$ in their last reversal when they needed fewer trials to reverse. This suggests that $\lambda$ is a constraint rather than having a direct linear influence on the number of trials to reverse: birds with low $\lambda$ still can reach the criterion in a small number of trials as long as they have a sufficiently high value of $\phi$ (see Figure M1 in the Methods).
 
