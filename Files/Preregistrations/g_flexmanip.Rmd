@@ -575,6 +575,7 @@ library("Rcpp")
 library("rstan")
 library(rethinking)
 library(ggplot2)
+#rebuild_cmdstan() #run this if you get an error about a PCH file https://discourse.mc-stan.org/t/struggling-to-get-cmdstan-working-on-mac-os-big-sur/19774/4
 
 # MODEL 9: batch was excluded because of what was learned in the previous sections
 dl <- list(trials = standardize(as.numeric(d3$TrialsLastReversal)), 
@@ -589,7 +590,6 @@ mplat1 <- ulam(alist(
   b ~ dnorm(0, 1), 
   phi ~ dexp(1)
   ), data = dl, chains=4, log_lik = TRUE, messages = FALSE)
-#This causes KM's R session to crash every time
 
 precis(mplat1,depth=2)
 #   mean   sd  5.5% 94.5% n_eff Rhat4
@@ -676,12 +676,37 @@ precis(mplat3,depth=2)
 # VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left)
 # figure out xlim: -1.28 - 2.10
 #range(dl$trials)
+# NOTE: need the code from KM for g_flexmanip_P2comboFig.png because I can't find it here. I started to put the 4 plots in the same place below, but haven't finished it yet
 
 # draw 50 lines from the prior
 trialsp_seq <- seq( from=-1.29 , to=2.11 , length.out=30 )
 
-op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
 plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( trialsp_seq , mu_mean , lwd=2 )
+shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
+
+plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( trialsp_seq , mu_mean , lwd=2 )
+shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
+
+plot(dl2$latency ~ dl2$trials , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (wooden)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+lines( trialsp_seq , mu_mean , lwd=2 )
+shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
+
+plot(dl3$locisolved ~ dl3$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
