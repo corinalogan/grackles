@@ -524,6 +524,9 @@ Grackles that were faster to reverse a preference in their **last reversal** (av
 library(rethinking)
 library(rstan)
 library(formatR)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
 
 # LOAD the data and column names
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -686,7 +689,7 @@ shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 
 plot(dl2$latency ~ dl2$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (wooden)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
+mu <- link( mplat2 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
 mu_ci <- apply( mu , 2 , PI , prob=0.97 )
 lines( trialsp_seq , mu_mean , lwd=2 )
@@ -694,12 +697,23 @@ shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 
 plot(dl3$locisolved ~ dl3$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
+mu <- link( mplat3 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
 mu_ci <- apply( mu , 2 , PI , prob=0.97 )
 lines( trialsp_seq , mu_mean , lwd=2 )
 shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 par(op)
+
+g1 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$ProportionOfYrsMilk.y)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$ProportionOfYrsMilk.y, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs Milk") + xlab("") + ylab("Proportion of years")
+
+g2 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$PropYrsSummer)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$PropYrsSummer, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs Summer") + xlab("") + ylab("Proportion of years")
+
+g3 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$PropYrsWinter)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$PropYrsWinter, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs Winter") + xlab("") + ylab("Proportion of years")
+
+g4 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$PropYrsTrue)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$PropYrsTrue, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs True") + xlab("") + ylab("Proportion of years")
+
+theme_set(theme_cowplot(font_size=12))
+plot_grid(g1, g2, g3, g4, align='h', ncol=2, labels=c('A','B','C','D'))
 ```
 
 ![](g_flexmanip_P2comboFig.png){width=100%}
@@ -2680,6 +2694,8 @@ We thank our PCI Ecology recommender, Aurelie Coulon, and reviewers, Maxime Dahi
 \newpage
 
 ### SUPPLEMENTARY MATERIAL
+
+### SM0: P4 learning strategy figures
 
 ```{r p4strategyfigSM, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
