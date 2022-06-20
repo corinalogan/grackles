@@ -342,6 +342,28 @@ Microhabitat: Cohen's unweighted kappa = 1.00
 Group size = 1.00
 
 
+**Unregistered reliability analysis for data entry (Jun 2022):** The focal follow data were transferred from the Prim8 auto-generated data sheets and transcribed (from focals that were recorded using audio files) to two analyzable data sheets (one for social behavior and one for foraging behavior) containing data for all variables in this preregistration. During the data cleaning process, several data entry/transcription errors were found, which prompted us to conduct a reliability analysis on the data. We did not record who the data entry person / transcriber was, so we could not conduct an interoberver analysis. Instead, we conducted an intraobserver reliability analysis. Ten percent (37) of the focal follows (total 367) were randomly selected (using RAND() in MS Excel) and recoded by Christa Rolls in 2022. Rolls recorded for each focal follow whether one or more errors in the original data set were made (1) or not (0), and this vector was compared with a vector from the original data set where the assumption wsa that no errors were made (all data points were 0). The Cohen's kappa between the recoded and the original data set was 0.89 (confidence boundary 0.79-0.99), indicating that the data cleaning process corrected enough errors such that the rest of the data did not need to be recoded.
+
+```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Cohen's kappa for CLR=Christa Rolls' recoded data vs the original transcribed data
+library(psych) #Cohen's kappa package
+
+#whether one or more errors were found by CLR (1=yes, 0=no). The assumption is that when the coders initially transcribed the data the first time, they did not think they were making any errors (0)
+clr = c(1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0)
+orig = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+
+#the cohen.kappa calculation can't calculate it properly when the data are in this format because one string is calculating the errors of the other string. So assign numbers 1 through 37 to orig and the same for clr, but make the 4 data points that were different in the two strings a number that is out of sequence so the difference will register
+orig <- c(1:37)
+clr <- c(1:37)
+clr[1] <- 38
+clr[22] <- 39
+clr[30] <- 10
+clr[36] <- 40
+
+cohen.kappa(x=cbind(clr,orig), w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #Unweighted kappa = 0.89, confidence boundary 0.79-0.99
+```
+
+
 ### E. ANALYSIS PLAN
 
 We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R (current version `r getRversion()`; @rcoreteam). When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity.
