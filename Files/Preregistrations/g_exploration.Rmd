@@ -763,11 +763,11 @@ bol$binDur = ifelse(bol$DurationOnGround >0, 1, 0)
 bol$Condition <- factor(bol$Condition, labels = c("Pigeon","Hawk","Cat"))
 
 rptC1 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Cat"),], datatype = "Binary", nboot = 1000, npermut = 200)
-# R = 0.18, p = 0.215
+# R = 0.18, p = 0.215, CI = 0-0.96
 rptC3 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200)
 # R = 0, p = 0.48
-rptBoth = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[-which(bol$Condition == "Pigeon"),], datatype = "Binary", nboot = 1000, npermut = 200)
-# R = 0.03, p = 0.27
+rptBoth = rpt(binDur ~ Condition + FlexGroup + (1|BirdID), grname = "BirdID", data = bol[-which(bol$Condition == "Pigeon"),], datatype = "Binary", nboot = 1000, npermut = 200)
+# R = 0.04, p = 0.22
 
 
 ## Boldness is NOT repeatable ##
@@ -820,7 +820,7 @@ var(repeata) # 0.003
 posterior.mode(repeata) # << -0.01
 HPDinterval(repeata, 0.95) # 0 - 0.06
 # R = 0.01 (CI: 0, 0.06)
-# get almost exact same results with rptR (R = 0.08, p = 0.095)
+
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -832,6 +832,7 @@ repeataF <- (vf+bold$VCV[,"BirdID"])/(vf+bold$VCV[,"BirdID"]+bold$VCV[,"units"])
 mean(repeataF) # 0.01
 posterior.mode(repeataF) 
 HPDinterval(repeataF, 0.95) # 0 - 0.06
+# get almost exact same results with rptR (R = 0.03, CI = 0-0.23, p = 0.27)
 
 # Now compare with the raw repeatability: null model
 boldraw <- MCMCglmm(binDur ~ 1, random=~BirdID, family="categorical", data=bol[-which(bol$Condition=="Pigeon"),], verbose=F, prior=prior, nitt=63000, thin=20, burnin=5000)
@@ -900,48 +901,101 @@ HPDinterval(repeata, 0.95)
 #Exploration of novel environment
 ee <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(ee)  #Check to make sure it looks right
+setwd("~/Documents/Grackle project")
+ee = read.csv("AZ_exp.csv")
 
 #want only Test=Environment (not Object)
 ee <- ee[ee$Test=="Environment",]
 
-#LatencyFirstLand has the most data so will use this variable
-#should I change LatencyFirstLand NAs to a number higher than the assay session length so they show up as data points? yes. Set latency for these at 3400 (the highest assay duration was 3340s)
+#Sum duration across distances to get DurationOnGround variable as in boldness analysis above
+ee$DurationOnGround = ee$TotalDurationInTent + ee$TotalDurationFar.20cm + ee$TotalDurationNear.20cm
+#changed LatencyFirstLand NAs to a number higher than the assay session length so they show up as data points? yes. Set latency for these at 3060 (51 minutes: the highest assay duration was 50 mins)
+ee$LatencyFirstLand[which(is.na(ee$LatencyFirstLand))]<-3060
 ee$LatencyFirstLand <- as.numeric(ee$LatencyFirstLand)
+ee$DurationOnGround <- as.numeric(ee$DurationOnGround)
+#LatencyFirstLand or Duration has the most data so will use one of these variables. Histograms for both look poisson
 ee$BirdID <- as.factor(ee$BirdID)
+
+# add column identifying whether bird was in the flexibility manipulation or control groups
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d$ID <- as.factor(d$ID)
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+#extract just bird name and flex group
+flexID = unique(d[,c(4,5)])
+colnames(flexID) = c("Name","FlexGroup")
+#Taco did initial discrimination and 1 reversal, so he is considered Control group for this analysis
+flexID$FlexGroup[which(flexID$Name == "Taco")]<- "Control"
+
+# Add band ID bird names to data frame to merge it with boldness data
+biometrics = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Data/data_biometricsAZ.csv"), header=T, sep=",", stringsAsFactors=F)
+biometrics = unique(biometrics[,c(1,2)])
+flexID = merge(flexID, biometrics, by = "Name")
+colnames(ee)[1] <- "Name"
+
+exp = merge(ee, flexID, by = "Name", all = T)
+# remove NA birds that were in the aviaries but did not complete exploration assays (4 birds)
+exp = exp[-which(is.na(exp$Condition)),]
+
+
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(LatencyFirstLand) ~ Condition + (1|BirdID), family=gaussian, data=ee), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ Condition + FlexGroup + (1|BirdID), data=exp), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-#looks randomly spread
+#looks kind of randomly spread, with a hole in one part
+simulationOutput2 <- simulateResiduals(fittedModel = glmer(DurationOnGround ~ Condition + FlexGroup + (1|BirdID), family=poisson, data=exp), n=250)
+plot(simulationOutput2$scaledResiduals) # looks a little better
+
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-#p=0.832 so not over or under dispersed
+#p=0.82 so not over or under dispersed
+testDispersion(simulationOutput2) #p=0.65
+
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
-#p=1 so not zero inflated
+#p=1 No zeros, so not zero inflated
+testZeroInflation(simulationOutput2) #p<<0.05 - significantly zero inflated
+
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-# p = 0.035, data not normally distributed. 
-# Log-transformed Latency variable, and now p-value = 0.23
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ee$Test, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# p = 0.009, data not normally distributed. 
+# Log-transformed Latency variable and used gaussian distribution, and now p-value = 0.38
+testUniformity(simulationOutput2) #p = 0.60 - Not heteroscedastic
+
+plot(simulationOutput)#...there should be no pattern in the data points in the right panel
+# KS test significant
+plot(simulationOutput2) # Outlier test significant
+#plotResiduals(exp$Test, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#### Use Latency To First Land as variable because it has as much data as Duration on Ground, but it passes all of the data checks (when log-transformed) whereas Duration On Ground is zero inflated.
+
+## Do grackles perceive the novel environment as threatening?
+m1 = MCMCglmm(log(LatencyFirstLand) ~ Condition + FlexGroup, random=~BirdID, family="gaussian", data=exp, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(m1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(m1$VCV) #Did random effects converge? Yes
+summary(m1)
+# No difference in performance on Familiar or Novel Environment tests. ß = 0.29, p = 0.27
+# Only interested in Novel Environment data from here on
+
+exp2 = exp[-which(exp$Condition == "Familiar"),]
 
 #REPEATABILITY
 #GLMM - 8 Feb 2021: changed family from poisson to gaussian because latency is gaussian, have to log-transform Latency so residuals are normally distributed
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-expl <- MCMCglmm(log(LatencyFirstLand) ~ Condition, random=~BirdID, family="gaussian", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~BirdID, family="gaussian", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(expl)
-autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Most values=Yes
-autocorr(expl$VCV) #Did random effects converge? Most values=Yes
+autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(expl$VCV) #Did random effects converge? Yes
 
 
 #Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 
 repeata <- expl$VCV[,"BirdID"]/(expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) #0.37
+mean(repeata) #0.68
 var(repeata) #0.02
-posterior.mode(repeata) #0.33
-HPDinterval(repeata, 0.95) #0.10-0.63
+posterior.mode(repeata) #0.73
+HPDinterval(repeata, 0.95) #0.37-0.92
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -950,80 +1004,149 @@ vf <- sapply(1:nrow(expl[["Sol"]]), function(i) {
 }) #estimates for each iteration of the MCMC
 
 repeataF <- (vf+expl$VCV[,"BirdID"])/(vf+expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) #0.35
-HPDinterval(repeataF, 0.95) #0.11-0.63
+mean(repeataF) #0.69
+posterior.mode(repeataF) #0.79
+HPDinterval(repeataF, 0.95) #0.43-0.95
 
-# Now compare with the raw repeatability: null model
-explraw <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=ee, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+# Now compare with the raw repeatability (no fixed effects)
+explraw <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(explraw)
 
 repeataraw <- explraw$VCV[,"BirdID"]/(explraw$VCV[,"BirdID"]+explraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata) #0.33
-HPDinterval(repeata, 0.95) #0.09-0.63
+mean(repeataraw) #0.68
+posterior.mode(repeataraw) #0.72
+HPDinterval(repeataraw, 0.95) #0.40-0.90
 #RESULT: Exp Env = repeatable
 
 
 ## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm
 library(rptR)
-r1 = rpt(log(LatencyFirstLand) ~ Condition + (1|BirdID), grname = "BirdID", data=ee, datatype="Gaussian", nboot=1000, npermut=100)
+r1 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp2, datatype="Gaussian", nboot=1000, npermut=100)
 summary(r1)
-# R = 0.39
-# CI = 0.12-0.60
+# R = 0.72
+# CI = 0.42-0.88
 # p < 0.05
 
-m1 = glmer(log(LatencyFirstLand) ~ Condition + (1|BirdID), data = ee, family = gaussian)
-m2 = glm(log(LatencyFirstLand) ~ Condition, data = ee, family = gaussian)
+m1 = glmer(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), data = exp2, family = gaussian)
+m2 = glm(log(LatencyFirstLand) ~ FlexGroup, data = exp2, family = gaussian)
 anova(m1,m2) #random effect improves fit, accounts for a significant proportion of the variance.
 library(ggplot2)
-ggplot(ee[which(ee$Condition == "Novel"),], aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
+ggplot(exp2, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
   geom_point() +
   facet_wrap( ~ BirdID)
+
+ggplot(exp2) +
+  geom_line(aes(x = as.factor(Time), y = LatencyFirstLand, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, size = 0.7)) + 
+  #facet_grid(.~Condition) +
+  labs(x = "Time", y = "Latency to approach (sec)") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        strip.text.x = element_text(size = 20)) +
+  ggtitle("Novel Environment Exploration") +
+  theme(legend.position="none")
+## Need to facet by ExpObj data for including in manuscript - in below code chunk.
 ```
 
 ```{r repeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Exploration of novel object
 eo <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(eo)  #Check to make sure it looks right
+setwd("~/Documents/Grackle project")
+eo = read.csv("AZ_exp.csv")
 
 #want only Test=Object (not Environment)
 eo <- eo[eo$Test=="Object",]
 
-#LatencyFirstLand has the most data so will use this variable (=3400s when a bird never came to the ground; the highest assay duration was 3340s)
+#Sum duration across distances to get DurationOnGround variable as in boldness analysis above
+eo$DurationOnGround = eo$TotalDurationInTent + eo$TotalDurationFar.20cm + eo$TotalDurationNear.20cm
+#changed LatencyFirstLand NAs to a number higher than the assay session length so they show up as data points? yes. Set latency for these at 3360 (56 minutes: the highest assay duration was 55 mins)
+eo$LatencyFirstLand[which(is.na(eo$LatencyFirstLand))]<-3360
 eo$LatencyFirstLand <- as.numeric(eo$LatencyFirstLand)
+eo$DurationOnGround <- as.numeric(eo$DurationOnGround)
+#LatencyFirstLand or Duration has the most data so will use one of these variables. 
 eo$BirdID <- as.factor(eo$BirdID)
-eo$Condition <- as.factor(eo$Condition)
+
+# add column identifying whether bird was in the flexibility manipulation or control groups
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d$ID <- as.factor(d$ID)
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+#extract just bird name and flex group
+flexID = unique(d[,c(4,5)])
+colnames(flexID) = c("Name","FlexGroup")
+#Taco did initial discrimination and 1 reversal, so he is considered Control group for this analysis
+flexID$FlexGroup[which(flexID$Name == "Taco")]<- "Control"
+
+# Add band ID bird names to data frame to merge it with boldness data
+biometrics = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Data/data_biometricsAZ.csv"), header=T, sep=",", stringsAsFactors=F)
+biometrics = unique(biometrics[,c(1,2)])
+flexID = merge(flexID, biometrics, by = "Name")
+colnames(eo)[1] <- "Name"
+
+exp.o = merge(eo, flexID, by = "Name", all = T)
+# remove NA birds that were in the aviaries but did not complete exploration assays (4 birds)
+exp.o = exp.o[-which(is.na(exp.o$Condition)),]
 
 # DATA CHECKING - changed family to gaussian (from poisson) bc latency is gaussian
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyFirstLand ~ Condition + (1|BirdID), family=gaussian, data=eo, na.action = na.omit ), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ Condition + FlexGroup + (1|BirdID), data=exp.o), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-#looks randomly scattered
+#looks flat
+simulationOutput2 <- simulateResiduals(fittedModel = glmer(DurationOnGround ~ Condition + FlexGroup + (1|BirdID), family=poisson, data=exp.o), n=250)
+plot(simulationOutput2$scaledResiduals) # looks less flat
+
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-#p=0.984 so not over or underdispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05; p = 1
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05
-#p=1 so not heteroscadistic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(eo$Condition, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+#p=0.88 so not over or under dispersed
+testDispersion(simulationOutput2) #p=0.90
+
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+#p=1 No zeros, so not zero inflated
+testZeroInflation(simulationOutput2) #p<<0.05 - significantly zero inflated
+
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p = 0.19, data normally distributed. 
+testUniformity(simulationOutput2) #p = 0.006 - Heteroscedastic
+
+plot(simulationOutput)#...there should be no pattern in the data points in the right panel
+# all n.s.
+plot(simulationOutput2) # KS test, Outlier test, within-group deviations from uniformity significant
+#plotResiduals(exp$Test, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+#### Use Latency To First Land as variable because it has as much data as Duration on Ground, but it passes all of the data checks (when log-transformed) whereas Duration On Ground is zero inflated and heteroscedastic.
+
+## Do grackles perceive the novel object as threatening?
+m1 = MCMCglmm(log(LatencyFirstLand) ~ Condition + FlexGroup, random=~BirdID, family="gaussian", data=exp.o, verbose=F, prior=prior, nitt=50000, thin=100, burnin=5000)
+autocorr(m1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(m1$VCV) #Did random effects converge? Yes, after increasing iterations
+summary(m1)
+# Grackles took signifiantly longer to come to the ground for the novel relative to the familiar object. 
+# ß = 2.11, CI = 1.22-2.89, p < 0.01
+# Only interested in Novel Environment data from here on
+
+exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),]
+
 
 #REPEATABILITY
 #GLMM
-#eo2 <- subset(eo,!(is.na(eo["Condition"]))) *KM does not see NA values in the condition column of eo
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-explo <- MCMCglmm(LatencyFirstLand ~ Condition, random=~BirdID, family="gaussian", data=eo, verbose=F, prior=prior, nitt=630000, thin=1000, burnin=23000)
-summary(explo) #slower to approach the novel object compared with the familiar object
+explo <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~BirdID, family="gaussian", data=exp.o2, verbose=F, prior=prior, nitt=630000, thin=1000, burnin=23000)
+summary(explo) 
 autocorr(explo$Sol) #Did fixed effects converge? Yes=all values after lag 0 are <0.1 indicating they converged
-autocorr(explo$VCV) #Did random effects converge? Yes=two values >0.1, increased nitt (to 630,000) and thin (to 1,000), then all values <0.1
+autocorr(explo$VCV) #Did random effects converge? Yes
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 
 repeata <- explo$VCV[,"BirdID"]/(explo$VCV[,"BirdID"]+explo$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) #0.01
 var(repeata) #0.002
-posterior.mode(repeata) #-1.03e-06
-HPDinterval(repeata, 0.95) #7.91e-23 to 0.08
+posterior.mode(repeata) #-6.84e-6
+HPDinterval(repeata, 0.95) #4.12e-17 to 0.06
 
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
@@ -1032,34 +1155,59 @@ vf <- sapply(1:nrow(explo[["Sol"]]), function(i) {
 }) #estimates for each iteration of the MCMC
 
 repeataF <- (vf+explo$VCV[,"BirdID"])/(vf+explo$VCV[,"BirdID"]+explo$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) #0.29
-HPDinterval(repeataF, 0.95) #0.11-0.43
+mean(repeataF) #0.04
+posterior.mode(repeataF) #0.001
+HPDinterval(repeataF, 0.95) #8.20e-9 to 0.14
 
 # Now compare with the raw repeatability: null model
-exploraw <- MCMCglmm(LatencyFirstLand ~ 1, random=~BirdID, family="gaussian", data=eo, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(explraw)
+exploraw <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=exp.o2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(exploraw)
 
 repeataraw <- exploraw$VCV[,"BirdID"]/(exploraw$VCV[,"BirdID"]+exploraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata) #-1.03e-06
-HPDinterval(repeata, 0.95) #7.91e-23 to 0.08
-#RESULT=Env Obj is not repeatable
+mean(repeataraw) #0.0002
+posterior.mode(repeataraw) #-3.40e-11
+HPDinterval(repeataraw, 0.95) #2.90e-17 to 4.62e-6
+
+#RESULT=Explore Object is not repeatable
 
 ## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct
 library(rptR)
-r2 = rpt(LatencyFirstLand ~ Condition + (1|BirdID), grname = "BirdID", data=eo, datatype="Gaussian", nboot=1000, npermut=100)
+r2 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp.o2, datatype="Gaussian", nboot=1000, npermut=100) # Fit is singular
 summary(r2)
-# R = 0.11
-# CI = 0-0.34
-# p > 0.05
+# R = 0.05
+# CI = 0-0.522
+# p = 1
 
-m3 = glmer(LatencyFirstLand ~ Condition + (1|BirdID), data = eo[-which(is.na(eo$LatencyFirstLand)),], family = gaussian)
-m4 = glm(LatencyFirstLand ~ Condition, data = eo[-which(is.na(eo$LatencyFirstLand)),], family = gaussian)
+m3 = glmer(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), data = exp.o2, family = gaussian)
+m4 = glm(log(LatencyFirstLand) ~ FlexGroup, data = exp.o2, family = gaussian)
 anova(m3,m4) #random effect does not improve the fit of the model, does not account for a significant portion of the variance.
 
-library(ggplot2)
-ggplot(eo[which(eo$Condition == "Novel"),], aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID)) +
-  geom_point() +
-  facet_wrap( ~ BirdID)
+
+#### CONTEXTUAL REPEATABILITY - combine explore environment and explore object back together. Only novel condition
+exp = rbind(exp2, exp.o2)
+rptBoth = rpt(log(LatencyFirstLand) ~ Test + FlexGroup + (1|BirdID), grname = "BirdID", data=exp, datatype="Gaussian", nboot=1000, npermut=100)
+summary(rptBoth) # R = 0.49, CI = 0.21-0.69, p = 0
+
+
+ggplot(exp, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID, shape = Test)) +
+  geom_point(size = 3) +
+  facet_wrap( ~ BirdID) + 
+  labs(x = "Time", y = "Latency to approach (sec)") + 
+  theme_bw() + 
+  scale_colour_discrete(guide = "none") 
+
+ggplot(exp) +
+  geom_line(aes(x = as.factor(Time), y = LatencyFirstLand, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, size = 0.7)) + 
+  facet_grid(.~Test) +
+  labs(x = "Time", y = "Latency to approach (sec)") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        strip.text.x = element_text(size = 20)) +
+  ggtitle("Exploration") +
+  theme(legend.position="none")
 ```
 
 
