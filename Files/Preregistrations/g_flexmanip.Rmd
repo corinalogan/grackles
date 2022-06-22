@@ -166,7 +166,25 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 \elandscape
 \newpage
 
-Because the wooden multi-access box was added after in principle recommendation, we conducted an unregistered analysis to determine whether the plastic and wooden multi-access box results correlated with each other, which would indicate that these tests are interchangeable. We found that they did not correlate with each other on either variable measured: the average latency to attempt a new locus (switching; Pearson's r=0.74, 95% CI=-0.19-0.97, t=2.18, df=4, p=0.09) or the total number of loci solved (problem solving; Pearson's r=0.51, 95% CI=-0.09-0.84, t=1.86, df=10, p=0.09). Therefore, these two tests are not interchangeable and we analyzed them separately.
+Because the wooden multi-access box was added after in principle recommendation, we conducted an unregistered analysis to determine whether the plastic and wooden multi-access box results correlated with each other, which would indicate that these tests are interchangeable. We found that they did not correlate with each other on either variable measured: the average latency to attempt a new locus (switching; Pearson's r=0.74, 89% confidence level=0.02-0.95, t=2.18, df=4, p=0.09) or the total number of loci solved (problem solving; Pearson's r=0.51, 89% confidence level=0.03-0.80, t=1.86, df=10, p=0.09). Therefore, these two tests are not interchangeable and we analyzed them separately.
+
+```{r mabscorr, eval=TRUE}
+#Is performance on the two multi-access boxes correlated?
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+##### This is the model code from the ability to detect actual effects section, copied here for clarity
+#remove pilot birds and Taco because he was the only one in batch "Juvenile"
+d2 <- d[!d$Bird=="Fajita" & !d$Bird=="Empanada",]
+
+#cor(d$AvgLatencySolveNewLoci_plastic, d$AvgLatencySolveNewLoci_wooden) #we no longer run this analyses bc switching is about the next attempt, not the next solve
+cor.test(d2$AverageLatencyAttemptNewLocusMABplastic, d2$AverageLatencyAttemptNewLocusMABwooden, use="pairwise.complete.obs", method="pearson", conf.level=0.89)
+#plastic and wooden are not significantly correlated cor=0.74 (89% Confidence level=0.02-0.95), t=2.18, df=4, p=0.09
+cor.test(d2$TotalLociSolvedMABplastic, d2$TotalLociSolvedMABwooden, use="pairwise.complete.obs", method="pearson", conf.level=0.89)
+#plastic and wooden are not significantly correlated cor=0.51 (89% Confidence level=0.03-0.80), t=1.86, df=10, p=0.09
+```
 
 ### P1: reversal speed gets faster with serial reversals
 
@@ -209,6 +227,19 @@ serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):
 #(Intercept)     4.46585  4.28078  4.66648    349.0 < 0.002 **
 #ReverseNumber  -0.06401 -0.11447 -0.02273    273.9 0.00952 **
 
+#Did batch have an effect on the results? No.
+priorNoBatch = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+
+serialNoBatch <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):ID, 
+	    family = "poisson", data = d, verbose = F, prior = priorNoBatch, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+summary(serialNoBatch)
+#22 Jun 2022: removed batch as a random effect per reviewer comment andn the results are the same
+#              post.mean l-95% CI u-95% CI eff.samp   pMCMC   
+#(Intercept)     4.47231  4.30258  4.68142    420.0 < 0.002 **
+#ReverseNumber  -0.06477 -0.11364 -0.02472    315.3 0.00476 **
+
 #Did fixed effects converge (<0.1)? Yes
 #autocorr(serial$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
@@ -223,6 +254,8 @@ library(kableExtra)
 knitr::kable(tb) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
 ```
+
+**Table 3.** Individuals in the manipulated condition pass their last reversal in fewer trials than control individuals.
 
 ```{r p1tablecondition, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -254,10 +287,22 @@ serial2 <- MCMCglmm(TrialsLastReversal ~ Condition, random = ~Batch,
 	    nitt = 300000, thin = 500, burnin = 90000)
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
 #summary(serial2)
+#            post.mean l-95% CI u-95% CI eff.samp   pMCMC   
+#(Intercept)    4.2793   3.9954   4.5086      420 < 0.002 **
+#Condition     -0.5117  -0.8751  -0.1651      420 0.00952 **
 #Did fixed effects converge (<0.1)? Yes
 #autocorr(serial2$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
 #autocorr(serial2$VCV)
+
+#Output table
+cond <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table2output.csv"), header=F, sep=",", stringsAsFactors=F)
+cond <- data.frame(cond)
+colnames(cond) <- c("","Posterior mean","Lower 95% confidence interval","Upper 95% confidence interval","Effective sample size","pMCMC","Significance code: **=0.01")
+
+library(kableExtra)
+knitr::kable(cond) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
 ```
 
 ```{r p1fig, eval=T}
@@ -283,7 +328,6 @@ par(op)
 ```
 
 **Figure 2.** Individuals in the manipulated condition (who received serial reversals) did not linearly decrease their reversal passing speeds with increasing reversal number (n=9 grackles).
-
 
 ```{r p1figlast, eval=T}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -315,8 +359,7 @@ par(op)
 
 **Figure 3.** Individuals in the manipulated condition (who received serial reversals) passed their last reversal in fewer trials than individuals in the control condition (who only received 1 reversal). n=19 grackles: 11=control, 8=manipulated.
 
-
-A pooled model of performance across all reversals estimates that birds can expect to improve by about 30 trials (89% prediction interval (PI): 25-36; Table 7: Model 15) after completing the serial reversals. While all manipulated birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.64, with highest posterior density intervals (HPDI) all positive, between the first reversal value and the improvement achieved by the last reversal; Table 7: Model 16). However, the birds who were the fastest in the first reversal, were also the fastest in the last reversal, but the difference between the slower and faster reversers is reduced (Figure 7). 
+**Unregistered analysis:** A pooled model of performance across all reversals estimates that birds can expect to improve by about 30 trials (89% prediction interval (PI): 25-36; Table 7: Model 15) after completing the serial reversals. While all manipulated birds improved, those birds that were already fast to reverse in their first reversal improved less than the birds that required many trials to reverse in their first reversal (posterior peak indicates a correlation of +0.64, with highest posterior density intervals (HPDI) all positive, between the first reversal value and the improvement achieved by the last reversal; Table 7: Model 16). However, the birds who were the fastest in the first reversal, were also the fastest in the last reversal, but the difference between the slower and faster reversers is reduced (Figure 7). 
 
 \newpage
 
@@ -675,7 +718,7 @@ plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
 lines( trialsp_seq , mu_mean , lwd=2 )
 shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 
@@ -683,7 +726,7 @@ plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
 lines( trialsp_seq , mu_mean , lwd=2 )
 shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 
@@ -691,7 +734,7 @@ plot(dl2$latency ~ dl2$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (wooden)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mplat2 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
 lines( trialsp_seq , mu_mean , lwd=2 )
 shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 
@@ -699,7 +742,7 @@ plot(dl3$locisolved ~ dl3$trials , pch=16 , col="black" ,
     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mplat3 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
 lines( trialsp_seq , mu_mean , lwd=2 )
 shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
 par(op)
