@@ -216,6 +216,10 @@ prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1,
 serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):ID+Batch, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 300000, thin = 500, burnin = 90000)
+# Extract 89 percentile compatibility interval from the model output
+PI(serial$Sol[,1],prob=0.89) #4.31 to 4.62
+PI(serial$Sol[,2],prob=0.89) #-0.10 to -0.03
+
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation? Yes
 #summary(serial)
 #              post.mean l-95% CI u-95% CI eff.samp  pMCMC   
@@ -248,7 +252,7 @@ summary(serialNoBatch)
 #Output table
 tb <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table2output.csv"), header=F, sep=",", stringsAsFactors=F)
 tb <- data.frame(tb)
-colnames(tb) <- c("","Posterior mean","Lower 95% confidence interval","Upper 95% confidence interval","Effective sample size","pMCMC","Significance code: **=0.01")
+colnames(tb) <- c("","Posterior mean","Lower 89 percentile compatibility interval (5%)","Upper 89 percentile compatibility interval (94%)","Effective sample size","pMCMC","Significance code: **=0.01")
 
 library(kableExtra)
 knitr::kable(tb) %>%
@@ -568,8 +572,6 @@ library(rethinking)
 library(rstan)
 library(formatR)
 library(dplyr)
-library(ggplot2)
-library(cowplot)
 
 # LOAD the data and column names
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -605,8 +607,6 @@ d3$Batch <- as.factor(d3$Batch)
 # RUN MODELs on the actual data
 library("Rcpp")
 library("rstan")
-library(rethinking)
-library(ggplot2)
 #rebuild_cmdstan() #run this if you get an error about a PCH file https://discourse.mc-stan.org/t/struggling-to-get-cmdstan-working-on-mac-os-big-sur/19774/4
 
 # MODEL 9: batch was excluded because of what was learned in the previous sections
@@ -705,7 +705,7 @@ precis(mplat3,depth=2)
 #b does not cross zero so there is a positive correlation between average switch latencies and number of trials to reverse on the first reversal. This means that reversal in general correlates with MAB loci and that the flexibility manipulation is not needed to enhance or make this relationship
 
 
-# VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left)
+# VISUALIZE: plot trials to pass last reversal against number of loci solved on the mwobatch model (p249 Rethinking panel on the left) with 89 percentile compatibility intervals (PI)
 # figure out xlim: -1.28 - 2.10
 #range(dl$trials)
 # NOTE: need the code from KM for g_flexmanip_P2comboFig.png because I can't find it here. I started to put the 4 plots in the same place below, but haven't finished it yet
@@ -713,55 +713,27 @@ precis(mplat3,depth=2)
 # draw 50 lines from the prior
 trialsp_seq <- seq( from=-1.29 , to=2.11 , length.out=30 )
 
-op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
-plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
+# unstandardize the x axis to make the plot easier to interpret. Then insert below in plot() and in shade() when specifying the x values
+originalmean<-mean(as.numeric(d3$TrialsLastReversal))
+originalsd<-sd(as.numeric(d3$TrialsLastReversal))
+unstandardizedx<-(as.numeric(dl$trials)*originalsd)+originalmean
+unstandardizedtrialseq<-trialsp_seq*originalsd+originalmean
+
+# the figure (NOTE: the other 3 panels are in the next 3 R code chunks! Put the screenshots together in Keynote for final formatting)
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(dl$latency ~ unstandardizedx , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal" , ylab="Avg. latency (s) to attempt new locus (plastic)" , xlim=c(20,101), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
 mu_mean <- apply( mu , 2 , mean )
 mu_ci <- apply( mu , 2 , PI , prob=0.89 )
 lines( trialsp_seq , mu_mean , lwd=2 )
-shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
-
-plot(dl$latency ~ dl$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( mplat1 , data=data.frame( trials=trialsp_seq ) )
-mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.89 )
-lines( trialsp_seq , mu_mean , lwd=2 )
-shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
-
-plot(dl2$latency ~ dl2$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (wooden)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( mplat2 , data=data.frame( trials=trialsp_seq ) )
-mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.89 )
-lines( trialsp_seq , mu_mean , lwd=2 )
-shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
-
-plot(dl3$locisolved ~ dl3$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (plastic)" , xlim=c(-1.2,2.05), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( mplat3 , data=data.frame( trials=trialsp_seq ) )
-mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.89 )
-lines( trialsp_seq , mu_mean , lwd=2 )
-shade( mu_ci , trialsp_seq , col=col.alpha(rangi2,0.3) )
+shade( mu_ci , unstandardizedtrialseq , col=col.alpha(rangi2,0.3) )
 par(op)
-
-g1 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$ProportionOfYrsMilk.y)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$ProportionOfYrsMilk.y, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs Milk") + xlab("") + ylab("Proportion of years")
-
-g2 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$PropYrsSummer)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$PropYrsSummer, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs Summer") + xlab("") + ylab("Proportion of years")
-
-g3 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$PropYrsWinter)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$PropYrsWinter, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs Winter") + xlab("") + ylab("Proportion of years")
-
-g4 <- ggplot(newdf,aes(newdf$EndocranialVol,newdf$PropYrsTrue)) + geom_smooth(method=lm, formula=newdf$EndocranialVol~newdf$PropYrsTrue, colour="red") + geom_smooth(method=lm) + geom_jitter() + ggtitle("Proportion yrs True") + xlab("") + ylab("Proportion of years")
-
-theme_set(theme_cowplot(font_size=12))
-plot_grid(g1, g2, g3, g4, align='h', ncol=2, labels=c('A','B','C','D'))
 ```
 
 ![](g_flexmanip_P2comboFig.png){width=100%}
 
-**Figure 5.** The average latency (seconds) to attempt to solve a different locus after having previously successfully solved a locus on a) the plastic multi-access box (MAB) is positively correlated with the number of trials to pass their last reversal (n = 11 grackles), but on b) the wooden MAB it is not correlated with the number of trials to pass their last reversal (n = 11 grackles). Additionally, the probability of solving a locus on c) the plastic MAB is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles), but on d) the wooden MAB it is not correlated with the number of trials to pass their last reversal (n = 12 grackles, estimate of slope includes zero). Shading represents the 97% prediction intervals.
+**Figure 5.** The average latency (seconds) to attempt to solve a different locus after having previously successfully solved a locus on a) the plastic multi-access box (MAB) is positively correlated with the number of trials to pass their last reversal (n = 11 grackles), but on b) the wooden MAB it is not correlated with the number of trials to pass their last reversal (n = 11 grackles). Additionally, the probability of solving a locus on c) the plastic MAB is negatively correlated with the number of trials to pass their last reversal (n = 15 grackles), but on d) the wooden MAB it is not correlated with the number of trials to pass their last reversal (n = 12 grackles, estimate of slope includes zero). Shading represents the 89 percentile compatibility intervals.
 
 
 #### Rule switching: latency to attempt a new locus on the multi-access box (wooden) ~ trials to reverse (unregistered analysis)
@@ -913,17 +885,23 @@ precis(mwlat3,depth=2)
 # draw 50 lines from the prior
 trialsw_seq <- seq( from=-1 , to=2.65 , length.out=30 )
 
+# unstandardize the x axis to make the plot easier to interpret. Then insert below in plot() and in shade() when specifying the x values
+originalmean2<-mean(as.numeric(d4$TrialsLastReversal))
+originalsd2<-sd(as.numeric(d4$TrialsLastReversal))
+unstandardizedx2<-(as.numeric(dlw$trials)*originalsd2)+originalmean2
+unstandardizedtrialseq2<-trialsw_seq*originalsd2+originalmean2
+
+# the figure (NOTE: the other 3 panels are in the next 3 R code chunks! Put the screenshots together in Keynote for final formatting)
 op <- par(mfrow=c(1,1), mar=c(5.9,4.9,3,0.9))
-plot(dlw$latency ~ dlw$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Avg latency (s) to attempt new locus on multi-access box (wooden)" , xlim=c(-1,2.65), cex.lab=2, cex.axis=2, cex=2 )
+plot(dlw$latency ~ unstandardizedx2 , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal" , ylab="Avg. latency (s) to attempt new locus (wooden)" , xlim=c(20,161), cex.lab=2, cex.axis=2, cex=2 )
 mu <- link( mwlat1 , data=data.frame( trials=trialsw_seq ) )
 mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
-lines( trialsw_seq , mu_mean , lwd=2 )
-shade( mu_ci , trialsw_seq , col=col.alpha(rangi2,0.3) )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
+lines( trialsp_seq , mu_mean , lwd=2 )
+shade( mu_ci , unstandardizedtrialseq2 , col=col.alpha(rangi2,0.3) )
 par(op)
 ```
-
 
 #### Innovativeness: number of loci solved on the multi-access box (plastic) ~ trials to reverse
 
@@ -1124,25 +1102,32 @@ diffsmcondition <- postmcondition$a[,1] - postmcondition$a[,2]
 # dat$locisolved is on the outcome scale, but the model output is on the logit scale so transform dat$locisolved to a probability by dividing by 4 total loci
 dat$locisolvedp <- (dat$locisolved/4)
 
-# draw 50 lines from the prior
-trials_seq <- seq( from=-1.13 , to=2.9 , length.out=30 )
-
-op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
-plot(dat$locisolvedp ~ dat$trials , pch=16 , col="black" ,
-    xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Probability of solving a locus on the multi-access box (plastic)" , xlim=c(-1.2,3.1), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( mwobatch , data=data.frame( trials=trials_seq ) )
-mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
-lines( trials_seq , mu_mean , lwd=2 )
-shade( mu_ci , trials_seq , col=col.alpha(rangi2,0.3) )
-par(op)
-
 # contrasts between batches on the outcome scale (p.341 Rethinking). Value = difference in number of loci solved. This shows that the batches are actually not different from each other in how many loci they solved because all values cross zero
 labsdif1 <- c("m1: Batch 1-3","m1: Batch 1-4","m1: Batch 3-4")
 labsdif2 <- c("m4: Control-Manipulated")
 op <- par(mfrow=c(2,1), mar=c(4,4,2,0.2))
 plot( precis(diffsm1c, diffsmcondition), xlim=c(-0.5,0.5), xlab="Difference in number of loci solved", labels=labsdif1)
 plot( precis(diffsmcondition), xlim=c(-1.5,0.5), xlab="Difference in number of loci solved", labels=labsdif2)
+par(op)
+
+# draw 50 lines from the prior
+trials_seq3 <- seq( from=-1.13 , to=2.9 , length.out=30 )
+
+# unstandardize the x axis to make the plot easier to interpret. Then insert below in plot() and in shade() when specifying the x values
+originalmean3<-mean(as.numeric(d$TrialsLastReversal))
+originalsd3<-sd(as.numeric(d$TrialsLastReversal))
+unstandardizedx3<-(as.numeric(dat$trials)*originalsd3)+originalmean3
+unstandardizedtrialseq3<-trials_seq3*originalsd3+originalmean3
+
+# the figure (NOTE: the other 3 panels are in the next 3 R code chunks! Put the screenshots together in Keynote for final formatting)
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,3,0.9))
+plot(dat$locisolvedp ~ unstandardizedx3 , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal" , ylab="Probability of solving a locus  (plastic)" , xlim=c(20,161), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( mwobatch , data=data.frame( trials=trials_seq3 ) )
+mu_mean <- apply( mu , 2 , mean )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
+lines( trials_seq3 , mu_mean , lwd=2 )
+shade( mu_ci , unstandardizedtrialseq3 , col=col.alpha(rangi2,0.3) )
 par(op)
 ```
 
@@ -1310,22 +1295,29 @@ precis(m8,depth=2)
 datw$locisolvedp <- (datw$locisolved/4)
 
 # draw 50 lines from the prior
-trialsw_seq <- seq( from=-0.96 , to=2.7 , length.out=30 )
+trialsw_seq4 <- seq( from=-0.96 , to=2.7 , length.out=30 )
+
+# unstandardize the x axis to make the plot easier to interpret. Then insert below in plot() and in shade() when specifying the x values
+originalmean4<-mean(as.numeric(d2$TrialsLastReversal))
+originalsd4<-sd(as.numeric(d2$TrialsLastReversal))
+unstandardizedx4<-(as.numeric(datw$trials)*originalsd4)+originalmean4
+unstandardizedtrialseq4<-trialsw_seq4*originalsd4+originalmean4
 
 # the plot will automatically be turned into a png file so we need to set the working directory to where this rmd file is so that g_flexmanip_figp2mablog.png will also save there
 library(rstudioapi)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # if this does not work, in RStudio click Session > Set working directory > To source file location
 
-op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+# the figure (NOTE: the other 3 panels are in the next 3 R code chunks! Put the screenshots together in Keynote for final formatting)
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,3,0.9))
 #png("g_flexmanip_figp2mablog.png")
-plot(jitter(datw$locisolvedp) ~ jitter(datw$trials) , pch=1 , col="black" ,
-     xlab="Trials to pass last reversal (standardized: mean=0)" , ylab="Probability of solving a locus on the multi-access box (wooden)" , xlim=c(-1.2,3.1), cex.lab=2, cex.axis=2, cex=2 )
-mu <- link( m6 , data=data.frame( trials=trialsw_seq ) )
+plot(jitter(datw$locisolvedp) ~ jitter(unstandardizedx4) , pch=16 , col="black" ,
+    xlab="Trials to pass last reversal" , ylab="Probability of solving a locus (wooden)" , xlim=c(20,161), cex.lab=2, cex.axis=2, cex=2 )
+mu <- link( m6 , data=data.frame( trials=trialsw_seq4 ) )
 mu_mean <- apply( mu , 2 , mean )
-mu_ci <- apply( mu , 2 , PI , prob=0.97 )
-lines( trialsw_seq , mu_mean , lwd=2 )
-shade( mu_ci , trialsw_seq , col=col.alpha(rangi2,0.3) )
+mu_ci <- apply( mu , 2 , PI , prob=0.89 )
+lines( trialsw_seq4 , mu_mean , lwd=2 )
+shade( mu_ci , unstandardizedtrialseq4 , col=col.alpha(rangi2,0.3) )
 #dev.off()
 par(op)
 #but the png doesn't look good so I will make the png by hand again
@@ -1398,6 +1390,10 @@ dw <- subset(dw,!(is.na(dw["MotorActionsWooden"])) & !(is.na(dw["TrialsLastRever
 
 # GLM
 motw <- glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden)
+AIC(motw) #172.3
+
+withoutmot <- glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal)
+AIC(withoutmot) #171.3
 
 # AIC calculation
 library(MuMIn)
