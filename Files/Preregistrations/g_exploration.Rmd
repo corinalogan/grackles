@@ -1242,13 +1242,14 @@ Actual power                  	=	0,7027626
 
 This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
-```{r explore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r flexexplore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 explore <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
 
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
+# boldness and novel object were not repeatable, so remove those independent variables.
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ FlexGroup + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + MultiaccessTouchesPerTime +  NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -1306,58 +1307,115 @@ autocorr(expl1$VCV) #Did random effects converge?
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
 ```{r expbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#UNREGISTERED ANALYSIS: first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground.
+#### 23 JUNE 2022: BOLDNESS WAS NOT REPEATABLE SO WE COULD NOT LOOK FOR CORRELATIONS BETWEEN BOLDNESS AND EXPLORATION.
 
-dexp <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
+#UNREGISTERED ANALYSIS (Jan 2021): first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground.
 
-#examine only Time 1 because not looking at intraindividual reliability and only the novel condition
+# dexp <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = T, sep = ",", stringsAsFactors = F)
+# 
+# #examine only Time 1 because not looking at intraindividual repeatability and only the novel condition
+# dexp <- dexp[!dexp$Time==2 & !dexp$Condition=="Familiar",]
+# 
+# dexp$LatencyFirstLand <- as.numeric(dexp$LatencyFirstLand)
+# # change na's to ceiling value
+# dexp$LatencyFirstLand[which(is.na(dexp$LatencyFirstLand))]<- 2000 #because max in data set is 1926
+# dexp$Test <- as.factor(dexp$Test)
+# dexp$BirdID <- as.factor(dexp$BirdID)
+# dexp$Time <- as.factor(dexp$Time)
+
+#plot to see what the data show. Omit facet_wrap if you want to see all birds in one plot. Looks like there are differences between environment and object latencies for 12/19 birds. Generally faster to approach the environment than the object
+# library(ggplot2)
+# ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
+#   geom_point() +
+#   facet_wrap( ~ BirdID) +
+#   theme(legend.position="none")
+# 
+# library(lme4)
+# m.eo <- MCMCglmm(log(LatencyFirstLand) ~ Test, random=~BirdID, family="gaussian", data=dexp, verbose=F, prior=prior, nitt=630000, thin=1000, burnin=23000)
+# summary(m.eo) #Latency to approach is significantly longer for object relative to environment p = 0.003
+
+
+
+### REGISTERED ANALYSES (23 June 2022): Only running code to make a figure showing boldness and exploration data
+## Combine exploration and boldness data to make a plot
+bol <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_boldness.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
+bol = bol[which(bol$IndicatedTrial == 2 & bol$AviaryOrWild == "Aviary"),-c(1:5,22:25)]
+bol = bol[-which(bol$Condition == "C2"),-c(2,3,6,8:16)] # exclude familiar condition and unused columns
+bol = bol[-which(bol$Time == 2),] # just time 1 performance 
+colnames(bol) = c("BirdID","Test","Time","LatencyFirstLand")
+# Fix BirdIDs entered incorrectly in boldness data sheet
+bol$BirdID[which(bol$BirdID == "A035P")] <- "A035P-"
+bol$BirdID[which(bol$BirdID == "A036R")] <- "A036R-"
+bol$BirdID[which(bol$BirdID == "A075Y")] <- "A075Y-"
+bol = merge(bol, flexID, by = "BirdID", all = T)
+# remove NA birds that were in the aviaries but did not complete boldness assays (4 birds)
+bol = bol[-which(is.na(bol$Test)),]
+bol$LatencyFirstLand = as.numeric(bol$LatencyFirstLand)
+bol$LatencyFirstLand[which(is.na(bol$LatencyFirstLand))]<- 900 #give ceiling value, highest in dataset is 836
+dexp <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = T, sep = ",", stringsAsFactors = F)
+
+#examine only Time 1 because not looking at intraindividual repeatability and only the novel condition
 dexp <- dexp[!dexp$Time==2 & !dexp$Condition=="Familiar",]
 
 dexp$LatencyFirstLand <- as.numeric(dexp$LatencyFirstLand)
+# change na's to ceiling value
+dexp$LatencyFirstLand[which(is.na(dexp$LatencyFirstLand))]<- 2000 #because max in data set is 1926
 dexp$Test <- as.factor(dexp$Test)
 dexp$BirdID <- as.factor(dexp$BirdID)
 dexp$Time <- as.factor(dexp$Time)
+dexp = dexp[,-c(3,6:14)]
+colnames(dexp)[1] = ("Name")
+dexp = merge(dexp, flexID, by = "Name", all = T)
+# remove NA birds that were in the aviaries but did not complete boldness assays (4 birds)
+dexp = dexp[-which(is.na(dexp$Test)),]
 
-#plot to see what the data show. Omit facet_wrap if you want to see all birds in one plot. Looks like there are differences between environment and object latencies for 12/19 birds. Generally faster to approach the environment than the object
-library(ggplot2)
-ggplot(dexp, aes(x = Test, y = LatencyFirstLand, colour = BirdID)) +
-  geom_point() +
-  facet_wrap( ~ BirdID)
+expbol = rbind(bol,dexp)
+# need wide dataset, not long
+expbol.melt = reshape(expbol, idvar = c("BirdID","FlexGroup"), v.names = "LatencyFirstLand", timevar = "Test", direction = "wide")
 
-library(lme4)
-m.eo <- glmer(LatencyFirstLand ~ Test + (1|BirdID), family=gaussian, data=dexp[-which(is.na(dexp$LatencyFirstLand)),])
-summary(m.eo) #negative correlation between environment and object latencies,r=-0.52
-#However, if one of the exploration tests is repeatable and the other is not, this could explain the lack of correlation between the two conditions and tell us which test we want to continue with
+expbol$Test <- factor(expbol$Test, labels = c("Cat","Hawk","Environment","Object"))
+ggplot(expbol, aes(x = BirdID, y = LatencyFirstLand, colour = BirdID, shape = Test)) +
+  geom_point(size = 4, face = "bold", alpha = 0.6, aes(fill = BirdID,color = BirdID)) +
+  scale_shape_manual(values = c(15,17,8,19))+
+  geom_hline(yintercept=900, linetype="solid", color = "black")+
+  geom_hline(yintercept=2000, linetype="solid", color = "black")+
+  labs(x = "Bird", y = "Latency to approach (sec)") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  scale_fill_discrete(guide = "none") +
+  scale_colour_discrete(guide = "none")
 
 
-### REGISTERED ANALYSES
+
 # DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyBoldness ~ TimeOutsideNovelEnv + LatencyTableExpObject, family=poisson, data=persist2), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# library(DHARMa)
+# library(lme4)
+# simulationOutput <- simulateResiduals(fittedModel = lm(log(LatencyFirstLand.C1) ~ LatencyFirstLand.Environment + LatencyFirstLand.Object, family=gaussian, data=expbol.melt), n=250) #250 simulations, but if want higher precision change n>1000
+# plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+# testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# #p=0.86 normal dispersion
+# testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# #no zeros, so not zero inflated. p = 1
+# testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# #p=0.10 not heteroscedastic
+# plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+# #right plot looks horrible. May not be a good fit with gaussian
+# #plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#GLM
-eb <- glm(LatencyBoldness ~ TimeOutsideNovelEnv + LatencyTableExpObject, family="poisson", data=expbol)
-#summary(eb)
 
-eb2 <- summary(eb)
-library(xtable)
-eb2.table <- xtable(eb2)
-library(knitr)
-kable(eb2.table, caption="Table 2: Model selection output.", format="html", digits=2)
-
-#Model Validation
-library(MuMIn)
-options(na.action = "na.fail")
-base1 <- dredge(glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2))
-library(knitr)
-kable(base1, caption="Table 3: Model selection output.")
+# eb2 <- summary(eb)
+# library(xtable)
+# eb2.table <- xtable(eb2)
+# library(knitr)
+# kable(eb2.table, caption="Table 2: Model selection output.", format="html", digits=2)
+# 
+# #Model Validation
+# library(MuMIn)
+# options(na.action = "na.fail")
+# base1 <- dredge(glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2))
+# library(knitr)
+# kable(base1, caption="Table 3: Model selection output.")
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data [@burnham2003model]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package [@bates2012lme4]. If the best fitting model has a high Akaike weight (>0.89; [@burnham2003model]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the [base/test *- delete as appropriate*] model (Table 2).
