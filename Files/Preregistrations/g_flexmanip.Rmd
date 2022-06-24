@@ -216,7 +216,9 @@ prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1,
 serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):ID+Batch, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 300000, thin = 500, burnin = 90000)
+
 # Extract 89 percentile compatibility interval from the model output
+library(rethinking)
 PI(serial$Sol[,1],prob=0.89) #4.31 to 4.62
 PI(serial$Sol[,2],prob=0.89) #-0.10 to -0.03
 
@@ -289,6 +291,12 @@ prior2 = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu =
 serial2 <- MCMCglmm(TrialsLastReversal ~ Condition, random = ~Batch, 
 	    family = "poisson", data = d, verbose = F, prior = prior2, 
 	    nitt = 300000, thin = 500, burnin = 90000)
+
+# Extract 89 percentile compatibility interval from the model output
+library(rethinking)
+PI(serial2$Sol[,1],prob=0.89) #4.08 to 4.48
+PI(serial2$Sol[,2],prob=0.89) #-0.81 to -0.22
+
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
 #summary(serial2)
 #            post.mean l-95% CI u-95% CI eff.samp   pMCMC   
@@ -300,9 +308,9 @@ serial2 <- MCMCglmm(TrialsLastReversal ~ Condition, random = ~Batch,
 #autocorr(serial2$VCV)
 
 #Output table
-cond <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table2output.csv"), header=F, sep=",", stringsAsFactors=F)
+cond <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table3output.csv"), header=F, sep=",", stringsAsFactors=F)
 cond <- data.frame(cond)
-colnames(cond) <- c("","Posterior mean","Lower 95% confidence interval","Upper 95% confidence interval","Effective sample size","pMCMC","Significance code: **=0.01")
+colnames(cond) <- c("","Posterior mean","Lower 89 percentile compatibility interval (5%)","Upper 89 percentile compatibility interval (94%)","Effective sample size","pMCMC","Significance code: **=0.01")
 
 library(kableExtra)
 knitr::kable(cond) %>%
@@ -1400,11 +1408,19 @@ library(MuMIn)
 options(na.action = "na.fail")
 dredgemw <- dredge(glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden))
 
-library(kableExtra)
-knitr::kable(dredgemw) %>%
-    column_spec(column = 1:7, width = "5em") %>%
-    scroll_box(width = "100%")
+#library(kableExtra)
+#knitr::kable(dredgemw) %>%
+#    column_spec(column = 1:7, width = "5em") %>%
+#    scroll_box(width = "100%")
 #Akaike weights = 0.71 null and <0.15 for the rest, therefore the models with or without motor actions are essentially the same
+
+aictable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table5output.csv"), header=F, sep=",", stringsAsFactors=F)
+aictable <- data.frame(aictable)
+colnames(aictable) <- c("Intercept","Motor actions (wooden)","Trials last reversal","df","log likelihood","AICc","delta","weight")
+
+library(kableExtra)
+knitr::kable(aictable) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
 ```
 
 ### P4: serial reversal learning strategy
