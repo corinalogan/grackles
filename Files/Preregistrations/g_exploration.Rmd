@@ -1250,8 +1250,11 @@ library(DHARMa)
 library(lme4)
 # boldness and novel object exploration were not repeatable and few grackles entered the tent in the explore environment assay so we did not measure latency to enter the tent or number of sections explored. We removed those independent variables.
 # FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
-# We also realized that as we manipulated reversal learning speed through serial reversal learning [cite FlexManip article 1], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TimeOutsideNovelEnv, LatencyExpEnv, MultiaccessTouchesPerTime, & NoMotorActions
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ FlexGroup + TimeOutsideNovelEnv + LatencyExpEnv + MultiaccessTouchesPerTime +  NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
+# We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), MultiaccessTouchesPerTime, & NoMotorActions
+# We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
+
+
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ FlexGroup + TotalDurationNear.20cm + LatencyFirstLand + MultiaccessTouchesPerTime +  NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
