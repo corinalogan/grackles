@@ -968,7 +968,7 @@ plot(simulationOutput2) # Outlier test significant
 
 #### Use Latency To First Land as variable because it has as much data as Duration on Ground, but it passes all of the data checks (when log-transformed) whereas Duration On Ground is zero inflated.
 
-## Do grackles perceive the novel environment as threatening?
+### UNREGISTERED ANALYSIS: Do grackles perceive the novel environment as threatening? ###
 m1 = MCMCglmm(log(LatencyFirstLand) ~ Condition + FlexGroup, random=~BirdID, family="gaussian", data=exp, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 autocorr(m1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(m1$VCV) #Did random effects converge? Yes
@@ -978,7 +978,7 @@ summary(m1)
 
 exp2 = exp[-which(exp$Condition == "Familiar"),]
 
-#REPEATABILITY
+### REGISTERED ANALYSIS: REPEATABILITY ###
 #GLMM - 8 Feb 2021: changed family from poisson to gaussian because latency is gaussian, have to log-transform Latency so residuals are normally distributed
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
@@ -1018,7 +1018,7 @@ HPDinterval(repeataraw, 0.95) #0.40-0.90
 #RESULT: Exp Env = repeatable
 
 
-## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm
+### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
 library(rptR)
 r1 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp2, datatype="Gaussian", nboot=1000, npermut=100)
 summary(r1)
