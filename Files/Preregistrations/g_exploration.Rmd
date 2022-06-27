@@ -1252,18 +1252,10 @@ library(lme4)
 # FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
 # We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), MultiaccessTouchesPerTime, & NoMotorActions
 # We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
+flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
+flexexplore = merge(explore, flexcompr, by = "Name", all = T)
 
-
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~ FlexGroup + TotalDurationNear.20cm + LatencyFirstLand + MultiaccessTouchesPerTime +  NoMotorActions + (1|Batch), family=poisson, data=explore), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-# ANALYSIS
-#Take the average of Time 1 and Time 2 for each variable (exploration environment, exploration object, boldness, motor diversity, persistence)
+#Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
 TimeOutsideNovelEnvT1 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time==1,] 
 TimeOutsideNovelEnvT2 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time==2,] 
 TimeOutsideNovelEnv <- (TimeOutsideNovelEnvT1 + TimeOutsideNovelEnvT2)/2
@@ -1272,35 +1264,85 @@ LatencyExpEnvT1 <- LatencyExpEnv[LatencyExpEnv$Time==1,]
 LatencyExpEnvT2 <- LatencyExpEnv[LatencyExpEnv$Time==2,] 
 LatencyExpEnv <- (LatencyExpEnvT1 + LatencyExpEnvT2)/2
 
-AverageTimePerSectionNovelEnvT1 <- AverageTimePerSectionNovelEnv[AverageTimePerSectionNovelEnv$Time==1,] 
-AverageTimePerSectionNovelEnvT2 <- AverageTimePerSectionNovelEnv[AverageTimePerSectionNovelEnv$Time==2,] 
-AverageTimePerSectionNovelEnv <- (AverageTimePerSectionNovelEnvT1 + AverageTimePerSectionNovelEnvT2)/2
-
-TotalNumberSectionsNovelEnvT1 <- TotalNumberSectionsNovelEnv[TotalNumberSectionsNovelEnv$Time==1,] 
-TotalNumberSectionsNovelEnvT2 <- TotalNumberSectionsNovelEnv[TotalNumberSectionsNovelEnv$Time==2,] 
-TotalNumberSectionsNovelEnv <- (TotalNumberSectionsNovelEnvT1 + TotalNumberSectionsNovelEnvT2)/2
-
-LatencyTableExpObjectT1 <- LatencyTableExpObject[LatencyTableExpObject$Time==1,] 
-LatencyTableExpObjectT2 <- LatencyTableExpObject[LatencyTableExpObject$Time==2,] 
-LatencyTableExpObject <- (LatencyTableExpObjectT1 + LatencyTableExpObjectT2)/2
-
 MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==1,] 
 MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==2,] 
 MultiaccessTouchesPerTime <- (MultiaccessTouchesPerTimeT1 + MultiaccessTouchesPerTimeT2)/2
-
-LatencyBoldnessT1 <- LatencyBoldness[LatencyBoldness$Time==1,] 
-LatencyBoldnessT2 <- LatencyBoldness[LatencyBoldness$Time==2,] 
-LatencyBoldness <- (LatencyBoldnessT1 + LatencyBoldnessT2)/2
 
 NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time==1,] 
 NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time==1,] 
 NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 
-#GLMM - dependent variable = number of trials to reverse in the last reversal
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0),R6=list(V=1,nu=0),R7=list(V=1,nu=0),R8=list(V=1,nu=0),R9=list(V=1,nu=0),R10=list(V=1,nu=0),R11=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0))) 
 
-expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection*EnvCondition + TotalNumberSections*EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions, random=~Batch, family="poisson", data=explore, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+## FlexExplore Model 1: TotalDurationNear.20cm 
+simulationOutput <- simulateResiduals(fittedModel = glmer(TotalDurationNear.20cm ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# ANALYSIS 1
+#GLMM - dependent variable = Total duration near tent
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
+expl1 <- MCMCglmm(TotalDurationNear.20cm ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(expl1)
+autocorr(expl1$Sol) #Did fixed effects converge?
+autocorr(expl1$VCV) #Did random effects converge?
+
+
+## FlexExplore Model 2: LatencyFirstLand
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# ANALYSIS 2
+#GLMM - dependent variable = LatencyFirstLand
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
+expl1 <- MCMCglmm(log(LatencyFirstLand) ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(expl1)
+autocorr(expl1$Sol) #Did fixed effects converge?
+autocorr(expl1$VCV) #Did random effects converge?
+
+## FlexExplore Model 3: MultiaccessTouchesPerTime 
+simulationOutput <- simulateResiduals(fittedModel = glmer(MultiaccessTouchesPerTime ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# ANALYSIS 3
+#GLMM - dependent variable = MultiaccessTouchesPerTime
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
+expl1 <- MCMCglmm(MultiaccessTouchesPerTime ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(expl1)
+autocorr(expl1$Sol) #Did fixed effects converge?
+autocorr(expl1$VCV) #Did random effects converge?
+
+
+## FlexExplore Model 4: NoMotorActions 
+simulationOutput <- simulateResiduals(fittedModel = glmer(NoMotorActions ~ lastphi + lastlambda + (1|Batch), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# ANALYSIS 4
+#GLMM - dependent variable = NoMotorActions
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
+expl1 <- MCMCglmm(NoMotorActions ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
 summary(expl1)
 autocorr(expl1$Sol) #Did fixed effects converge?
 autocorr(expl1$VCV) #Did random effects converge?
