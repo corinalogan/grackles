@@ -1243,26 +1243,25 @@ Actual power                  	=	0,7027626
 This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
 ```{r flexexplore, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-explore <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_aviaryexplorationmotpersist.csv", header = T, sep = ",", stringsAsFactors = F)
 
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
 library(lme4)
-# boldness and novel object exploration were not repeatable and few grackles entered the tent in the explore environment assay so we did not measure latency to enter the tent or number of sections explored. We removed those independent variables.
+# boldness and novel object exploration were not repeatable and few grackles entered the tent in the explore environment assay so we did not include a measure for latency to enter the tent or number of sections explored. We removed those independent variables.
 # FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
 # We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), MultiaccessTouchesPerTime, & NoMotorActions
 # We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
 flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
-flexexplore = merge(explore, flexcompr, by = "Name", all = T)
+colnames(flexcompr)[2]<- "Name"
+flexexplore = merge(exp2, flexcompr, by = "Name", all = T)
+flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
+flexexplore = merge(flexID[,c(1,4)],flexexplore, by = "Name",all = T)
+flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
 
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
-TimeOutsideNovelEnvT1 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time==1,] 
-TimeOutsideNovelEnvT2 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time==2,] 
-TimeOutsideNovelEnv <- (TimeOutsideNovelEnvT1 + TimeOutsideNovelEnvT2)/2
+FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + lastphi + lastlambda, data = flexexplore, FUN = "mean")
 
-LatencyExpEnvT1 <- LatencyExpEnv[LatencyExpEnv$Time==1,] 
-LatencyExpEnvT2 <- LatencyExpEnv[LatencyExpEnv$Time==2,] 
-LatencyExpEnv <- (LatencyExpEnvT1 + LatencyExpEnvT2)/2
+FE2 = aggregate(LatencyFirstLand ~ Name + Batch + lastphi + lastlambda, data = flexexplore, FUN = "mean")
 
 MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==1,] 
 MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==2,] 
@@ -1274,41 +1273,59 @@ NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 
 
 ## FlexExplore Model 1: TotalDurationNear.20cm 
-simulationOutput <- simulateResiduals(fittedModel = glmer(TotalDurationNear.20cm ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ lastphi + lastlambda + (1|Batch), family=poisson, data=FE1), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# p = 0.8, not over- or under-dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+# p = 0.1, not zero inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p = 0.2, not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# all n.s.
+#plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 # ANALYSIS 1
 #GLMM - dependent variable = Total duration near tent
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl1 <- MCMCglmm(TotalDurationNear.20cm ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ lastphi + lastlambda, random=~Batch, data=FE1,  family="poisson", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(expl1$Sol) #Did fixed effects converge? Yes
+autocorr(expl1$VCV) #Did random effects converge? Yes
 summary(expl1)
-autocorr(expl1$Sol) #Did fixed effects converge?
-autocorr(expl1$VCV) #Did random effects converge?
-
+# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 58.98, p = 0.17) or lambda (ß = -0.27, p = 0.81).
 
 ## FlexExplore Model 2: LatencyFirstLand
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=FE2), n=1000) #250 simulations, but if want higher precision change n>1000
+#fit is singular, why?
+#UNREGISTERED ANALYSIS:
+fittedModel = lmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), data=FE2)
+fittedModel2 = lm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2)
+anova(fittedModel,fittedModel2)
+# Random effect "Batch" accounts for 0 variance, so exclude from model.
+
+simulationOutput <- simulateResiduals(fittedModel = lm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# p = 0.86, not over- or under-dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+# no zeros so not zero-inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p = 1, so not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# all n.s.
+#plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 # ANALYSIS 2
 #GLMM - dependent variable = LatencyFirstLand
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl1 <- MCMCglmm(log(LatencyFirstLand) ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(expl1)
-autocorr(expl1$Sol) #Did fixed effects converge?
-autocorr(expl1$VCV) #Did random effects converge?
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) 
+expl2 <- MCMCglmm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(expl2$Sol) #Did fixed effects converge? Yes
+autocorr(expl2$VCV) #Did random effects converge? N/A
+summary(expl2)
+# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -20.76, p = 0.12) or lambda (ß = -0.03, p = 0.95)
+
 
 ## FlexExplore Model 3: MultiaccessTouchesPerTime 
 simulationOutput <- simulateResiduals(fittedModel = glmer(MultiaccessTouchesPerTime ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
@@ -1323,11 +1340,10 @@ plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residua
 #GLMM - dependent variable = MultiaccessTouchesPerTime
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl1 <- MCMCglmm(MultiaccessTouchesPerTime ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(expl1)
-autocorr(expl1$Sol) #Did fixed effects converge?
-autocorr(expl1$VCV) #Did random effects converge?
-
+expl3 <- MCMCglmm(MultiaccessTouchesPerTime ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(expl3$Sol) #Did fixed effects converge?
+autocorr(expl3$VCV) #Did random effects converge?
+summary(expl3)
 
 ## FlexExplore Model 4: NoMotorActions 
 simulationOutput <- simulateResiduals(fittedModel = glmer(NoMotorActions ~ lastphi + lastlambda + (1|Batch), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
@@ -1342,10 +1358,10 @@ plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residua
 #GLMM - dependent variable = NoMotorActions
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl1 <- MCMCglmm(NoMotorActions ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(expl1)
-autocorr(expl1$Sol) #Did fixed effects converge?
-autocorr(expl1$VCV) #Did random effects converge?
+expl4 <- MCMCglmm(NoMotorActions ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(expl4$Sol) #Did fixed effects converge?
+autocorr(expl4$VCV) #Did random effects converge?
+summary(expl4)
 
 ```
 
