@@ -1116,7 +1116,7 @@ plot(simulationOutput2) # KS test, Outlier test, within-group deviations from un
 
 #### Use Latency To First Land as variable because it has as much data as Duration on Ground, but it passes all of the data checks (when log-transformed) whereas Duration On Ground is zero inflated and heteroscedastic.
 
-## Do grackles perceive the novel object as threatening?
+### UNREGISTERED ANALYSIS: Do grackles perceive the novel object as threatening? ###
 m1 = MCMCglmm(log(LatencyFirstLand) ~ Condition + FlexGroup, random=~BirdID, family="gaussian", data=exp.o, verbose=F, prior=prior, nitt=50000, thin=100, burnin=5000)
 autocorr(m1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(m1$VCV) #Did random effects converge? Yes, after increasing iterations
@@ -1128,7 +1128,7 @@ summary(m1)
 exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),]
 
 
-#REPEATABILITY
+### REGISTERED ANALYSIS: REPEATABILITY ###
 #GLMM
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
@@ -1167,7 +1167,7 @@ HPDinterval(repeataraw, 0.95) #2.90e-17 to 4.62e-6
 
 #RESULT=Explore Object is not repeatable
 
-## Unregistered analysis - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct
+### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct ###
 library(rptR)
 r2 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp.o2, datatype="Gaussian", nboot=1000, npermut=100) # Fit is singular
 summary(r2)
