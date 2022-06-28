@@ -1264,7 +1264,7 @@ flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
 FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
 
-FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi, data = flexexplore, FUN = "mean")
+FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
 
 MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==1,] 
 MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==2,] 
@@ -1309,22 +1309,22 @@ summary(expl1)
 
 
 ## FlexExplore Model 2: LatencyFirstLand
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=FE2), n=1000) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Batch), data=FE2), n=1000) #250 simulations, but if want higher precision change n>1000
 #fit is singular, why?
 #UNREGISTERED ANALYSIS:
-fittedModel = lmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), data=FE2)
-fittedModel2 = lm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2)
+fittedModel = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Batch), data=FE2)
+fittedModel2 = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2)
 anova(fittedModel,fittedModel2)
 # Random effect "Batch" accounts for 0 variance, so exclude from model.
 
-simulationOutput <- simulateResiduals(fittedModel = lm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 # p = 0.86, not over- or under-dispersed
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
 # no zeros so not zero-inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-# p = 1, so not heteroscedastic
+# p = 0.83, so not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 # all n.s.
 #plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
@@ -1333,11 +1333,12 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 #GLMM - dependent variable = LatencyFirstLand
 library(MCMCglmm)
 prior2 = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) 
-expl2 <- MCMCglmm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2,  family="gaussian", verbose=F, prior=prior2, nitt=13000, thin=10, burnin=3000)
+expl2 <- MCMCglmm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2,  family="gaussian", verbose=F, prior=prior2, nitt=13000, thin=10, burnin=3000)
 autocorr(expl2$Sol) #Did fixed effects converge? Yes
-autocorr(expl2$VCV) #Did random effects converge? N/A
-summary(expl2)
-# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -20.76, p = 0.12) or lambda (ß = -0.03, p = 0.95)
+autocorr(expl2$VCV) #Did random effects converge? Units, Yes
+plot(expl2) # convergence looks good
+summary(expl2) # Effective sample sizes and post.mean look good.
+# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.11) or lambda (ß = -0.05, p = 0.86)
 
 
 ## FlexExplore Model 3: MultiaccessTouchesPerTime 
@@ -1378,17 +1379,22 @@ summary(expl4)
 
 
 m <- list(
-   "Duration Near" = glmer(round(TotalDurationNear.20cm) ~ lastphi + lastlambda + (1|Batch), data=FE1,  family="poisson"),
-   "Latency to land" = lm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2))
+   "Duration Near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=FE1,  family="poisson"),
+   "Latency to Land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2))
 
 library(modelsummary)
 library(kableExtra)
 library(gt)
 modelsummary(m,
+             fmt = 2,
              shape = term ~ model + statistic,
+             estimate = "estimate",
              statistic = c("conf.int",
                            "std.error",
                            "p.value"),
+             coef_omit = "SD",
+             title = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land).",
+             notes = "'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales.",
              gof_map = NA)
 ```
 
