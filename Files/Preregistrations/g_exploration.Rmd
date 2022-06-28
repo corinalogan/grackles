@@ -1290,19 +1290,21 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 
 
 # ANALYSIS 1
-#GLMM - dependent variable = Total duration near tent
+#GLMM - dependent variable = Total duration near tent - a lot of residual variation that is leading to convergence issues. Because in poisson the variance is constrained to 1, MCMCglmm looks for an observation-level residual term (random effect) to account for residual variance. We could also model this overdispersion with a negative binomial using glmer.nb, but there’s no comparable method in MCMCglmm. See: https://stat.ethz.ch/pipermail/r-sig-mixed-models/2019q2/027899.html
+
 library(MCMCglmm)
 # prior1 = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,fix=1))) 
 prior1 = list(R=list(R1=list(V=1, fix=1),
                      R2=list(V=1, nu=1, alpha.v=0.1)),
               G=list(G1=list(V=1, nu=0)))
-expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ 1, random = ~Name, data=FE1,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
+expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ c.phi + c.lambda, random = ~Name, data=FE1,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
 plot(expl1)
 # lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
 autocorr(expl1$Sol) #Did fixed effects converge? Yes
-autocorr(expl1$VCV) #Did random effects converge? autocorrelation present, increase nitt, center/scale IVs
+autocorr(expl1$VCV) #Did random effects converge? autocorrelation present so we 1) center/scaled IVs, 2) increase nitt/burnin/thin but that does not seem to fix the autocorrelation, so we 3) tried to tighten down priors
 summary(expl1)
-# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 58.98, p = 0.17) or lambda (ß = -0.27, p = 0.81).
+# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.49, p = 0.13) or lambda (ß = -0.27, p = 0.81).
+# however, post mean still indicates overdispersion (i.e. much greater than 1), and the effective sample size is much smaller than sample size (indicating there is still autocorrelation of samples)
 
 
 
