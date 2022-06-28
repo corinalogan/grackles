@@ -1257,11 +1257,14 @@ flexexplore = merge(exp2, flexcompr, by = "Name", all = T)
 flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
 flexexplore = merge(flexID[,c(1,4)],flexexplore, by = "Name",all = T)
 flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
+# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexexplore$c.phi = scale(flexexplore$lastphi, center = T, scale = T)
+flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
 
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
-FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + lastphi + lastlambda, data = flexexplore, FUN = "mean")
+FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
 
-FE2 = aggregate(LatencyFirstLand ~ Name + Batch + lastphi + lastlambda, data = flexexplore, FUN = "mean")
+FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi, data = flexexplore, FUN = "mean")
 
 MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==1,] 
 MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==2,] 
@@ -1273,27 +1276,35 @@ NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 
 
 ## FlexExplore Model 1: TotalDurationNear.20cm 
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ lastphi + lastlambda + (1|Batch), family=poisson, data=FE1), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), family=poisson, data=FE1), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 # p = 0.8, not over- or under-dispersed
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
 # p = 0.1, not zero inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-# p = 0.2, not heteroscedastic
+# p = 0.3, not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 # all n.s.
 #plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
+
 # ANALYSIS 1
 #GLMM - dependent variable = Total duration near tent
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ lastphi + lastlambda, random=~Batch, data=FE1,  family="poisson", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+# prior1 = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,fix=1))) 
+prior1 = list(R=list(R1=list(V=1, fix=1),
+                     R2=list(V=1, nu=1, alpha.v=0.1)),
+              G=list(G1=list(V=1, nu=0)))
+expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ 1, random = ~Name, data=FE1,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
+plot(expl1)
+# lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
 autocorr(expl1$Sol) #Did fixed effects converge? Yes
-autocorr(expl1$VCV) #Did random effects converge? Yes
+autocorr(expl1$VCV) #Did random effects converge? autocorrelation present, increase nitt, center/scale IVs
 summary(expl1)
 # no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 58.98, p = 0.17) or lambda (ß = -0.27, p = 0.81).
+
+
 
 ## FlexExplore Model 2: LatencyFirstLand
 simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=FE2), n=1000) #250 simulations, but if want higher precision change n>1000
@@ -1319,8 +1330,8 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 # ANALYSIS 2
 #GLMM - dependent variable = LatencyFirstLand
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) 
-expl2 <- MCMCglmm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+prior2 = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) 
+expl2 <- MCMCglmm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2,  family="gaussian", verbose=F, prior=prior2, nitt=13000, thin=10, burnin=3000)
 autocorr(expl2$Sol) #Did fixed effects converge? Yes
 autocorr(expl2$VCV) #Did random effects converge? N/A
 summary(expl2)
@@ -1363,6 +1374,20 @@ autocorr(expl4$Sol) #Did fixed effects converge?
 autocorr(expl4$VCV) #Did random effects converge?
 summary(expl4)
 
+
+m <- list(
+   "Duration Near" = glmer(round(TotalDurationNear.20cm) ~ lastphi + lastlambda + (1|Batch), data=FE1,  family="poisson"),
+   "Latency to land" = lm(log(LatencyFirstLand) ~ lastphi + lastlambda, data=FE2))
+
+library(modelsummary)
+library(kableExtra)
+library(gt)
+modelsummary(m,
+             shape = term ~ model + statistic,
+             statistic = c("conf.int",
+                           "std.error",
+                           "p.value"),
+             gof_map = NA)
 ```
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
