@@ -1470,6 +1470,7 @@ expbol = rbind(bol,dexp)
 expbol.melt = reshape(expbol, idvar = c("BirdID","FlexGroup"), v.names = "LatencyFirstLand", timevar = "Test", direction = "wide")
 
 expbol$Test <- factor(expbol$Test, labels = c("Cat","Hawk","Environment","Object"))
+#write.csv(expbol,"g_exploration_data_combinedExpBold.csv")
 ggplot(expbol, aes(x = BirdID, y = LatencyFirstLand, colour = BirdID, shape = Test)) +
   geom_point(size = 4, face = "bold", alpha = 0.6, aes(fill = BirdID,color = BirdID)) +
   scale_shape_manual(values = c(15,17,8,19))+
@@ -1589,97 +1590,155 @@ A GLMM (as in the repeatability analysis) will be conducted.
 
 ```{r capwildbold, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Boldness
-cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
+## BOLDNESS WAS NOT REPEATABLE IN THE AVIARY TESTS - THIS METHOD DOES NOT MEASURE AN INHERENT PERSONALITY TRAIT
 
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyBoldness ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-bold <- MCMCglmm(LatencyBoldness ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(bold)
-#autocorr(bold$Sol) #Did fixed effects converge?
-#autocorr(bold$VCV) #Did random effects converge?
+# cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
+# # DATA CHECKING
+# library(DHARMa)
+# library(lme4)
+# simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyBoldness ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
+# simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+# testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+# plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# #GLMM
+# library(MCMCglmm)
+# prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+# bold <- MCMCglmm(LatencyBoldness ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+# summary(bold)
+# #autocorr(bold$Sol) #Did fixed effects converge?
+# #autocorr(bold$VCV) #Did random effects converge?
 ```
 
 ```{r capwildpers, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#Boldness
-cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumberTouches ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-bold <- MCMCglmm(NumberTouches ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(bold)
-#autocorr(bold$Sol) #Did fixed effects converge?
-#autocorr(bold$VCV) #Did random effects converge?
+#Persistence
+### NO GRACKLES TOUCHED THE ITEMS IN THE WILD ASSAYS
+# 
+# cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
+# 
+# # DATA CHECKING
+# library(DHARMa)
+# library(lme4)
+# simulationOutput <- simulateResiduals(fittedModel = glmer(NumberTouches ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
+# simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+# testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+# plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# 
+# #GLMM
+# library(MCMCglmm)
+# prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+# bold <- MCMCglmm(NumberTouches ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+# summary(bold)
+# #autocorr(bold$Sol) #Did fixed effects converge?
+# #autocorr(bold$VCV) #Did random effects converge?
 ```
 
 ```{r capwildexp, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### ONLY NOVEL ENVIRONMENT EXPLORATION WAS REPEATABLE SO JUST COMPARING CAPTIVE AND WILD PERFORMANCE ON THAT TEST ###
+
 #Exploration: novel environment
-cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
+cw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_wild.csv"), header=T, sep = ",", stringsAsFactors = FALSE) 
+cw = cw[which(c(cw$Condition=="2" | cw$Condition == "Novel")),] # only novel item conditions
+cw = cw[-which(cw$Time == 2),] # Remove the 1 instance of a repeated assay at time 2
+cw = cw[-which(cw$Item == "C2"),] # only threatening boldness objects
+cw$Item[cw$Item == "C1"]<-"Cat"
+cw$Item[cw$Item == "C3"]<-"Hawk"
+
+cw$LatencyFirstLandingOnFloor = as.numeric(cw$LatencyFirstLandingOnFloor) # most data in LatencyFirstLand, similar to aviary assays
+cw = cw[,c(6,7,10,11:13)]
+colnames(cw)[6] = "LatencyFirstLand" #to match aviary data
+colnames(cw)[3] = "Test" #to match aviary data       
+colnames(cw)[5] = "AssayAttempts"
+cw = merge(cw,flexID,by = "Name", all = T)
+cw = cw[-which(is.na(cw$Test)),-c(8:9)]
+cw$FlexGroup[which(is.na(cw$FlexGroup))]<-"None"
+colnames(cw)[2]="BirdID"
+cw$Context = "Wild"
+
+expbol <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_combinedExpBold.csv"), header=T, sep = ",", stringsAsFactors = FALSE) 
+expbol$Context = "Aviary"
+expbol$AssayAttempts = 1 #only 1 grackle in the aviary failed to participate on the first attempt
+expbol$AssayAttempts[which(expbol$Name == "Tapa" & expbol$Test == "Environment")] <- 2
+expbol = expbol[,-1]
+
+cw = rbind(cw,expbol)
+cw$BirdID = as.factor(cw$BirdID)
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyExpEnv ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(LatencyFirstLand) ~ Context + AssayAttempts + (1|BirdID), family=poisson, data=cw[which(cw$Test == "Environment"),]), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+# looks flat
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# p = 0.42
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# no zeros
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p = 0.74
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# all n.s.
+#plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #GLMM
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-bold <- MCMCglmm(LatencyExpEnv ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(bold)
-#autocorr(bold$Sol) #Did fixed effects converge?
-#autocorr(bold$VCV) #Did random effects converge?
+expEnv <- MCMCglmm(round(LatencyFirstLand) ~ Context + AssayAttempts, random=~BirdID, family="poisson", data=cw[which(cw$Test == "Environment"),], verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+# model is singular because no repeated measures for BirdID when we just look at the Environment data. Remove random effect.
+prior = list(R=list(R1=list(V=1,nu=0)))
+expEnv <- MCMCglmm(round(LatencyFirstLand) ~ Context + AssayAttempts, family="poisson", data=cw[which(cw$Test == "Environment"),], verbose=F, prior=prior, nitt=200000, thin=100, burnin=6000)
+plot(expEnv) #inspect traces for convergence - possibly some autocorrelation in Context, increase nitt/thin/burnin
+autocorr(expEnv$Sol) #Did fixed effects converge? Yes
+autocorr(expEnv$VCV) #Did random effects converge? Yes
+summary(expEnv) # eff.samp matches sample size
+# no relationship between latency to land and whether the assay was conducted in the aviaries or in the wild.
+
+
+### Plot
+#Within individual consistency across aviary and wild contexts
+#Only repeated measures for Chalupa & Taquito (exploration object); Fideo & Taquito (boldness cat)
+tmp = cw[which(cw$Name == "Chalupa"|cw$Name == "Taquito" | cw$Name == "Fideo"),]
+tmp = tmp[which(tmp$Test == "Cat" | tmp$Test == "Object"),]
+tmp = tmp[-which(tmp$Test == "Object" & tmp$Name == "Fideo"),]
+tmp = tmp[-which(tmp$Test == "Cat" & tmp$Name == "Chalupa"),]
+
+ggplot(tmp, aes(x = BirdID, y = LatencyFirstLand, colour = Context, shape = Test)) +
+  geom_point(size = 6, face = "bold", alpha = 0.8, aes(fill = Context,color = Context)) +
+  scale_shape_manual(values = c(15,17,8,19))+
+  geom_hline(yintercept=900, linetype="solid", color = "black")+
+  geom_hline(yintercept=2000, linetype="solid", color = "black")+
+  labs(x = "Bird", y = "Latency to approach (sec)") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16))
 
 
 #Exploration: novel object
-cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyTableExpObject ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-bold <- MCMCglmm(LatencyTableExpObject ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(bold)
-#autocorr(bold$Sol) #Did fixed effects converge?
-#autocorr(bold$VCV) #Did random effects converge?
+# cw <- read.csv ("/Users/corina/GTGR/data/data_individual_differences.csv", header=T, sep=",", stringsAsFactors=F) 
+# 
+# # DATA CHECKING
+# library(DHARMa)
+# library(lme4)
+# simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyTableExpObject ~ Context + AssayAttempts + (1|ID), family=poisson, data=cw), n=250) #250 simulations, but if want higher precision change n>1000
+# simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+# testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+# testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+# plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# 
+# #GLMM
+# library(MCMCglmm)
+# prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+# bold <- MCMCglmm(LatencyTableExpObject ~ Context + AssayAttempts, random=~ID, family="poisson", data=cw, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+# summary(bold)
+# #autocorr(bold$Sol) #Did fixed effects converge?
+# #autocorr(bold$VCV) #Did random effects converge?
 ```
 
 #### *Alternative Analyses*
