@@ -657,74 +657,55 @@ Actual power                  	=	0.7083763
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
  
 ```{r consistent1, eval=F}
-## UNREGISTERED ANALYSIS: We realized that to determine whether individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box, we needed the variables on the same measurement scale (seconds). The serial reversal learning latencies to switch a preference were previously at the trial-level measurement scale. However, all trials had start times so we were able to calculate the latency to switch a preference in seconds, across trials. For the repeatability analysis we were then able to create a data frame that consisted of latency to switch (labeled as duration of time to switch in data frame), test type (Reversal, MAB plastic, MAB wooden), reversal number (i.e. only serial reversal or locus solves after initial color tube discrimination/first MAB solve), and bird ID.
+## UNREGISTERED ANALYSIS: We realized that to determine whether individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box, we needed the variables on the same measurement scale (seconds). The serial reversal learning latencies to switch a preference were previously at the trial-level measurement scale. However, all trials had start times so we were able to calculate the latency to switch a preference in seconds, across trials. For the repeatability analysis we were then able to create a data frame that consisted of latency to switch (labeled as duration of time to switch in data frame), Condition (test type - Reversal, MAB plastic, MAB wooden), reversal number (i.e. only serial reversal or locus solves after initial color tube discrimination/first MAB solve), and bird ID.
 ### DEVIATION: We also realize we incorrectly specified the variables that would be included in the repeatability model in the preregistration. The DV is the latency to switch a preference after the previously rewarded preference becomes non-functional. The IVs are Test type, Reversal Number and a random effect for Bird ID.
 
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) 
+# rename variables to match preregistration:
+colnames(d)[c(3,4)] = c("Condition","LatencySwitch")
+d$ID  = as.factor(d$ID)
+d$Condition = as.factor(d$Condition)
 
-#remove NAs from the variables that will be in the model
-d <- subset(d,!(is.na(d["TrialsToReverse"])))
-d <- subset(d,!(is.na(d["ReverseNumber"])))
+length(unique(d$ID))
+#n=16 birds participated in at least one switch (reversal) across at least 2 tests (reversal learning and/or MAB plastic and/or MAB wooden)
 
-#include only those birds in the reversal tubes experiment
-d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
-
-#factor variable
-d$ID <- as.factor(d$ID)
-
-#remove pilot birds (Fajita and Empanada) and Memela who did not pass the reversal experiment and therefore was not offered the MAB experiments
-d <- d[!d$ID=="Fajita" & !d$ID=="Empanada" & !d$ID=="Memela",]
-
-#n=8
-#length(unique(d$ID))
-
-#NOTE: removed "touchscreen trials to reverse" from the models below because the touchscreen experiment did not end up working out. Removed "condition" from the models below because this analysis only works on birds that have had serial reversals, which are only those in the manipulated group
+#NOTE: removed "touchscreen trials to reverse" from the models below because the touchscreen experiment did not end up working out. 
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(LatencyMABplastic ~ ReverseNumber + TrialsToReverse + (1|ID), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.744 so no dispersion
+## DEVIATION: Poisson model was heterscedastic, but when we log-transformed to use a gaussian distribution and used the centered and scaled reversal IV, it passed data checks
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), data=d), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Does not look great
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
+#p=0.72 so no dispersion
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.44
+# no zeros
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p=0.14 so NOT heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel. There are patterns
 #January 2021: My interpretation of the patterns is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
 
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+xcontx <- MCMCglmm(log(LatencySwitch) ~ cent.rev + Condition, random=~ID, family="gaussian", data=d, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(xcontx$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(xcontx$VCV) #Did random effects converge? Yes
+plot(xcontx) # traces look grassy and uncorrelated
 
-# GLMM color reversal tubes compared with multi-access box plastic
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0)))
-rm <- MCMCglmm(LatencyMABplastic ~ ReverseNumber * TrialsToReverse, random = ~ID, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 130000, thin = 1000, burnin = 30000)
-summary(rm)
-#                              post.mean l-95% CI u-95% CI eff.samp pMCMC
-#(Intercept)                     2.08708 -4.45451 11.67734      100  0.66
-#ReverseNumber                   1.01476 -2.75484  5.49974      100  0.42
-#TrialsToReverse                 0.01693 -0.09999  0.11593      100  0.58
-#ReverseNumber:TrialsToReverse  -0.01159 -0.07061  0.03283      100  0.42
-#nothing significant so no consistent individual differences across contexts on MAB plastic and trials to reverse
+## REPEATABILITY ANALYSIS
+#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 
-#autocorr(rm$Sol) #Did fixed effects converge (<0.1)? yes
-#autocorr(rm$VCV) #Did random effects converge (<0.1)? yes except for 3 values
+repeata <- xcontx$VCV[,"ID"]/(xcontx$VCV[,"ID"]+xcontx$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.35
+var(repeata) #0.02
+posterior.mode(repeata) #0.35
+HPDinterval(repeata, 0.95) #0.12-0.60
 
-# GLMM color reversal tubes compared with multi-access box wooden
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0)))
-rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 130000, thin = 1000, burnin = 30000)
-#summary(rmw)
-#                              post.mean  l-95% CI  u-95% CI eff.samp pMCMC  
-#(Intercept)                    3.622381  0.148743  7.810863    159.0  0.08 .
-#ReverseNumber                  0.211605 -1.843271  2.126334    100.0  0.88  
-#TrialsToReverse                0.032183 -0.019718  0.076067    147.9  0.14  
-#ReverseNumber:TrialsToReverse -0.004685 -0.037464  0.014299    100.0  0.62  
-#nothing significant so no consistent individual differences across contexts on MAB wooden and trials to reverse
+### UNREGISTERED ANALYSIS - compare R values with rptR function for p-value (from permutation tests) and to make sure the interpretation of MCMCglmm result is correct - output matches that of MCMCglmm ###
+library(rptR)
+r1 = rpt(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), grname = "ID", data=d, datatype="Gaussian", nboot=1000, npermut=100)
+summary(r1)
+# Same results as above: R = 0.36, CI = 0.12-0.55, p = 0.01
 
-#autocorr(rmw$Sol) #Did fixed effects converge (<0.1)? yes except for 1 value
-#autocorr(rmw$VCV) #Did random effects converge (<0.1)? yes
 ```
 
