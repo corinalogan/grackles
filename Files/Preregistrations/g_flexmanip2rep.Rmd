@@ -707,5 +707,31 @@ r1 = rpt(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), grname = "ID", data
 summary(r1)
 # Same results as above: R = 0.36, CI = 0.12-0.55, p = 0.01
 
+d$scale.dur = scale_by(LatencySwitch ~ Condition, d)
+rev.all3 = d %>% 
+  group_by(ID, Condition) %>% 
+  summarise(median = median(scale.dur),
+            lcl = quantile(scale.dur, probs=0.25),
+            ucl = quantile(scale.dur, probs=0.75)) %>% 
+  ungroup() %>% 
+  mutate(Condition = recode(Condition, "LatencyMABplastic"="MAB plastic",
+                       "LatencyMABwooden"="MAB wood",
+                       "Reversal" = "Reversal learning")) 
+
+#Plot of performance across all tests
+ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Condition)) +
+  #geom_point() +
+  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
+                  position = position_dodge(width = 0.5)) +
+  scale_shape_manual(values = c(15,17,8,19))+
+  labs(x = "Bird", y = "Latency to switch (sec)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size = 10,angle=90,vjust=-0.001,hjust=0.95),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  scale_fill_discrete(guide = "none") +
+  scale_colour_discrete(guide = "none")
+
+
 ```
 
