@@ -71,7 +71,6 @@ Aurélie Coulon (2019) Can context changes improve behavioral flexibility? Towar
 
 We focused our study on great-tailed grackles (*Quiscalus mexicanus*, hereafter grackles), a bird species that is flexible [@logan2016behavioral] and rapidly expanding its geographic range [@wehtje2003range]. We attempted to manipulate grackle flexibility using serial reversals of a color preference to determine whether their flexibility is generalizable across additional experimental contexts (touchscreen reversal learning and multi-access box solution switching), whether improving flexibility also improves innovativeness (number of loci solved on a multi-access box), whether it is repeatable within individuals and across contexts, and what learning strategies grackles employ (Figure 1). 
 
-![](g_flexmanipFig1.png)
 
 **Figure 1.** A visual illustration of Hypothesis 1 (A), Hypothesis 2 (B), Hypothesis 3 (C1 and C2), and Hypothesis 4 (D). Longer black arrows indicate slower reversal times, the two yellow circles represent experience with the two yellow tubes that both contained food for the control group.
 
@@ -245,125 +244,87 @@ HPDinterval(repeataraw, 0.95)  #7.2e-16 to 0.18, probability=0.952
 
 Performance was repeatable within individuals within the context of reversal learning. We obtained a repeatability value of 0.13, which is significantly greater than that expected if birds are performing randomly in each reversal (p=0.001; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
 
-### P3b: not repeatable across contexts
+### P3b: repeatable across contexts
 
-There was no consistency of flexibility in individuals across contexts: the latency to attempt a different locus on both multi-access boxes did not correlate within individuals with the number of trials to reverse a preference in each reversal (Table 6; n=8 grackles: only those in the manipulated condition because only they experienced more than one reversal; Memela was not included because she did not complete the reversal experiment and therefore was not offered the multi-access box experiments).
 
-**Table 6.** No repeatability across contexts. MCMCglmm output for the multi-access box plastic and wooden models.
 
 ```{r consistent2results, eval=T}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
-setwd("~/Documents/Grackle project")
-d = read.csv("g_flexmanip_data_repeatability.csv")
-#remove NAs from the variables that will be in the model
-d <- subset(d,!(is.na(d["TrialsToReverse"])))
-d <- subset(d,!(is.na(d["ReverseNumber"])))
+## UNREGISTERED ANALYSIS: We realized that to determine whether individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box, we needed the variables on the same measurement scale (seconds). The serial reversal learning latencies to switch a preference were previously at the trial-level measurement scale. However, all trials had start times so we were able to calculate the latency to switch a preference in seconds, across trials. For the repeatability analysis we were then able to create a data frame that consisted of latency to switch (labeled as duration of time to switch in data frame), Condition (test type - Reversal, MAB plastic, MAB wooden), reversal number (i.e. only serial reversal or locus solves after initial color tube discrimination/first MAB solve), and bird ID.
+### DEVIATION: We also realize we incorrectly specified the variables that would be included in the repeatability model in the preregistration. The DV is the latency to switch a preference after the previously rewarded preference becomes non-functional. The IVs are Test type, Reversal Number and a random effect for Bird ID.
 
-#include only those birds in the serial reversal tubes experiment, and not values for the initial discrimination
-d <- d[d$ExperimentalGroup=="Manipulation" & !d$Test == "InitialDisc",]
-d <- d[d$TubesOrTouchscreen == "TUBES" & d$ExperimentalGroup == "Manipulation",
-    ]
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) 
+# rename variables to match preregistration:
+colnames(d)[c(3,4)] = c("Condition","LatencySwitch")
+d$ID  = as.factor(d$ID)
+d$Condition = as.factor(d$Condition)
 
-#factor variable
-d$ID <- as.factor(d$ID)
+length(unique(d$ID))
+#n=16 birds participated in at least one switch (reversal) across at least 2 tests (reversal learning and/or MAB plastic and/or MAB wooden)
 
-#remove Guacamole & Memela who did not pass the reversal experiment and therefore was not offered the MAB experiments
-d <- d[!d$ID=="Guacamole" & !d$ID=="Memela",]
-#remove Chalupa who did not solve any MAB loci and so we can't measure solution switching
-d <- d[!d$ID=="Chalupa",]
-#remove pilot birds
-d <- d[!d$ID == "Fajita" & !d$ID == "Empanada", ]
+#NOTE: removed "touchscreen trials to reverse" from the models below because the touchscreen experiment did not end up working out. 
 
-
-#n=7
-#length(unique(d$ID))
-
-# Data checking - Which distribution should we use? 
+# DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(Value) ~
-    Test + ReverseNumber + (1 | ID), family = gaussian, data = d), n = 250)  #250 simulations, but if want higher precision change n>1000; Log transform because trials does not fit a poisson distribution.
-plot(simulationOutput$scaledResiduals)  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
-testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.90 
-testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p>0.05. p=1 - there are no zeros, so not zero inflated
-testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.25 so NOT heteroscedastic
-plot(simulationOutput)  #...there should be no pattern in the data points in the right panel.
+## DEVIATION: Poisson model was heterscedastic, but when we log-transformed to use a gaussian distribution and used the centered and scaled reversal IV, it passed data checks
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), data=d), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Does not look great
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
+#p=0.72 so no dispersion
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1
+# no zeros
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p=0.14 so NOT heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel. There are patterns
+#January 2021: My interpretation of the patterns is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
 
-# Need to put latency on same scale (trials to reverse vs seconds to switch)
-# cntx.rpt = rpt(log(Value) ~ Test + ReverseNumber + (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 5000, npermut = 100)
-# summary(cntx.rpt) # R = 0.12, p = 0.03
-# 
-# rm <- lmer(log(Value) ~ Test + ReverseNumber + (1|ID), 
-# 	    data = d)
-# plot(rm)
-# 
-# boxplot(residuals(rm) ~ d$Test)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+xcontx <- MCMCglmm(log(LatencySwitch) ~ cent.rev + Condition, random=~ID, family="gaussian", data=d, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+autocorr(xcontx$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(xcontx$VCV) #Did random effects converge? Yes
+plot(xcontx) # traces look grassy and uncorrelated
+
+## REPEATABILITY ANALYSIS
+#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
+
+repeata <- xcontx$VCV[,"ID"]/(xcontx$VCV[,"ID"]+xcontx$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.35
+var(repeata) #0.02
+posterior.mode(repeata) #0.35
+HPDinterval(repeata, 0.95) #0.12-0.60
+
+### UNREGISTERED ANALYSIS - compare R values with rptR function for p-value (from permutation tests) and to make sure the interpretation of MCMCglmm result is correct - output matches that of MCMCglmm ###
+library(rptR)
+r1 = rpt(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), grname = "ID", data=d, datatype="Gaussian", nboot=1000, npermut=100)
+summary(r1)
+# Same results as above: R = 0.36, CI = 0.12-0.55, p = 0.01
+
+d$scale.dur = scale_by(LatencySwitch ~ Condition, d)
+rev.all3 = d %>% 
+  group_by(ID, Condition) %>% 
+  summarise(median = median(scale.dur),
+            lcl = quantile(scale.dur, probs=0.25),
+            ucl = quantile(scale.dur, probs=0.75)) %>% 
+  ungroup() %>% 
+  mutate(Condition = recode(Condition, "LatencyMABplastic"="MAB plastic",
+                            "LatencyMABwooden"="MAB wood",
+                            "Reversal" = "Reversal learning")) 
+
+#Plot of performance across all tests
+ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Condition)) +
+  #geom_point() +
+  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
+                  position = position_dodge(width = 0.5)) +
+  scale_shape_manual(values = c(15,17,8,19))+
+  labs(x = "Bird", y = "Latency to switch (sec)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(size = 10,angle=90,vjust=-0.001,hjust=0.95),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  scale_fill_discrete(guide = "none") +
+  scale_colour_discrete(guide = "none")
 
 
-# GLMM color reversal tubes compared with multi-access box
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0)))
-
-# plastic
-rm <- MCMCglmm(LatencyMABplastic ~ ReverseNumber * TrialsToReverse, random = ~ID, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 130000, thin = 1000, burnin = 30000)
-#summary(rm)
-#                              post.mean l-95% CI u-95% CI eff.samp pMCMC
-#(Intercept)                     2.08708 -4.45451 11.67734      100  0.66
-#ReverseNumber                   1.01476 -2.75484  5.49974      100  0.42
-#TrialsToReverse                 0.01693 -0.09999  0.11593      100  0.58
-#ReverseNumber:TrialsToReverse  -0.01159 -0.07061  0.03283      100  0.42
-#nothing significant so no consistent individual differences across contexts on MAB plastic and trials to reverse
-
-# wooden
-rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 130000, thin = 1000, burnin = 30000)
-#summary(rmw)
-#                              post.mean  l-95% CI  u-95% CI eff.samp pMCMC  
-#(Intercept)                    3.622381  0.148743  7.810863    159.0  0.08 .
-#ReverseNumber                  0.211605 -1.843271  2.126334    100.0  0.88  
-#TrialsToReverse                0.032183 -0.019718  0.076067    147.9  0.14  
-#ReverseNumber:TrialsToReverse -0.004685 -0.037464  0.014299    100.0  0.62  
-#nothing significant so no consistent individual differences across contexts on MAB wooden and trials to reverse
-
-
-# Make a table with the outputs from both models (following https://gkhajduk.github.io/2017-10-25-cleanMCMCglmm/)
-library(dplyr)
-
-# for 1 model
-clean.MCMC <- function(x) {
-    sols <- summary(x)$solutions  ## pull out relevant info from model summary
-    Gcovs <- summary(x)$Gcovariances
-    Rcovs <- summary(x)$Rcovariances
-    fixed <- data.frame(row.names(sols), sols, row.names = NULL)  ## convert to dataframes with the row.names as the first col
-    random <- data.frame(row.names(Gcovs), Gcovs, row.names = NULL)
-    residual <- data.frame(row.names(Rcovs), Rcovs, row.names = NULL)
-    names(fixed)[names(fixed) == "row.names.sols."] <- "variable"  ## change the columns names to variable, so they all match
-    names(random)[names(random) == "row.names.Gcovs."] <- "variable"
-    names(residual)[names(residual) == "row.names.Rcovs."] <- "variable"
-    fixed$effect <- "fixed"  ## add ID column for type of effect (fixed, random, residual)
-    random$effect <- "random"
-    residual$effect <- "residual"
-    modelTerms <- as.data.frame(bind_rows(fixed, random, residual))  # merge it all together
-}
-
-# check for one model - it works
-#oneModel <- clean.MCMC(rmw)  # get all the info from summary(modelName)
-#oneModel$modelName <- getName.MCMC(rmw)  # add the model's name in a new column
-#oneModel  # check out the created dataframe
-
-# check for multiple models - it works
-dataList <- list(rm, rmw)
-dataListNames <- list("Plastic", "Wooden")
-readyList <- mapply(cbind, lapply(dataList, clean.MCMC), "modelName" = dataListNames, SIMPLIFY = F)
-mcmcOutputs <- as.data.frame(do.call(rbind, readyList), stringsAsFactors = FALSE)
-
-# NOTE: for html, change to type='html', for pdf, change to type='latex' (https://stackoverflow.com/questions/14670299/using-stargazer-with-rstudio-and-knitr , stargazer cheatsheet: https://www.jakeruss.com/cheatsheets/stargazer/#html-formatting)
-library(stargazer)
-stargazer(mcmcOutputs, summary=FALSE, header=FALSE, type='latex', digits=1) 
 ```
 
 ## DISCUSSION
@@ -657,81 +618,117 @@ Actual power                  	=	0.7083763
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
  
 ```{r consistent1, eval=F}
-## UNREGISTERED ANALYSIS: We realized that to determine whether individuals that are faster to reverse a color preference also have lower latencies to switch to new options on the multi-access box, we needed the variables on the same measurement scale (seconds). The serial reversal learning latencies to switch a preference were previously at the trial-level measurement scale. However, all trials had start times so we were able to calculate the latency to switch a preference in seconds, across trials. For the repeatability analysis we were then able to create a data frame that consisted of latency to switch (labeled as duration of time to switch in data frame), Condition (test type - Reversal, MAB plastic, MAB wooden), reversal number (i.e. only serial reversal or locus solves after initial color tube discrimination/first MAB solve), and bird ID.
-### DEVIATION: We also realize we incorrectly specified the variables that would be included in the repeatability model in the preregistration. The DV is the latency to switch a preference after the previously rewarded preference becomes non-functional. The IVs are Test type, Reversal Number and a random effect for Bird ID.
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
+setwd("~/Documents/Grackle project")
+d = read.csv("g_flexmanip_data_repeatability.csv")
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
 
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) 
-# rename variables to match preregistration:
-colnames(d)[c(3,4)] = c("Condition","LatencySwitch")
-d$ID  = as.factor(d$ID)
-d$Condition = as.factor(d$Condition)
+#include only those birds in the serial reversal tubes experiment, and not values for the initial discrimination
+d <- d[d$ExperimentalGroup=="Manipulation" & !d$Test == "InitialDisc",]
+d <- d[d$TubesOrTouchscreen == "TUBES" & d$ExperimentalGroup == "Manipulation",
+    ]
 
-length(unique(d$ID))
-#n=16 birds participated in at least one switch (reversal) across at least 2 tests (reversal learning and/or MAB plastic and/or MAB wooden)
+#factor variable
+d$ID <- as.factor(d$ID)
 
-#NOTE: removed "touchscreen trials to reverse" from the models below because the touchscreen experiment did not end up working out. 
+#remove Guacamole & Memela who did not pass the reversal experiment and therefore was not offered the MAB experiments
+d <- d[!d$ID=="Guacamole" & !d$ID=="Memela",]
+#remove Chalupa who did not solve any MAB loci and so we can't measure solution switching
+d <- d[!d$ID=="Chalupa",]
+#remove pilot birds
+d <- d[!d$ID == "Fajita" & !d$ID == "Empanada", ]
 
-# DATA CHECKING
+
+#n=7
+#length(unique(d$ID))
+
+# Data checking - Which distribution should we use? 
 library(DHARMa)
 library(lme4)
-## DEVIATION: Poisson model was heterscedastic, but when we log-transformed to use a gaussian distribution and used the centered and scaled reversal IV, it passed data checks
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), data=d), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Does not look great
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
-#p=0.72 so no dispersion
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1
-# no zeros
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-# p=0.14 so NOT heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. There are patterns
-#January 2021: My interpretation of the patterns is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(Value) ~
+    Test + ReverseNumber + (1 | ID), family = gaussian, data = d), n = 250)  #250 simulations, but if want higher precision change n>1000; Log transform because trials does not fit a poisson distribution.
+plot(simulationOutput$scaledResiduals)  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.90 
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p>0.05. p=1 - there are no zeros, so not zero inflated
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.25 so NOT heteroscedastic
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel.
 
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-xcontx <- MCMCglmm(log(LatencySwitch) ~ cent.rev + Condition, random=~ID, family="gaussian", data=d, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-autocorr(xcontx$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
-autocorr(xcontx$VCV) #Did random effects converge? Yes
-plot(xcontx) # traces look grassy and uncorrelated
-
-## REPEATABILITY ANALYSIS
-#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
-
-repeata <- xcontx$VCV[,"ID"]/(xcontx$VCV[,"ID"]+xcontx$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) #0.35
-var(repeata) #0.02
-posterior.mode(repeata) #0.35
-HPDinterval(repeata, 0.95) #0.12-0.60
-
-### UNREGISTERED ANALYSIS - compare R values with rptR function for p-value (from permutation tests) and to make sure the interpretation of MCMCglmm result is correct - output matches that of MCMCglmm ###
-library(rptR)
-r1 = rpt(log(LatencySwitch) ~ cent.rev + Condition + (1|ID), grname = "ID", data=d, datatype="Gaussian", nboot=1000, npermut=100)
-summary(r1)
-# Same results as above: R = 0.36, CI = 0.12-0.55, p = 0.01
-
-d$scale.dur = scale_by(LatencySwitch ~ Condition, d)
-rev.all3 = d %>% 
-  group_by(ID, Condition) %>% 
-  summarise(median = median(scale.dur),
-            lcl = quantile(scale.dur, probs=0.25),
-            ucl = quantile(scale.dur, probs=0.75)) %>% 
-  ungroup() %>% 
-  mutate(Condition = recode(Condition, "LatencyMABplastic"="MAB plastic",
-                       "LatencyMABwooden"="MAB wood",
-                       "Reversal" = "Reversal learning")) 
-
-#Plot of performance across all tests
-ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Condition)) +
-  #geom_point() +
-  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
-                  position = position_dodge(width = 0.5)) +
-  scale_shape_manual(values = c(15,17,8,19))+
-  labs(x = "Bird", y = "Latency to switch (sec)") +
-  theme_bw() +
-  theme(axis.text.x = element_text(size = 10,angle=90,vjust=-0.001,hjust=0.95),
-        axis.text.y = element_text(size = 10),
-        axis.title = element_text(size = 16)) +
-  scale_fill_discrete(guide = "none") +
-  scale_colour_discrete(guide = "none")
+# Need to put latency on same scale (trials to reverse vs seconds to switch)
+# cntx.rpt = rpt(log(Value) ~ Test + ReverseNumber + (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 5000, npermut = 100)
+# summary(cntx.rpt) # R = 0.12, p = 0.03
+# 
+# rm <- lmer(log(Value) ~ Test + ReverseNumber + (1|ID), 
+# 	    data = d)
+# plot(rm)
+# 
+# boxplot(residuals(rm) ~ d$Test)
 
 
+# GLMM color reversal tubes compared with multi-access box
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+
+# plastic
+rm <- MCMCglmm(LatencyMABplastic ~ ReverseNumber * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 130000, thin = 1000, burnin = 30000)
+#summary(rm)
+#                              post.mean l-95% CI u-95% CI eff.samp pMCMC
+#(Intercept)                     2.08708 -4.45451 11.67734      100  0.66
+#ReverseNumber                   1.01476 -2.75484  5.49974      100  0.42
+#TrialsToReverse                 0.01693 -0.09999  0.11593      100  0.58
+#ReverseNumber:TrialsToReverse  -0.01159 -0.07061  0.03283      100  0.42
+#nothing significant so no consistent individual differences across contexts on MAB plastic and trials to reverse
+
+# wooden
+rmw <- MCMCglmm(LatencyMABwooden ~ ReverseNumber * TrialsToReverse, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 130000, thin = 1000, burnin = 30000)
+#summary(rmw)
+#                              post.mean  l-95% CI  u-95% CI eff.samp pMCMC  
+#(Intercept)                    3.622381  0.148743  7.810863    159.0  0.08 .
+#ReverseNumber                  0.211605 -1.843271  2.126334    100.0  0.88  
+#TrialsToReverse                0.032183 -0.019718  0.076067    147.9  0.14  
+#ReverseNumber:TrialsToReverse -0.004685 -0.037464  0.014299    100.0  0.62  
+#nothing significant so no consistent individual differences across contexts on MAB wooden and trials to reverse
+
+
+# Make a table with the outputs from both models (following https://gkhajduk.github.io/2017-10-25-cleanMCMCglmm/)
+library(dplyr)
+
+# for 1 model
+clean.MCMC <- function(x) {
+    sols <- summary(x)$solutions  ## pull out relevant info from model summary
+    Gcovs <- summary(x)$Gcovariances
+    Rcovs <- summary(x)$Rcovariances
+    fixed <- data.frame(row.names(sols), sols, row.names = NULL)  ## convert to dataframes with the row.names as the first col
+    random <- data.frame(row.names(Gcovs), Gcovs, row.names = NULL)
+    residual <- data.frame(row.names(Rcovs), Rcovs, row.names = NULL)
+    names(fixed)[names(fixed) == "row.names.sols."] <- "variable"  ## change the columns names to variable, so they all match
+    names(random)[names(random) == "row.names.Gcovs."] <- "variable"
+    names(residual)[names(residual) == "row.names.Rcovs."] <- "variable"
+    fixed$effect <- "fixed"  ## add ID column for type of effect (fixed, random, residual)
+    random$effect <- "random"
+    residual$effect <- "residual"
+    modelTerms <- as.data.frame(bind_rows(fixed, random, residual))  # merge it all together
+}
+
+# check for one model - it works
+#oneModel <- clean.MCMC(rmw)  # get all the info from summary(modelName)
+#oneModel$modelName <- getName.MCMC(rmw)  # add the model's name in a new column
+#oneModel  # check out the created dataframe
+
+# check for multiple models - it works
+dataList <- list(rm, rmw)
+dataListNames <- list("Plastic", "Wooden")
+readyList <- mapply(cbind, lapply(dataList, clean.MCMC), "modelName" = dataListNames, SIMPLIFY = F)
+mcmcOutputs <- as.data.frame(do.call(rbind, readyList), stringsAsFactors = FALSE)
+
+# NOTE: for html, change to type='html', for pdf, change to type='latex' (https://stackoverflow.com/questions/14670299/using-stargazer-with-rstudio-and-knitr , stargazer cheatsheet: https://www.jakeruss.com/cheatsheets/stargazer/#html-formatting)
+library(stargazer)
+stargazer(mcmcOutputs, summary=FALSE, header=FALSE, type='latex', digits=1) 
 ```
 
