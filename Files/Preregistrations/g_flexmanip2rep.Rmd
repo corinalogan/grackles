@@ -617,16 +617,18 @@ This means that, with our sample size of 32, we have a 71% chance of detecting a
 library(lubridate)
 library(DHARMa)
 library(lme4)
-rev = read.csv("g_flexmanip2rep_data_xcontext.csv") # data file with reversal learning measure in seconds to reverse
+rev <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) # data file with reversal learning measure in seconds to reverse
+rev <- rev[!rev$ID == "Diablo",] #remove Diablo who did not pass criterion on solving any MAB loci and so we can't measure solution switching
+
 simulationOutput <- simulateResiduals(fittedModel = glmer(log(Dur.sec) ~
     Test + cent.rev + (1 | ID), family = gaussian, data = rev), n = 250)  #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals)  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Poisson does not look great. Try log-transforming and using gaussian - Looks randomly scattered
 testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
-#p = 0.72
+#p = 0.78
 testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p>0.05. 
 #p=1 - there are no zeros, so not zero inflated
 testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.25 so NOT heteroscedastic
-#p = 0.14 not heteroscedastic
+#p = 0.07 not heteroscedastic
 plot(simulationOutput)  #...there should be no pattern in the data points in the right panel. 
 
 
@@ -642,16 +644,16 @@ plot(xcontx) # all traces look great
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
 repeata <- xcontx$VCV[,"ID"]/(xcontx$VCV[,"ID"]+xcontx$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) #0.35
+mean(repeata) #0.37
 var(repeata) #0.02 variance
-posterior.mode(repeata) #0.33
-HPDinterval(repeata, 0.95) #0.11-0.57
+posterior.mode(repeata) #0.44
+HPDinterval(repeata, 0.95) #0.11-0.61
 
 library(rptR) # check significance of repeatability using rptR package
 xcontx.rpt = rpt(log(Dur.sec) ~ Test + cent.rev + (1|ID), grname = "ID", 
                  data = rev, datatype="Gaussian", nboot=1000, npermut=100)
 summary(xcontx.rpt)
-# R = 0.36, CI: 0.11-0.55, p = 0.01
+# R = 0.36, CI: 0.11-0.58, p = 0.01
 # Almost exact same results for R and CI.
 
 ## PLOTTING RESULTS ##
