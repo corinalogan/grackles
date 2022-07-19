@@ -454,9 +454,9 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 serial <- MCMCglmm(log(TrialsToReverse) ~ ReverseNumber, random=~ID, family="gaussian", data=d, verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=5000)
 summary(serial)
-autocorr(serial$Sol) #Did fixed effects converge (<0.1)? yes, except for 2
-autocorr(serial$VCV) #Did random effects converge (<0.1)? yes, except for 4
-
+autocorr(serial$Sol) #Did fixed effects converge (<0.1)? yes
+autocorr(serial$VCV) #Did random effects converge (<0.1)? yes
+plot(serial)
 
 #REPEATABILITY
 
@@ -464,7 +464,7 @@ autocorr(serial$VCV) #Did random effects converge (<0.1)? yes, except for 4
 repeata <- serial$VCV[,"ID"]/(serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) #0.13
 var(repeata) #0.02 variance
-posterior.mode(repeata) #5.21e-5
+posterior.mode(repeata) #<0.01
 HPDinterval(repeata, 0.95) #4.64e-16 to 0.43, probability=0.95
 
 # ADDED Aug 2021
@@ -490,14 +490,14 @@ for(i in 1:1000){
   tmp8 = data.frame("ID" = d$ID[which(d$ReverseNumber==8)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==8)], 
           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==8)],replace=F))
   tmp = rbind(tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8)
-  m <- MCMCglmm(log(TrialsToReverse) ~ ReverseNumber, random=~ID, family="gaussian", data=tmp, verbose=F, prior=prior, nitt=100000, thin=500, burnin=500)
+  m <- MCMCglmm(log(TrialsToReverse) ~ ReverseNumber, random=~ID, family="gaussian", data=tmp, verbose=F, prior=prior, nitt=10000, thin=50, burnin=500)
   rpt <- m$VCV[,"ID"]/(m$VCV[,"ID"]+m$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
   results[i] = mean(rpt)
 }
 hist(results)
 abline(v=0.13,col="red")
 sum(results > 0.13)/1000
-#p = 0.004 - Our repeatability value of 0.13 is significantly greater than that expected if birds are performing randomly in each reversal
+#p = 0.003 - Our repeatability value of 0.13 is significantly greater than that expected if birds are performing randomly in each reversal
 
 
 # WE DID NOT end up using the code below because the above gave us what we needed
@@ -613,6 +613,80 @@ Actual power                  	=	0.7083763
 This means that, with our sample size of 32, we have a 71% chance of detecting a medium effect [approximated at f^2^=0.15 by @cohen1988statistical]. 
  
 ```{r consistent1, eval=F}
+# ADDED JULY 2022 - we realized we mis-specified the model for assessing repeatability of flexibility across contexts. Previously we were analyzing the relationship between overall performance on the reversal learning and MAB tasks, rather than individual consistency of performance. Consequently we conducted an analysis that evaluated performance as a function of task type, reversal/switch number and a random effect of ID.
+library(lubridate)
+library(DHARMa)
+library(lme4)
+rev = read.csv("g_flexmanip2rep_data_xcontext.csv") # data file with reversal learning measure in seconds to reverse
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(Dur.sec) ~
+    Test + cent.rev + (1 | ID), family = gaussian, data = rev), n = 250)  #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Poisson does not look great. Try log-transforming and using gaussian - Looks randomly scattered
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
+#p = 0.72
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p>0.05. 
+#p=1 - there are no zeros, so not zero inflated
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.25 so NOT heteroscedastic
+#p = 0.14 not heteroscedastic
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel. 
+
+
+#REPEATABILITY
+# GLMM
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+xcontx <- MCMCglmm(log(Dur.sec) ~ Test + cent.rev, random=~ID, family="gaussian", data=rev, verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=5000)
+summary(xcontx)
+autocorr(xcontx$Sol) #Did fixed effects converge (<0.1)? yes
+autocorr(xcontx$VCV) #Did random effects converge (<0.1)? yes
+plot(xcontx) # all traces look great
+
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
+repeata <- xcontx$VCV[,"ID"]/(xcontx$VCV[,"ID"]+xcontx$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.35
+var(repeata) #0.02 variance
+posterior.mode(repeata) #0.33
+HPDinterval(repeata, 0.95) #0.11-0.57
+
+library(rptR) # check significance of repeatability using rptR package
+xcontx.rpt = rpt(log(Dur.sec) ~ Test + cent.rev + (1|ID), grname = "ID", 
+                 data = rev, datatype="Gaussian", nboot=1000, npermut=100)
+summary(xcontx.rpt)
+# R = 0.36, CI: 0.11-0.55, p = 0.01
+# Almost exact same results for R and CI.
+
+## PLOTTING RESULTS ##
+library(tidyverse)
+library(ggplot2)
+
+rev = rev %>% 
+  group_by(Test) %>% 
+  mutate(scale.dur = scale(Dur.sec, center=T, scale=T)) %>% 
+  ungroup()
+rev.all3 = rev %>% 
+  group_by(ID, Test) %>% 
+  summarise(median = median(scale.dur),
+            lcl = quantile(scale.dur, probs=0.25),
+            ucl = quantile(scale.dur, probs=0.75)) %>% 
+  ungroup() %>% 
+  mutate(Test = recode(Test, "LatencyMABplastic"="MAB plastic",
+                       "LatencyMABwooden"="MAB wood",
+                       "Reversal" = "Reversal learning")) #%>% 
+
+#performance across all tests
+ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Test)) +
+  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
+                  position = position_dodge(width = 0.5)) +
+  scale_shape_manual(values = c(15,17,8,19))+
+  labs(x = "Bird", y = "Latency to switch (sec)") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  scale_fill_discrete(guide = "none") +
+  scale_colour_discrete(guide = "none")
+
+
+
+## CODE for previous (mis-specified) analysis ##
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F) 
 setwd("~/Documents/Grackle project")
 d = read.csv("g_flexmanip_data_repeatability.csv")
@@ -628,18 +702,17 @@ d <- d[d$TubesOrTouchscreen == "TUBES" & d$ExperimentalGroup == "Manipulation",
 #factor variable
 d$ID <- as.factor(d$ID)
 
-#remove Guacamole & Memela who did not pass the reversal experiment and therefore was not offered the MAB experiments
+#remove Guacamole & Memela who did not pass the reversal experiment and therefore were not offered the MAB experiments
 d <- d[!d$ID=="Guacamole" & !d$ID=="Memela",]
-#remove Chalupa who did not solve any MAB loci and so we can't measure solution switching
-d <- d[!d$ID=="Chalupa",]
+#remove Diablo and Chalupa who did not pass criterion on solving any MAB loci and so we can't measure solution switching
+d <- d[!d$ID=="Chalupa" & !d$ID == "Diablo",]
 #remove pilot birds
 d <- d[!d$ID == "Fajita" & !d$ID == "Empanada", ]
 
-
-#n=7
+#n=6
 #length(unique(d$ID))
 
-# Data checking - Which distribution should we use? 
+# Data checking  
 library(DHARMa)
 library(lme4)
 simulationOutput <- simulateResiduals(fittedModel = glmer(log(Value) ~
@@ -649,17 +722,6 @@ testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.0
 testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p>0.05. p=1 - there are no zeros, so not zero inflated
 testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.25 so NOT heteroscedastic
 plot(simulationOutput)  #...there should be no pattern in the data points in the right panel.
-
-# Need to put latency on same scale (trials to reverse vs seconds to switch)
-# cntx.rpt = rpt(log(Value) ~ Test + ReverseNumber + (1|ID), grname = "ID", data = d, datatype = "Gaussian", nboot = 5000, npermut = 100)
-# summary(cntx.rpt) # R = 0.12, p = 0.03
-# 
-# rm <- lmer(log(Value) ~ Test + ReverseNumber + (1|ID), 
-# 	    data = d)
-# plot(rm)
-# 
-# boxplot(residuals(rm) ~ d$Test)
-
 
 # GLMM color reversal tubes compared with multi-access box
 library(MCMCglmm)
