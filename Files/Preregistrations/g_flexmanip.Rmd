@@ -188,7 +188,55 @@ cor.test(d2$TotalLociSolvedMABplastic, d2$TotalLociSolvedMABwooden, use="pairwis
 
 ### P1: reversal speed gets faster with serial reversals
 
-The birds in the manipulated group required a similar number of trials during their first reversal (R1 median=75 trials) as the birds in the control group needed during their first and only reversal (R1 median=70 trials). The manipulated birds improved during the reversal manipulation to a median of 40 trials in their last reversal. There was a significant negative correlation between the number of trials to reverse (average=71 trials, standard deviation (sd)=28) and the reversal number for those grackles in the flexibility manipulation condition (n=9, which included Memela who did not pass the manipulation condition; Figure 2). 
+The birds in the manipulated group required a similar number of trials during their first reversal (R1 median=75 trials) as the birds in the control group needed during their first and only reversal (R1 median=70 trials) (see unregistered analysis in Table X). The manipulated birds improved during the reversal manipulation to a median of 40 trials in their last reversal. There was a significant negative correlation between the number of trials to reverse (average=71 trials, standard deviation (sd)=28) and the reversal number for those grackles in the flexibility manipulation condition (n=9, which included Memela who did not pass the manipulation condition; Figure 2). 
+
+```{r p1unregistered, eval=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
+d <- d[d$TubesOrTouchscreen=="TUBES",]
+
+#factor variables
+d$Batch <- as.factor(d$Batch)
+d$ID <- as.factor(d$ID)
+d$ExperimentalGroup <- as.factor(d$ExperimentalGroup)
+
+#rename Taco's "None" to "Control" to count him as a control bird for this analysis because he had only 1 reversal (and no yellow tube afterward)
+levels(d$ExperimentalGroup) <- c("Control","Manipulation","Control")
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0), G2 = list(V = 1, nu = 0)))
+condition <- MCMCglmm(TrialsToReverse ~ ExperimentalGroup, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+
+#reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation? Yes
+summary(condition)
+#              post.mean l-95% CI u-95% CI eff.samp  pMCMC   
+#(Intercept)                     4.28760  4.09032  4.51160      420 <0.002 **
+#ExperimentalGroupManipulation  -0.07978 -0.31236  0.15703      420  0.457   
+
+#Output table
+# FIRST: Extract 89 percentile compatibility interval from the model output and update the table's csv
+library(rethinking)
+PI(condition$Sol[,1],prob=0.89) #4.12 to 4.46
+PI(condition$Sol[,2],prob=0.89) #-0.27 to 0.11
+
+tb <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_tableR1condition.csv"), header=F, sep=",", stringsAsFactors=F)
+tb <- data.frame(tb)
+colnames(tb) <- c("","Posterior mean","Lower 89 percentile compatibility interval (5%)","Upper 89 percentile compatibility interval (94%)","Effective sample size","pMCMC","Significance code: **=0.01")
+
+library(kableExtra)
+knitr::kable(tb) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
+```
 
 **Unregistered analysis:** There was additionally a difference between manipulated and control reversal speeds when comparing their last reversals (Figure 3; for the control birds, their last reversal was their first reversal): the Akaike weight of the full model was 0.94, which means that including condition in the model explains the bulk of the variation in the number of trials to reverse in the last reversal (Table 3). This analysis includes 19 grackles (8 manipulated condition - only those who actually passed the manipulation, 11 control condition) who had an overall average of 62 trials in their last reversal (sd=32).
 
