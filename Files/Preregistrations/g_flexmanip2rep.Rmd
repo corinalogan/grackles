@@ -644,10 +644,10 @@ plot(xcontx) # all traces look great
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
 repeata <- xcontx$VCV[,"ID"]/(xcontx$VCV[,"ID"]+xcontx$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) #0.37
+mean(repeata) #0.36
 var(repeata) #0.02 variance
-posterior.mode(repeata) #0.44
-HPDinterval(repeata, 0.95) #0.11-0.61
+posterior.mode(repeata) #0.40
+HPDinterval(repeata, 0.95) #0.10-0.64
 
 library(rptR) # check significance of repeatability using rptR package
 xcontx.rpt = rpt(log(Dur.sec) ~ Test + cent.rev + (1|ID), grname = "ID", 
@@ -791,3 +791,15 @@ library(stargazer)
 stargazer(mcmcOutputs, summary=FALSE, header=FALSE, type='latex', digits=1) 
 ```
 
+Table 1: We found significant repeatability of performance across time within a context (temporal repeatability model) and across contexts (contextual repeatability model).
+```{r resultstable, eval=T}
+#Output table
+tbl = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_tabledata.csv"), header=T, sep=",", stringsAsFactors=F)
+#tbl <- data.frame(tbl)
+#colnames(tbl) <- c("","Posterior mean","Lower 89 percentile compatibility interval (5%)","Upper 89 percentile compatibility interval (94%)","Effective sample size","pMCMC","Significance code: **=0.01")
+
+library(kableExtra)
+knitr::kable(tbl) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
+
+```
