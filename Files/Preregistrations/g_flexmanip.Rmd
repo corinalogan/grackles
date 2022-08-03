@@ -88,7 +88,7 @@ If grackle flexibility is manipulatable using serial reversals, this could provi
 **Figure X.** Photos of the experimental apparatuses.
 
 
-## HYPOTHESES
+### HYPOTHESES
 
 #### H1: Behavioral flexibility, as measured by reversal learning using colored tubes, is manipulatable.
 
@@ -113,12 +113,618 @@ If grackle flexibility is manipulatable using serial reversals, this could provi
  - **P4 alternative 1:** Individuals will continue to prefer a mixture of learning strategies, and/or they do not converge on the more functional epsilon-first learning strategy, regardless of how many reversals they participate in. This pattern could suggest that the grackles do not attend to functional meta-strategies, that is, they do not learn the overarching rule (once food is found in the non-preferred tube, one must switch to preferring that tube color), but rather they learn each preference change as if it was new. 
 
 
-## ASSOCIATED PREREGISTRATION
+### ASSOCIATED PREREGISTRATION
 
 Our methods and analysis plans are described in the peer-reviewed preregistration of this article that received in principle recommendation from PCI Ecology, which is included below as the [Methods](#methods). We moved the hypotheses from the preregistration to the section above to improve flow for the reader.
 
 
-### DEVIATIONS FROM THE PREREGISTRATION
+## METHODS
+
+Please see our preregistration that received in principle acceptance at PCI Ecology ([PDF](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf) version) for all of the preregistered methods. Below, we include a summary and describe all deviations from the preregistration
+
+We present the results from different hypotheses in separate articles: this one, @mccune2022flexmanip, and @lukas2022flexmanip.
+
+#### **Planned Sample**
+	
+Great-tailed grackles were caught in the wild in Tempe, Arizona, USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 in the control group (they receive 1 reversal) and ~16 in the flexibility manipulation (they receive multiple reversals)) were brought temporarily into aviaries for testing, and then released back to the wild.
+ - **Deviation from the plan:** we were able to test a total of 20 individuals: 11 in the control condition and 9 in the manipulation condition. This met our minimum sample size criterion (see next section).
+
+#### **Data collection stopping rule**
+	
+We stopped testing birds after we completed two full aviary seasons because the sample size was above the minimum suggested boundary of 15 (to detect a medium effect size) based on model simulations (see Supplementary Material 6).
+
+#### **Open materials** 
+
+[Design files](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) for the plastic multi-access box: 3D printer files and laser cutter files
+
+[Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all three experiments: colored tube reversal learning, plastic multi-access box, wooden multi-access box, and touchscreen reversal learning
+
+#### **Open data**
+
+The data are available at the Knowledge Network for Biocomplexity's data repository: [https://knb.ecoinformatics.org/view/corina_logan.84.42](https://knb.ecoinformatics.org/view/corina_logan.84.42).
+
+#### **Randomization and counterbalancing** 
+
+H1: Subjects were randomly assigned to the manipulated or control group. In the reversal learning trials, the rewarded option is pseudorandomized for side (and the option on the left is always placed first). Pseudorandomization consisted of alternating location for the first two trials of a session and then keeping the same color on the same side for at most two consecutive trials thereafter. A list of all 88 unique trial sequences for a 10-trial session, following the pseudorandomization rules, was generated in advance for experimenters to use during testing (e.g., a randomized trial sequence might look like: LRLLRRLRLR, where L and R refer to the location, left or right, of the rewarded tube). Randomized trial sequences were assigned randomly to any given 10-trial session using a random number generator (random.org) to generate a number from 1-88. The only exception to this randomization was when an individual exhibited a side bias (choosing one side 4 or more trials in a row). In these cases, we stopped the current random numbers for side and started putting the rewarded color on the non-preferred side as much as possible while still following the pseudorandomization rules until the individual stopped exhibiting a side bias.
+
+
+### ANALYSIS PLAN
+
+Analyses were conducted in R [current version `r getRversion()`; @rcoreteam], using several R packages: @kableextra, @stargazer, @hadfieldMCMCglmmpackage, @mumin, @rethinking2020, @rstan, @formatr, @rstudioapi, @rcpp, @ggplot2, knitr [@xie2018knitr; @xie2017dynamic; @xie2013knitr], @dplyr, @cmdstanr, posterior [@burkner2020posterior], cowplot [@wilkecowplot], bayesplot [@gabry2019visualization], irr [@gamer2012package], psych [@revelle2014psych; @psych], @reactable, DHARMa [@Hartig2019dharma], lme4 [@lme4; @bates2012lme4]. 
+
+**Unregistered analyses:** We conducted unregistered interobserver reliability analyses on the response variables. Scores indicated that the response variables are repeatable to a high or extremely high degree given our instructions and training (see Supplementary Material 5).
+
+**Planned analyses:** When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity. 
+
+ - **Deviation from the plan:** We removed experimenter (random variable) from all analyses because the interobserver reliability scores were so high, indicating there was no difference between experimenters, therefore we could keep our models simpler by leaving this variable out.
+
+#### *Data checking*
+
+The data were checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4] for the DHARMa data checking.
+
+#### *Determining the threshold: How many reversals are enough?*
+
+**The plan:** We initially (in 2017) set as the passing criterion: During the data collection period, the number of trials required to reverse a preference will be documented per bird, and reversals will continue until the first batch of birds tested reaches an asymptote (i.e., there are negligible further decreases in the number of trials required to reverse a preference). The number of reversals to reach the asymptote will be the number of reversals that subsequent birds experience.
+
+**Deviations from the plan:** Due to delays in setting up the field site, we were only able to test two grackles in early 2018 (January through April) and, due to randomization, only one (Fajita) was in the experimental condition that involved undergoing the flexibility manipulation (Empanada was in the control condition). While Fajita's reversal speeds generally improved with increasing serial reversals, she never reached an asymptote (which we defined as passing three consecutive reversals in the same number of trials), even after 38 reversals. These 38 reversals took 2.5 months, which is an impractical amount of time if birds are to participate in the rest of the test battery (multi-access box, detour, causal cognition, go no-go, reversal on a touchscreen) after undergoing the reversal manipulation (we were initially permitted to keep them in aviaries for up to three months per bird, which we extended to 6 months per bird in Dec 2018). Because our objective in this experiment was to manipulate an individual's flexibility, we decided to revise our serial reversal passing criterion to something more species relevant based on Fajita's serial reversal performance and the performance of seven grackles in Santa Barbara who underwent only one reversal in 2014 and 2015 [@logan2016behavioral]. **The revised serial reversal passing criterion was: passing two reversals in a row at or under 50 trials**. 50 trials is fewer trials than any of the nine grackles required to pass their first reversal (range 70-130), therefore it should reflect an improvement in flexibility.
+
+#### *Revising the choice criterion and the criterion to pass the control condition*
+
+**Choice criterion:** At the beginning of the second bird's initial discrimination in the reversal learning colored tube experiment (October 2018), we revised the criterion for what counts as a choice from A) the bird's head needs to pass an invisible line on the table that ran perpendicular to the the tube opening to B) the bird needs to bend its body or head down to look in the tube. Criterion A resulted in birds making more choices than the number of learning opportunities they were exposed to (because they could not see whether there was food in the tube unless they bent their head down to look in the tube) and appeared to result in slower learning. It is important that one choice equals one learning opportunity, therefore we revised the choice criterion to the latter. Anecdotally, this choice matters because the first three birds in the experiment (Tomatillo, Chalupa, and Queso) learned faster than the pilot birds (Empanada and Fajita) in their initial discriminations and first reversals. Thus, it was an important change to make at the beginning of the experiment (after testing the two pilot birds and before collecting any data that were included in analyses).
+
+**Criterion to pass the control condition:** Before collecting experimental data, we set the number of trials experienced by the birds in the control group as 1100 because this is how many trials it would have taken the pilot bird in the manipulated group, Fajita, to pass serial reversals 2-17 according to our revised serial reversal passing criterion. However, after 25 and 17 days (after Tomatillo and Queso's first reversals, respectively) of testing the first two individuals in the control group, it became apparent that 1100 trials is impractical given the time constraints for how long we were permitted to keep each bird temporarily in captivity and would prevent birds from completing the test battery before their release. Additionally, after revising the choice criterion, it was going to be likely that birds in the manipulated group would require fewer than 1100 trials to meet the serial reversal passing criterion. Therefore, reducing the number of trials the control birds experience would result in a better match of experience with birds in the manipulated group. On 2 November 2018 we set the number of trials control birds experience after their first (and only) reversal to the number of trials it requires the first bird in the manipulated group to pass (the first bird has not passed yet, therefore we do not yet know what this number is). After more individuals in the manipulated group passed, we updated this number to the average number of trials to pass. This applied to all birds in the control condition, except Mofongo (see next paragraph).
+
+ - **Deviation from the plan** (16 April 2020): Mofongo (control condition) was a slow participator and would not have finished his test battery by the time it got too hot to keep birds in the aviaries if we used the current average number of trials (420). Instead, we matched him with the fastest bird in the manipulated group (Habanero=290 trials) to make it more likely that Mofongo could get through the rest of the test battery in time.
+
+#### *P1: negative relationship between the number of trials to reverse a preference and the number of reversals?*
+
+**Analysis:** Response variable: Number of trials to reverse a preference. An individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials (with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). We use a sliding window to look at the most recent 10 trials for a bird, regardless of when the testing sessions occurred. Explanatory variable: reversal number. Random variables: batch (random effect because multiple batches included in the analysis; batch is a test cohort, consisting of 8 birds being tested simultaneously) and ID (random effect because repeated measures on the same individuals). A Generalized Linear Mixed Model [GLMM; MCMCglmm function, MCMCglmm package; @hadfieldMCMCglmmpackage] will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence [lag time autocorrelation values <0.01; @hadfieldMCMCglmmpackage], and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+
+We did not need a power analysis to estimate our ability to detect actual effects because, by definition, the individuals that complete this experiment must get faster at reversing in order to be able to pass the stopping criterion (two consecutive reversals in 50 trials or less). According to previous grackle data [from the pilot birds, and from Santa Barbara @logan2016behavioral], the fastest grackle passed their first reversal in 70 trials, which means that passing our serial reversal stopping criterion would require them to have improved their passing speed.
+
+```{r serial, eval=F}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variables
+d$Batch <- as.factor(d$Batch)
+d$ID <- as.factor(d$ID)
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
+#Looks randomly scattered
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
+#p=0.00, it is underdispersed according to the plot at https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html.
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
+#p=1 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+#p=0.06 so it is not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+#There is a pattern in the right panel
+#January 2021: My interpretation of the statistically significant underdispersion in the data is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0), G2 = list(V = 1, nu = 0)))
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+#reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
+summary(serial)
+#Did fixed effects converge (<0.1)? Yes
+autocorr(serial$Sol) 
+#Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
+autocorr(serial$VCV)
+
+#AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000))
+library(knitr)
+kable(base, caption="")
+```
+
+#### *P2: serial reversal improves rule switching and problem solving*
+
+**Unregistered analysis:** Because the wooden multi-access box was added after in principle recommendation, we conducted an unregistered analysis to determine whether the plastic and wooden multi-access box results correlated with each other, which would indicate that these tests are interchangeable. We found that they did not statistically significantly correlate with each other on either variable measured: the average latency to attempt a new locus (switching; Pearson's r=0.74, 89% confidence level=0.02-0.95, t=2.18, df=4, p=0.09, n=6) or the total number of loci solved (problem solving; Pearson's r=0.51, 89% confidence level=0.03-0.80, t=1.86, df=10, p=0.09, n=12). Therefore, while the performance on the two multi-access boxes might not be completely independent as indicated by the high r values, the two boxes appear not to be completely interchangeable either as indicated by the lack of statistical significance and high uncertainty in the r values. We therefore analyzed the plastic and wooden multi-access boxes separately.
+
+**Planned analyses:** As originally planned, we replaced the GLMs and GLMMs in May 2020 with more powerful models after learning how to make bespoke Bayesian models from @statrethinkingbook. We made these models before analyzing the actual data (14 May 2020).
+
+One model was run per response variable: average latency to attempt to solve a new locus after solving a different locus, and total number of loci solved. Explanatory variable: Number of trials to reverse a preference in the last reversal. Random variable: batch. 
+
+The model for the number of loci solved takes the form of:
+
+locisolved ~ Binomial(4, p) *[likelihood]*
+
+logit(p) ~ $\alpha$[batch] + $\beta$trials  *[model]*
+
+locisolved is the number of loci solved on the multi-access box, 4 is the total number of loci on the multi-access box, p is the probability of solving any one locus across the whole experiment, $\alpha$ is the intercept and each batch gets its own, $\beta$ is the expected amount of change in locisolved for every one unit change in trials, and trials is the number of trials to reverse a color preference. See Supplementary Material 3 for more model details.
+
+The model for the latency to switch options takes the form of:
+
+latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
+
+log($\lambda_i$) ~ $\alpha$[batch] + $\beta$trials  *[the model]*
+
+latency is the average latency to attempt a new locus on the multi-access box, $\lambda_i$ is the rate (probability of attempting a locus in each second) per bird (and we take the log of it to make sure it is always positive; birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, $\alpha$ is the intercept for the rate per batch, $\beta$ is the expected amount of change in the rate of attempting to solve in any given second for every one unit change in trials, and trials is the number of trials to reverse a color preference. See Supplementary Material 6 for more model details.
+
+```{r improves, eval=F}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+d <- data.frame(d)
+colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+##### This is the model code from the ability to detect actual effects section, copied here for clarity
+#remove pilot birds and Taco because he was the only one in batch "Juvenile"
+d2 <- d[!d$Bird=="Fajita" & !d$Bird=="Empanada",]
+
+#ulam doesn't like that batch is not consecutive (there is no batch 2 in this sample, only 1, 3 and 4), so renamed batches 3 and 4, 2 and 3, respectively
+d2$Batch[d2$Batch==3]<-2
+d2$Batch[d2$Batch==4]<-3
+d2$Batch[d2$Batch=="3a"]<-4 #This is Taco bc he wasn't officially in a batch due to him being the first juvenile we ever tested so we wanted to see if he performed similarly to the adults and he did
+d2$Batch<-as.integer(d2$Batch)
+
+#load libraries
+library(rethinking)
+library(rstan)
+library(formatR)
+
+### MAB PLASTIC LOCI last reversal
+#remove NAs from the variables that will be in the models. n=17
+d3 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["TotalLoci_plastic"]))) 
+
+dlist <- list(locisolved = d3$TotalLoci_plastic,
+              trials = standardize(d3$Trialstoreverselast),
+              batch = as.integer(d3$Batch)
+)
+
+mloci <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dlist , chains=4 , log_lik=TRUE )
+
+precis(mloci,depth=2)
+# a=number of loci solved: was there a difference betweeen batches? Yes, batch 1 solved more loci
+#b=effect of trials to reverse last on the number of loci solved. Results show that there are no relationships between the number of loci solved and the trials to reverse last (across all batches)
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1]  0.61 0.39  0.01  1.22  3289     1
+#a[2]  0.44 0.39 -0.19  1.06  2763     1
+#a[3] -0.76 0.56 -1.65  0.11  3031     1
+#a[4] -0.48 0.75 -1.70  0.65  3743     1
+#b    -0.28 0.26 -0.69  0.13  2905     1
+
+
+
+### MAB LOG LOCI last reversal
+#remove NAs from the variables that will be in the models. n=12
+d4 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["TotalLoci_wooden"]))) 
+
+dlistLog <- list(locisolved = d4$TotalLoci_wooden,
+              trials = standardize(d4$Trialstoreverselast),
+              batch = as.integer(d4$Batch)
+)
+
+mlociw <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dlistLog , chains=4 , log_lik=TRUE )
+
+precis(mlociw,depth=2)
+#a=number of loci solved: was there a difference betweeen batches? Yes, batches 2 and 3 (actually 3 and 4) solved more loci on the log. However, there was only 1 bird (Mole) in batch 1 (he solved all 4)
+#b=effect of trials to reverse last on the number of loci solved. There was no relationship between trials to reverse the last preference and the number of loci solved
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1] 1.09 0.75 -0.09  2.35  2820     1
+#a[2] 0.83 0.37  0.26  1.44  2595     1
+#a[3] 1.45 0.63  0.47  2.49  2432     1
+#a[4] 1.08 0.76 -0.10  2.36  2573     1
+#b    0.14 0.29 -0.32  0.62  2539     1
+
+#plot
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d3$Trialstoreverselast),jitter(d3$TotalLoci_plastic), ylab="Number of loci solved", xlab="Trials in last reversal", ylim=c(0,5), xlim=c(0,170), cex=4, pch=2, yaxt="n")
+points(jitter(d4$Trialstoreverselast),jitter(d4$TotalLoci_wooden), cex=4, pch=1, yaxt="n")
+legend(x="topright", y=8, legend=c(pch2="Plastic", pch1="Wooden"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(1,2,3,4))
+par(op)
+
+
+
+### MAB PLASTIC SWITCH last reversal
+#Load packages
+library("Rcpp")
+library(ggplot2)
+
+#remove NAs from the variables that will be in the models. n=11
+d5 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["AvgLatencyAttemptNewLoci_plastic"]))) 
+
+dlist5 <- list(latency = d5$AvgLatencyAttemptNewLoci_plastic,
+              trials = standardize(d5$Trialstoreverselast),
+              batch = as.integer(d5$Batch)
+)
+
+mswitchp <- ulam(
+  alist(
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[batch] + b*trials,
+    a[batch] ~ dnorm(1,1),
+    b ~ dnorm(0,1),
+    phi ~ dexp(1)
+  ),data=dlist5, log_lik=TRUE, messages=FALSE)
+
+precis(mswitchp,depth=2)
+#phi=dispersion of gamma poisson, b=effect of trials to reverse on latency, a=were some batches faster to switch
+#b=no correlation between average switch latencies and number of trials in last reversal
+
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1] 4.74 0.45  3.97  5.39   208    1
+#a[2] 3.64 0.42  2.99  4.32   278    1
+#a[3] 4.63 0.58  3.69  5.53   216    1
+#b    0.32 0.26 -0.06  0.77   438    1
+#phi  0.78 0.43  0.27  1.60   200    1
+
+
+### MAB LOG SWITCH last reversal
+#remove NAs from the variables that will be in the models. n=11
+d6 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["AvgLatencyAttemptNewLoci_wooden"]))) 
+
+dlist6 <- list(latency = d6$AvgLatencyAttemptNewLoci_wooden,
+              trials = standardize(d6$Trialstoreverselast),
+              batch = as.integer(d6$Batch)
+)
+
+mswitchw <- ulam(
+  alist(
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[batch] + b*trials,
+    a[batch] ~ dnorm(1,1),
+    b ~ dnorm(0,1),
+    phi ~ dexp(1)
+  ),data=dlist6, log_lik=TRUE, messages=FALSE)
+
+precis(mswitchw,depth=2)
+#phi=dispersion of gamma poisson, b=effect of trials to reverse on latency, a=were some batches faster to switch
+#b=no correlation between average switch latencies and number of trials in last reversal
+
+#mean   sd  5.5% 94.5% n_eff Rhat
+#a[1]  4.17 0.68  3.07  5.25   208    1
+#a[2]  4.52 0.60  3.54  5.43   237    1
+#a[3]  4.27 0.60  3.36  5.22   207    1
+#a[4]  2.66 0.73  1.57  3.89   304    1
+#b    -0.27 0.36 -0.81  0.36   304    1
+#phi   0.20 0.12  0.06  0.45   162    1
+
+
+#plot
+op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
+plot(jitter(d5$Trialstoreverselast),jitter(d5$AvgLatencyAttemptNewLoci_plastic), ylab="Average seconds to attempt a new locus", xlab="Trials in last reversal", ylim=c(0,1500), xlim=c(0,170), cex=4, pch=2, yaxt="n")
+points(jitter(d6$Trialstoreverselast),jitter(d6$AvgLatencyAttemptNewLoci_wooden), cex=4, pch=1, yaxt="n")
+legend(x="topright", y=8, legend=c(pch2="Plastic", pch1="Wooden"), pch=c(2,1), box.lty=1, cex=2)
+axis(side=2, at=c(100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500))
+par(op)
+
+
+
+
+
+
+
+######   BELOW was in the original preregistration  ######
+#Is performance on the two multi-access boxes correlated?
+#cor(d$AvgLatencySolveNewLoci_plastic, d$AvgLatencySolveNewLoci_wooden) #we no longer run this analyses bc switching is about the next attempt, not the next solve
+cor.test(d2$AverageLatencyAttemptNewLocusMABplastic, d2$AverageLatencyAttemptNewLocusMABwooden, use="pairwise.complete.obs", method="pearson")
+#plastic and wooden are not significantly correlated cor=0.74 (95% Confidence Interval=-0.19-0.97), t=2.18, df=4, p=0.09
+cor.test(d2$TotalLociSolvedMABplastic, d2$TotalLociSolvedMABwooden, use="pairwise.complete.obs", method="pearson")
+#plastic and wooden are not significantly correlated cor=0.51 (95% Confidence Interval=-0.09-0.84), t=1.86, df=10, p=0.09
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOut <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + AvgLatencyAttemptNewLoci + TotalLoci + (1|Batch), family=poisson, data=improve), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOut$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOut) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOut) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOut) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOut) #...there should be no pattern in the data points in the right panel
+plotResiduals(Condition, simulationOut$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0), G2 = list(V = 1, nu = 0)))
+imp <- MCMCglmm(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + 
+	    AvgLatencyAttemptNewLoci + TotalLoci, random = ~Batch, 
+	    family = "poisson", data = improve, verbose = F, prior = prior, 
+	    nitt = 13000, thin = 10, burnin = 3000)
+summary(imp)
+# autocorr(imp$Sol) #Did fixed effects converge?
+# autocorr(imp$VCV) #Did random effects converge?
+```
+
+**Deviations from the plan:** 
+
+ - April 2020: we realized that the average latency to solve a new locus after solving a different locus is confounded with the total number of loci solved because the measure of innovation is included in the definition. Therefore, we removed average latency to solve a locus from analyseis so that we are only examining pure measures of flexibility (average latency to **attempt** to solve) and innovation (total number of loci solved).
+ - Removed batch (random variable): the original model for P2 (Table SM2: Model 1) included the covariate aviary batch, however this ended up confounding the analysis because control and manipulated individuals, while randomly assigned to these conditions, ended up in particular batches as a result of their willingness to participate in tests offered during their time in the aviary (Table SM2: Model 3). Several grackles never passed habituation or training such that their first experiment could begin, therefore we replaced these grackles in the aviaries with others who were willing to participate. This means that batch did not indicate a particular temporal period. Therefore, we removed batch from the models (post data collection, mid-data analysis).
+ - When making the bespoke Bayesian models, we realized that we had previously misinterpreted which variable should be the response variable in this analysis. We originally set the number of trials to reverse as the response variable, however we should have instead set the number of loci solved as the response variable and then planned to conduct a second model with the latency to attempt a new locus as the response variable and number of trials as the explanatory variable. This is because a) we manipulated the number of trials to reverse, therefore it must be the explanatory variable [@hernan2006instruments]; and b) they should be split into two models because of a and because these are two very different relationships that should be considered in their own models. We also realized that Condition (manipulated or control) does not need to be a variable in any of our models because the manipulated birds have, by definition, faster reversal speeds.
+
+#### *P2 alternative 2: additional analysis: latency and motor diversity*
+
+**Planned analysis:** We ran one model per response variable: Number of trials to attempt a new locus on the multi-access boxes, and number of trials to solve (meet criterion) a new locus on the multi-access boxes. Explanatory variables: Number of trials to reverse a preference in the last reversal that individual participated in, motor diversity: the number of different motor actions used when attempting to solve the multi-access boxes. Random variable: ID (random because repeated measures on the same individuals). A Generalized Linear Mixed Model [GLMM; MCMCglmm function, MCMCglmm package; @hadfieldMCMCglmmpackage] will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We ensured the GLMM showed acceptable convergence [lag time autocorrelation values <0.01; @hadfieldMCMCglmmpackage] by adjusting parameters if necessary. We determined whether an independent variable had an effect or not using the Estimate in the full model.
+
+**Deviations from the plan:** We used the average latency rather than the number of trials to attempt a new locus because this would make the model comparable with the model in P2. Using the number of trials was an artifact from a previous version and we had missed updating this. We omitted the number of trials to solve a new locus as described in the deviation from the plan in P2 above. We used a GLM rather than a GLMM because there was only one data point per bird.
+
+```{r diversity1P, eval=F}
+#Latency to attempt to solve a new locus
+dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+dp <- data.frame(dp)
+colnames(dp) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+# Remove NAs
+dp <- subset(dp,!(is.na(dp["MotorActionsPlastic"])) & !(is.na(dp["TrialsLastReversal"])) & !(is.na(dp["AverageLatencyAttemptNewLocusMABplastic"])))
+
+# n=11: 6 in manipulated group, 5 in control group
+#length(dp$AverageLatencyAttemptNewLocusMABplastic)
+
+# look at the data
+#hist(dp$AverageLatencyAttemptNewLocusMABplastic)
+#mean(dp$AverageLatencyAttemptNewLocusMABplastic) #208
+#sd(dp$AverageLatencyAttemptNewLocusMABplastic) #226
+
+#hist(dp$MotorActionsPlastic)
+#mean(dp$MotorActionsPlastic) #14
+#sd(dp$MotorActionsPlastic) #3
+
+#mean(dp$TrialsLastReversal) #52
+#sd(dp$TrialsLastReversal) #22
+#mean(dp$TrialsFirstReversal) #70
+#sd(dp$TrialsFirstReversal) #21
+
+
+# PLASTIC MULTI-ACCESS BOX (P)
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutp <- simulateResiduals(fittedModel = glmer(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic + (1|Bird), family=poisson, data=dp), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutp$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.992 so not over or under dispersed
+testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
+testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.45 so not heterscedastic
+plot(simulationOutp) #...there should be no pattern in the data points in the right panel. There is no pattern
+
+# GLM
+motp <- glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic)
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+dredgemp <- dredge(glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic))
+library(knitr)
+kable(dredgemp, caption = "")
+#Akaike weights are all >0.5, therefore the models are essentially the same
+
+
+# GLMM - can't use this because only 1 data point per bird
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic, random = ~Bird, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption = "")
+```
+
+```{r diversity1W, eval=F}
+# WOODEN MULTI-ACCESS BOX (W)
+dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+dw <- data.frame(dw)
+colnames(dw) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+# Remove NAs
+dw <- subset(dw,!(is.na(dw["MotorActionsWooden"])) & !(is.na(dw["TrialsLastReversal"])) & !(is.na(dw["AverageLatencyAttemptNewLocusMABwooden"])))
+
+# n=11: 5 in manipulated group, 6 in control group
+#length(dw$AverageLatencyAttemptNewLocusMABwooden)
+
+# look at the data
+#hist(dw$AverageLatencyAttemptNewLocusMABwooden)
+#mean(dw$AverageLatencyAttemptNewLocusMABwooden) #463
+#sd(dw$AverageLatencyAttemptNewLocusMABwooden) #481
+
+#hist(dw$MotorActionsWooden)
+#mean(dw$MotorActionsWooden) #13
+#sd(dw$MotorActionsWooden) #4
+
+#mean(dw$TrialsLastReversal) #60
+#sd(dw$TrialsLastReversal) #38
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutw <- simulateResiduals(fittedModel = glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutw$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
+testDispersion(simulationOutw) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.744 so not over or under dispersed
+testZeroInflation(simulationOutw) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
+testUniformity(simulationOutw) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.53 so not heterscedastic
+plot(simulationOutw) #...there should be no pattern in the data points in the right panel. It says "quantile deviations detected"
+
+# GLM
+motw <- glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden)
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+dredgemw <- dredge(glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden))
+library(knitr)
+kable(dredgemw, caption = "")
+#Akaike weights = 0.71 null and <0.15 for the rest, therefore the models with or without motor actions are essentially the same
+
+
+
+# GLMM - does not work because only one data point per bird
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption = "")
+```
+
+```{r diversity2P, eval=F}
+#Latency to solve a new locus
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# PLASTIC MULTI-ACCESS BOX (P)
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMultiP, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption = "")
+```
+
+```{r diversity2W, eval=F}
+#Latency to solve a new locus
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+
+# WOODEN MULTI-ACCESS BOX (W)
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
+plotResiduals(NumberMotorActionsMultiW, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
+
+# GLMM
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+    nu = 0)))
+div <- MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(div)
+# autocorr(div$Sol) #Did fixed effects converge?
+# autocorr(div$VCV) #Did random effects converge?
+
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+    family = "poisson", data = diversity, verbose = F, prior = prior, 
+    nitt = 13000, thin = 10, burnin = 3000))
+library(knitr)
+kable(base1, caption = "")
+```
+
+#### *P4: learning strategies (for birds in the manipulated group only)*
+
+**Analysis 1 (qualitative):** Learning strategies were identified by matching them to the two known approximate strategies of the contextual, binary multi-armed bandit: epsilon-first and epsilon-decreasing [@mcinerney2010; as in @logan2016behavioral]. We used the criterion for the epsilon-first strategy of learning the correct choice after one trial and then choosing correctly thereafter. Other patterns were classified as the epsilon-decreasing strategy. This method of qualitative inspection of learning curves is standard for this type of learning strategy assessment [@mcinerney2010]. The variable for visual inspection was the proportion of correct choices in a non-overlapping sliding window of 4-trial bins across the total number of trials required to reach the criterion of 17/20 correct choices per individual. 
+
+From @logan2016behavioral (emphasis added):
+
+>The following equations refer to the different phases involved in each strategy:
+
+>Equation 1 (exploration phase): $$\epsilon N$$
+
+>Equation 2 (exploitation phase): $$ ( 1 - \epsilon ) N $$
+
+>N is the number of trials given, and epsilon, $$\epsilon$$, represents the subject’s uncertainty about the location of the reward, starting at complete uncertainty ($\epsilon$ = 1) at the beginning of the experiment and decreasing rapidly as individuals gain experience with the task (exploration phase where the rewarded [option] is chosen below or at chance levels) and switch to the exploitative phase (the rewarded [option] is chosen significantly above chance levels). Because the [subjects] needed to learn the rules of the task, they necessarily had an exploration phase. The **epsilon-first strategy** involves an exploration phase followed by an entirely exploitative phase. The optimal strategy overall would be to explore one color in the first trial and the other color in the second trial, and then switch to an exploitative strategy (choose the rewarded [option] significantly above chance levels). In this case there would be no pattern [in the learning curve] in the choices [during] the exploration phase because it would consist of sampling each [option] only once. In the **epsilon-decreasing strategy**, subjects would start by making some incorrect choices and then increase their choice of the rewarded [option] gradually as their uncertainty decreases until they choose the rewarded [option] significantly above chance levels. In this case, a linear pattern emerges (in the learning curve) during the exploration phase. 
+
+**Analysis 2 (quantitative):** We then quantitatively determined to what degree each bird used the exploration versus exploitation strategy using methods in [@federspiel2017adjusting] by calculating the number of 20-trial blocks where birds were choosing “randomly” (6-14 correct choices; called sampling blocks; akin to the exploration phase above) and dividing it by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (15-20 correct choices; akin to the exploitation phase above). These ratios, calculated for each bird for their serial reversals, quantitatively discern the exploration from the exploitation phases.
+
+**Deviation from the plan** (Aug 2021): the grackles were tested in 10-trial blocks and not 20-trial blocks as in @federspiel2017adjusting, which would mean that if there were <20 trials in the last block of a reversal, they would be omitted from the analysis. Therefore, we changed the block size to 10 trials and adjusted the sampling blocks to 2-9 correct choices, and the acquisition blocks to 9-10 correct choices using significance levels in the binomial test as did @federspiel2017adjusting.
+
+```{r strategyratio, eval=F}
+rr <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseratio.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+#remove NAs from the variables that will be in the model
+rr <- subset(rr,!(is.na(rr["SamplingRatio"])))
+rr <- subset(rr,!(is.na(rr["AcquisitionRatio"])))
+
+# GLMM is sampling ratio (exploration) higher earlier in serial reversals?
+rr1 <- glmer(SamplingRatio ~ Reversal + (1|ID), family=binomial, data=rr)
+summary(rr1)
+#There is no significant correlation between reversal number and sampling ratio
+
+# GLMM is acquisition ratio (exploitation) higher earlier in serial reversals?
+rr2 <- glmer(AcquisitionRatio ~ Reversal + (1|ID), family=binomial, data=rr)
+summary(rr2)
+#There is no significant correlation between reversal number and acquisition ratio
+```
+
+#### DEVIATIONS FROM THE PREREGISTRATION
 
 **In the middle of data collection**
 
@@ -1555,1219 +2161,7 @@ We are not the first group to attempt to transfer a traditional lab or field tas
 
 We demonstrate that it is possible to manipulate flexibility using a paradigm such as reversal learning. This opens up many opportunities to better understand what flexibility is and whether and how it is causally related to other behaviors or forms of cognition. Understanding how flexibility causally relates to other traits will allow researchers to develop robust theory about the mechanisms and functional impact of flexibility, and when to invoke it as a primary driver in a given context, such as a rapid geographic range expansion. Indeed, we are already in the process of testing the latter hypothesis by conducting cross-population research on great-tailed grackles to test whether a population on the range edge is more flexible [@logan2020xpop]. That we were able to manipulate flexibility, which had causal effects on flexible behavior in a different context (multi-access box) as well as a different cognitive ability (innovativeness), demonstrates that flexibility manipulations could be useful in training individuals of other species in how to be more flexible. This could have important implications for threatened and endangered taxa (such as informing the choice of individuals for captive breeding or introduction programs where individuals or their offspring are released into novel areas), as well as for habituating zoo animals or other managed populations to novelty. If such a flexibility manipulation was successful, it could then change their behavior in this and other domains, giving them a better chance of succeeding in human modified environments.
 
-
-## METHODS
-
-Below is our preregistration that received in principle acceptance at PCI Ecology ([PDF](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf) version)
-
-### STATE OF THE DATA
-
-This preregistration was written (2017) prior to collecting data. Pilot data on serial reversal learning (using colored tubes) in one grackle was collected January through April 2018, which informed the revision of 1) the [criterion to pass serial reversal learning](#Determining-the-threshold-How-many-reversals-are-enough), 2) more accurate language for H1 P1 (each subsequent reversal may not be faster than the previous, however their average reversal speed decreases), 3) the removal of shape reversals from H3a and H3b (to reduce the amount of time each bird is tested), and 4) a new passing criterion for touchscreen serial reversals in H3b. Part way through data collection on reversal learning (using colored tubes) for the first two birds, the criterion for what counts as making a choice was revised (October 2018) and part way through data collection on the first four birds (October 2018; see below for details) the number of trials that birds in the control group receive was revised to make the test battery feasible in the time given.
-
-This preregistration was submitted to PCI Ecology for peer review (July 2018), we received the first round of peer reviews a few days before data collection began (Sep 2018), we revised and resubmitted after data collection had started (Feb 2019) and it passed peer review (Mar 2019) before any of the planned analyses had been conducted. See the [peer review history](https://ecology.peercommunityin.org/public/rec?id=17&reviews=True) at PCI Ecology.
-
-### PARTITIONING THE RESULTS
-
-We may present the different hypotheses in separate papers (Nov 2020: all hypotheses are included in this one post-study article).
-
-### METHODS
-
-#### **Planned Sample**
-	
-Great-tailed grackles will be caught in the wild in Tempe, Arizona, USA for individual identification (colored leg bands in unique combinations). Some individuals (~32: ~16 in the control group (they receive 1 reversal) and ~16 in the flexibility manipulation (they receive multiple reversals)) will be brought temporarily into aviaries for testing, and then they will be released back to the wild.
-	
-#### **Sample size rationale**
-	
-We will test as many birds as we can in the approximately three years at this field site given that the birds only participate in tests in aviaries during the non-breeding season (approximately September through March). 
-	
-#### **Data collection stopping rule**
-	
-We will stop testing birds once we have completed two full aviary seasons (likely in March 2020) if the sample size is above the minimum suggested boundary based on model simulations (see section "[Ability to detect actual effects](http://corinalogan.com/Preregistrations/g_flexmanip.html#ability_to_detect_actual_effects)" below). If the minimum sample size is not met by this point, we will continue testing birds at our next field site (which we move to in the summer of 2020) until we meet the minimum sample size.
-
-#### **Open materials** 
-
-[Design files](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) for the plastic multi-access box: 3D printer files and laser cutter files
-
-[Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all three experiments: colored tube reversal learning, plastic multi-access box, wooden multi-access box, and touchscreen reversal learning
-
-NOTE (Oct 2020): Touchscreen training data and a summary of the training process is detailed in @seitz2021training
-
-#### **Open data**
-
-The data are available at the Knowledge Network for Biocomplexity's data repository: [https://knb.ecoinformatics.org/view/corina_logan.84.42](https://knb.ecoinformatics.org/view/corina_logan.84.42).
-
-#### **Randomization and counterbalancing** 
-
-H1: Subjects will be randomly assigned to the manipulated or control group. In the reversal learning trials, the rewarded option is pseudorandomized for side (and the option on the left is always placed first). Pseudorandomization consisted of alternating location for the first two trials of a session and then keeping the same color on the same side for at most two consecutive trials thereafter. A list of all 88 unique trial sequences for a 10-trial session, following the pseudorandomization rules, will be generated in advance for experimenters to use during testing (e.g., a randomized trial sequence might look like: LRLLRRLRLR, where L and R refer to the location, left or right, of the rewarded tube). Randomized trial sequences will be assigned randomly to any given 10-trial session using a random number generator (random.org) to generate a number from 1-88.
-
-#### **Blinding of conditions during analysis**
-
-No blinding is involved in this study.
-
-#### **Dependent variables**
-
-*P1-P2*
-
-Number of trials to reverse a preference. An individual is considered to have a preference if it chose the rewarded option at least 17 out of the most recent 20 trials (with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). We use a sliding window to look at the most recent 10 trials for a bird, regardless of when the testing sessions occurred.
-
-*P2 alternative 2: additional analysis: latency and motor diversity*
-
-1) Number of trials to attempt a new locus on the multi-access boxes
-
-2) Number of trials to solve (meet criterion) a new locus on the multi-access boxes
-
-*P4: learning strategies* 
-
-Proportion of correct choices in a non-overlapping sliding window of 4-trial bins across the total number of trials required to reach the criterion of 17/20 correct choices (as in P1-P3).
-
-#### **Independent variables**
-
-#### *P1: reversal speed gets faster with serial reversals*
-
-1) Reversal number
-
-2) Batch (random effect because multiple batches included in the analysis). Note: batch is a test cohort, consisting of 8 birds being tested simultaneously
-
-3) ID (random effect because repeated measures on the same individuals)
-
-#### *P2: serial reversals improve rule switching & problem solving*
-
-1) Average latency to attempt to solve a new locus after solving a different locus
-
-2) Average latency to solve a new locus after solving a different locus
-
-3) Total number of loci solved
-
-4) Experimental group (manipulated=multiple reversals with color stimuli; control=one reversal plus equalized experience making choices where both are the same color and both contain a reward)
-
-5) Batch (random effect because multiple batches included in the analysis). Note: batch is a test cohort, consisting of 8 birds being tested simultaneously
-
-Note April 2020: we realized that the average latency to solve a new locus after solving a different locus is confounded with the total number of loci solved because the measure of innovation is included in the definition. Therefore, we will remove this independent variable when conducting the analysis so that we are only examining pure measures of flexibility (average latency to attempt to solve) and innovation (total number of loci solved).
-
-#### *P2 alternative 2: additional analysis: latency and motor diversity*
-
-1) Number of trials to reverse a preference in the last reversal that individual participated in
-
-2) Motor diversity: the number of different motor actions used when attempting to solve the multi-access boxes
-
-3) ID (random effect because repeated measures on the same individuals)
-
-#### *P4: serial reversal learning strategy*
-
-1) Trial number
-
-2) ID (random effect because repeated measures on the same individuals)
-
-### ANALYSIS PLAN
-
-We do not plan to **exclude** any data. When **missing data** occur, the existing data for that individual will be included in the analyses for the tests they completed. Analyses will be conducted in R [current version `r getRversion()`; @rcoreteam], using several R packages: @kableextra, @stargazer, @hadfieldMCMCglmmpackage, @mumin, @rethinking2020, @rstan, @formatr, @rstudioapi, @rcpp, @ggplot2, knitr [@xie2018knitr; @xie2017dynamic; @xie2013knitr], @dplyr, @cmdstanr, posterior [@burkner2020posterior], cowplot [@wilkecowplot], bayesplot [@gabry2019visualization], irr [@gamer2012package], psych [@revelle2014psych; @psych], @reactable, DHARMa [@Hartig2019dharma], lme4 [@lme4; @bates2012lme4]. When there is more than one experimenter within a test, experimenter will be added as a random effect to account for potential differences between experimenters in conducting the tests. If there are no differences between models including or excluding experimenter as a random effect, then we will use the model without this random effect for simplicity. 
-
-#### Unregistered analysis: interobserver reliability of dependent variables
-
-To determine whether experimenters coded the dependent variables in a repeatable way, hypothesis-blind video coders were first trained in video coding the dependent variable, and then they coded at least 20% of the videos in the reversal (tubes) and multi-access box experiments. We randomly chose a subset of all of the birds who participated in each experiment using random.org:
-
-- Reversal 6/20 grackles (30% with half from the control group): Chalupa, Avocada, Diablo, Fideo, Tomatillo, Adobo
-
-- Multi-access box plastic 3/15 grackles (20%): Habanero, Queso, Chalupa
-
-- Multi-access box log 3/12 grackles (25%): Diablo, Adobo, Yuca
-
-Video coders then analyzed all videos from these birds. The experimenter's data was compared with the video coder data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). Note that the data in columns from coders 1 and 2 in the data sheets were aligned based on similar numbers between coders to prevent disagreements near the top of the data sheet from misaligning all subsequent entries.
-
-##### Interobserver reliability training
-
-To pass **interobserver reliability (IOR) training**, video coders needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders (see R code comments for details). 
-
-***Alexis Breen*** (compared with experimenter's live coding): 
-
- - Multi-access box: correct choice unweighted Cohen's Kappa=0.90 (confidence boundaries=0.77-1.00, n=33 data points) 
-
- - Multi-access box: locus solved unweighted Cohen's Kappa=0.90 (confidence boundaries=0.76-1.00, n=33 data points) 
- 
-Note: Breen was not a hypothesis-blind video coder. She contributed to extensive video coding across the whole project, however, for interobserver reliability analyses, her data were always compared with a hypothesis-blind coder's data.
-
-***Anja Becker*** (compared with experimenter's live coding): 
-
- - Reversal: correct choice ICC=1.00 (confidence boundaries=1.00-1.00, n=25 data points) 
- 
-***Tiana Lam*** (compared with experimenter's live coding): 
-
- - Multi-access box: correct choice ICC=0.90 (confidence boundaries=0.77-1.00, n=33 data points) 
-
- - Multi-access box: locus solved unweighted Cohen's Kappa=0.95 (confidence boundaries=0.84-1.00, n=33 data points) 
- 
-***Brynna Hood*** (compared with experimenter's live coding): 
-
- - Multi-access log: correct choice unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
-
- - Multi-access log: locus solved unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
-
- 
-##### Interobserver reliability
-
-Interobserver reliability scores (minimum 20% of the videos) were as follows:
-   
-***Brynna Hood*** (compared with experimenter's live coding): 
-
- - Multi-access log: correct choice unweighted Cohen's Kappa=0.91 (confidence boundaries=0.76-1.00, n=39 data points) 
-
- - Multi-access log: locus solved unweighted Cohen's Kappa=1.0 (confidence boundaries=1.0-1.00, n=39 data points) 
-
-***Tiana Lam*** (compared with experimenter's live coding): 
-
- - Multi-access box: correct choice unweighted Cohen's Kappa=0.83 (confidence boundaries=0.73-0.92, n=102 data points) 
-
- - Multi-access box: locus solved unweighted Cohen's Kappa=0.90 (confidence boundaries=0.830-0.97, n=102 data points) 
-
-***Anja Becker*** (compared with experimenter's live coding): 
-
- - Reversal: correct choice ICC=0.99 (confidence boundaries=0.98-0.99, n=3280 data points) 
-
-These scores indicate that the dependent variables are repeatable to a high or extremely high degree given our instructions and training.
-
-
-```{r ior, eval=F}
-# Inter/intra-rater reliability using Cohen's kappa when the variable is categorical (scale=1+) or intra-class correlation coefficient when the variable is continuous (Mandrekar 2011 J Thoracic Oncology 6(1):6-7 https://doi.org/10.1097/JTO.0b013e318200f983)
-
-# Intra-class correlation / reliability coefficient / the # degree of bias in the regression slope (Hutcheon et al. 2010. Random measurement error and regression dilution bias  www.bmj.com/content/340/bmj.c2289). 'The ratio of variation in error-free (true) X values to the variation in the observed error-prone (observed) values is known as the reliability coefficient, attenuation factor, or intra-class correlation.'
-
-#Cohen's kappa = Good for nominal data (where distance doesn't mean anything; don't use the weighted Kappa bc it is like the ICC) https://www.rdocumentation.org/packages/psych/versions/1.9.12.31/topics/cohen.kappa 
-
-# ICC / Cohen's Kappa must be 0.90 or greater to be considered reliable and pass training
-### ICCs for agreement between the 2 coders (live coder and video coder)
-
-#### PASSING interobserver reliability TRAINING so they can become second coders for experiments
-#Note: this data counts as second coder data if they have ICC or Kappa > 0.89
-
-library(irr) #ICC package
-library(psych) #Cohen's kappa package
-
-##### REVERSAL
-
-#coder 1=experimenter live coding
-#coder 2=Anja Becker
-
-# IOR TRAINING: did ANJA BECKER pass interobserver reliability training? YES
-l <- c(1,-1,1,1,1,0,1,1,-1,-1,-1,1,1,-1,1,1,1,1,1,1,1,1,1,1,1) 
-#live coder data from CorrectChoice column for videos below
-v <- c(1,-1,1,1,1,0,1,1,-1,-1,-1,1,1,-1,1,1,1,1,1,1,1,1,1,1,1) 
-#video coder data for videos A064LR 2019-09-25 Color Reversal 0 S1 T1, A064LR 2019-09-25 Color Reversal 0 S2 T2, A064LR 2019-09-25 Color Reversal 0 S3 T8, A064LR 2019-09-26 Color Reversal 0 S4 T8, A064LR 2019-09-26 Color Reversal 0 S5 T8, A064LR 2019-09-26 Color Reversal 0 S6 T10
-df <- data.frame(l,v)
-cohen.kappa(df, w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
-#Anja = unweighted kappa = 1 (1-1=lower and upper bounds, n=25 data points)
-
-# IOR: 20% of videos
-becker <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_reversal_Becker.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(becker)
-cohen.kappa(becker[,c("X1CorrectChoice","X2CorrectChoice")], w=NULL, n.obs=NULL, alpha=.05, levels=NULL)
-#unweighted kappa = 0.99; upper and lower CIs = 0.98 - 0.99, n = 3280
-
-
-##### MULTIACCESS BOX PLASTIC
-
-#coder 1=experimenter live coding
-#coder 2=Tiana Lam
-#coder 3=Alexis Breen
-
-### IOR TRAINING: did Tiana Lam pass? YES  Cohen's unweighted kappa = 0.90 and 0.95
-#all videos from bird 31
-
-lamtrain <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABplastic_Lam_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(lamtrain)  #Check to make sure it looks right
-
-# correct choice
-lamtrain[,3] #1CorrectChoice = live coder
-lamtrain[,4] #2CorrectChoice = Coder2 data from Tiana
-cohen.kappa(lamtrain[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.77-1.00, n=33 data points
-
-# locus solved
-lamtrain[,5] #1LocusSolved = live coder
-lamtrain[,6] #2LocusSolved = Coder2 data from Tiana
-cohen.kappa(lamtrain[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.95, confidence boundary = 0.84-1.00, n=33 data points
-
-
-### IOR: interobserver reliability score from Tiana Lam on 20% of the videos
-lam <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABplastic_Lam.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(lam)  #Check to make sure it looks right
-
-# correct choice
-lam[,3] #1CorrectChoice = live coder
-lam[,4] #2CorrectChoice = Coder2 data from Tiana
-cohen.kappa(lam[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.83, confidence boundary = 0.73-0.92, n=102 data points
-
-# locus solved
-lam[,5] #1LocusSolved = live coder
-lam[,6] #2LocusSolved = Coder2 data from Tiana
-cohen.kappa(lam[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.83-0.97, n=102 data points
-
-
-### IOR TRAINING: did Alexis Breen pass? YES  Cohen's unweighted kappa = 0.90 and 0.90
-#all videos from bird 31
-
-data <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABplastic_Breen_training.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(data)  #Check to make sure it looks right
-
-# correct choice
-data[,3] #1CorrectChoice = live coder
-data[,4] #2CorrectChoice = Coder2 data from Tiana
-cohen.kappa(data[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.77-1.00, n=33 data points
-
-# locus solved
-data[,5] #1LocusSolved = live coder
-data[,6] #2LocusSolved = Coder2 data from Tiana
-cohen.kappa(data[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #unweighted kappa = 0.90, confidence boundary = 0.76-1.00, n=33 data points
-
-
-
-##### MULTIACCESS BOX LOG
-
-#coder 1=experimenter live coding
-#coder 2=Brynna Hood
-
-### IOR TRAINING: did Brynna Hood pass? YES
-#didn't need to calculate it because everything matched perfectly (all videos from birds 73 and 87) - Brynna's training data is in the data sheet below with 20% of the videos (all of her training data was used in the 20% IOR calculation)
-#correct choice unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
-#locus solved unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
-
-## IOR: Brynna Hood interobserver reliability score for 20% of the videos = 0.91 & 1.00
-#20% of the videos = all videos from birds 64, 73, and 87
- 
-data <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/IOR_MABlog_Hood.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
-head(data)  #Check to make sure it looks right
-
-# correct choice
-# Note: c(3,4) is telling R to look at columns 2 ('1CorrectChoice') and 3 ('2CorrectChoice') and compare them. Double check this:
-data[,3] #1CorrectChoice = live coder
-data[,4] #2CorrectChoice = Coder2 data from Brynna
-
-cohen.kappa(data[,c(3,4)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
-#unweighted kappa = 0.91, confidence boundary = 0.76-1.00, n=39 data points
-
-# locus solved
-data[,5] #1LocusSolved = live coder
-data[,6] #2LocusSolved = Coder2 data from Brynna
-
-cohen.kappa(data[,c(5,6)], w=NULL,n.obs=NULL,alpha=.05,levels=NULL) 
-#unweighted kappa = 1.00 confidence boundary = 1-1, n=39 data points
-```
-
-
-
-#### *Ability to detect actual effects*
-
-To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we used G&ast;Power [v.3.1, @faul2007g; @faul2009statistical] to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMs (though the chosen test in G&ast;Power appears to align with GLMs) or GLMMs or for the inclusion of the number of trials per bird (which are generally large in our investigation), thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we are unaware of better options at this time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these experiments.
-
-To address the power analysis issues, we will run simulations on our Arizona data set before conducting any analyses in this preregistration. We will first run null models (i.e., dependent variable ~ 1 + random effects), which will allow us to determine what a weak versus a strong effect is for each model. Then we will run simulations based on the null model to explore the boundaries of influences (e.g., sample size) on our ability to detect effects of interest of varying strengths. If simulation results indicate that our Arizona sample size is not larger than the lower boundary, we will continue these experiments at the next field site until we meet the minimum suggested sample size.
-
-**SIMULATIONS APRIL 2020 (pre-data analysis):** following procedures in @mcelreath2018statistical, we first constructed a **hypothesis-appropriate mathematical model** that encompasses the relationship between the variables of interest for each analysis: 1) number of loci solved on the multi-access box ~ trials to reverse, and 2) latency to attempt a new locus on the multi-access box ~ trials to reverse. 
-
-**Simulation and model: number of loci solved on the multi-access box ~ trials to reverse**
-
-The model takes the form of:
-
-locisolved ~ Binomial(4, p) *[likelihood]*
-
-logit(p) ~ $\alpha$[batch] + $\beta$trials  *[model]*
-
-locisolved is the number of loci solved on the multi-access box, 4 is the total number of loci on the multi-access box, p is the probability of solving any one locus across the whole experiment, $\alpha$ is the intercept and each batch gets its own, $\beta$ is the expected amount of change in locisolved for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
-
-Expected values for the number of loci solved on the multi-access box were set to either 2 or 0 (out of 4 loci maximum) because we were unsure of whether the grackles would be able to solve any loci on the multi-access box because this experiment had never been done on this species before. Expected values for reversal learning using colored tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles [@logan2016behavioral]. This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21. In our model, the variation in the actual data is reflected by both the population standard deviation and the expected amount of change related to the explanatory variable. After running simulations, we identified the following distributions and priors to be the most likely for our expected data:
-
-$\alpha$ ~ Normal(4,10) *[$\alpha$ prior]*
-
-$\beta$ ~ Normal(0,5) *[$\beta$ prior]*
-
-We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means [see Figure 10.6 in @mcelreath2018statistical]. For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean). 
-
-```{r modelparameters1, eval=F}
-library(rethinking)
-library(rstan)
-library(formatR)
-
-### SIMULATION
-#SET PARAMETERS for population values = these are what we are varying!
-
-#Setting beta
-b <- 0.1
-plot(x=21*c(-2:2)+91,y=4*inv_logit(0+b*c(-2:2))) #plot expected relationship between loci solved (y axis) and trials to reverse (x axis) based on varying b. Result1 = in the simulation b should not be larger than 1 (or smaller than -1) because at 1 it ranges from solving 0.5-3.5 loci which is basically the min and max possible range. Beta=0.1 means 
-
-#Setting b prior: our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1 (these will be the limits for the simulation)
-x <- seq(-2,2,length=100) #make a normal distribution
-hx <- dnorm(x,mean=0,sd=0.4) #change sd until you get the width you want
-plot(x,hx,xlim=c(-2,2),ylim=c(0,1)) #plot to see whether values now match our expectation for this prior and the result from figuring out beta prior
-#Result2 = in the model (ulam) we want to set the b prior to be (0,0.4)
-
-#Figuring out probability, p
-batch1mean <- 2 #solves on average 2 loci 
-batch2mean <- 1.6 #solves on average 1.6 loci
-
-batch1mean <- log((batch1mean/4)/(1-(batch1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
-batch2mean <- log((batch2mean/4)/(1-(batch2mean/4))) 
-
-#Figuring out alpha prior
-probabilities<-inv_logit(rnorm(10000,mean=-2,sd=0.5))
-mean(probabilities) #this is the mean number of loci solved
-loci <- vector()
-for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
-hist(loci) #we didn't know whether they would be able to solve any loci bc this species had never been given this MAB before. Therefore, we set the mean number of loci solved to 0 (which is -2 inverse logit scale of the probability), and the sd to 2 because then it is possible that some individuals can solve all 4 options (even though solving all 4 is rare) (if sd is lower, then the possibility to solve 4 options disappears, if higher then solving 1-4 becomes equally likely or 4 becomes more likely). Minimum SD=0.5
-
-probabilities<-inv_logit(rnorm(10000,mean=0,sd=0.3))
-loci <- vector()
-for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
-mean(loci) #this is the mean number of loci solved
-hist(loci) #Alternatively, we expect a bell curve with most of the individuals being average at solving loci (at the mean=2 loci) and some being more innovative while others are less. Minimum SD=0.3
-
-#Figuring out how much noise we expect (sd in alpha) = 0.4
-hist(inv_logit(rnorm(10000,mean=0,sd=1))) #it is spread out along the x axis so the many individuals in the ends are going to have different probabilities from the pop mean
-hist(inv_logit(rnorm(10000,mean=0,sd=0.4))) #this is much narrower, thus most of the individuals will match the pop mean and this reduces noise
-
-#Result = in the simulation alpha sd should not be larger than 1 because at 1 it ranges from a probability of solving 0.12-0.88 loci which is basically the min and max possible range. But since this is the sd, we want it narrower than the full range (so it isn't a flat prior), so set it to something like 0.5 (0.7 with a beta of 1 looks like alpha covers 41% of the variation w a sample size of 15 birds, which was the boundary for a different simulation using a normal distribution in a separate preregistration xpopbehaviorhabitat. So we could detect effects that are at least as large as the noise)
-
-
-#RUN SIMULATION WITH PARAMETERS (this is the simulated data that the model (below) will use to estimate beta) Generate values for simulated individuals from two simulated batches: vary the alpha batch mean (expected number of loci solved and whether batches differ) and alpha sd (the noise in the population in the number of loci solved), beta (the slope between number of loci solved and trials to reverse), sample size
-b <- 1  #beta
-asd <- 0.3 #alpha sd for the population. We set this smaller than what we had it above bc we wanted to make it so individuals were not equally likely to have similar results
-batch1mean <- 1.9 #alpha batch mean: solves on average 2 loci 
-batch2mean <- 2.1 #alpha batch mean: solves on average 1.6 loci
-n <- 16
-
-batch1mean <- log((batch1mean/4)/(1-(batch1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
-batch2mean <- log((batch2mean/4)/(1-(batch2mean/4))) 
-
-individuals<-matrix(nrow=16,ncol=8)
-colnames(individuals)<-c("loci","trials","batch","probability","logit trials","logit base value","base probability","logit probability")
-for (i in 1:n/2) {
-  trials<-rnorm(1,0,1)
-  batch1 <- rnorm(1,batch1mean,asd) #n, mean, sd of probability of solving a locus. SD is the noise
-  p <- batch1 + b*trials
-  individuals[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) #50 trials (drawing 50 times (the highest number of trials an individual could get is probably 50 trials). Each trial is an opportunity to solve a locus and they can only solve 1 locus per trial. Sum for how many of the loci in total did they solve across the 50 trials
-  ifelse(individuals[i,1]>4,individuals[i,1]<-4,individuals[i,1]<-individuals[i,1])
-  individuals[i,2]<-trials*21+91 #column: number trials to reverse (standardized) and then unstandardized (multiply by sd + mean)
-  individuals[i,3]<-1 #column: batch=1
-  individuals[i,4]<-inv_logit(p) #column: p (probability)
-  individuals[i,5]<-trials #the logit of trials to reverse
-  individuals[i,6]<-batch1 #logit base value of alpha (for the intercept for this ind)
-  individuals[i,7]<-inv_logit(batch1) #base probability is the inverse logit of the previous column
-  individuals[i,8]<-p #logit probability
-}
-
-for (i in (n/2+1):n) {
-  trials<-rnorm(1,0,1)
-  batch2 <- rnorm(1,batch2mean,asd) #n, mean, sd
-  p <- batch2 + b*trials
-  individuals[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) 
-  ifelse(individuals[i,1]>4,individuals[i,1]<-4,individuals[i,1]<-individuals[i,1])
-  individuals[i,2]<-trials*21+91
-  individuals[i,3]<-2 #batch=2
-  individuals[i,4]<-inv_logit(p)
-  individuals[i,5]<-trials
-  individuals[i,6]<-batch2
-  individuals[i,7]<-inv_logit(batch2)
-  individuals[i,8]<-p
-}
-
-#individuals #check the data
-plot(individuals[,1]~individuals[,2]) #visualize the relationship
-#plot(individuals[1:8,1]~individuals[1:8,2]) #batch1 goes full range of both variables
-#plot(individuals[9:16,1]~individuals[9:16,2]) #batch2 goes full range of both variables
-
-
-### RUN MODEL
-#don't change alpha or beta parameters here because they are changed above
-dat <- list(locisolved = individuals[,1],
-            trials = standardize(individuals[,2]),
-            batch = individuals[,3]
-              )
-
-m1 <- ulam( alist(
-  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
-  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
-  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-) , data=dat , chains=4 , log_lik=TRUE )
-
-precis(m1,depth=2)
-#mean(individuals[1:8,1])
-#mean(individuals[9:16,1])
-
-
-#check posterior for p to look at the distribution of probabilities that are probable
-prior <- extract.prior(m,n=1e4)
-p <- inv_logit(prior$a) #convert from logit to actual probability
-dens(p,adj=0.1)
-#result1: it was a normal curve with a peak at 3.5, let's see what happens if we flatten it saying that we expect all probabilities to be probable (changed a sd from 0.5 to 1.5)
-#result2: this worked - the distribution is flat at 1.2
-
-
-#check to see if including batch has an influence on the estimate of b by removing batch
-mwobatch <- ulam( alist(
-  locisolved ~ dbinom(4,p) , 
-  logit(p) <- a + b*trials , #standardize trials so 0=mean
-  a ~ dnorm(0,0.5) , 
-  b ~ dnorm(0,2)
-) , data=dat , chains=4 , log_lik=TRUE )
-
-precis(mwobatch,depth=2)
-mean(individuals[1:8,1])
-mean(individuals[9:16,1])
-#result = really similar to model m1
-```
-
-**Simulation and model: latency to attempt a new locus on the multi-access box ~ trials to reverse**
-
-For the average latency to attempt a new locus on the multi-access box as it relates to trials to reverse (both are measures of flexibility), we simulated data and set the model as follows: 
-
-latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
-
-log($\lambda_i$) ~ $\alpha$[batch] + $\beta$trials  *[the model]*
-
-latency is the average latency to attempt a new locus on the multi-access box, $\lambda_i$ is the rate (probability of attempting a locus in each second) per bird (and we take the log of it to make sure it is always positive; birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, $\alpha$ is the intercept for the rate per batch, $\beta$ is the expected amount of change in the rate of attempting to solve in any given second for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
-
-Expected values for the latency to attempt a new locus on the multi-access box was set to between 1-2700 sec because the experiment ends for a bird if they do not obtain the food in 3 consecutive trials, and each trial can last up to 15 min. Because we did not have prior data for this species on this test, we set the mean to 300 sec, which is half way through a usual 10 min trial because it seems likely that if a bird is going to attempt another locus, it will likely do so at the next opportunity, especially after being successful in the previous trial. Expected values for reversal learning using colored tubes are the same as above. After running simulations, we identified the following to be the most likely distributions and priors for our expected data:
-
-$\phi$ ~ 1/(Exponential(1)) *[$\phi$ prior]*
-
-$\alpha$ ~ Normal(300,50) *[$\alpha$ prior]*
-
-$\beta$ ~ Normal(0,5) *[$\beta$ prior]*
-
-We used a gamma-Poisson distribution for latency because it constrains the values to be positive and to primarily occur sooner rather than later, which is what we expect from the grackles [based on data from New Caledonian crows and kea in @auersperg_flexibility_2011]. For $\phi$, we used an exponential distribution because it is standard for this paramter. We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means [see Figure 10.6 in @mcelreath2018statistical]. For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean).
-
-```{r modelparameters2, eval=F}
-library(rethinking)
-library(rstan)
-library(formatR)
-
-### SIMULATIONS: GAMMA-POISSON
-n <- 16 #number of individuals
-b<- 1 #slope between latency and trials, want positive and negative values so mean=0
-phi <- 150 #this gives us a distribution that we expect (long right tail)
-asd<-0.5 #alpha sd is our noise parameter. Decrease this to make the upper bound come to a reasonable number
-
-individuals<-matrix(nrow=16,ncol=3)
-colnames(individuals)<-c("trials","latency","batch")
-
-for (i in 1:n/2){
-  trials <- rnorm(1,0,1) #distribution for trials. These are standardized values. To convert back to the original units: trials*21+91
-  a1 <- rnorm(1,mean=6.5,asd) #intercept for batch 1, mean=log of 450 sec, sd puts the range at 164-1212 sec (asd is our noise parameter)
-  lambda <- exp(a1 + b*trials) #the linear model for batch 1
-  latency <- rgampois(1,lambda,phi) #this is the latency per individual
-  
-  individuals[i,1]<-trials*21+91
-  individuals[i,2]<-latency
-  individuals[i,3]<-1
-}
-
-for (i in (n/2+1):n){
-  trials <- rnorm(1,0,1) 
-  a2 <- rnorm(1,mean=5.5,sd=asd)
-  lambda <- exp(a2 + b*trials)
-  latency <- rgampois(1,lambda,phi) 
-  
-  individuals[i,1]<-trials*21+91
-  individuals[i,2]<-latency
-  individuals[i,3]<-2
-}
-
-### RUN THE MODEL
-#Load packages
-library("Rcpp")
-library("rstan") 
-library(rethinking)
-library(ggplot2)
-
-dat <- list(trials = standardize(as.numeric(individuals[,1])),
-            latency = as.integer(individuals[,2]),
-            batch = as.integer(individuals[,3])
-)
-
-m2 <- ulam(
-  alist(
-    latency ~ dgampois(lambda, phi),
-    log(lambda) <- a[batch] + b*trials,
-    a[batch] ~ dnorm(1,1),
-    b ~ dnorm(0,1),
-    phi ~ dexp(1)
-  ),data=dat, log_lik=TRUE, messages=FALSE)
-
-###To make the model work, need to set up a few things... (this took me a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next)
-
-###Update R
-#install installr package
-#updateR(TRUE) #didn't work bc it can't find my R folder on my computer
-#updateR(fast = FALSE, browse_news, install_R, copy_packages, copy_Rprofile.site, keep_old_packages, update_packages, start_new_R, quit_R, print_R_versions = TRUE, GUI = TRUE, to_checkMD5sums = FALSE, keep_install_file = FALSE, download_dir = "/Users/corina/Library/R", silent = FALSE, setInternet2 = TRUE, cran_mirror = "https://cran.rstudio.com/") #didn't work bc it can't find my R folder on my computer
-#manually updated R and reinstalled packages
-
-###Install rethinking
-#install package devtools
-#devtools::install_github("rmcelreath/rethinking",ref="Experimental")
-
-###Install xcode (first download the app from the app store)
-#In terminal, type: "xcode-select --install"
-
-###Get STAN working https://github.com/rmcelreath/rethinking
-#Install C++ toolchain and configuration https://github.com/stan-dev/rstan/wiki/Installing-RStan-from-source-on-a-Mac
-#install.packages("Rcpp", repos = "https://rcppcore.github.io/drat") 
-#Then install rstan per instructions at the previous link
-
-###Now we're ready to go!
-```
-
-We **translated the simulation output into effect sizes** and examined what kind of effect size these parameter values represent (Table M1). For each $\beta$, we calculated the effect size [Box 13.3 in @lajeunesse2013recovering: linear regression]:
-
-r = $\beta$ (SDx / SDy) = $\beta$ (1.5 / 21)
-
-Where r is the Pearson product moment correlation and SD is the standard deviation. For the standard deviation of x (number of loci solved on the multiacccess box), we estimated a possible value of 1.5. For the standard deviation of y (trials to reverse), we used 21 from the Santa Barbara grackle data [@logan2016behavioral]. We then calculated the effect sizes and R^2^ values for each value of $\beta$.
-
-**Table M1.** The connection between $\beta$ and effect sizes (SDx=standard deviation of x, which is the number of loci solved; SDy=standard deviation of y, which is the number of trials to reverse; R^2^=R squared).
-
-```{r tableeffect, eval=T}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_simtoeffectsize.csv"), header=F, sep=",", stringsAsFactors=F)
-
-library(reactable)
-reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
-          columns = list(
-            V1 = colDef(name="Beta"),
-            V2 = colDef(name="SDx"),
-            V3 = colDef(name="SDy"),
-            V4 = colDef(name="Effect size"),
-            V5 = colDef(name="R2")
-          ))
-```
-
-We then used the simulations to run **models** on simulated data to estimate the measurement error associated with varying sample size, $\beta$, and the range of multi-access box loci solved or latency to attempt a new locus (Table M2). Before running the models, we decided that a model would detect an effect if 89% of the posterior sample was on the same side of zero [following @mcelreath2018statistical]. We ran the simulation with $\beta$=3 (latency) because this was a high value at which an appropriate range of values were observed in the simulation testing phase, $\beta$=0 because this would be the scenario in which there is no relationship between the response variable and the trials to reverse, and $\beta$=-1 to determine how small of a difference we can detect and with what amount of associated noise ($\sigma$). **Sigma ($\sigma$) is the standard deviation in the trials to reverse if the trials to reverse is a normal distribution. In all simulations, the mean in the trials to reverse was set to 91. Therefore, a ($\sigma$) of 14 is 15% noise (14/91). We found that when ($\sigma$) is larger than 14, we cannot detect even the largest effect of trials to reverse on loci solved or latency because there are some simulations where the estimated regression coefficient crosses zero.** When $\beta$=0 we want all of the regression coefficients to cross zero (10 out of 10 random repetitions) and when $\beta$ $\neq$ 0 we want none of the regression coefficients to cross zero (0 out of 10 random repetitions). We ran the models several times with various parameters to determine at what point this was the case for each combination of parameters.
-
-**Table M2.** Simulation outputs from varying $\beta$, sample size (n), $\sigma$, and whether the actual range of multi-access box [MAB] loci solved were 0-2 or 0-4 **(we did not know how many loci the grackles would be able to solve before we started collecting data so we ran two simulations. The grackles ended up being able to solve all four loci on both multi-access boxes, therefore we must use only those rows associated with "Range of MAB loci solved" = 0-4). This table is useful for the analyses involving the number of loci solved on the multi-access box, but not the latency to switch to attempting a new locus on the multi-access box, which uses a different (gamma poisson) model.**
-
-```{r tableparam, eval=T}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_minsamplesizesim.csv"), header=F, sep=",", stringsAsFactors=F)
-
-library(reactable)
-reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
-          columns = list(
-            V1 = colDef(name="Beta"),
-            V2 = colDef(name="n"),
-            V3 = colDef(name="Sigma"),
-            V4 = colDef(name="Regression coefficient crosses zero"),
-            V5 = colDef(name="Regression coefficient"),
-            V6 = colDef(name="Range of MAB loci solved")
-          ))
-```
-
-This shows that we would have the power to detect a medium effect (-0.357 in Table M1) with a sample size of 15 if the noise ($\sigma$) is <15%. We would be unlikely to get a false negative because there were no false negatives in the  simulations (i.e., the posterior sample range did not cross zero). With this sample size, when $\beta$=0, there are no false positives (i.e., the posterior sample range always included zero). However, we would not be able to detect a weak effect unless the noise ($\sigma$) was much smaller.
-
-
-#### *Data checking*
-
-The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
-
-#### *Determining the threshold: How many reversals are enough?*
-
-We initially (in 2017) set as the passing criterion: During the data collection period, the number of trials required to reverse a preference will be documented per bird, and reversals will continue until the first batch of birds tested reaches an asymptote (i.e., there are negligible further decreases in the number of trials required to reverse a preference). The number of reversals to reach the asymptote will be the number of reversals that subsequent birds experience.
-
-Due to delays in setting up the field site, we were only able to test two grackles in early 2018 (January through April) and, due to randomization, only one (Fajita) was in the experimental condition that involved undergoing the flexibility manipulation (Empanada was in the control condition). While Fajita's reversal speeds generally improved with increasing serial reversals, she never reached an asymptote (which we defined as passing three consecutive reversals in the same number of trials), even after 38 reversals. These 38 reversals took 2.5 months, which is an impractical amount of time if birds are to participate in the rest of the test battery after undergoing the reversal manipulation (we are permitted to keep them in aviaries for up to three months per bird). Because our objective in this experiment is to manipulate an individual's flexibility, we decided to revise our serial reversal passing criterion to something more species relevant based on Fajita's serial reversal performance and the performance of seven grackles in Santa Barbara who underwent only one reversal in 2014 and 2015 [@logan2016behavioral]. **The revised serial reversal passing criterion is: passing two sessions in a row at or under 50 trials**. 50 trials is fewer trials than any of the nine grackles required to pass their first reversal (range 70-130), therefore it should reflect an improvement in flexibility.
-
-#### *Revising the choice criterion and the criterion to pass the control condition*
-
-**Choice criterion:** At the beginning of the second bird's initial discrimination in the reversal learning colored tube experiment (October 2018), we revised the criterion for what counts as a choice from A) the bird's head needs to pass an invisible line on the table that ran perpendicular to the the tube opening to B) the bird needs to bend its body or head down to look in the tube. Criterion A resulted in birds making more choices than the number of learning opportunities they were exposed to (because they could not see whether there was food in the tube unless they bent their head down to look in the tube) and appeared to result in slower learning. It is important that one choice equals one learning opportunity, therefore we revised the choice criterion to the latter. Anecdotally, this choice matters because the first three birds in the experiment (Tomatillo, Chalupa, and Queso) learned faster than the pilot birds (Empanada and Fajita) in their initial discriminations and first reversals. Thus, it was an important change to make at the beginning of the experiment.
-
-**Criterion to pass the control condition:** Before collecting experimental data, we set the number of trials experienced by the birds in the control group as 1100 because this is how many trials it would have taken the pilot bird in the manipulated group, Fajita, to pass serial reversals 2-17 according to our revised serial reversal passing criterion. However, after 25 and 17 days (after Tomatillo and Queso's first reversals, respectively) of testing the first two individuals in the control group it became apparent that 1100 trials is impractical given the time constraints for how long we are permitted to keep each bird temporarily in captivity and would prevent birds from completing the test battery before their release. Additionally, after revising the choice criterion, it was going to be likely that birds in the manipulated group would require fewer than 1100 trials to meet the serial reversal passing criterion. Therefore, reducing the number of trials control birds experience would result in a better match of experience with birds in the manipulated group. On 2 November 2018 we set the number of trials control birds experience after their first (and only) reversal to the number of trials it requires the first bird in the manipulated group to pass (the first bird has not passed yet, therefore we do not yet know what this number is). After more individuals in the manipulated group pass, we will update this number to the average number of trials to pass. Note on 16 April 2020: this is what we did for all birds in the control condition, except Mofongo who was a slow participator and would not have finished his test battery by the time it got too hot to keep birds in the aviaries if we used the current average number of trials (420). Instead, we matched him with the fastest bird in the manipulated group (Habanero=290 trials) to make it more likely that Mofongo could get through the rest of the test battery in time.
-
-#### *P1: negative relationship between the number of trials to reverse a preference and the number of reversals?*
-
-**Analysis:** A Generalized Linear Mixed Model [GLMM; MCMCglmm function, MCMCglmm package; @hadfieldMCMCglmmpackage] will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence [lag time autocorrelation values <0.01; @hadfieldMCMCglmmpackage], and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
-
-We do not need a power analysis to estimate our ability to detect actual effects because, by definition, the individuals that complete this experiment must get faster at reversing in order to be able to pass the stopping criterion (two consecutive reversals in 50 trials or less). According to previous grackle data (from the pilot and from Santa Barbara), the fastest grackle passed their first reversal in 70 trials, which means that passing our serial reversal stopping criterion would require them to have improved their passing speed.
-
-```{r serial, eval=F}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverse.csv"), header=T, sep=",", stringsAsFactors=F)
-d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pilot bird
-
-#remove NAs from the variables that will be in the model
-d <- subset(d,!(is.na(d["TrialsToReverse"])))
-d <- subset(d,!(is.na(d["ReverseNumber"])))
-
-#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
-d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
-
-#factor variables
-d$Batch <- as.factor(d$Batch)
-d$ID <- as.factor(d$ID)
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
-#Looks randomly scattered
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
-#p=0.00, it is underdispersed according to the plot at https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html.
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-#p=1 so not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-#p=0.06 so it is not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-#There is a pattern in the right panel
-#January 2021: My interpretation of the statistically significant underdispersion in the data is that this was a manipulation, therefore, by definition the data will not be randomly (normally) distributed. Therefore, we will move forward with the glmm as planned.
-
-# GLMM
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0), G2 = list(V = 1, nu = 0)))
-serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 300000, thin = 500, burnin = 90000)
-#reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
-summary(serial)
-#Did fixed effects converge (<0.1)? Yes
-autocorr(serial$Sol) 
-#Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
-autocorr(serial$VCV)
-
-#AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-base <- dredge(MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 300000, thin = 500, burnin = 90000))
-library(knitr)
-kable(base, caption="")
-```
-
-#### *P2: serial reversal improves rule switching and problem solving*
-
-**Note on 14 May 2020:** Please see our [Alternative Analyses](#alternative-analyses) section where we describe that we will conduct this analysis as in the new models in the [Ability to detect actual effects](#ability-to-detect-actual-effects) section, which will replace the analysis listed below.
-
-**Analysis:** Because the independent variables could influence each other, we will analyze them in a single model. A Generalized Linear Mixed Model [GLMM; MCMCglmm function, MCMCglmm package; @hadfieldMCMCglmmpackage] will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence [lag time autocorrelation values <0.01; @hadfieldMCMCglmmpackage], and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
-
-To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
-
-*Input:*
-
-Effect size f²                	=	0.41
-
-α err prob                    	=	0.05
-
-Power (1-β err prob)          	=	0.7
-
-Number of predictors          	=	5
-
-*Output:*
-
-Noncentrality parameter λ     	=	13.1200000
-
-Critical F                    	=	2.5867901
-
-Numerator df                  	=	5
-
-Denominator df                	=	26
-
-Total sample size             	=	32
-
-Actual power                  	=	0.7103096
-
-This means that, with our sample size of 32, we have a 71% chance of detecting a large effect [approximated at f^2^=0.35 by @cohen1988statistical]. 
-
-We will first determine whether the total loci solved, the latency to solve or attempt at new loci are correlated across the two distinct multi-access boxes. If there is a positive correlation, then we will only use the variables for the plastic multi-access box (for which we will likely have more data), as presented below. If there is no correlation, we will incorporate the total loci solved, the latencies to solve and attempt at new loci for each of the multi-access boxes as independent variables in our model.
-
-```{r improves, eval=F}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=T, sep=",", stringsAsFactors=F) 
-
-d <- data.frame(d)
-colnames(d) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
-
-##### This is the model code from the ability to detect actual effects section, copied here for clarity
-#remove pilot birds and Taco because he was the only one in batch "Juvenile"
-d2 <- d[!d$Bird=="Fajita" & !d$Bird=="Empanada",]
-
-#ulam doesn't like that batch is not consecutive (there is no batch 2 in this sample, only 1, 3 and 4), so renamed batches 3 and 4, 2 and 3, respectively
-d2$Batch[d2$Batch==3]<-2
-d2$Batch[d2$Batch==4]<-3
-d2$Batch[d2$Batch=="3a"]<-4 #This is Taco bc he wasn't officially in a batch due to him being the first juvenile we ever tested so we wanted to see if he performed similarly to the adults and he did
-d2$Batch<-as.integer(d2$Batch)
-
-#load libraries
-library(rethinking)
-library(rstan)
-library(formatR)
-
-### MAB PLASTIC LOCI last reversal
-#remove NAs from the variables that will be in the models. n=17
-d3 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["TotalLoci_plastic"]))) 
-
-dlist <- list(locisolved = d3$TotalLoci_plastic,
-              trials = standardize(d3$Trialstoreverselast),
-              batch = as.integer(d3$Batch)
-)
-
-mloci <- ulam( alist(
-  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
-  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
-  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-) , data=dlist , chains=4 , log_lik=TRUE )
-
-precis(mloci,depth=2)
-# a=number of loci solved: was there a difference betweeen batches? Yes, batch 1 solved more loci
-#b=effect of trials to reverse last on the number of loci solved. Results show that there are no relationships between the number of loci solved and the trials to reverse last (across all batches)
-#mean   sd  5.5% 94.5% n_eff Rhat
-#a[1]  0.61 0.39  0.01  1.22  3289     1
-#a[2]  0.44 0.39 -0.19  1.06  2763     1
-#a[3] -0.76 0.56 -1.65  0.11  3031     1
-#a[4] -0.48 0.75 -1.70  0.65  3743     1
-#b    -0.28 0.26 -0.69  0.13  2905     1
-
-
-
-### MAB LOG LOCI last reversal
-#remove NAs from the variables that will be in the models. n=12
-d4 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["TotalLoci_wooden"]))) 
-
-dlistLog <- list(locisolved = d4$TotalLoci_wooden,
-              trials = standardize(d4$Trialstoreverselast),
-              batch = as.integer(d4$Batch)
-)
-
-mlociw <- ulam( alist(
-  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
-  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
-  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-) , data=dlistLog , chains=4 , log_lik=TRUE )
-
-precis(mlociw,depth=2)
-#a=number of loci solved: was there a difference betweeen batches? Yes, batches 2 and 3 (actually 3 and 4) solved more loci on the log. However, there was only 1 bird (Mole) in batch 1 (he solved all 4)
-#b=effect of trials to reverse last on the number of loci solved. There was no relationship between trials to reverse the last preference and the number of loci solved
-#mean   sd  5.5% 94.5% n_eff Rhat
-#a[1] 1.09 0.75 -0.09  2.35  2820     1
-#a[2] 0.83 0.37  0.26  1.44  2595     1
-#a[3] 1.45 0.63  0.47  2.49  2432     1
-#a[4] 1.08 0.76 -0.10  2.36  2573     1
-#b    0.14 0.29 -0.32  0.62  2539     1
-
-#plot
-op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
-plot(jitter(d3$Trialstoreverselast),jitter(d3$TotalLoci_plastic), ylab="Number of loci solved", xlab="Trials in last reversal", ylim=c(0,5), xlim=c(0,170), cex=4, pch=2, yaxt="n")
-points(jitter(d4$Trialstoreverselast),jitter(d4$TotalLoci_wooden), cex=4, pch=1, yaxt="n")
-legend(x="topright", y=8, legend=c(pch2="Plastic", pch1="Wooden"), pch=c(2,1), box.lty=1, cex=2)
-axis(side=2, at=c(1,2,3,4))
-par(op)
-
-
-
-### MAB PLASTIC SWITCH last reversal
-#Load packages
-library("Rcpp")
-library(ggplot2)
-
-#remove NAs from the variables that will be in the models. n=11
-d5 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["AvgLatencyAttemptNewLoci_plastic"]))) 
-
-dlist5 <- list(latency = d5$AvgLatencyAttemptNewLoci_plastic,
-              trials = standardize(d5$Trialstoreverselast),
-              batch = as.integer(d5$Batch)
-)
-
-mswitchp <- ulam(
-  alist(
-    latency ~ dgampois(lambda, phi),
-    log(lambda) <- a[batch] + b*trials,
-    a[batch] ~ dnorm(1,1),
-    b ~ dnorm(0,1),
-    phi ~ dexp(1)
-  ),data=dlist5, log_lik=TRUE, messages=FALSE)
-
-precis(mswitchp,depth=2)
-#phi=dispersion of gamma poisson, b=effect of trials to reverse on latency, a=were some batches faster to switch
-#b=no correlation between average switch latencies and number of trials in last reversal
-
-#mean   sd  5.5% 94.5% n_eff Rhat
-#a[1] 4.74 0.45  3.97  5.39   208    1
-#a[2] 3.64 0.42  2.99  4.32   278    1
-#a[3] 4.63 0.58  3.69  5.53   216    1
-#b    0.32 0.26 -0.06  0.77   438    1
-#phi  0.78 0.43  0.27  1.60   200    1
-
-
-### MAB LOG SWITCH last reversal
-#remove NAs from the variables that will be in the models. n=11
-d6 <- subset(d2,!(is.na(d2["Trialstoreverselast"])) & !(is.na(d2["AvgLatencyAttemptNewLoci_wooden"]))) 
-
-dlist6 <- list(latency = d6$AvgLatencyAttemptNewLoci_wooden,
-              trials = standardize(d6$Trialstoreverselast),
-              batch = as.integer(d6$Batch)
-)
-
-mswitchw <- ulam(
-  alist(
-    latency ~ dgampois(lambda, phi),
-    log(lambda) <- a[batch] + b*trials,
-    a[batch] ~ dnorm(1,1),
-    b ~ dnorm(0,1),
-    phi ~ dexp(1)
-  ),data=dlist6, log_lik=TRUE, messages=FALSE)
-
-precis(mswitchw,depth=2)
-#phi=dispersion of gamma poisson, b=effect of trials to reverse on latency, a=were some batches faster to switch
-#b=no correlation between average switch latencies and number of trials in last reversal
-
-#mean   sd  5.5% 94.5% n_eff Rhat
-#a[1]  4.17 0.68  3.07  5.25   208    1
-#a[2]  4.52 0.60  3.54  5.43   237    1
-#a[3]  4.27 0.60  3.36  5.22   207    1
-#a[4]  2.66 0.73  1.57  3.89   304    1
-#b    -0.27 0.36 -0.81  0.36   304    1
-#phi   0.20 0.12  0.06  0.45   162    1
-
-
-#plot
-op <- par(mfrow=c(1,1), oma=c(0,0,0,0), mar=c(4.5,4.5,2,0.2), cex.lab=1.8, cex.axis=2)
-plot(jitter(d5$Trialstoreverselast),jitter(d5$AvgLatencyAttemptNewLoci_plastic), ylab="Average seconds to attempt a new locus", xlab="Trials in last reversal", ylim=c(0,1500), xlim=c(0,170), cex=4, pch=2, yaxt="n")
-points(jitter(d6$Trialstoreverselast),jitter(d6$AvgLatencyAttemptNewLoci_wooden), cex=4, pch=1, yaxt="n")
-legend(x="topright", y=8, legend=c(pch2="Plastic", pch1="Wooden"), pch=c(2,1), box.lty=1, cex=2)
-axis(side=2, at=c(100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500))
-par(op)
-
-
-
-
-
-
-
-######   BELOW was in the original preregistration  ######
-#Is performance on the two multi-access boxes correlated?
-#cor(d$AvgLatencySolveNewLoci_plastic, d$AvgLatencySolveNewLoci_wooden) #we no longer run this analyses bc switching is about the next attempt, not the next solve
-cor.test(d2$AverageLatencyAttemptNewLocusMABplastic, d2$AverageLatencyAttemptNewLocusMABwooden, use="pairwise.complete.obs", method="pearson")
-#plastic and wooden are not significantly correlated cor=0.74 (95% Confidence Interval=-0.19-0.97), t=2.18, df=4, p=0.09
-cor.test(d2$TotalLociSolvedMABplastic, d2$TotalLociSolvedMABwooden, use="pairwise.complete.obs", method="pearson")
-#plastic and wooden are not significantly correlated cor=0.51 (95% Confidence Interval=-0.09-0.84), t=1.86, df=10, p=0.09
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOut <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + AvgLatencyAttemptNewLoci + TotalLoci + (1|Batch), family=poisson, data=improve), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOut$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOut) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOut) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOut) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOut) #...there should be no pattern in the data points in the right panel
-plotResiduals(Condition, simulationOut$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-# GLMM
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0), G2 = list(V = 1, nu = 0)))
-imp <- MCMCglmm(TrialsToReverse ~ Condition + AvgLatencySolveNewLoci + 
-	    AvgLatencyAttemptNewLoci + TotalLoci, random = ~Batch, 
-	    family = "poisson", data = improve, verbose = F, prior = prior, 
-	    nitt = 13000, thin = 10, burnin = 3000)
-summary(imp)
-# autocorr(imp$Sol) #Did fixed effects converge?
-# autocorr(imp$VCV) #Did random effects converge?
-```
-
-#### *P2 alternative 2: additional analysis: latency and motor diversity*
-
-A Generalized Linear Mixed Model [GLMM; MCMCglmm function, MCMCglmm package; @hadfieldMCMCglmmpackage] will be used with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence [lag time autocorrelation values <0.01; @hadfieldMCMCglmmpackage], and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
-
-To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G\*Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
-
-*Input:*
-
-Effect size f²                	=	0.27
-
-α err prob                    	=	0.05
-
-Power (1-β err prob)          	=	0.7
-
-Number of predictors          	=	2
-
-*Output:*
-
-Noncentrality parameter λ     	=	8.6400000
-
-Critical F                    	=	3.3276545
-
-Numerator df                  	=	2
-
-Denominator df                	=	29
-
-Total sample size             	=	32
-
-Actual power                  	=	0.7047420
-
-This means that, with our sample size of 32, we have a 70% chance of detecting a medium [approximated at f^2^=0.15 by @cohen1988statistical] to large effect [approximated at f^2^=0.35 by @cohen1988statistical]. 
-
-We will perform separate models for each multi-access box (plastic and wooden).
-
-NOTE (Aug 2021): when attempting to run the below model, we realized the model has to be a GLM and not a GLMM because there is only one data point per bird, so we changed this accordingly.
-
-```{r diversity1P, eval=F}
-#Latency to attempt to solve a new locus
-dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-
-dp <- data.frame(dp)
-colnames(dp) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
-
-# Remove NAs
-dp <- subset(dp,!(is.na(dp["MotorActionsPlastic"])) & !(is.na(dp["TrialsLastReversal"])) & !(is.na(dp["AverageLatencyAttemptNewLocusMABplastic"])))
-
-# n=11: 6 in manipulated group, 5 in control group
-#length(dp$AverageLatencyAttemptNewLocusMABplastic)
-
-# look at the data
-#hist(dp$AverageLatencyAttemptNewLocusMABplastic)
-#mean(dp$AverageLatencyAttemptNewLocusMABplastic) #208
-#sd(dp$AverageLatencyAttemptNewLocusMABplastic) #226
-
-#hist(dp$MotorActionsPlastic)
-#mean(dp$MotorActionsPlastic) #14
-#sd(dp$MotorActionsPlastic) #3
-
-#mean(dp$TrialsLastReversal) #52
-#sd(dp$TrialsLastReversal) #22
-#mean(dp$TrialsFirstReversal) #70
-#sd(dp$TrialsFirstReversal) #21
-
-
-# PLASTIC MULTI-ACCESS BOX (P)
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutp <- simulateResiduals(fittedModel = glmer(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic + (1|Bird), family=poisson, data=dp), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutp$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
-testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.992 so not over or under dispersed
-testZeroInflation(simulationOutp) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
-testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.45 so not heterscedastic
-plot(simulationOutp) #...there should be no pattern in the data points in the right panel. There is no pattern
-
-# GLM
-motp <- glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic)
-
-# AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-dredgemp <- dredge(glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic))
-library(knitr)
-kable(dredgemp, caption = "")
-#Akaike weights are all >0.5, therefore the models are essentially the same
-
-
-# GLMM - can't use this because only 1 data point per bird
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-    nu = 0)))
-div <- MCMCglmm(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic, random = ~Bird, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000)
-summary(div)
-# autocorr(div$Sol) #Did fixed effects converge?
-# autocorr(div$VCV) #Did random effects converge?
-
-# AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToSolveNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000))
-library(knitr)
-kable(base1, caption = "")
-```
-
-```{r diversity1W, eval=F}
-# WOODEN MULTI-ACCESS BOX (W)
-dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-
-dw <- data.frame(dw)
-colnames(dw) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
-
-# Remove NAs
-dw <- subset(dw,!(is.na(dw["MotorActionsWooden"])) & !(is.na(dw["TrialsLastReversal"])) & !(is.na(dw["AverageLatencyAttemptNewLocusMABwooden"])))
-
-# n=11: 5 in manipulated group, 6 in control group
-#length(dw$AverageLatencyAttemptNewLocusMABwooden)
-
-# look at the data
-#hist(dw$AverageLatencyAttemptNewLocusMABwooden)
-#mean(dw$AverageLatencyAttemptNewLocusMABwooden) #463
-#sd(dw$AverageLatencyAttemptNewLocusMABwooden) #481
-
-#hist(dw$MotorActionsWooden)
-#mean(dw$MotorActionsWooden) #13
-#sd(dw$MotorActionsWooden) #4
-
-#mean(dw$TrialsLastReversal) #60
-#sd(dw$TrialsLastReversal) #38
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutw <- simulateResiduals(fittedModel = glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutw$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
-testDispersion(simulationOutw) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.744 so not over or under dispersed
-testZeroInflation(simulationOutw) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
-testUniformity(simulationOutw) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.53 so not heterscedastic
-plot(simulationOutw) #...there should be no pattern in the data points in the right panel. It says "quantile deviations detected"
-
-# GLM
-motw <- glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden)
-
-# AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-dredgemw <- dredge(glm(dw$AverageLatencyAttemptNewLocusMABwooden ~ dw$TrialsLastReversal + dw$MotorActionsWooden))
-library(knitr)
-kable(dredgemw, caption = "")
-#Akaike weights = 0.71 null and <0.15 for the rest, therefore the models with or without motor actions are essentially the same
-
-
-
-# GLMM - does not work because only one data point per bird
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-    nu = 0)))
-div <- MCMCglmm(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000)
-summary(div)
-# autocorr(div$Sol) #Did fixed effects converge?
-# autocorr(div$VCV) #Did random effects converge?
-
-# AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToSolveNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000))
-library(knitr)
-kable(base1, caption = "")
-```
-
-```{r diversity2P, eval=F}
-#Latency to solve a new locus
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
-
-# PLASTIC MULTI-ACCESS BOX (P)
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMultiP, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
-plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
-
-# GLMM
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-    nu = 0)))
-div <- MCMCglmm(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000)
-summary(div)
-# autocorr(div$Sol) #Did fixed effects converge?
-# autocorr(div$VCV) #Did random effects converge?
-
-# AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociP ~ TrialsToReverseLast + NumberMotorActionsMultiP, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000))
-library(knitr)
-kable(base1, caption = "")
-```
-
-```{r diversity2W, eval=F}
-#Latency to solve a new locus
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
-
-# WOODEN MULTI-ACCESS BOX (W)
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMultiW, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
-plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
-
-# GLMM
-library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-    nu = 0)))
-div <- MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000)
-summary(div)
-# autocorr(div$Sol) #Did fixed effects converge?
-# autocorr(div$VCV) #Did random effects converge?
-
-# AIC calculation
-library(MuMIn)
-options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
-    family = "poisson", data = diversity, verbose = F, prior = prior, 
-    nitt = 13000, thin = 10, burnin = 3000))
-library(knitr)
-kable(base1, caption = "")
-```
-
-#### *P4: learning strategies (for birds in the manipulated group only)*
-
-**Analysis:** Learning strategies will be identified by matching them to the two known approximate strategies of the contextual, binary multi-armed bandit: epsilon-first and epsilon-decreasing [@mcinerney2010; as in @logan2016behavioral]. 
-
-From @logan2016behavioral (emphasis added):
-
->The following equations refer to the different phases involved in each strategy:
-
->Equation 1 (exploration phase): $$\epsilon N$$
-
->Equation 2 (exploitation phase): $$ ( 1 - \epsilon ) N $$
-
->N is the number of trials given, and epsilon, $$\epsilon$$, represents the subject’s uncertainty about the location of the reward, starting at complete uncertainty ($\epsilon$ = 1) at the beginning of the experiment and decreasing rapidly as individuals gain experience with the task (exploration phase where the rewarded [option] is chosen below or at chance levels) and switch to the exploitative phase (the rewarded [option] is chosen significantly above chance levels). Because the [subjects] needed to learn the rules of the task, they necessarily had an exploration phase. The **epsilon-first strategy** involves an exploration phase followed by an entirely exploitative phase. The optimal strategy overall would be to explore one color in the first trial and the other color in the second trial, and then switch to an exploitative strategy (choose the rewarded [option] significantly above chance levels). In this case there would be no pattern [in the learning curve] in the choices [during] the exploration phase because it would consist of sampling each [option] only once. In the **epsilon-decreasing strategy**, subjects would start by making some incorrect choices and then increase their choice of the rewarded [option] gradually as their uncertainty decreases until they choose the rewarded [option] significantly above chance levels. In this case, a linear pattern emerges [in the learning curve] during the exploration phase. 
-
-We will then quantitatively determine to what degree each bird used the exploration versus exploitation strategy using methods in [@federspiel2017adjusting] by calculating the number of 20-trial blocks where birds were choosing “randomly” (6-14 correct choices; called sampling blocks; akin to the exploration phase in our preregistration) was divided by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (15-20 correct choices; akin to the exploitation phase in our preregistration). These ratios, calculated for each bird for their serial reversals, quantitatively discern the exploration from the exploitation phases.
-
-NOTE (Aug 2021): the grackles were tested in 10-trial blocks and not 20-trial blocks as in @federspiel2017adjusting, which would mean that if there were <20 trials in the last block of a reversal, they would be omitted from the analysis. Therefore, we changed the block size to 10 trials and adjusted the sampling blocks to 2-9 correct choices, and the acquisition blocks to 9-10 correct choices using significance levels in the binomial test as did @federspiel2017adjusting.
-
-```{r strategyratio, eval=F}
-rr <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseratio.csv"), header=T, sep=",", stringsAsFactors=F) 
-
-#remove NAs from the variables that will be in the model
-rr <- subset(rr,!(is.na(rr["SamplingRatio"])))
-rr <- subset(rr,!(is.na(rr["AcquisitionRatio"])))
-
-# GLMM is sampling ratio (exploration) higher earlier in serial reversals?
-rr1 <- glmer(SamplingRatio ~ Reversal + (1|ID), family=binomial, data=rr)
-summary(rr1)
-#There is no significant correlation between reversal number and sampling ratio
-
-# GLMM is acquisition ratio (exploitation) higher earlier in serial reversals?
-rr2 <- glmer(AcquisitionRatio ~ Reversal + (1|ID), family=binomial, data=rr)
-summary(rr2)
-#There is no significant correlation between reversal number and acquisition ratio
-```
-
-#### *Alternative Analyses*
-
-We anticipate that we will want to run additional/different analyses after reading @statrethinkingbook. We will revise this preregistration to include these new analyses before conducting the analyses above.
-
-**14 May 2020:** After reading @mcelreath2018statistical and taking McElreath's stats course, we changed a couple of things about the analysis plan in this preregistration (before we analyzed any of our data). These are the changes we made:
-
-1) [Ability to detect actual effects](#ability-to-detect-actual-effects): We added two simulations and hypothesis-specific models for P2. One examines the relationship between the number of loci solved on the multi-access box and the number of trials to reverse a preference. The other examines the latency to attempt another locus on the multi-access box and the number of trials to reverse a preference.
-
-2) [P2: serial reversal improves rule switching and problem solving](#p2-serial-reversal-improves-rule-switching-and-problem-solving): In conducting point 1, we realized that we had misinterpreted which variable should be the response variable in this analysis. We originally set the number of trials to reverse as the response variable, however we should have instead set the number of loci solved as the response variable and then planned to conduct a second model with the latency to attempt a new locus as the response variable and number of trials as the explanatory variable. This is because a) we manipulated the number of trials to reverse, therefore it must be the explanatory variable; and b) they should be split into two models because of a and because these are two very different relationships that should be considered in their own models. We also realized that Condition (manipulated or control) does not need to be a variable in any of our models because the manipulated birds have, by definition, faster reversal speeds. For these reasons, when we conduct the P2 analysis in this preregistration, we will use the custom models we made in point 1 above rather than the planned MCMCglmm model.
-
-### ETHICS
+## ETHICS
 
 This research is carried out in accordance with permits from the:
 
@@ -2777,7 +2171,7 @@ This research is carried out in accordance with permits from the:
 4) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
 5) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17 [2017])
 
-### AUTHOR CONTRIBUTIONS
+## AUTHOR CONTRIBUTIONS
 
 **Logan:** Hypothesis development, protocol development, data collection, data analysis and interpretation, write up, revising/editing, materials/funding.
 
@@ -2795,23 +2189,35 @@ This research is carried out in accordance with permits from the:
 
 **McCune:** Added MAB log experiment, protocol development, data collection, data interpretation, revising/editing, materials.
 
-### FUNDING
+## FUNDING
 
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology (2017-current), and by a Leverhulme Early Career Research Fellowship to Logan (2017-2018).
 
-### CONFLICT OF INTEREST DISCLOSURE
+## CONFLICT OF INTEREST DISCLOSURE
 
 We, the authors, declare that we have no financial conflicts of interest with the content of this article. CJ Logan is a Recommender and on the Managing Board at PCI Ecology.
 
-### ACKNOWLEDGEMENTS
+## ACKNOWLEDGEMENTS
 
-We thank our PCI Ecology recommender, Aurelie Coulon, and reviewers, Maxime Dahirel and Andrea Griffin, for their feedback on the preregistration and post-study manuscript; Kevin Langergraber for serving as our ASU IACUC PI; Ben Trumble and Angela Bond for logistical support; Melissa Wilson for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; Sophie Kaube for logistical support; Richard McElreath for project support; Aaron Blackwell and Ken Kosik for being the UCSB sponsors of the Cooperation Agreement with the Max Planck Institute for Evolutionary Anthropology; Tiana Lam, Anja Becker, and Brynna Hood for interobserver reliability video coding: Sawyer Lung for field support;  Alexis Breen for coding multi-access box videos; and our research assistants: Aelin Mayer, Nancy Rodriguez, Brianna Thomas, Aldora Messinger, Elysia Mamola, Michael Guillen, Rita Barakat, Adriana Boderash, Olateju Ojekunle, August Sevchik, Justin Huynh, Jennifer Berens, Amanda Overholt, Michael Pickett, Sam Munoz, Sam Bowser, Emily Blackwell, Kaylee Delcid, Sofija Savic, Brynna Hood, Sierra Planck, and Elise Lange.
+We thank our PCI Ecology recommender, Aurelie Coulon, and reviewers, Maxime Dahirel and Andrea Griffin, for their feedback on the preregistration and post-study manuscript; Kevin Langergraber for serving as our ASU IACUC PI; Ben Trumble and Angela Bond for logistical support; Melissa Wilson for sponsoring our affiliations at Arizona State University and lending lab equipment; Kristine Johnson for technical advice on great-tailed grackles; Arizona State University School of Life Sciences Department Animal Care and Technologies for providing space for our aviaries and for their excellent support of our daily activities; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; Sophie Kaube for logistical support; Richard McElreath for project support; Aaron Blackwell and Ken Kosik for being the UCSB sponsors of the Cooperation Agreement with the Max Planck Institute for Evolutionary Anthropology; Tiana Lam, Anja Becker, and Brynna Hood for interobserver reliability video coding: Sawyer Lung for field support; Alexis Breen for coding multi-access box videos; and our research assistants: Aelin Mayer, Nancy Rodriguez, Brianna Thomas, Aldora Messinger, Elysia Mamola, Michael Guillen, Rita Barakat, Adriana Boderash, Olateju Ojekunle, August Sevchik, Justin Huynh, Jennifer Berens, Amanda Overholt, Michael Pickett, Sam Munoz, Sam Bowser, Emily Blackwell, Kaylee Delcid, Sofija Savic, Brynna Hood, Sierra Planck, and Elise Lange.
 
 \newpage
 
-### SUPPLEMENTARY MATERIAL
+## SUPPLEMENTARY MATERIAL 1: Summarized results per bird
 
-### SM0: P4 learning strategy figures
+**Table SM1.** Summarized results per bird in the reversal learning (tube and touchscreen) and multi-access box (plastic and wooden) experiments. “Reversals to pass” indicates how many serial reversals it took a bird to pass criterion (passing two consecutive reversals in 50 trials or less) if they were in the flexibility manipulation condition. X indicates the bird attempted, but did not pass that experiment. Note: Tapa did not finish the MAB log experiment; Marisco's MAB log experiment ended too early due to experimenter error (timed out on 2 consecutive sessions, not 3); Mole and Habanero: do not count MAB plastic number of options solved because they were given the box fully put together for habituation due to experimenter error; Taco was the first juvenile we tested and we did not put him in the flexibility experiment: he received 1 reversal and moved on to his next test, therefore he was essentially a control bird without the matched yellow tube experience.
+
+\newpage
+
+## SUPPLEMENTARY MATERIAL 2: Prediction 2 model outputs
+
+**Table SM2.** Model outputs for the number of loci solved and the latency to switch loci after passing criterion on a different locus on the plastic (models 1-5 and 9-11) and wooden (models 6-8 and 12-14) multi-access boxes. SD=standard deviation, the 89% prediction intervals are shown, n_eff=effective sample size, Rhat4=an indicator of model convergence (1 is ideal), b=the slope of the relationship between loci solved or average switch latency and the number of trials to pass the reversal.
+
+\newpage
+
+## SUPPLEMENTARY MATERIAL 3: Prediction 4 learning strategy figures
+
+Below are figures for the proportion of trials correct by trial number and reversal for each bird.
 
 ```{r p4strategyfigSM, eval=F}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -3028,37 +2434,417 @@ ggdraw(all + theme(legend.position = "none")) +
 
 ![](g_flexmanip_strategiesAdobo.png)
 
-**Figure SM1.** Adobo’s proportion of trials correct by trial number and reversal.
+**Figure SM3.1.** Adobo’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesChalupa.png)
 
-**Figure SM2.** Chalupa’s proportion of trials correct by trial number and reversal.
+**Figure SM3.2.** Chalupa’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesChilaquile.png)
 
-**Figure SM3.** Chilaquile’s proportion of trials correct by trial number and reversal.
+**Figure SM3.3.** Chilaquile’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesDiablo.png)
 
-**Figure SM4.** Diablo’s proportion of trials correct by trial number and reversal.
+**Figure SM3.4.** Diablo’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesHabanero.png)
 
-**Figure SM5.** Habanero’s proportion of trials correct by trial number and reversal.
+**Figure SM3.5.** Habanero’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesMemela.png)
 
-**Figure SM6.** Memela’s proportion of trials correct by trial number and reversal.
+**Figure SM3.6.** Memela’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesMole.png)
 
-**Figure SM7.** Mole’s proportion of trials correct by trial number and reversal.
+**Figure SM3.7.** Mole’s proportion of trials correct by trial number and reversal.
 
 ![](g_flexmanip_strategiesPollito.png)
 
-**Figure SM8.** Pollito’s proportion of trials correct by trial number and reversal.
+**Figure SM3.8.** Pollito’s proportion of trials correct by trial number and reversal.
+
+\newpage
+
+## SUPPLEMENTARY MATERIAL 4: Reversal learning experiments: discriminating shapes on the touchscreen compared with color using tubes
+
+In the tube experiment, it took four grackles an average of 40 trials (sd=12) in the initial discrimination phase to learn to prefer a color, while it took the same individuals an average of 390 trials (sd=59) to learn to prefer a shape using the touchscreen (Queso, Mole, Habanero, and Tapa). The two individuals who were faster to learn in the tube experiment were slower to learn in the touchscreen experiment. For the reversal, it took three of these individuals (Queso, Mole, and Habanero) an average of 80 trials (sd=14) to reverse their colored tube preference, and an average of 362 trials (sd=111) to reverse their shape preference on the touchscreen (Tapa had to be released back to the wild before finishing the experiment, but was on trial 629 in reversal one of the touchscreen experiment at the time of release. In the tube experiment, she was also the slowest of the four to reverse at 100 trials). All three individuals were about equally fast at the reversal in the tube experiment, while their reversal learning speeds differed on the touchscreen. The touchscreen training data and a summary of the training process is detailed in @seitz2021training.
+
+\newpage
+
+## SUPPLEMENTARY MATERIAL 5: Interobserver reliability of dependent variables (unregistered analyses)
+
+To determine whether experimenters coded the dependent variables in a repeatable way, hypothesis-blind video coders were first trained in video coding the dependent variable, and then they coded at least 20% of the videos in the reversal (tubes) and multi-access box experiments. We randomly chose a subset of all of the birds who participated in each experiment using random.org:
+
+- Reversal 6/20 grackles (30% with half from the control group): Chalupa, Avocada, Diablo, Fideo, Tomatillo, Adobo
+
+- Multi-access box plastic 3/15 grackles (20%): Habanero, Queso, Chalupa
+
+- Multi-access box log 3/12 grackles (25%): Diablo, Adobo, Yuca
+
+Video coders then analyzed all videos from these birds. The experimenter's data was compared with the video coder data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). Note that the data in columns from coders 1 and 2 in the data sheets were aligned based on similar numbers between coders to prevent disagreements near the top of the data sheet from misaligning all subsequent entries.
+
+##### Interobserver reliability training
+
+To pass **interobserver reliability (IOR) training**, video coders needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders (see R code comments for details). 
+
+***Alexis Breen*** (compared with experimenter's live coding): 
+
+ - Multi-access box: correct choice unweighted Cohen's Kappa=0.90 (confidence boundaries=0.77-1.00, n=33 data points) 
+
+ - Multi-access box: locus solved unweighted Cohen's Kappa=0.90 (confidence boundaries=0.76-1.00, n=33 data points) 
+ 
+Note: Breen was not a hypothesis-blind video coder. She contributed to extensive video coding across the whole project, however, for interobserver reliability analyses, her data were always compared with a hypothesis-blind coder's data.
+
+***Anja Becker*** (compared with experimenter's live coding): 
+
+ - Reversal: correct choice ICC=1.00 (confidence boundaries=1.00-1.00, n=25 data points) 
+ 
+***Tiana Lam*** (compared with experimenter's live coding): 
+
+ - Multi-access box: correct choice ICC=0.90 (confidence boundaries=0.77-1.00, n=33 data points) 
+
+ - Multi-access box: locus solved unweighted Cohen's Kappa=0.95 (confidence boundaries=0.84-1.00, n=33 data points) 
+ 
+***Brynna Hood*** (compared with experimenter's live coding): 
+
+ - Multi-access log: correct choice unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
+
+ - Multi-access log: locus solved unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
+
+ 
+##### Interobserver reliability
+
+Interobserver reliability scores (minimum 20% of the videos) were as follows:
+   
+***Brynna Hood*** (compared with experimenter's live coding): 
+
+ - Multi-access log: correct choice unweighted Cohen's Kappa=0.91 (confidence boundaries=0.76-1.00, n=39 data points) 
+
+ - Multi-access log: locus solved unweighted Cohen's Kappa=1.0 (confidence boundaries=1.0-1.00, n=39 data points) 
+
+***Tiana Lam*** (compared with experimenter's live coding): 
+
+ - Multi-access box: correct choice unweighted Cohen's Kappa=0.83 (confidence boundaries=0.73-0.92, n=102 data points) 
+
+ - Multi-access box: locus solved unweighted Cohen's Kappa=0.90 (confidence boundaries=0.830-0.97, n=102 data points) 
+
+***Anja Becker*** (compared with experimenter's live coding): 
+
+ - Reversal: correct choice ICC=0.99 (confidence boundaries=0.98-0.99, n=3280 data points) 
+
+These scores indicate that the dependent variables are repeatable to a high or extremely high degree given our instructions and training
 
 
 \newpage
+
+## SUPPLEMENTARY MATERIAL 6: Ability to detect actual effects
+
+To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we used G&ast;Power [v.3.1, @faul2007g; @faul2009statistical] to conduct power analyses based on confidence intervals. G&ast;Power uses pre-set drop down menus and we chose the options that were as close to our analysis methods as possible (listed in each analysis below). Note that there were no explicit options for GLMs (though the chosen test in G&ast;Power appears to align with GLMs) or GLMMs or for the inclusion of the number of trials per bird (which are generally large in our investigation), thus the power analyses are only an approximation of the kinds of effect sizes we can detect. We realize that these power analyses are not fully aligned with our study design and that these kinds of analyses are not appropriate for Bayesian statistics (e.g., our MCMCglmm below), however we weare unaware of better options at thatis time. Additionally, it is difficult to run power analyses because it is unclear what kinds of effect sizes we should expect due to the lack of data on this species for these experiments.
+
+To address the power analysis issues, we ran simulations on our Arizona data set before conducting any analyses in this preregistration. 
+
+**Planned:** We will first run null models (i.e., dependent variable ~ 1 + random effects), which will allow us to determine what a weak versus a strong effect is for each model. Then we will run simulations based on the null model to explore the boundaries of influences (e.g., sample size) on our ability to detect effects of interest of varying strengths. If simulation results indicate that our Arizona sample size is not larger than the lower boundary, we will continue these experiments at the next field site until we meet the minimum suggested sample size.
+
+ - **Implementation of the plan:** simulations were conducted in April 2020 (pre-data analysis) following procedures in @mcelreath2018statistical. This meant that there were no null models because the simulations using the full models are used to determine whether one can detect differences between effect sizes.
+
+To run the simulations, we first constructed a **hypothesis-appropriate mathematical model** that encompasseds the relationship between the variables of interest for each analysis: 1) number of loci solved on the multi-access box ~ trials to reverse, and 2) latency to attempt a new locus on the multi-access box ~ trials to reverse. 
+
+**Simulation and model: number of loci solved on the multi-access box ~ trials to reverse**
+
+The model takes the form of:
+
+locisolved ~ Binomial(4, p) *[likelihood]*
+
+logit(p) ~ $\alpha$[batch] + $\beta$trials  *[model]*
+
+locisolved is the number of loci solved on the multi-access box, 4 is the total number of loci on the multi-access box, p is the probability of solving any one locus across the whole experiment, $\alpha$ is the intercept and each batch gets its own, $\beta$ is the expected amount of change in locisolved for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
+
+Expected values for the number of loci solved on the multi-access box were set to either 2 or 0 (out of 4 loci maximum) because we were unsure of whether the grackles would be able to solve any loci on the multi-access box because this experiment had never been done on this species before. Expected values for reversal learning using colored tubes (mean, standard deviation, and range of number of trials to reverse a color preference) were based on previously published data on great-tailed grackles [@logan2016behavioral]. This data indicates that the average number of trials to reverse a preference is 91 and the standard deviation is 21. In our model, the variation in the actual data is reflected by both the population standard deviation and the expected amount of change related to the explanatory variable. After running simulations, we identified the following distributions and priors to be the most likely for our expected data:
+
+$\alpha$ ~ Normal(4,10) *[$\alpha$ prior]*
+
+$\beta$ ~ Normal(0,5) *[$\beta$ prior]*
+
+We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means [see Figure 10.6 in @mcelreath2018statistical]. For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean). 
+
+
+```{r modelparameters1, eval=F}
+library(rethinking)
+library(rstan)
+library(formatR)
+
+### SIMULATION
+#SET PARAMETERS for population values = these are what we are varying!
+
+#Setting beta
+b <- 0.1
+plot(x=21*c(-2:2)+91,y=4*inv_logit(0+b*c(-2:2))) #plot expected relationship between loci solved (y axis) and trials to reverse (x axis) based on varying b. Result1 = in the simulation b should not be larger than 1 (or smaller than -1) because at 1 it ranges from solving 0.5-3.5 loci which is basically the min and max possible range. Beta=0.1 means 
+
+#Setting b prior: our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1 (these will be the limits for the simulation)
+x <- seq(-2,2,length=100) #make a normal distribution
+hx <- dnorm(x,mean=0,sd=0.4) #change sd until you get the width you want
+plot(x,hx,xlim=c(-2,2),ylim=c(0,1)) #plot to see whether values now match our expectation for this prior and the result from figuring out beta prior
+#Result2 = in the model (ulam) we want to set the b prior to be (0,0.4)
+
+#Figuring out probability, p
+batch1mean <- 2 #solves on average 2 loci 
+batch2mean <- 1.6 #solves on average 1.6 loci
+
+batch1mean <- log((batch1mean/4)/(1-(batch1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
+batch2mean <- log((batch2mean/4)/(1-(batch2mean/4))) 
+
+#Figuring out alpha prior
+probabilities<-inv_logit(rnorm(10000,mean=-2,sd=0.5))
+mean(probabilities) #this is the mean number of loci solved
+loci <- vector()
+for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
+hist(loci) #we didn't know whether they would be able to solve any loci bc this species had never been given this MAB before. Therefore, we set the mean number of loci solved to 0 (which is -2 inverse logit scale of the probability), and the sd to 2 because then it is possible that some individuals can solve all 4 options (even though solving all 4 is rare) (if sd is lower, then the possibility to solve 4 options disappears, if higher then solving 1-4 becomes equally likely or 4 becomes more likely). Minimum SD=0.5
+
+probabilities<-inv_logit(rnorm(10000,mean=0,sd=0.3))
+loci <- vector()
+for(i in 1:10000) {loci[i]<-rbinom(1,size=4,prob=probabilities[i])}
+mean(loci) #this is the mean number of loci solved
+hist(loci) #Alternatively, we expect a bell curve with most of the individuals being average at solving loci (at the mean=2 loci) and some being more innovative while others are less. Minimum SD=0.3
+
+#Figuring out how much noise we expect (sd in alpha) = 0.4
+hist(inv_logit(rnorm(10000,mean=0,sd=1))) #it is spread out along the x axis so the many individuals in the ends are going to have different probabilities from the pop mean
+hist(inv_logit(rnorm(10000,mean=0,sd=0.4))) #this is much narrower, thus most of the individuals will match the pop mean and this reduces noise
+
+#Result = in the simulation alpha sd should not be larger than 1 because at 1 it ranges from a probability of solving 0.12-0.88 loci which is basically the min and max possible range. But since this is the sd, we want it narrower than the full range (so it isn't a flat prior), so set it to something like 0.5 (0.7 with a beta of 1 looks like alpha covers 41% of the variation w a sample size of 15 birds, which was the boundary for a different simulation using a normal distribution in a separate preregistration xpopbehaviorhabitat. So we could detect effects that are at least as large as the noise)
+
+
+#RUN SIMULATION WITH PARAMETERS (this is the simulated data that the model (below) will use to estimate beta) Generate values for simulated individuals from two simulated batches: vary the alpha batch mean (expected number of loci solved and whether batches differ) and alpha sd (the noise in the population in the number of loci solved), beta (the slope between number of loci solved and trials to reverse), sample size
+b <- 1  #beta
+asd <- 0.3 #alpha sd for the population. We set this smaller than what we had it above bc we wanted to make it so individuals were not equally likely to have similar results
+batch1mean <- 1.9 #alpha batch mean: solves on average 2 loci 
+batch2mean <- 2.1 #alpha batch mean: solves on average 1.6 loci
+n <- 16
+
+batch1mean <- log((batch1mean/4)/(1-(batch1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
+batch2mean <- log((batch2mean/4)/(1-(batch2mean/4))) 
+
+individuals<-matrix(nrow=16,ncol=8)
+colnames(individuals)<-c("loci","trials","batch","probability","logit trials","logit base value","base probability","logit probability")
+for (i in 1:n/2) {
+  trials<-rnorm(1,0,1)
+  batch1 <- rnorm(1,batch1mean,asd) #n, mean, sd of probability of solving a locus. SD is the noise
+  p <- batch1 + b*trials
+  individuals[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) #50 trials (drawing 50 times (the highest number of trials an individual could get is probably 50 trials). Each trial is an opportunity to solve a locus and they can only solve 1 locus per trial. Sum for how many of the loci in total did they solve across the 50 trials
+  ifelse(individuals[i,1]>4,individuals[i,1]<-4,individuals[i,1]<-individuals[i,1])
+  individuals[i,2]<-trials*21+91 #column: number trials to reverse (standardized) and then unstandardized (multiply by sd + mean)
+  individuals[i,3]<-1 #column: batch=1
+  individuals[i,4]<-inv_logit(p) #column: p (probability)
+  individuals[i,5]<-trials #the logit of trials to reverse
+  individuals[i,6]<-batch1 #logit base value of alpha (for the intercept for this ind)
+  individuals[i,7]<-inv_logit(batch1) #base probability is the inverse logit of the previous column
+  individuals[i,8]<-p #logit probability
+}
+
+for (i in (n/2+1):n) {
+  trials<-rnorm(1,0,1)
+  batch2 <- rnorm(1,batch2mean,asd) #n, mean, sd
+  p <- batch2 + b*trials
+  individuals[i,1]<-sum(rbinom(50,1,inv_logit(p)/12.5)) 
+  ifelse(individuals[i,1]>4,individuals[i,1]<-4,individuals[i,1]<-individuals[i,1])
+  individuals[i,2]<-trials*21+91
+  individuals[i,3]<-2 #batch=2
+  individuals[i,4]<-inv_logit(p)
+  individuals[i,5]<-trials
+  individuals[i,6]<-batch2
+  individuals[i,7]<-inv_logit(batch2)
+  individuals[i,8]<-p
+}
+
+#individuals #check the data
+plot(individuals[,1]~individuals[,2]) #visualize the relationship
+#plot(individuals[1:8,1]~individuals[1:8,2]) #batch1 goes full range of both variables
+#plot(individuals[9:16,1]~individuals[9:16,2]) #batch2 goes full range of both variables
+
+
+### RUN MODEL
+#don't change alpha or beta parameters here because they are changed above
+dat <- list(locisolved = individuals[,1],
+            trials = standardize(individuals[,2]),
+            batch = individuals[,3]
+              )
+
+m1 <- ulam( alist(
+  locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
+  logit(p) <- a[batch] + b*trials , #batch=random effect, standardize trials so 0=mean
+  a[batch] ~ dnorm(0,1) , #each batch gets its own intercept
+  b ~ dnorm(0,0.4) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
+) , data=dat , chains=4 , log_lik=TRUE )
+
+precis(m1,depth=2)
+#mean(individuals[1:8,1])
+#mean(individuals[9:16,1])
+
+
+#check posterior for p to look at the distribution of probabilities that are probable
+prior <- extract.prior(m,n=1e4)
+p <- inv_logit(prior$a) #convert from logit to actual probability
+dens(p,adj=0.1)
+#result1: it was a normal curve with a peak at 3.5, let's see what happens if we flatten it saying that we expect all probabilities to be probable (changed a sd from 0.5 to 1.5)
+#result2: this worked - the distribution is flat at 1.2
+
+
+#check to see if including batch has an influence on the estimate of b by removing batch
+mwobatch <- ulam( alist(
+  locisolved ~ dbinom(4,p) , 
+  logit(p) <- a + b*trials , #standardize trials so 0=mean
+  a ~ dnorm(0,0.5) , 
+  b ~ dnorm(0,2)
+) , data=dat , chains=4 , log_lik=TRUE )
+
+precis(mwobatch,depth=2)
+mean(individuals[1:8,1])
+mean(individuals[9:16,1])
+#result = really similar to model m1
+```
+
+
+**Simulation and model: latency to attempt a new locus on the multi-access box ~ trials to reverse**
+
+For the average latency to attempt a new locus on the multi-access box as it relates to trials to reverse (both are measures of flexibility), we simulated data and set the model as follows: 
+
+latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
+
+log($\lambda_i$) ~ $\alpha$[batch] + $\beta$trials  *[the model]*
+
+latency is the average latency to attempt a new locus on the multi-access box, $\lambda_i$ is the rate (probability of attempting a locus in each second) per bird (and we take the log of it to make sure it is always positive; birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, $\alpha$ is the intercept for the rate per batch, $\beta$ is the expected amount of change in the rate of attempting to solve in any given second for every one unit change in trials, and trials is the number of trials to reverse a color preference. 
+
+Expected values for the latency to attempt a new locus on the multi-access box was set to between 1-2700 sec because the experiment ends for a bird if they do not obtain the food in 3 consecutive trials, and each trial can last up to 15 min. Because we did not have prior data for this species on this test, we set the mean to 300 sec, which is half way through a usual 10 min trial because it seems likely that if a bird is going to attempt another locus, it will likely do so at the next opportunity, especially after being successful in the previous trial. Expected values for reversal learning using colored tubes are the same as above. After running simulations, we identified the following to be the most likely distributions and priors for our expected data:
+
+$\phi$ ~ 1/(Exponential(1)) *[$\phi$ prior]*
+
+$\alpha$ ~ Normal(300,50) *[$\alpha$ prior]*
+
+$\beta$ ~ Normal(0,5) *[$\beta$ prior]*
+
+We used a gamma-Poisson distribution for latency because it constrains the values to be positive and to primarily occur sooner rather than later, which is what we expect from the grackles [based on data from New Caledonian crows and kea in @auersperg_flexibility_2011]. For $\phi$, we used an exponential distribution because it is standard for this paramter. We used normal distributions for $\alpha$ and $\beta$ because they are (or are based on) sums with large means [see Figure 10.6 in @mcelreath2018statistical]. For the $\beta$ prior, we had no expectation about whether the relationship would be positive or negative, therefore we centered it on 0 (the mean).
+
+```{r modelparameters2, eval=F}
+library(rethinking)
+library(rstan)
+library(formatR)
+
+### SIMULATIONS: GAMMA-POISSON
+n <- 16 #number of individuals
+b<- 1 #slope between latency and trials, want positive and negative values so mean=0
+phi <- 150 #this gives us a distribution that we expect (long right tail)
+asd<-0.5 #alpha sd is our noise parameter. Decrease this to make the upper bound come to a reasonable number
+
+individuals<-matrix(nrow=16,ncol=3)
+colnames(individuals)<-c("trials","latency","batch")
+
+for (i in 1:n/2){
+  trials <- rnorm(1,0,1) #distribution for trials. These are standardized values. To convert back to the original units: trials*21+91
+  a1 <- rnorm(1,mean=6.5,asd) #intercept for batch 1, mean=log of 450 sec, sd puts the range at 164-1212 sec (asd is our noise parameter)
+  lambda <- exp(a1 + b*trials) #the linear model for batch 1
+  latency <- rgampois(1,lambda,phi) #this is the latency per individual
+  
+  individuals[i,1]<-trials*21+91
+  individuals[i,2]<-latency
+  individuals[i,3]<-1
+}
+
+for (i in (n/2+1):n){
+  trials <- rnorm(1,0,1) 
+  a2 <- rnorm(1,mean=5.5,sd=asd)
+  lambda <- exp(a2 + b*trials)
+  latency <- rgampois(1,lambda,phi) 
+  
+  individuals[i,1]<-trials*21+91
+  individuals[i,2]<-latency
+  individuals[i,3]<-2
+}
+
+### RUN THE MODEL
+#Load packages
+library("Rcpp")
+library("rstan") 
+library(rethinking)
+library(ggplot2)
+
+dat <- list(trials = standardize(as.numeric(individuals[,1])),
+            latency = as.integer(individuals[,2]),
+            batch = as.integer(individuals[,3])
+)
+
+m2 <- ulam(
+  alist(
+    latency ~ dgampois(lambda, phi),
+    log(lambda) <- a[batch] + b*trials,
+    a[batch] ~ dnorm(1,1),
+    b ~ dnorm(0,1),
+    phi ~ dexp(1)
+  ),data=dat, log_lik=TRUE, messages=FALSE)
+
+###To make the model work, need to set up a few things... (this took me a few days because at every stage there is an error message and it isn't clear what the problem is or what to do next)
+
+###Update R
+#install installr package
+#updateR(TRUE) #didn't work bc it can't find my R folder on my computer
+#updateR(fast = FALSE, browse_news, install_R, copy_packages, copy_Rprofile.site, keep_old_packages, update_packages, start_new_R, quit_R, print_R_versions = TRUE, GUI = TRUE, to_checkMD5sums = FALSE, keep_install_file = FALSE, download_dir = "/Users/corina/Library/R", silent = FALSE, setInternet2 = TRUE, cran_mirror = "https://cran.rstudio.com/") #didn't work bc it can't find my R folder on my computer
+#manually updated R and reinstalled packages
+
+###Install rethinking
+#install package devtools
+#devtools::install_github("rmcelreath/rethinking",ref="Experimental")
+
+###Install xcode (first download the app from the app store)
+#In terminal, type: "xcode-select --install"
+
+###Get STAN working https://github.com/rmcelreath/rethinking
+#Install C++ toolchain and configuration https://github.com/stan-dev/rstan/wiki/Installing-RStan-from-source-on-a-Mac
+#install.packages("Rcpp", repos = "https://rcppcore.github.io/drat") 
+#Then install rstan per instructions at the previous link
+
+###Now we're ready to go!
+```
+
+We **translated the simulation output into effect sizes** and examined what kind of effect size these parameter values represent (Table M1). For each $\beta$, we calculated the effect size [Box 13.3 in @lajeunesse2013recovering: linear regression]:
+
+r = $\beta$ (SDx / SDy) = $\beta$ (1.5 / 21)
+
+Where r is the Pearson product moment correlation and SD is the standard deviation. For the standard deviation of x (number of loci solved on the multiacccess box), we estimated a possible value of 1.5. For the standard deviation of y (trials to reverse), we used 21 from the Santa Barbara grackle data [@logan2016behavioral]. We then calculated the effect sizes and R^2^ values for each value of $\beta$.
+
+```{r tableeffect, eval=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_simtoeffectsize.csv"), header=F, sep=",", stringsAsFactors=F)
+
+library(reactable)
+reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
+          columns = list(
+            V1 = colDef(name="Beta"),
+            V2 = colDef(name="SDx"),
+            V3 = colDef(name="SDy"),
+            V4 = colDef(name="Effect size"),
+            V5 = colDef(name="R2")
+          ))
+```
+
+**Table SM6.1.** The connection between $\beta$ and effect sizes (SDx=standard deviation of x, which is the number of loci solved; SDy=standard deviation of y, which is the number of trials to reverse; R^2^=R squared).
+
+We then used the simulations to run **models** on simulated data to estimate the measurement error associated with varying sample size, $\beta$, and the range of multi-access box loci solved or latency to attempt a new locus (Table M2). Before running the models, we decided that a model would detect an effect if 89% of the posterior sample was on the same side of zero [following @mcelreath2018statistical]. We ran the simulation with $\beta$=3 (latency) because this was a high value at which an appropriate range of values were observed in the simulation testing phase, $\beta$=0 because this would be the scenario in which there is no relationship between the response variable and the trials to reverse, and $\beta$=-1 to determine how small of a difference we can detect and with what amount of associated noise ($\sigma$). **Sigma ($\sigma$) is the standard deviation in the trials to reverse if the trials to reverse is a normal distribution. In all simulations, the mean in the trials to reverse was set to 91. Therefore, a ($\sigma$) of 14 is 15% noise (14/91). We found that when ($\sigma$) is larger than 14, we cannot detect even the largest effect of trials to reverse on loci solved or latency because there are some simulations where the estimated regression coefficient crosses zero.** When $\beta$=0 we want all of the regression coefficients to cross zero (10 out of 10 random repetitions) and when $\beta$ $\neq$ 0 we want none of the regression coefficients to cross zero (0 out of 10 random repetitions). We ran the models several times with various parameters to determine at what point this was the case for each combination of parameters.
+
+```{r tableparam, eval=T}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table_minsamplesizesim.csv"), header=F, sep=",", stringsAsFactors=F)
+
+library(reactable)
+reactable(d, highlight=TRUE, bordered=FALSE, compact=TRUE, wrap=TRUE, resizable=TRUE,
+          columns = list(
+            V1 = colDef(name="Beta"),
+            V2 = colDef(name="n"),
+            V3 = colDef(name="Sigma"),
+            V4 = colDef(name="Regression coefficient crosses zero"),
+            V5 = colDef(name="Regression coefficient"),
+            V6 = colDef(name="Range of MAB loci solved")
+          ))
+```
+
+**Table SM6.2.** Simulation outputs from varying $\beta$, sample size (n), $\sigma$, and whether the actual range of multi-access box [MAB] loci solved were 0-2 or 0-4 **(we did not know how many loci the grackles would be able to solve before we started collecting data so we ran two simulations. The grackles ended up being able to solve all four loci on both multi-access boxes, therefore we must use only those rows associated with "Range of MAB loci solved" = 0-4). This table is useful for the analyses involving the number of loci solved on the multi-access box, but not the latency to switch to attempting a new locus on the multi-access box, which uses a different (gamma poisson) model.**
+
+This shows that we would have the power to detect a medium effect (-0.357 in Table M1) with a sample size of 15 if the noise ($\sigma$) is <15%. We would be unlikely to get a false negative because there were no false negatives in the  simulations (i.e., the posterior sample range did not cross zero). With this sample size, when $\beta$=0, there are no false positives (i.e., the posterior sample range always included zero). However, we would not be able to detect a weak effect unless the noise ($\sigma$) was much smaller.
 
 ### REFERENCES
