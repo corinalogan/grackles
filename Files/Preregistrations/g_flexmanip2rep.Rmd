@@ -503,21 +503,21 @@ sum(results > 0.13)/1000
 # WE DID NOT end up using the code below because the above gave us what we needed
 # Repeatability on the data/observed scale (accounting for fixed effects)
 #code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
-vf <- sapply(1:nrow(serial[["Sol"]]), function(i) {
-   var(predict(serial, it=i))  
-}) #estimates for each iteration of the MCMC
-
-repeataF <- (vf+serial$VCV[,"ID"])/(vf+serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) #0.998
-HPDinterval(repeataF, 0.95) #0.992 to 0.9998, probability=0.952
-
-# Now compare with the raw repeatability: null model. NOTE: we shouldn't run this one because the reversal was a manipulation so the reverse number must be included
-serialraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=d, verbose=F, prior=prior, nitt=50000, thin=100, burnin=25000)
-#summary(serialraw)
-
-repeataraw <- serialraw$VCV[,"ID"]/(serialraw$VCV[,"ID"]+serialraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeataraw) # -0.00002
-HPDinterval(repeataraw, 0.95) #7.2e-16 to 0.18, probability=0.952
+# vf <- sapply(1:nrow(serial[["Sol"]]), function(i) {
+#    var(predict(serial, it=i))  
+# }) #estimates for each iteration of the MCMC
+# 
+# repeataF <- (vf+serial$VCV[,"ID"])/(vf+serial$VCV[,"ID"]+serial$VCV[,"units"]) #latent scale adjusted + data scale
+# posterior.mode(repeataF) #0.998
+# HPDinterval(repeataF, 0.95) #0.992 to 0.9998, probability=0.952
+# 
+# # Now compare with the raw repeatability: null model. NOTE: we shouldn't run this one because the reversal was a manipulation so the reverse number must be included
+# serialraw <- MCMCglmm(TrialsToReverse ~ 1, random=~ID, family="poisson", data=d, verbose=F, prior=prior, nitt=50000, thin=100, burnin=25000)
+# #summary(serialraw)
+# 
+# repeataraw <- serialraw$VCV[,"ID"]/(serialraw$VCV[,"ID"]+serialraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+# posterior.mode(repeataraw) # -0.00002
+# HPDinterval(repeataraw, 0.95) #7.2e-16 to 0.18, probability=0.952
 ```
 
 #### *P3a alternative: was the potential lack of repeatability on colored tube reversal learning due to motivation or hunger?*
