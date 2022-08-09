@@ -144,13 +144,57 @@ The data are available at the Knowledge Network for Biocomplexity's data reposit
 
 
 
-
-
 ## RESULTS
 
 Our sample size was 9 for our first hypothesis testing temporal repeatability of reversal learning performance.
 
 Performance was repeatable within individuals within the context of reversal learning: we obtained a repeatability value of 0.13. By design in the serial reversal learning experiment, grackles became faster at switching across serial reversals. To determine the statistical significance of R=0.13, while accounting for this non-independence, we compared the actual performance on the number of trials to switch a preference to simulated data where birds performed randomly within each reversal. We found that this repeatability value was significantly greater than expected if birds were performing randomly (p=0.001; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
+
+We then assessed the repeatability of performance across contexts by quantifying whether individuals that were fast to switch a preference in the color reversal task were also fast to switch to attempting a new solution after passing criterion on a different solution on the two MAB tasks. We converted our metric of reversal speed from trials to reverse to seconds to reverse so the measures across contexts would be on the same scale. We had repeated measures across contexts for 15 grackles that participated in at least one color reversal and one solution switch on either or both MAB tasks. We found significant repeatability across contexts (R=0.36, p=0.01; Fig. 2), where latency to switch was consistent within individuals and different among individuals.
+
+ 
+```{r consistent1, eval=T, echo=F, message=FALSE, warning=FALSE, results=hide}
+# ADDED JULY 2022 - we realized we mis-specified the model for assessing repeatability of flexibility across contexts. Previously we were analyzing the relationship between overall performance on the reversal learning and MAB tasks, rather than individual consistency of performance. Consequently we conducted an analysis that evaluated performance as a function of task type, reversal/switch number and a random effect of ID.
+library(lubridate)
+library(DHARMa)
+library(lme4)
+rev <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) # data file with reversal learning measure in seconds to reverse
+rev <- rev[!rev$ID == "Diablo",] #remove Diablo who did not pass criterion on solving any MAB loci and so we can't measure solution switching
+
+
+## PLOTTING RESULTS ##
+library(tidyverse)
+library(ggplot2)
+
+rev = rev %>% 
+  group_by(Test) %>% 
+  mutate(scale.dur = scale(Dur.sec, center=T, scale=T)) %>% 
+  ungroup()
+rev.all3 = rev %>% 
+  group_by(ID, Test) %>% 
+  summarise(median = median(scale.dur),
+            lcl = quantile(scale.dur, probs=0.25),
+            ucl = quantile(scale.dur, probs=0.75)) %>% 
+  ungroup() %>% 
+  mutate(Test = recode(Test, "LatencyMABplastic"="MAB plastic",
+                       "LatencyMABwooden"="MAB wood",
+                       "Reversal" = "Reversal learning")) #%>% 
+
+#performance across all tests
+ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Test)) +
+  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
+                  position = position_dodge(width = 0.5)) +
+  scale_shape_manual(values = c(15,17,8,19))+
+  labs(x = "Bird", y = "Latency to switch (sec)") +
+  theme_bw() +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  scale_fill_discrete(guide = "none") +
+  scale_colour_discrete(guide = "none")
+```
+Figure 2: We found significant repeatability in switching performance across the three contexts: multi-access box (MAB) plastic (square), MAB wood (triangle), and reversal learning with color tubes (star). Points indicate the (centered and scaled) median performance of an individual in each context, the lines indicate the variation in performance across multiple switches within a context. Some individuals participated in a context, but did not experience multiple preference switches and so there is a point, but no line. Additionally, some individuals are missing points for a given context because they did not participate. Grackles are ordered on the x-axis from fastest (left) to slowest (right).
+
+
 
 
 ## DISCUSSION
