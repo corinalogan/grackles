@@ -201,6 +201,172 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
+#### Calculating phis and lambdas for all grackles
+
+```{r phislambdas, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### Code below copied from Lukas et al. 2022
+
+# Using OBSERVED not simulated data 
+
+# We want to estimate lambda and phi differently. For the initial values, we combine the data from the first association learning with the first reversal.
+
+
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+library(rstan)
+library(rethinking)
+library(cmdstanr)
+library(posterior)
+
+# If you have cmdstan installed, use the following:
+# set_ulam_cmdstan(TRUE)
+
+# PREPARE reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+# Want data ONLY from initial learning and first reversal to determine phi and lambda at the beginning. This is for all birds, including those that did not experience the reversal manipulation experiment
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$ID))) {
+  thisbird <- unique(dflex$ID)[i]
+  thisbirddata <- dflex[dflex$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c(0,1),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+dflex_beginning <- reduceddata
+
+# We want to remove the birds who did not go through at least the first reversal trial
+birdscompletedreversal<-unique(dflex_beginning[dflex_beginning$Reversal==1,]$ID)
+
+dflex_beginning<-dflex_beginning[dflex_beginning$ID %in% birdscompletedreversal,]
+
+length(unique(dflex_beginning$ID)) #21 birds
+
+#Construct Choice variable
+dflex_beginning$Choice <- NA
+for (i in 1: nrow(dflex_beginning)) {
+  if (dflex_beginning$Reversal[i] %in% seq(0, max(unique(dflex_beginning$Reversal)), by = 2)){
+    
+    if (dflex_beginning$Correct[i] == 1){
+      dflex_beginning$Choice[i] <- 1
+    } else {
+      dflex_beginning$Choice[i] <- 2
+    } 
+  } else {
+    if (dflex_beginning$Correct[i] == 1){
+      dflex_beginning$Choice[i] <- 2
+    } else {
+      dflex_beginning$Choice[i] <- 1
+    } 
+  }
+}
+dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$ID)), ]
+
+colnames(dflex_beginning)[4]<-"id"
+
+# Sort birds alphabetically
+dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$id)), ]
+birdnames<-unique(dflex_beginning$id)
+
+# Convert bird names into numeric ids
+dflex_beginning$id <- as.numeric(as.factor(dflex_beginning$id))
+
+
+datinitialandfirstreversal <- as.list(dflex_beginning)
+datinitialandfirstreversal$N <- nrow(dflex_beginning)
+datinitialandfirstreversal$N_id <- length(unique(dflex_beginning$id))
+
+
+
+# The STAN model is set up to have the initial attraction for each option set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
+reinforcement_model_nonzeroattraction <- "
+data{
+   int N;
+   int N_id;
+   int id[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on stuff
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1';
+}
+
+// loop over Choices
+
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+
+L =  exp(log_L + v_ID[id[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+
+phi =  inv_logit(logit_phi + v_ID[id[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+
+}//i
+}
+"
+
+m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialandfirstreversal ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+sinitialandreversal <- extract.samples(m_initialandreversal)
+initialandreversal_lambda <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp( mean(sinitialandreversal$log_L) + mean(sinitialandreversal$v_ID[ ,x, 1])))
+initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit( mean(sinitialandreversal$logit_phi) + mean(sinitialandreversal$v_ID[ ,x, 2])))
+
+plot(initialandreversal_phi~initialandreversal_lambda)
+
+
+```
+
 #### P1-P2
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
@@ -425,11 +591,34 @@ Social network data are not independent (@croft2011hypothesis), therefore, to de
 
 
 ```{r p4, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+ff <- data.frame(ff)
+
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Separate the sexes
 fem <- ff[ff$Sex=="f",]
 mal <- ff[ff$Sex=="m",]
+
+### Were there enough affiliative events between two banded birds to have a sample size to analyze bond strength?
+
+## Females
+
+#remove NAs and unbanded birds. 18 categories outside of NA. Change "unknown" to "unbanded", and "unknown individual" to "unknown grackle" if it was a grackle
+fem$NonFocalBirdID <- factor(fem$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
+
+fem1 <- fem[!fem$NonFocalBirdID=="NA" & !fem$NonFocalBirdID=="unbanded adult male" & !fem$NonFocalBirdID=="unbanded adult female" & !fem$NonFocalBirdID=="unbanded juvenile female" & !fem$NonFocalBirdID=="unbanded juvenile male" & !fem$NonFocalBirdID=="unbanded unknown female" & !fem$NonFocalBirdID=="unbanded unknown male"& !fem$NonFocalBirdID=="unknown male" & !fem$NonFocalBirdID=="unknown female" & !fem$NonFocalBirdID=="unknown juvenile" & !fem$NonFocalBirdID=="unknown individual" & !fem$NonFocalBirdID=="unknown grackle",] 
+
+#select only affiliative interactions
+fem1 <- fem1[fem1$BehavType=="affiliative",]
+fem1 #how many affiliative events were there in total? have a look at the data sheet to get a general sense
+length(fem1$BehavType) #how many affiliative events were there in total aross all females? 
+
+#how many females had affiliative events?
+FocalBirdID <- factor(FocalBirdID)
+length(FocalBirdID)
+
 
 #Factor the random effect variables
 ID <- as.factor(fem$ID)
