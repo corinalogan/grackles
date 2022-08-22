@@ -252,7 +252,7 @@ dflex_beginning<-dflex_beginning[dflex_beginning$ID %in% birdscompletedreversal,
 
 length(unique(dflex_beginning$ID)) #21 birds
 
-#Construct Choice variable
+#Construct Choice variable to match with how the STAN model is set up.
 dflex_beginning$Choice <- NA
 for (i in 1: nrow(dflex_beginning)) {
   if (dflex_beginning$Reversal[i] %in% seq(0, max(unique(dflex_beginning$Reversal)), by = 2)){
@@ -274,22 +274,30 @@ dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$I
 
 colnames(dflex_beginning)[4]<-"id"
 
-# Sort birds alphabetically
+# Sort birds alphabetically; we do this so we can later on rematch the names to the numerical ids.
 dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$id)), ]
+
+# Store the bird names
 birdnames<-unique(dflex_beginning$id)
 
 # Convert bird names into numeric ids
 dflex_beginning$id <- as.numeric(as.factor(dflex_beginning$id))
 
+# Select only the columns that are of relevance. In particular, remove any additional columns that contain missing values.
+dflex_beginning<-dflex_beginning[,c(4,6,8,11,23,24)]
 
+# Prepare the data in the setup for the STAN model, as a list
 datinitialandfirstreversal <- as.list(dflex_beginning)
 datinitialandfirstreversal$N <- nrow(dflex_beginning)
 datinitialandfirstreversal$N_id <- length(unique(dflex_beginning$id))
 
+datinitialandfirstreversal$Reversal<-as.numeric(as.factor(datinitialandfirstreversal$Reversal))
+datinitialandfirstreversal$CorrectChoice<-as.numeric(as.factor(datinitialandfirstreversal$CorrectChoice))
 
 
 # The STAN model is set up to have the initial attraction for each option set to 0.1, and that individuals only learn the reward of the option they chose in a given trial.
-reinforcement_model_nonzeroattraction <- "
+reinforcement_model_nonzeroattraction_alternativepriors <- "
+
 data{
    int N;
    int N_id;
@@ -304,14 +312,7 @@ parameters{
   real log_L;
 
   // Varying effects clustered on individual
-  matrix[2,N_id] z_ID;
-  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
-  cholesky_factor_corr[2] Rho_ID;
-}
-
-transformed parameters{
-matrix[N_id,2] v_ID; // varying effects on stuff
-v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+  matrix[N_id,2] v_ID;
 }
 
 model{
@@ -321,14 +322,12 @@ logit_phi ~  normal(0,1);
 log_L ~  normal(0,1);
 
 // varying effects
-to_vector(z_ID) ~ normal(0,1);
-sigma_ID ~ exponential(1);
-Rho_ID ~ lkj_corr_cholesky(4);
+to_vector(v_ID) ~ normal(0,1);
 
 // initialize attraction scores
 
 for ( i in 1:N_id ) {
-A[i,1] = 0.1; A[i,2] = 0.1';
+A[i,1] = 0.1; A[i,2] = 0.1;
 }
 
 // loop over Choices
@@ -350,19 +349,67 @@ Choice[i] ~ categorical( p );
 phi =  inv_logit(logit_phi + v_ID[id[i],2]);
 pay[1:2] = rep_vector(0,2);
 pay[ Choice[i] ] = Correct[i];
-A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]);
 
 }//i
 }
 "
 
-m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialandfirstreversal ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
+
+
+# The first way to run the model is directly through rstan. This does not work on some computers (Macs?) because of the way the interfacing runs. In this case, use the setup below that uses cmdstan.
+m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction_alternativepriors, data=datinitialandfirstreversal ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 sinitialandreversal <- extract.samples(m_initialandreversal)
 initialandreversal_lambda <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp( mean(sinitialandreversal$log_L) + mean(sinitialandreversal$v_ID[ ,x, 1])))
 initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit( mean(sinitialandreversal$logit_phi) + mean(sinitialandreversal$v_ID[ ,x, 2])))
 
 plot(initialandreversal_phi~initialandreversal_lambda)
+
+
+# This alternative setup uses cmdstanr to run the model. It first needs to create an executable on your computer for the model for which you need to specify the path to where it can find the relevant compilers.
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+# access the output file created by the model running the reinforcement model / reinforcement_model_nonzeroattraction_alternativepriors
+write(reinforcement_model_nonzeroattraction_alternativepriors,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+# RUN the model
+fit_initialandfirstreversal <- mod$sample(
+  data = datinitialandfirstreversal,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+
+
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+drawsarray<-fit_initialandfirstreversal$draws()
+drawsdataframe<-as_draws_df(drawsarray)
+drawsdataframe<-data.frame(drawsdataframe)
+initialandreversal_lambda <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[,x+3]))) 
+initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[,x+3+length(unique(datinitialandfirstreversal$id))])))
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+
+# Combine the extracted values in a dataframe, and link them back to the id of the individuals
+birds_phi_lambda<-matrix(ncol=3,nrow=length(birdnames))
+birds_phi_lambda<-as.data.frame(birds_phi_lambda)
+colnames(birds_phi_lambda)<-c("id","phi","lambda")
+birds_phi_lambda$id<-birdnames
+birds_phi_lambda$phi<-initialandreversal_phi
+birds_phi_lambda$lambda<-initialandreversal_lambda
+
 
 
 ```
