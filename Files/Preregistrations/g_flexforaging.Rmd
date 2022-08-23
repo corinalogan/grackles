@@ -203,15 +203,18 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 
 #### Calculating phis and lambdas for all grackles
 
+We used the phis and lambdas from each bird's initial discrimination plus first reversal (for the CA birds and AZ control birds) or the last two reversals (for the AZ manipulated birds). We calculated the phis and lambdas using the model and code from @lukas2022flexmanip, and entered these into the data sheets used for the analyses of the predictions.
+
 ```{r phislambdas, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-### Code below copied from Lukas et al. 2022
+### Code below copied from Lukas et al. 2022. Using OBSERVED (not simulated) data from GTGR in Woodland/Sacramento and Tempe
 
-# Using OBSERVED not simulated data 
+# These are the phis and lambas for the AZ birds using their LAST 2 switches
+eachbirdslearningparameters<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
 
+
+# The code below gets the phis and lambdas for the first 2 switches, so only use it to calculate the CA data
 # We want to estimate lambda and phi differently. For the initial values, we combine the data from the first association learning with the first reversal.
-
-
-dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 library(rstan)
 library(rethinking)
@@ -222,11 +225,11 @@ library(posterior)
 # set_ulam_cmdstan(TRUE)
 
 # PREPARE reversal learning data
-#exclude yellow tube trials for control birds because we are only interested in reversal data
-dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#exclude birds that did not finish the reversal experiment
+dflex <- dflex[!dflex$ID=="Chocolate" & !dflex$ID=="Xango" & !dflex$ID=="Wachil" & !dflex$ID=="Talingo" & !dflex$ID=="Quiscalus" & !dflex$ID=="Churro" & !dflex$ID=="Sopapilla" & !dflex$ID=="Tres Leches" & !dflex$ID=="Merengue" & !dflex$ID=="Carlota" & !dflex$ID=="Changa" & !dflex$ID=="Urraca" & !dflex$ID=="Bacmut bacni" & !dflex$ID=="Zanate",] 
+
 #include only those trials where the bird made a choice (0 or 1)
-dflex <- subset(dflex, dflex$CorrectChoice != -1) 
-#reverse number. 0=initial discrimination
+dflex <- subset(dflex, dflex$CorrectChoice != -1) #reverse number. 0=initial discrimination
 dflex$Reversal <- as.integer(dflex$Reversal)
 
 dflex$Correct <- as.integer(dflex$CorrectChoice)
@@ -245,12 +248,12 @@ for (i in 1:length(unique(dflex$ID))) {
 }
 dflex_beginning <- reduceddata
 
-# We want to remove the birds who did not go through at least the first reversal trial
+# We want to remove the birds who did not complete at least the first reversal
 birdscompletedreversal<-unique(dflex_beginning[dflex_beginning$Reversal==1,]$ID)
 
 dflex_beginning<-dflex_beginning[dflex_beginning$ID %in% birdscompletedreversal,]
 
-length(unique(dflex_beginning$ID)) #21 birds
+length(unique(dflex_beginning$ID)) #39 birds
 
 #Construct Choice variable to match with how the STAN model is set up.
 dflex_beginning$Choice <- NA
@@ -272,7 +275,8 @@ for (i in 1: nrow(dflex_beginning)) {
 }
 dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$ID)), ]
 
-colnames(dflex_beginning)[4]<-"id"
+#enter the column name for the individual's name here (ID) and then we will change it to small "id" to match the stan code below
+colnames(dflex_beginning)[colnames(dflex_beginning)=="ID"]<-"id"
 
 # Sort birds alphabetically; we do this so we can later on rematch the names to the numerical ids.
 dflex_beginning <- dflex_beginning[with(dflex_beginning, order(dflex_beginning$id)), ]
@@ -284,7 +288,7 @@ birdnames<-unique(dflex_beginning$id)
 dflex_beginning$id <- as.numeric(as.factor(dflex_beginning$id))
 
 # Select only the columns that are of relevance. In particular, remove any additional columns that contain missing values.
-dflex_beginning<-dflex_beginning[,c(4,6,8,11,23,24)]
+dflex_beginning<-dflex_beginning[,c("id","Reversal","Trial","CorrectChoice","Correct","Choice")]
 
 # Prepare the data in the setup for the STAN model, as a list
 datinitialandfirstreversal <- as.list(dflex_beginning)
@@ -355,9 +359,7 @@ A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]
 }
 "
 
-
-
-# The first way to run the model is directly through rstan. This does not work on some computers (Macs?) because of the way the interfacing runs. In this case, use the setup below that uses cmdstan.
+# RUN MODEL OPTION 1: The first way to run the model is directly through rstan. This does not work on some computers because of the way the interfacing runs. If it doesn't work on your computer, use Option 2 below, which uses cmdstan
 m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction_alternativepriors, data=datinitialandfirstreversal ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
 sinitialandreversal <- extract.samples(m_initialandreversal)
@@ -366,8 +368,19 @@ initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x
 
 plot(initialandreversal_phi~initialandreversal_lambda)
 
+# Combine the extracted values in a dataframe, and link them back to the id of the individuals
+birds_phi_lambda<-matrix(ncol=3,nrow=length(birdnames))
+birds_phi_lambda<-as.data.frame(birds_phi_lambda)
+colnames(birds_phi_lambda)<-c("id","phi","lambda")
+birds_phi_lambda$id<-birdnames
+birds_phi_lambda$phi<-initialandreversal_phi
+birds_phi_lambda$lambda<-initialandreversal_lambda
+#here is the table with the phis and lambdas!
+birds_phi_lambda 
+#DONE with Option 1
 
-# This alternative setup uses cmdstanr to run the model. It first needs to create an executable on your computer for the model for which you need to specify the path to where it can find the relevant compilers.
+
+# RUN MODEL OPTION 2: This alternative setup uses cmdstanr to run the model. It first needs to create an executable on your computer for the model for which you need to specify the path to where it can find the relevant compilers.
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
 setwd(cmdstanlocation)
@@ -386,7 +399,6 @@ fit_initialandfirstreversal <- mod$sample(
   refresh = 500
 )
 
-
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
 drawsarray<-fit_initialandfirstreversal$draws()
 drawsdataframe<-as_draws_df(drawsarray)
@@ -401,7 +413,6 @@ file.remove(fn)
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
 
-
 # Combine the extracted values in a dataframe, and link them back to the id of the individuals
 birds_phi_lambda<-matrix(ncol=3,nrow=length(birdnames))
 birds_phi_lambda<-as.data.frame(birds_phi_lambda)
@@ -409,9 +420,8 @@ colnames(birds_phi_lambda)<-c("id","phi","lambda")
 birds_phi_lambda$id<-birdnames
 birds_phi_lambda$phi<-initialandreversal_phi
 birds_phi_lambda$lambda<-initialandreversal_lambda
-
-
-
+#here is the table with the phis and lambdas!
+birds_phi_lambda 
 ```
 
 #### P1-P2
@@ -636,42 +646,77 @@ Before analyzing degree and strength, we will determine if these values differ b
 
 Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly based on flexibility (i.e., association strength between two grackles is larger than would be expected by random chance), we will compare our model results to those obtained from random networks. To make a random network, we will use the R package sna (@butts2016sna) and the function “rperm” to randomly rearrange the association strengths (edges) of grackles in our network. We will conduct this edge randomization (called permutation) 10,000 times to create our sample of random networks. We will then re-calculate our dependent variables from the random networks and re-run the same models (as in @croft2011hypothesis and @whitehead2005testing). We will conclude that social bonds are significantly related to flexibility if the coefficients describing the relationship in our observed data are in the top 2.5% and bottom 2.5% of the coefficients resulting from models run on the random networks.
 
-
 ```{r p4, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
 
 ff <- data.frame(ff)
 
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
-
 #Separate the sexes
-fem <- ff[ff$Sex=="f",]
-mal <- ff[ff$Sex=="m",]
+fem <- ff[ff$Sex=="F",]
+mal <- ff[ff$Sex=="M",]
 
 ### Were there enough affiliative events between two banded birds to have a sample size to analyze bond strength?
 
 ## Females
 
-#remove NAs and unbanded birds. 18 categories outside of NA. Change "unknown" to "unbanded", and "unknown individual" to "unknown grackle" if it was a grackle
-fem$NonFocalBirdID <- factor(fem$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
+#remove NAs and unbanded birds. Use the ff data frame to get all of the categories
+ff$NonFocalBirdID <- factor(ff$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
+levels(ff$NonFocalBirdID)
 
-fem1 <- fem[!fem$NonFocalBirdID=="NA" & !fem$NonFocalBirdID=="unbanded adult male" & !fem$NonFocalBirdID=="unbanded adult female" & !fem$NonFocalBirdID=="unbanded juvenile female" & !fem$NonFocalBirdID=="unbanded juvenile male" & !fem$NonFocalBirdID=="unbanded unknown female" & !fem$NonFocalBirdID=="unbanded unknown male"& !fem$NonFocalBirdID=="unknown male" & !fem$NonFocalBirdID=="unknown female" & !fem$NonFocalBirdID=="unknown juvenile" & !fem$NonFocalBirdID=="unknown individual" & !fem$NonFocalBirdID=="unknown grackle",] 
+fem1 <- fem[!fem$NonFocalBirdID=="NA" & !fem$NonFocalBirdID=="unbanded adult female" & !fem$NonFocalBirdID=="unbanded adult male" & !fem$NonFocalBirdID=="unbanded juvenile" & !fem$NonFocalBirdID=="unbanded juvenile female" & !fem$NonFocalBirdID=="unbanded juvenile male" & !fem$NonFocalBirdID=="unbanded unknown female" & !fem$NonFocalBirdID=="unbanded unknown male"  & !fem$NonFocalBirdID=="unknown adult female" & !fem$NonFocalBirdID=="unknown adult male" & !fem$NonFocalBirdID=="unknown adult male " & !fem$NonFocalBirdID=="unknown banded female" & !fem$NonFocalBirdID=="unknown female" & !fem$NonFocalBirdID=="unknown grackle"  & !fem$NonFocalBirdID=="unknown individual" & !fem$NonFocalBirdID=="unknown juvenile" & !fem$NonFocalBirdID=="unknown juvenile female"  & !fem$NonFocalBirdID=="unknown juvenile male" & !fem$NonFocalBirdID=="unknown male" & !fem$NonFocalBirdID=="unknown unbanded male",] 
 
 #select only affiliative interactions
 fem1 <- fem1[fem1$BehavType=="affiliative",]
 fem1 #how many affiliative events were there in total? have a look at the data sheet to get a general sense
-length(fem1$BehavType) #how many affiliative events were there in total aross all females? 
+length(fem1$BehavType) #how many affiliative events were there in total across all females? 167 events
 
 #how many females had affiliative events?
-FocalBirdID <- factor(FocalBirdID)
-length(FocalBirdID)
+fem1$FocalBirdID <- factor(fem1$FocalBirdID)
+length(levels(fem1$FocalBirdID)) #29 females have affiliative data
+
+## Males
+
+#remove NAs and unbanded birds. Use the ff data frame to get all of the categories
+ff$NonFocalBirdID <- factor(ff$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
+levels(ff$NonFocalBirdID)
+
+mal1 <- mal[!mal$NonFocalBirdID=="NA" & !mal$NonFocalBirdID=="unbanded adult female" & !mal$NonFocalBirdID=="unbanded adult male" & !mal$NonFocalBirdID=="unbanded juvenile" & !mal$NonFocalBirdID=="unbanded juvenile female" & !mal$NonFocalBirdID=="unbanded juvenile male" & !mal$NonFocalBirdID=="unbanded unknown female" & !mal$NonFocalBirdID=="unbanded unknown male"  & !mal$NonFocalBirdID=="unknown adult female" & !mal$NonFocalBirdID=="unknown adult male" & !mal$NonFocalBirdID=="unknown adult male " & !mal$NonFocalBirdID=="unknown banded female" & !mal$NonFocalBirdID=="unknown female" & !mal$NonFocalBirdID=="unknown grackle"  & !mal$NonFocalBirdID=="unknown individual" & !mal$NonFocalBirdID=="unknown juvenile" & !mal$NonFocalBirdID=="unknown juvenile female"  & !mal$NonFocalBirdID=="unknown juvenile male" & !mal$NonFocalBirdID=="unknown male" & !mal$NonFocalBirdID=="unknown unbanded male",] 
+
+#select only affiliative interactions
+mal <- mal1[mal1$BehavType=="affiliative",]
+mal1 #how many affiliative events were there in total? have a look at the data sheet to get a general sense
+length(mal1$BehavType) #how many affiliative events were there in total across all males? 1689 events
+
+#how many males had affiliative events?
+mal1$FocalBirdID <- factor(mal1$FocalBirdID)
+length(levels(mal1$FocalBirdID)) #24 males have affiliative data
+
+
+### Calculate MaxBondStrength
+
+
+
+### Calculate SumBondStrength
+
+
+
+### Calculate Degree
+
+
+
+### Calculate MaleSharesTerritory
+
+
+
+### Calculate total number of bonds
+
 
 
 #Factor the random effect variables
 ID <- as.factor(fem$ID)
-Population <- as.factor(fem$Population)
+Population <- as.factor(fem$Site)
 ID <- as.factor(mal$ID)
-Population <- as.factor(mal$Population)
+Population <- as.factor(mal$Site)
 
 # DATA CHECKING
 library(DHARMa)
