@@ -197,7 +197,7 @@ We did not exclude any data. When missing data occurred, the existing data for t
 
 We used the phis and lambdas from each bird's initial discrimination plus first reversal (for the CA birds and AZ control birds) or the last two reversals (for the AZ manipulated birds). We calculated the phis and lambdas using the model and code from @lukas2022flexmanip, and entered these into the data sheets used for the analyses in the results section.
 
-```{r phislambdas, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r phislambdas, eval=FALSE}
 ### Code below copied from Lukas et al. 2022. Using OBSERVED (not simulated) data from GTGR in Woodland/Sacramento and Tempe
 
 # These are the phis and lambas for the AZ birds using their LAST 2 switches
@@ -552,7 +552,7 @@ We will quantify the number of different food types and foraging techniques duri
 
 **Analysis:** A GLMM was conducted as in P1-P2, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variable being a proportion.
 
-```{r p3, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p3, eval=FALSE}
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 
 ff <- data.frame(ff)
@@ -685,7 +685,7 @@ Before analyzing degree and strength, we will determine if these values differ b
 
 Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly based on flexibility (i.e., association strength between two grackles is larger than would be expected by random chance), we will compare our model results to those obtained from random networks. To make a random network, we will use the R package sna (@butts2016sna) and the function “rperm” to randomly rearrange the association strengths (edges) of grackles in our network. We will conduct this edge randomization (called permutation) 10,000 times to create our sample of random networks. We will then re-calculate our dependent variables from the random networks and re-run the same models (as in @croft2011hypothesis and @whitehead2005testing). We will conclude that social bonds are significantly related to flexibility if the coefficients describing the relationship in our observed data are in the top 2.5% and bottom 2.5% of the coefficients resulting from models run on the random networks.
 
-```{r p4, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p4, eval=FALSE}
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
 
 ff <- data.frame(ff)
@@ -933,7 +933,7 @@ summary(f4)
 
 **Analysis:** A GLMM was conducted as in P1-P2.
 
-```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p5, eval=FALSE}
 ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
 
 #Separate the sexes
@@ -991,7 +991,9 @@ summary(f2)
 
 **Analysis:** A GLMM was conducted as in P1-P2.
 
-```{r p6, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+ - **Deviation from the preregistration:** we originally planned on running models with a Poisson distribution, however MCMCglmm does not allow non-integers and the Shannon Diversity Index is an integer. Therefore, we used the Gaussian distribution and identity link instead.
+
+```{r p6, eval=FALSE}
 ### Calculate the Shannon diversity index (SDI) per bird
 sdi <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
 sdi <- data.frame(sdi)
@@ -1098,36 +1100,38 @@ length(unique(mal$ID)) #26 males
 library(DHARMa)
 library(lme4)
 
-#Data checking for female GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for female GLMM - USE ZERO INFLATED MODEL?
+simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=gaussian, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.1 so not dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=0.3 so not zero inflated
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.3 so not dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so zero inflated, but when I look at fem$ShannonDiversityIndex, there are only 2 zeros out of 9 females
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.4 so ok to proceed. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Looks good
 plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined quantile test significant, but don't know what this means
 
-#Data checking for male GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for male GLMM - USE ZERO INFLATED MODEL?
+simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=gaussian, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.02 so dispersed probably becaus heteroscedastic
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=23 so not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.04775 so heteroscedastic. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Says combined quantile test significant, but don't know what this means
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.6 so not dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so zero inflated
+hist(mal$ShannonDiversityIndex) #6 zeros out of 26
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.7 so looks good. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Looks good
 plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined quantile test significant, but don't know what this means
 
 #GLMM
+#MCMCglmm family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom", "ncst", "msst", "hubinomial", "ztmb", "ztmultinomial") from https://rdrr.io/cran/MCMCglmm/src/R/MCMCglmm.R
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 #females
-f1 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population, family="gaussian", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000) #removed ID because only one data point per bird
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-f2 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population, family="gaussian", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000) #removed ID because only one data point per bird
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
@@ -1135,11 +1139,29 @@ summary(f2)
 
 This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology (@alberti2001quantifying & @tews2004animal).
 
+#### P7: no difference in human population density across sites - wrote this in Aug 2022
+
+Human population density per square mile data from 2020 was obtained from the US Census Bureau for Tempe, Arizona (180,587) and Sacramento, California (524,943; https://www.census.gov/quickfacts/fact/table/sacramentocitycalifornia,tempecityarizona/PST045221).
+
+```{r p7, eval=FALSE}
+pd <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+pd <- data.frame(pd)
+
+#exclude NAs from the Phi column
+pd <- subset(pd, is.na(pd$Phi) == FALSE)
+
+glm(phi ~ HumanPopulationDensity, data=pd)
+glm(lambda ~ HumanPopulationDensity, data=pd)
+```
 
 #### P8: flexible = particular habitats
 
 **Analysis:** We will examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal learning color tube experiment. This will allow us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
 
+```{r p8, eval=FALSE}
+#How is this different from P6?
+Microhabitat ~
+```
 
 ## ETHICS
 
