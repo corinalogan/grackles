@@ -193,17 +193,9 @@ We did not exclude any data. When missing data occurred, the existing data for t
 
  - **Deviation from the plan:** We removed experimenter (random variable) from all analyses because the interobserver reliability scores were so high, indicating there was no difference between experimenters, therefore we could keep our models simpler by leaving this variable out.
 
-#### Ability to detect actual effects
+#### Calculating the independent variable Flexibility 4 (phis and lambdas)
 
-To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we will revise the Analysis Plan after reading @statrethinkingbook. We currently don’t have any estimates for any of our measured variables because these tests have never been done in grackles and we have not encountered previous research that has manipulated flexibility in this way. We will use Bayesian analyses to estimate our likely confidence in the results given simulated data. We will revise this preregistration to include these new analyses before conducting the planned analyses on our actual data. Based on the simulations, we might adapt the number of focal follows per individual or decide to collect much more data just with the aviary-tested birds to increase the amount of information per individual.
-
-#### Data checking
-
-The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
-
-#### Calculating phis and lambdas for all grackles
-
-We used the phis and lambdas from each bird's initial discrimination plus first reversal (for the CA birds and AZ control birds) or the last two reversals (for the AZ manipulated birds). We calculated the phis and lambdas using the model and code from @lukas2022flexmanip, and entered these into the data sheets used for the analyses of the predictions.
+We used the phis and lambdas from each bird's initial discrimination plus first reversal (for the CA birds and AZ control birds) or the last two reversals (for the AZ manipulated birds). We calculated the phis and lambdas using the model and code from @lukas2022flexmanip, and entered these into the data sheets used for the analyses in the results section.
 
 ```{r phislambdas, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ### Code below copied from Lukas et al. 2022. Using OBSERVED (not simulated) data from GTGR in Woodland/Sacramento and Tempe
@@ -422,49 +414,82 @@ birds_phi_lambda$phi<-initialandreversal_phi
 birds_phi_lambda$lambda<-initialandreversal_lambda
 #here is the table with the phis and lambdas!
 birds_phi_lambda 
+#DONE with Option 2
 ```
 
-#### P1-P2
+#### Data checking
+
+The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
+
+#### Ability to detect actual effects
+
+To begin to understand what kinds of effect sizes we will be able to detect given our sample size limitations and our interest in decreasing noise by attempting to measure it, which increases the number of explanatory variables, we will revise the Analysis Plan after reading @statrethinkingbook. We currently don’t have any estimates for any of our measured variables because these tests have never been done in grackles and we have not encountered previous research that has manipulated flexibility in this way. We will use Bayesian analyses to estimate our likely confidence in the results given simulated data. We will revise this preregistration to include these new analyses before conducting the planned analyses on our actual data. Based on the simulations, we might adapt the number of focal follows per individual or decide to collect much more data just with the aviary-tested birds to increase the amount of information per individual.
+
+### Deviations from the prepregistration
+
+**In the middle of data collection**
+
+ - Because all models only include aviary-tested birds for our analyses, Condition (IV6), which indicates whether a bird is aviary-tested or not-aviary-tested, does not need to be included as an independent variable as we originally indicated. (13 July 2022)
+ - The Flexibility 4 independent variable calculates the phi and lambda of aviary-tested birds, and as such, it is redundant to include IV4: Flexibility manipulation as an independent variable in the analysis. (13 July 2022)
+ - Initially, the dependent variables for P1 and P2 calculated the number of different foods eaten and the number of foraging techniques used in the first X minutes of a focal follow. To equalize observation time across individuals, X minutes was the total observation time using the individual with the lowest sum across all individuals. As we started to clean the data and prepare it for analysis, we noticed three individuals had no focal follows (sum focal time = 0) and the next lowest sum focal time was 497 seconds. The average sum focal time across all 38 individuals was 3024 seconds, leaving an excess of data that would be excluded given the originally prescribed calculation of the dependent variables. Therefore, we changed this to a proportion and divided the number of different foods eaten and the number of foraging techniques used by an individual with the sum observation time across that individual’s focal follows. The analysis for the P1 and P2 dependent variables accommodated this change by adjusting from a poisson to a binomial distribution. (3 August 2022)
+
+
+## RESULTS
+
+### P1: FLexibility and foraging behavior 
+
+#### Analysis plan: P1-P2
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
+ - **Deviation from the plan:** we added the independent dependent variable, total seconds of observation time, to account for the different amounts of observation time with regard to the number of foods eaten and foraging techniques used per individual.
+
 ```{r p1p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-ff <- read.csv ("/Users/corina/GTGR/data/data_P1-P4_P6.csv", header=T, sep=",", stringsAsFactors=F) 
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+
+ff <- data.frame(ff)
+
+#exclude NAs from the DomRank column
+ff <- subset(ff, is.na(ff$DomRank) == FALSE)
 
 #Separate the sexes
-fem <- ff[ff$Sex=="f",]
-mal <- ff[ff$Sex=="m",]
+fem <- ff[ff$Sex=="F",]
+mal <- ff[ff$Sex=="M",]
 
 #Factor the random effect variables
-ID <- as.factor(fem$ID)
-Population <- as.factor(fem$Population)
-ID <- as.factor(mal$ID)
-Population <- as.factor(mal$Population)
+fem$ID <- as.factor(fem$BirdID)
+fem$Population <- as.factor(fem$Population)
+mal$ID <- as.factor(mal$BirdID)
+mal$Population <- as.factor(mal$Population)
+
+#sample sizes
+length(unique(fem$ID)) #9 females
+length(unique(mal$ID)) #26 males
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
 
 #Data checking for GLMM 1 females
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumberFoodsEaten ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. Doesn't work
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p<0.05 so it is heteroscadistic. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
 
 #Data checking for GLMM 1 males
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumberFoodsEaten ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. Doesn't work
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p<0.05 so heteroscedastic. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
 
 #Data checking for GLMM 2 females
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumberForagingTechniques ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -473,7 +498,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #Data checking for GLMM 2 males
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumberForagingTechniques ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -484,30 +509,30 @@ plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals a
 
 #GLMM 
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #GLMM 1 with response variable = NumberFoodsEaten
 #females
-f1 <- MCMCglmm(NumberFoodsEaten ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(NumFoodTypes ~ TrialsToReverseLast + Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-f2 <- MCMCglmm(NumberFoodsEaten ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
 #GLMM 2 with response variable = NumberForagingTechniques
 #female
-f3 <- MCMCglmm(NumberForagingTechniques ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f3 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
 #autocorr(f3$Sol) #Did fixed effects converge?
 #autocorr(f3$VCV) #Did random effects converge?
 
 #male
-f4 <- MCMCglmm(NumberForagingTechniques ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f4 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
 #autocorr(f4$VCV) #Did random effects converge?
@@ -515,34 +540,46 @@ summary(f4)
 
 We will quantify the number of different food types and foraging techniques during focal follows according to the [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing). If a grackle forages during a focal follow we record WHAT it eats, as well as HOW the bird is searching for food. Foraging techniques include: Flipping over objects (flip), digging in ground with bill or feet (dig), sweeping head back and forth [i.e., actually sweeping the bill across the substrate; (sw)], extracting from a substrate (ex), lowers body posture to be parallel to ground to stalk/catch prey from air, from ground, from tree, etc (sc), using gaping bill to search through substrate (ga), lifting or nudging objects with bill (ln). 
 
-
 #### P1 alternative 2: flexible = more valuable food types
 
 **Analysis:** We will rank all food types eaten by the grackles by their caloric value, examine the food types eaten per individual and relate this to their flexibility scores on their most recent reversal learning color tube experiment. This will allow us to see whether the more flexible individuals (faster to reverse) eat more valuable (i.e., higher calorie) food types than the less flexible individuals.
+
+### P2: FLexibility manipulation and foraging behavior 
+
+
 
 #### P3: flexible = more human foods
 
 **Analysis:** A GLMM was conducted as in P1-P2, except this GLMM used a binomial distribution (called "categorical" in MCMCglmm) due to the response variable being a proportion.
 
 ```{r p3, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+
+ff <- data.frame(ff)
+
+#exclude NAs from the DomRank column
+ff <- subset(ff, is.na(ff$DomRank) == FALSE)
 
 #Separate the sexes
-fem <- ff[ff$Sex=="f",]
-mal <- ff[ff$Sex=="m",]
+fem <- ff[ff$Sex=="F",]
+mal <- ff[ff$Sex=="M",]
 
 #Factor the random effect variables
-ID <- as.factor(fem$ID)
-Population <- as.factor(fem$Population)
-ID <- as.factor(mal$ID)
-Population <- as.factor(mal$Population)
+fem$ID <- as.factor(fem$BirdID)
+fem$Population <- as.factor(fem$Population)
+mal$ID <- as.factor(mal$BirdID)
+mal$Population <- as.factor(mal$Population)
+
+#sample sizes
+length(unique(fem$ID)) #9 females
+length(unique(mal$ID)) #26 males
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
 
 #Data checking for female GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=binomial, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=binomial, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -551,7 +588,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 plotResiduals(ProportionFoodsEatenHumanFood, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #Data checking for male GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=binomial, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=binomial, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -566,13 +603,13 @@ prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=lis
 
 #GLMM with response variable = NumberFoodsEaten
 #females
-f1 <- MCMCglmm(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-f2 <- MCMCglmm(ProportionFoodsEatenHumanFood ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
@@ -588,6 +625,9 @@ d2 <- MCMCglmm(avg_dist ~ TrialsToReverseLast + ExperimentalGroup + DominanceRan
 summary(d2)
 
 # Number of outdoor cafes within the home range of each individual, measured by calculating home range size and then summing the number of cafes.
+distance <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+distance <- data.frame(distance)
+
 #Load packages
 library(adehabitatHR)
 library(sf)
@@ -704,7 +744,7 @@ length(levels(mal1$FocalBirdID)) #24 males have affiliative data
 
 
 
-### Calculate MaleSharesTerritory
+### Add to data sheet MaleSharesTerritory
 
 
 
