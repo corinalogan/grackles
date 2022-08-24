@@ -471,40 +471,40 @@ library(DHARMa)
 library(lme4)
 
 #Data checking for GLMM 1 females
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. Doesn't work
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p<0.05 so it is heteroscadistic. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.88 so it is fine
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p=0.05. p<0.99 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.72 so it is fine. Also...
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Says combined adjusted quantile test significant
+plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
 #Data checking for GLMM 1 males
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. Doesn't work
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p<0.05 so heteroscedastic. Also...
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.88 so it is fine
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=0.86 so it is fine
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.76 so it is fine. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect)
+plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
 #Data checking for GLMM 2 females
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.336 so it is fine
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so it is fine
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.49 so it is fine. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
 #Data checking for GLMM 2 males
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.94 so it is fine
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=0.77 so it is fine
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.84 so it is fine. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(FlexRatio, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
 
 #GLMM 
@@ -513,26 +513,26 @@ prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=lis
 
 #GLMM 1 with response variable = NumberFoodsEaten
 #females
-f1 <- MCMCglmm(NumFoodTypes ~ TrialsToReverseLast + Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f1 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
-f2 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f2 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
 #autocorr(f2$VCV) #Did random effects converge?
 
 #GLMM 2 with response variable = NumberForagingTechniques
 #female
-f3 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f3 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
 #autocorr(f3$Sol) #Did fixed effects converge?
 #autocorr(f3$VCV) #Did random effects converge?
 
 #male
-f4 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+f4 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
 #autocorr(f4$VCV) #Did random effects converge?
@@ -686,23 +686,41 @@ Before analyzing degree and strength, we will determine if these values differ b
 Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly based on flexibility (i.e., association strength between two grackles is larger than would be expected by random chance), we will compare our model results to those obtained from random networks. To make a random network, we will use the R package sna (@butts2016sna) and the function “rperm” to randomly rearrange the association strengths (edges) of grackles in our network. We will conduct this edge randomization (called permutation) 10,000 times to create our sample of random networks. We will then re-calculate our dependent variables from the random networks and re-run the same models (as in @croft2011hypothesis and @whitehead2005testing). We will conclude that social bonds are significantly related to flexibility if the coefficients describing the relationship in our observed data are in the top 2.5% and bottom 2.5% of the coefficients resulting from models run on the random networks.
 
 ```{r p4, eval=FALSE}
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
 
+#Include only those individuals who met the minimum of at least 4 focals (across seasons)
+g1 <- g[g$NumFollows>3,] #n=24
+#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
+#Females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+
+#Exclude those who did not meet the minimum of 4 focals
+g2 <- g[g$NumFollows<4,] #n=24
+g2$BirdID #Adobo, Habanero, Mole, Pizza, Pollito, Flan, Piña, Buñuelo, Ak'xi, Kau, Tzanatl preciosa
+
+### Now analyze the social data sheet using only those individuals who met the minimum sample size
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
 ff <- data.frame(ff)
+
+#Exclude those individuals who did not meet the minimum of at least 4 focals (across seasons)
+ff <- ff[!ff$FocalBirdID=="Adobo" & !ff$FocalBirdID=="Habanero" & !ff$FocalBirdID=="Mole" & !ff$FocalBirdID=="Pizza" & !ff$FocalBirdID=="Pollito" & !ff$FocalBirdID=="Flan" & !ff$FocalBirdID=="Piña" & !ff$FocalBirdID=="Buñuelo" & !ff$FocalBirdID=="Ak'xi" & !ff$FocalBirdID=="Kau" & !ff$FocalBirdID=="Tzanatl preciosa",]
+
+#Exclude rows where the focal bird's ID is NA
+ff <- subset(ff, is.na(ff$FocalBirdID) == FALSE)
 
 #Separate the sexes
 fem <- ff[ff$Sex=="F",]
 mal <- ff[ff$Sex=="M",]
 
+
 ### Were there enough affiliative events between two banded birds to have a sample size to analyze bond strength?
 
 ## Females
-
 #remove NAs and unbanded birds. Use the ff data frame to get all of the categories
 ff$NonFocalBirdID <- factor(ff$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
 levels(ff$NonFocalBirdID)
 
-fem1 <- fem[!fem$NonFocalBirdID=="NA" & !fem$NonFocalBirdID=="unbanded adult female" & !fem$NonFocalBirdID=="unbanded adult male" & !fem$NonFocalBirdID=="unbanded juvenile" & !fem$NonFocalBirdID=="unbanded juvenile female" & !fem$NonFocalBirdID=="unbanded juvenile male" & !fem$NonFocalBirdID=="unbanded unknown female" & !fem$NonFocalBirdID=="unbanded unknown male"  & !fem$NonFocalBirdID=="unknown adult female" & !fem$NonFocalBirdID=="unknown adult male" & !fem$NonFocalBirdID=="unknown adult male " & !fem$NonFocalBirdID=="unknown banded female" & !fem$NonFocalBirdID=="unknown female" & !fem$NonFocalBirdID=="unknown grackle"  & !fem$NonFocalBirdID=="unknown individual" & !fem$NonFocalBirdID=="unknown juvenile" & !fem$NonFocalBirdID=="unknown juvenile female"  & !fem$NonFocalBirdID=="unknown juvenile male" & !fem$NonFocalBirdID=="unknown male" & !fem$NonFocalBirdID=="unknown unbanded male",] 
+fem1 <- fem[!fem$FocalBirdID=="NA" & !fem$NonFocalBirdID=="NA" & !fem$NonFocalBirdID=="unbanded adult female" & !fem$NonFocalBirdID=="unbanded adult male" & !fem$NonFocalBirdID=="unbanded juvenile" & !fem$NonFocalBirdID=="unbanded juvenile female" & !fem$NonFocalBirdID=="unbanded juvenile male" & !fem$NonFocalBirdID=="unbanded unknown female" & !fem$NonFocalBirdID=="unbanded unknown male"  & !fem$NonFocalBirdID=="unknown adult female" & !fem$NonFocalBirdID=="unknown adult male" & !fem$NonFocalBirdID=="unknown adult male " & !fem$NonFocalBirdID=="unknown banded female" & !fem$NonFocalBirdID=="unknown female" & !fem$NonFocalBirdID=="unknown grackle"  & !fem$NonFocalBirdID=="unknown individual" & !fem$NonFocalBirdID=="unknown juvenile" & !fem$NonFocalBirdID=="unknown juvenile female"  & !fem$NonFocalBirdID=="unknown juvenile male" & !fem$NonFocalBirdID=="unknown male" & !fem$NonFocalBirdID=="unknown unbanded male",] 
 
 #select only affiliative interactions
 fem1 <- fem1[fem1$BehavType=="affiliative",]
@@ -929,239 +947,10 @@ summary(f4)
 #autocorr(f10$VCV) #Did random effects converge?
 ```
 
-#### P5: flexible = immigrants
 
-**Analysis:** A GLMM was conducted as in P1-P2.
-
-```{r p5, eval=FALSE}
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
-
-#Separate the sexes
-fem <- ff[ff$Sex=="f",]
-mal <- ff[ff$Sex=="m",]
-
-#Factor the random effect variables
-ID <- as.factor(fem$ID)
-Population <- as.factor(fem$Population)
-ID <- as.factor(mal$ID)
-Population <- as.factor(mal$Population)
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-
-#Data checking for female GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ImmigrantProbability ~ TrialsToReverseLast + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ImmigrantProbability, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#Data checking for male GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ImmigrantProbability ~ TrialsToReverseLast + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ImmigrantProbability, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+## DISCUSSION
 
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
-
-#GLMM 
-#females
-f1 <- MCMCglmm(ImmigrantProbability ~ TrialsToReverseLast, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
-
-#males
-f2 <- MCMCglmm(ImmigrantProbability ~ TrialsToReverseLast, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
-```
-
-#### P6: flexible = wider range of habitats
-
-**Analysis:** A GLMM was conducted as in P1-P2.
-
- - **Deviation from the preregistration:** we originally planned on running models with a Poisson distribution, however MCMCglmm does not allow non-integers and the Shannon Diversity Index is an integer. Therefore, we used the Gaussian distribution and identity link instead.
-
-```{r p6, eval=FALSE}
-### Calculate the Shannon diversity index (SDI) per bird
-sdi <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
-sdi <- data.frame(sdi)
-library(vegan)
-
-#factor ID and make a data frame for each individual so each can get their own SDI
-sdi$BirdID <- factor(sdi$BirdID)
-#levels(unique(sdi$BirdID))
-ado <- sdi[sdi$BirdID=="Adobo",]
-#diversity(ado$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-akx <- sdi[sdi$BirdID=="Ak'xi",]
-#diversity(akx$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-bun <- sdi[sdi$BirdID=="Buñuelo",]
-#diversity(bun$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-bur <- sdi[sdi$BirdID=="Burrito",]
-#diversity(bur$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.748781
-cam <- sdi[sdi$BirdID=="Camote",]
-#diversity(cam$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.386294
-cha <- sdi[sdi$BirdID=="Chalupa",]
-#diversity(cha$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.332179
-chi <- sdi[sdi$BirdID=="Chilaquile",]
-#diversity(chi$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.6341786
-cue <- sdi[sdi$BirdID=="Cuervo",]
-#diversity(cue$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.013665
-cut <- sdi[sdi$BirdID=="Cutuy",]
-#diversity(cut$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.4558862
-dia <- sdi[sdi$BirdID=="Diablo",]
-#diversity(dia$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.9502705
-ddl <- sdi[sdi$BirdID=="Dulce de Leche",]
-#diversity(ddl$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #= 1.085262
-fid <- sdi[sdi$BirdID=="Fideo",]
-#diversity(fid$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.260804
-fla <- sdi[sdi$BirdID=="Flan",]
-#diversity(fla$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-gal <- sdi[sdi$BirdID=="Galandra",]
-#diversity(gal$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.872114
-hab <- sdi[sdi$BirdID=="Habanero",]
-#diversity(hab$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-hel <- sdi[sdi$BirdID=="Helado",]
-#diversity(hel$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.6931472
-kau <- sdi[sdi$BirdID=="Kau",]
-#diversity(kau$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-kel <- sdi[sdi$BirdID=="Kel",]
-#diversity(kel$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.039721
-mar <- sdi[sdi$BirdID=="Marisco",]
-#diversity(mar$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.039721
-mof <- sdi[sdi$BirdID=="Mofongo",]
-#diversity(mof$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.386294
-mol <- sdi[sdi$BirdID=="Mole",]
-#diversity(mol$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.6931472
-pin <- sdi[sdi$BirdID=="Piña",]
-#diversity(pin$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.098612
-piz <- sdi[sdi$BirdID=="Pizza",]
-#diversity(piz$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #= 0.6341786
-pol <- sdi[sdi$BirdID=="Pollito",]
-#diversity(pol$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-pov <- sdi[sdi$BirdID=="Polvorones",]
-#diversity(pov$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.334183
-que <- sdi[sdi$BirdID=="Queso",]
-#diversity(que$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.6730117
-tac <- sdi[sdi$BirdID=="Taco",]
-#diversity(tac$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.748781
-tap <- sdi[sdi$BirdID=="Tapa",]
-#diversity(tap$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.039721
-taq <- sdi[sdi$BirdID=="Taquito",]
-#diversity(taq$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-tem <- sdi[sdi$BirdID=="Tembleque",]
-#diversity(tem$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.332179
-tom <- sdi[sdi$BirdID=="Tomatillo",]
-#diversity(tom$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.039721
-tza <- sdi[sdi$BirdID=="Tzanatl preciosa",]
-#diversity(tza$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.6931472
-xun <- sdi[sdi$BirdID=="Xunub",]
-#diversity(xun$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0.5623351
-yuc <- sdi[sdi$BirdID=="Yuca",]
-#diversity(yuc$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=0
-zan <- sdi[sdi$BirdID=="Zapote Negro",]
-#diversity(zan$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.322879
-#entered this data into the main data sheet used below
-
-
-### Now run the analyses for the predictions
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-ff <- data.frame(ff)
-
-#exclude NAs from the DomRank column
-ff <- subset(ff, is.na(ff$DomRank) == FALSE)
-
-#Separate the sexes
-fem <- ff[ff$Sex=="F",]
-mal <- ff[ff$Sex=="M",]
-
-#Factor the random effect variables
-fem$ID <- as.factor(fem$BirdID)
-fem$Population <- as.factor(fem$Population)
-mal$ID <- as.factor(mal$BirdID)
-mal$Population <- as.factor(mal$Population)
-
-#sample sizes
-length(unique(fem$ID)) #9 females
-length(unique(mal$ID)) #26 males
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-
-#Data checking for female GLMM - USE ZERO INFLATED MODEL?
-simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=gaussian, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.3 so not dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so zero inflated, but when I look at fem$ShannonDiversityIndex, there are only 2 zeros out of 9 females
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.4 so ok to proceed. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Looks good
-plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined quantile test significant, but don't know what this means
-
-#Data checking for male GLMM - USE ZERO INFLATED MODEL?
-simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=gaussian, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.6 so not dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so zero inflated
-hist(mal$ShannonDiversityIndex) #6 zeros out of 26
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.7 so looks good. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Looks good
-plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined quantile test significant, but don't know what this means
-
-#GLMM
-#MCMCglmm family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom", "ncst", "msst", "hubinomial", "ztmb", "ztmultinomial") from https://rdrr.io/cran/MCMCglmm/src/R/MCMCglmm.R
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-
-#females
-f1 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population, family="gaussian", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000) #removed ID because only one data point per bird
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
-
-#males
-f2 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population, family="gaussian", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000) #removed ID because only one data point per bird
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
-```
-
-This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology (@alberti2001quantifying & @tews2004animal).
-
-#### P7: no difference in human population density across sites - wrote this in Aug 2022
-
-Human population density per square mile data from 2020 was obtained from the US Census Bureau for Tempe, Arizona (180,587) and Sacramento, California (524,943; https://www.census.gov/quickfacts/fact/table/sacramentocitycalifornia,tempecityarizona/PST045221).
-
-```{r p7, eval=FALSE}
-pd <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-pd <- data.frame(pd)
-
-#exclude NAs from the Phi column
-pd <- subset(pd, is.na(pd$Phi) == FALSE)
-
-glm(phi ~ HumanPopulationDensity, data=pd)
-glm(lambda ~ HumanPopulationDensity, data=pd)
-```
-
-#### P8: flexible = particular habitats
-
-**Analysis:** We will examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal learning color tube experiment. This will allow us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
-
-```{r p8, eval=FALSE}
-#How is this different from P6?
-Microhabitat ~
-```
 
 ## ETHICS
 
