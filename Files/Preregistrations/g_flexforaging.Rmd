@@ -95,7 +95,7 @@ This is one of the first studies planned for our long-term research on the role 
 
 **P3 alternative 2:** There is a negative correlation between an individual's flexibility and the proportion of human foods in their diet, potentially because some of the less flexible individuals might specialize on human foods, thus increasing their consumption above that of the more flexible individuals.
 
-#### H2: [Behavioral flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) [see @mikhalevich_is_2017 for a detailed definition] is related to social behavior (measured year-round with focal follows using this [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing)) in wild individuals. Flexibility is measured in aviaries using two paradigms: reversal learning and switching between options on a multi-access box. To give an example of the types of social relationships this sexually dimorphic species engages in, they forage and roost socially [@selander1961analysis] and they have a non-faithful-female frank polygynous mating system [@johnson2000male]. In terms of male social relationships, @johnson2000male found during the breeding season in a population in Texas that one or more territorial males defend a territory with several nests from females, that non-territory holding resident males will queue to gain access to a territory, and that transient males move from colony to colony. There could be varying needs for males to manage their relationships with each other in breeding and non-breeding seasons, and flexibility could potentially play a role in such management.
+#### H2: [Behavioral flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) [see @mikhalevich_is_2017 for a detailed definition] is related to social behavior (measured year-round with focal follows using this [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing)) in wild individuals. Flexibility is measured in aviaries using two paradigms: reversal learning and switching between options on a multi-access box. To give an example of the types of social relationships this sexually dimorphic species engages in, they forage and roost socially [@selander1961analysis] and they have a non-faithful-ffale frank polygynous mating system [@johnson2000male]. In terms of male social relationships, @johnson2000male found during the breeding season in a population in Texas that one or more territorial males defend a territory with several nests from ffales, that non-territory holding resident males will queue to gain access to a territory, and that transient males move from colony to colony. There could be varying needs for males to manage their relationships with each other in breeding and non-breeding seasons, and flexibility could potentially play a role in such management.
 
 **P4** Flexible individuals are more likely to have a greater number of bonds OR stronger bonds with others, in particular with individuals who are less related, potentially because they are better able to adjust their behavior to that of an affiliate. Social bonds are measured using the focal follow method to sample affiliative and aggressive behaviors.
 
@@ -189,7 +189,7 @@ Flexibility 1 (as above)
 
 #### ANALYSIS PLAN
 
-We did not exclude any data. When missing data occurred, the existing data for that individual was included in the analyses for the tests they completed. Analyses were conducted in R [current version `r getRversion()`; @rcoreteam], using several R packages: @kableextra, @stargazer, @hadfieldMCMCglmmpackage, @mumin, @rethinking2020, @rstan, @formatr, @rstudioapi, @rcpp, @ggplot2, knitr [@xie2018knitr; @xie2017dynamic; @xie2013knitr], @dplyr, @cmdstanr, posterior [@burkner2020posterior], cowplot [@wilkecowplot], bayesplot [@gabry2019visualization], irr [@gamer2012package], psych [@revelle2014psych; @psych], @reactable, DHARMa [@Hartig2019dharma], lme4 [@lme4; @bates2012lme4]. When there was more than one experimenter within a test, experimenter was added as a random effect to account for potential differences between experimenters in conducting the tests. When there are no differences between models including or excluding experimenter as a random effect, then we use the model without this random effect for simplicity. We analyzed data for females and males separately because each sex has a distinct natural history.
+We did not exclude any data. When missing data occurred, the existing data for that individual was included in the analyses for the tests they completed. Analyses were conducted in R [current version `r getRversion()`; @rcoreteam], using several R packages: @kableextra, @stargazer, @hadfieldMCMCglmmpackage, @mumin, @rethinking2020, @rstan, @formatr, @rstudioapi, @rcpp, @ggplot2, knitr [@xie2018knitr; @xie2017dynamic; @xie2013knitr], @dplyr, @cmdstanr, posterior [@burkner2020posterior], cowplot [@wilkecowplot], bayesplot [@gabry2019visualization], irr [@gamer2012package], psych [@revelle2014psych; @psych], @reactable, DHARMa [@Hartig2019dharma], lme4 [@lme4; @bates2012lme4]. When there was more than one experimenter within a test, experimenter was added as a random effect to account for potential differences between experimenters in conducting the tests. When there are no differences between models including or excluding experimenter as a random effect, then we use the model without this random effect for simplicity. We analyzed data for ffales and males separately because each sex has a distinct natural history.
 
  - **Deviation from the plan:** We removed experimenter (random variable) from all analyses because the interobserver reliability scores were so high, indicating there was no difference between experimenters, therefore we could keep our models simpler by leaving this variable out.
 
@@ -453,29 +453,29 @@ ff <- data.frame(ff)
 ff <- subset(ff, is.na(ff$DomRank) == FALSE)
 
 #Separate the sexes
-fem <- ff[ff$Sex=="F",]
+ff <- ff[ff$Sex=="F",]
 mal <- ff[ff$Sex=="M",]
 
 #Factor the random effect variables
-fem$ID <- as.factor(fem$BirdID)
-fem$Population <- as.factor(fem$Population)
+ff$ID <- as.factor(ff$BirdID)
+ff$Population <- as.factor(ff$Population)
 mal$ID <- as.factor(mal$BirdID)
 mal$Population <- as.factor(mal$Population)
 
 #sample sizes
-length(unique(fem$ID)) #9 females
+length(unique(ff$ID)) #9 ffales
 length(unique(mal$ID)) #26 males
 
 ## figuring out how to treat the differences in observation time (SumFocalTime)
-plot(fem$NumFoodTypes ~ fem$SumFocalTime)
+plot(ff$NumFoodTypes ~ ff$SumFocalTime)
 plot(mal$NumFoodTypes ~ mal$SumFocalTime)
-plot(fem$NumForageTechs ~ fem$SumFocalTime)
+plot(ff$NumForageTechs ~ ff$SumFocalTime)
 plot(mal$NumForageTechs ~ mal$SumFocalTime)
 
-#male data are significantly correlated - need to include observatino time; female data are not significantly correlated - don't need to include observation time. However, there is a larger sample size for the males so perhaps this would be a pattern found in the females too if we had data on more individuals
-cor.test(fem$NumFoodTypes, fem$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 1.6156, df = 7, p-value = 0.1502, 95 percent confidence interval:  -0.2186279  0.8805227, cor 0.5211645 
+#male data are significantly correlated - need to include observatino time; ffale data are not significantly correlated - don't need to include observation time. However, there is a larger sample size for the males so perhaps this would be a pattern found in the ffales too if we had data on more individuals
+cor.test(ff$NumFoodTypes, ff$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 1.6156, df = 7, p-value = 0.1502, 95 percent confidence interval:  -0.2186279  0.8805227, cor 0.5211645 
 cor.test(mal$NumFoodTypes, mal$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 3.1879, df = 24, p-value = 0.003954, 95 percent confidence interval: 0.2004097 0.7700786, cor 0.5454211 
-cor.test(fem$NumForageTechs, fem$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 0.88938, df = 7, p-value = 0.4033, 95 percent confidence interval: -0.4382205  0.8111143, cor 0.3186338 
+cor.test(ff$NumForageTechs, ff$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 0.88938, df = 7, p-value = 0.4033, 95 percent confidence interval: -0.4382205  0.8111143, cor 0.3186338 
 cor.test(mal$NumForageTechs, mal$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 2.4232, df = 24, p-value = 0.0233, 95 percent confidence interval:0.06761479 0.70895493, cor 0.3186338 
 
 
@@ -483,14 +483,14 @@ cor.test(mal$NumForageTechs, mal$SumFocalTime, conf.level = 0.95, method = "pear
 library(DHARMa)
 library(lme4)
 
-#Data checking for GLMM 1 females
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for GLMM 1 ffales
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.88 so it is fine
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p=0.05. p<0.99 so not zero inflated
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.72 so it is fine. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Says combined adjusted quantile test significant
-plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
+plotResiduals(ff$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
 #Data checking for GLMM 1 males
 simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
@@ -501,14 +501,14 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
-#Data checking for GLMM 2 females
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for GLMM 2 ffales
+simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.336 so it is fine
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so it is fine
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.49 so it is fine. Also...
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
+plotResiduals(ff$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
 
 #Data checking for GLMM 2 males
 simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
@@ -525,8 +525,8 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #GLMM 1 with response variable = NumberFoodsEaten
-#females
-f1 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffales
+f1 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
@@ -538,8 +538,8 @@ summary(f2)
 #autocorr(f2$VCV) #Did random effects converge?
 
 #GLMM 2 with response variable = NumberForagingTechniques
-#female
-f3 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffale
+f3 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
 #autocorr(f3$Sol) #Did fixed effects converge?
 #autocorr(f3$VCV) #Did random effects converge?
@@ -576,25 +576,25 @@ ff <- data.frame(ff)
 ff <- subset(ff, is.na(ff$DomRank) == FALSE)
 
 #Separate the sexes
-fem <- ff[ff$Sex=="F",]
+ff <- ff[ff$Sex=="F",]
 mal <- ff[ff$Sex=="M",]
 
 #Factor the random effect variables
-fem$ID <- as.factor(fem$BirdID)
-fem$Population <- as.factor(fem$Population)
+ff$ID <- as.factor(ff$BirdID)
+ff$Population <- as.factor(ff$Population)
 mal$ID <- as.factor(mal$BirdID)
 mal$Population <- as.factor(mal$Population)
 
 #sample sizes
-length(unique(fem$ID)) #9 females
+length(unique(ff$ID)) #9 ffales
 length(unique(mal$ID)) #26 males
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
 
-#Data checking for female GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=binomial, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for ffale GLMM
+simulationOutput <- simulateResiduals(fittedModel = glmer(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=binomial, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -617,8 +617,8 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #GLMM with response variable = NumberFoodsEaten
-#females
-f1 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffales
+f1 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
@@ -701,13 +701,91 @@ Before analyzing degree and strength, we will determine if these values differ b
 Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly based on flexibility (i.e., association strength between two grackles is larger than would be expected by random chance), we will compare our model results to those obtained from random networks. To make a random network, we will use the R package sna (@butts2016sna) and the function “rperm” to randomly rearrange the association strengths (edges) of grackles in our network. We will conduct this edge randomization (called permutation) 10,000 times to create our sample of random networks. We will then re-calculate our dependent variables from the random networks and re-run the same models (as in @croft2011hypothesis and @whitehead2005testing). We will conclude that social bonds are significantly related to flexibility if the coefficients describing the relationship in our observed data are in the top 2.5% and bottom 2.5% of the coefficients resulting from models run on the random networks.
 
 ```{r p4, eval=FALSE}
+### Create social network graph from associations between banded birds ###
+#Load social data
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
+ff <- data.frame(ff)
+
+#Exclude unbanded birds
+ff1 <- ff[!ff$FocalBirdID=="NA" & !ff$NonFocalBirdID=="NA" & !ff$NonFocalBirdID=="unbanded adult female" & !ff$NonFocalBirdID=="unbanded adult male" & !ff$NonFocalBirdID=="unbanded juvenile" & !ff$NonFocalBirdID=="unbanded juvenile female" & !ff$NonFocalBirdID=="unbanded juvenile male" & !ff$NonFocalBirdID=="unbanded unknown female" & !ff$NonFocalBirdID=="unbanded unknown male"  & !ff$NonFocalBirdID=="unknown adult female" & !ff$NonFocalBirdID=="unknown adult male" & !ff$NonFocalBirdID=="unknown adult male " & !ff$NonFocalBirdID=="unknown banded female" & !ff$NonFocalBirdID=="unknown female" & !ff$NonFocalBirdID=="unknown grackle"  & !ff$NonFocalBirdID=="unknown individual" & !ff$NonFocalBirdID=="unknown juvenile" & !ff$NonFocalBirdID=="unknown juvenile female"  & !ff$NonFocalBirdID=="unknown juvenile male" & !ff$NonFocalBirdID=="unknown male" & !ff$NonFocalBirdID=="unknown unbanded male",] 
+
+ff1 <- subset(ff1, is.na(ff1$FocalBirdID) == FALSE) #257 banded-banded bird associations
+ff2 = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ff1, FUN = "max") #only one observation of banded-banded pair per sampling period is allowed, for 111 banded-banded associations
+
+library(igraph)
+library(sna)
+#Create an edgelist - a two column matrix of birds seen together
+el = ff2[,c(1:4)]
+#since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
+colnames(el)[c(2,3)]=c("ID.1","ID.2")
+el$ID.1 = as.character(el$ID.1)
+el$ID.2 = as.character(el$ID.2)
+for (i in 1:nrow(el)) {
+  tmp = el[i, c("ID.1", "ID.2")]
+  tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
+  el[i, "ID.1"] = tmp[,1]
+  el[i, "ID.2"] = tmp[,2]
+}
+
+#calculate edge weights using the half-weight index by quantifying the number of times two birds are seen together (x), the number of times bird 1 is seen without bird 2 (Y.1), and the number of times bird 2 is seen without bird 1 (Y.2)
+el$count = 1
+x = aggregate(count ~ ID.1 + ID.2, data = el, FUN = "sum") #how many times are bird 1 and bird 2 observed together
+colnames(x)[3]="x"
+
+tmp = el[,c(2,4)]
+colnames(tmp)[1] = "ID"
+tmp2 = el[,c(3,4)]
+colnames(tmp2)[1] = "ID"
+y = rbind(tmp, tmp2)
+y$count = 1
+y = aggregate(count ~ ID + Site, data = y, FUN = "sum") #how many times each bird is seen individually
+colnames(y)[3] = "y"
+
+colnames(y)[1] = "ID.1" 
+hwi = merge(x,y, by = "ID.1", all = T)
+hwi$Y.1 = hwi$y - hwi$x #the number of times bird 1 was seen without bird 2
+hwi = hwi[,-5]
+colnames(y)[1] = "ID.2"
+hwi = merge(hwi,y, by = "ID.2", all = T)
+hwi$Y.2 = hwi$y - hwi$x #the number of times bird 2 was seen without bird 1
+hwi = hwi[-which(is.na(hwi$x)),-c(6,7)] #data frame ready for half-weight index equation
+hwi$hwi = hwi$x/(0.5*(hwi$Y.1 + hwi$Y.2)+hwi$x)
+
+Y = as.matrix(hwi)
+labels <- unique( c(Y[,1], Y[,2]) )
+A <- matrix(0, length(labels), length(labels))
+rownames(A) <- colnames(A) <- labels
+A[ Y[,1:2] ] <- as.numeric( Y[,7] )
+Ya = graph.adjacency(A, weighted = T, mode = "max", diag = F)
+
+l <- layout_with_fr(Ya)
+l <- norm_coords(l, ymin=-8, ymax=8, xmin=-8, xmax=8)
+E(Ya)$weight <- hwi$hwi #link hwi to graph for edge weights
+V(Ya)$Site=as.character(y$Site[match(V(Ya)$name,y$ID.2)])#link Site info to graph vertices (bird IDs)
+V(Ya)$color=V(Ya)$Site 
+V(Ya)$color=gsub("AZ","red",V(Ya)$color) 
+V(Ya)$color=gsub("CA","blue",V(Ya)$color)
+deg <- degree(A)
+V(Ya)$size <- deg*10
+
+plot(Ya, layout = l*8.0, 
+     edge.width =E(Ya)$weight*20,
+     vertex.color = V(Ya)$color,
+     size = V(Ya)$size*10,
+     vertex.label.cex=1,
+     vertex.label.color = "black")
+
+
+### Now we can quantify social network metrics on individuals with the minimum number of focal follows ###
+
+
 g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 g <- data.frame(g)
 
 #Include only those individuals who met the minimum of at least 4 focals (across seasons)
 g1 <- g[g$NumFollows>3,] #n=24
 #Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#Females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
 
 #Exclude those who did not meet the minimum of 4 focals
 g2 <- g[g$NumFollows<4,] #n=24
@@ -724,27 +802,27 @@ ff <- ff[!ff$FocalBirdID=="Adobo" & !ff$FocalBirdID=="Habanero" & !ff$FocalBirdI
 ff <- subset(ff, is.na(ff$FocalBirdID) == FALSE)
 
 #Separate the sexes
-fem <- ff[ff$Sex=="F",]
+ff <- ff[ff$Sex=="F",]
 mal <- ff[ff$Sex=="M",]
 
 
 ### Were there enough affiliative events between two banded birds to have a sample size to analyze bond strength?
 
-## Females
+## females
 #remove NAs and unbanded birds. Use the ff data frame to get all of the categories
 ff$NonFocalBirdID <- factor(ff$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
 levels(ff$NonFocalBirdID)
 
-fem1 <- fem[!fem$FocalBirdID=="NA" & !fem$NonFocalBirdID=="NA" & !fem$NonFocalBirdID=="unbanded adult female" & !fem$NonFocalBirdID=="unbanded adult male" & !fem$NonFocalBirdID=="unbanded juvenile" & !fem$NonFocalBirdID=="unbanded juvenile female" & !fem$NonFocalBirdID=="unbanded juvenile male" & !fem$NonFocalBirdID=="unbanded unknown female" & !fem$NonFocalBirdID=="unbanded unknown male"  & !fem$NonFocalBirdID=="unknown adult female" & !fem$NonFocalBirdID=="unknown adult male" & !fem$NonFocalBirdID=="unknown adult male " & !fem$NonFocalBirdID=="unknown banded female" & !fem$NonFocalBirdID=="unknown female" & !fem$NonFocalBirdID=="unknown grackle"  & !fem$NonFocalBirdID=="unknown individual" & !fem$NonFocalBirdID=="unknown juvenile" & !fem$NonFocalBirdID=="unknown juvenile female"  & !fem$NonFocalBirdID=="unknown juvenile male" & !fem$NonFocalBirdID=="unknown male" & !fem$NonFocalBirdID=="unknown unbanded male",] 
+ff1 <- ff[!ff$FocalBirdID=="NA" & !ff$NonFocalBirdID=="NA" & !ff$NonFocalBirdID=="unbanded adult female" & !ff$NonFocalBirdID=="unbanded adult male" & !ff$NonFocalBirdID=="unbanded juvenile" & !ff$NonFocalBirdID=="unbanded juvenile female" & !ff$NonFocalBirdID=="unbanded juvenile male" & !ff$NonFocalBirdID=="unbanded unknown female" & !ff$NonFocalBirdID=="unbanded unknown male"  & !ff$NonFocalBirdID=="unknown adult female" & !ff$NonFocalBirdID=="unknown adult male" & !ff$NonFocalBirdID=="unknown adult male " & !ff$NonFocalBirdID=="unknown banded female" & !ff$NonFocalBirdID=="unknown female" & !ff$NonFocalBirdID=="unknown grackle"  & !ff$NonFocalBirdID=="unknown individual" & !ff$NonFocalBirdID=="unknown juvenile" & !ff$NonFocalBirdID=="unknown juvenile female"  & !ff$NonFocalBirdID=="unknown juvenile male" & !ff$NonFocalBirdID=="unknown male" & !ff$NonFocalBirdID=="unknown unbanded male",] 
 
 #select only affiliative interactions
-fem1 <- fem1[fem1$BehavType=="affiliative",]
-fem1 #how many affiliative events were there in total? have a look at the data sheet to get a general sense
-length(fem1$BehavType) #how many affiliative events were there in total across all females? 167 events
+ff1 <- ff1[ff1$BehavType=="affiliative",]
+ff1 #how many affiliative events were there in total? have a look at the data sheet to get a general sense
+length(ff1$BehavType) #how many affiliative events were there in total across all females? 167 events
 
 #how many females had affiliative events?
-fem1$FocalBirdID <- factor(fem1$FocalBirdID)
-length(levels(fem1$FocalBirdID)) #29 females have affiliative data
+ff1$FocalBirdID <- factor(ff1$FocalBirdID)
+length(levels(ff1$FocalBirdID)) #29 females have affiliative data
 
 ## Males
 
@@ -752,7 +830,7 @@ length(levels(fem1$FocalBirdID)) #29 females have affiliative data
 ff$NonFocalBirdID <- factor(ff$NonFocalBirdID) #first, factor non focal bird ID to see what the other categories are called
 levels(ff$NonFocalBirdID)
 
-mal1 <- mal[!mal$NonFocalBirdID=="NA" & !mal$NonFocalBirdID=="unbanded adult female" & !mal$NonFocalBirdID=="unbanded adult male" & !mal$NonFocalBirdID=="unbanded juvenile" & !mal$NonFocalBirdID=="unbanded juvenile female" & !mal$NonFocalBirdID=="unbanded juvenile male" & !mal$NonFocalBirdID=="unbanded unknown female" & !mal$NonFocalBirdID=="unbanded unknown male"  & !mal$NonFocalBirdID=="unknown adult female" & !mal$NonFocalBirdID=="unknown adult male" & !mal$NonFocalBirdID=="unknown adult male " & !mal$NonFocalBirdID=="unknown banded female" & !mal$NonFocalBirdID=="unknown female" & !mal$NonFocalBirdID=="unknown grackle"  & !mal$NonFocalBirdID=="unknown individual" & !mal$NonFocalBirdID=="unknown juvenile" & !mal$NonFocalBirdID=="unknown juvenile female"  & !mal$NonFocalBirdID=="unknown juvenile male" & !mal$NonFocalBirdID=="unknown male" & !mal$NonFocalBirdID=="unknown unbanded male",] 
+mal1 <- mal[!mal$NonFocalBirdID=="NA" & !mal$NonFocalBirdID=="unbanded adult ffale" & !mal$NonFocalBirdID=="unbanded adult male" & !mal$NonFocalBirdID=="unbanded juvenile" & !mal$NonFocalBirdID=="unbanded juvenile ffale" & !mal$NonFocalBirdID=="unbanded juvenile male" & !mal$NonFocalBirdID=="unbanded unknown ffale" & !mal$NonFocalBirdID=="unbanded unknown male"  & !mal$NonFocalBirdID=="unknown adult ffale" & !mal$NonFocalBirdID=="unknown adult male" & !mal$NonFocalBirdID=="unknown adult male " & !mal$NonFocalBirdID=="unknown banded ffale" & !mal$NonFocalBirdID=="unknown ffale" & !mal$NonFocalBirdID=="unknown grackle"  & !mal$NonFocalBirdID=="unknown individual" & !mal$NonFocalBirdID=="unknown juvenile" & !mal$NonFocalBirdID=="unknown juvenile ffale"  & !mal$NonFocalBirdID=="unknown juvenile male" & !mal$NonFocalBirdID=="unknown male" & !mal$NonFocalBirdID=="unknown unbanded male",] 
 
 #select only affiliative interactions
 mal <- mal1[mal1$BehavType=="affiliative",]
@@ -785,8 +863,8 @@ length(levels(mal1$FocalBirdID)) #24 males have affiliative data
 
 
 #Factor the random effect variables
-ID <- as.factor(fem$ID)
-Population <- as.factor(fem$Site)
+ID <- as.factor(ff$ID)
+Population <- as.factor(ff$Site)
 ID <- as.factor(mal$ID)
 Population <- as.factor(mal$Site)
 
@@ -794,8 +872,8 @@ Population <- as.factor(mal$Site)
 library(DHARMa)
 library(lme4)
 
-#Data checking for female GLMM 1
-simulationOutput <- simulateResiduals(fittedModel = glmer(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for ffale GLMM 1
+simulationOutput <- simulateResiduals(fittedModel = glmer(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -812,8 +890,8 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(MaxBondStrength, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#Data checking for female GLMM 2
-simulationOutput <- simulateResiduals(fittedModel = glmer(SumBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for ffale GLMM 2
+simulationOutput <- simulateResiduals(fittedModel = glmer(SumBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -831,8 +909,8 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 plotResiduals(SumBondStrength, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 
-#Data checking for female GLMM 3
-simulationOutput <- simulateResiduals(fittedModel = glmer(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for ffale GLMM 3
+simulationOutput <- simulateResiduals(fittedModel = glmer(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -849,8 +927,8 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(Degree, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#Data checking for female GLMM 4
-simulationOutput <- simulateResiduals(fittedModel = glmer(MaleSharesTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for ffale GLMM 4
+simulationOutput <- simulateResiduals(fittedModel = glmer(MaleSharesTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -867,8 +945,8 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 plotResiduals(MaleSharesTerritory, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-#Data checking for female GLMM 5
-simulationOutput <- simulateResiduals(fittedModel = glmer(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
+#Data checking for ffale GLMM 5
+simulationOutput <- simulateResiduals(fittedModel = glmer(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
 simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
@@ -897,8 +975,8 @@ season = MCMCglmm(SumBondStrength ~ Season, random=~ID, family="poisson", data=f
 season = MCMCglmm(Degree ~ Season, random=~ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 
 #GLMM 1 with response variable = MaxBondStrength
-#females
-f1 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffales
+f1 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
@@ -910,8 +988,8 @@ summary(f2)
 #autocorr(f2$VCV) #Did random effects converge?
 
 #GLMM 2 with response variable = AvgBondStrength
-#female
-f3 <- MCMCglmm(SumBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffale
+f3 <- MCMCglmm(SumBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
 #autocorr(f3$Sol) #Did fixed effects converge?
 #autocorr(f3$VCV) #Did random effects converge?
@@ -923,8 +1001,8 @@ summary(f4)
 #autocorr(f4$VCV) #Did random effects converge?
 
 #GLMM 3 with response variable = Degree
-#female
-f5 <- MCMCglmm(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffale
+f5 <- MCMCglmm(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f5)
 #autocorr(f5$Sol) #Did fixed effects converge?
 #autocorr(f5$VCV) #Did random effects converge?
@@ -936,8 +1014,8 @@ summary(f6)
 #autocorr(f6$VCV) #Did random effects converge?
 
 #GLMM 4 with response variable = MaleSharesTerritory
-#female
-f7 <- MCMCglmm(MaleSharesTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffale
+f7 <- MCMCglmm(MaleSharesTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f7)
 #autocorr(f7$Sol) #Did fixed effects converge?
 #autocorr(f7$VCV) #Did random effects converge?
@@ -949,8 +1027,8 @@ summary(f8)
 #autocorr(f8$VCV) #Did random effects converge?
 
 #GLMM 5 with response variable = RelatednessForMaxBond
-#female
-f9 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+#ffale
+f9 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f9)
 #autocorr(f9$Sol) #Did fixed effects converge?
 #autocorr(f9$VCV) #Did random effects converge?
