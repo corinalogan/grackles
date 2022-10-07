@@ -700,7 +700,7 @@ Before analyzing degree and strength, we will determine if these values differ b
 
 Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly based on flexibility (i.e., association strength between two grackles is larger than would be expected by random chance), we will compare our model results to those obtained from random networks. To make a random network, we will use the R package sna (@butts2016sna) and the function “rperm” to randomly rearrange the association strengths (edges) of grackles in our network. We will conduct this edge randomization (called permutation) 10,000 times to create our sample of random networks. We will then re-calculate our dependent variables from the random networks and re-run the same models (as in @croft2011hypothesis and @whitehead2005testing). We will conclude that social bonds are significantly related to flexibility if the coefficients describing the relationship in our observed data are in the top 2.5% and bottom 2.5% of the coefficients resulting from models run on the random networks.
 
-```{r p4, eval=FALSE}
+```{r p4pt1, eval=FALSE}
 ### Create social network graph from associations between banded birds ###
 #Load social data
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -746,16 +746,16 @@ hwi = merge(x,y, by = "ID.1", all = T)
 hwi$Y.1 = hwi$y - hwi$x #the number of times bird 1 was seen without bird 2
 hwi = hwi[,-5]
 colnames(y)[1] = "ID.2"
-hwi = merge(hwi,y, by = "ID.2", all = T)
+hwi = merge(hwi,y, by = c("ID.2","Site"), all = T)
 hwi$Y.2 = hwi$y - hwi$x #the number of times bird 2 was seen without bird 1
-hwi = hwi[-which(is.na(hwi$x)),-c(6,7)] #data frame ready for half-weight index equation
+hwi = hwi[-which(is.na(hwi$x)),-6] #data frame ready for half-weight index equation
 hwi$hwi = hwi$x/(0.5*(hwi$Y.1 + hwi$Y.2)+hwi$x)
 
 Y = as.matrix(hwi)
-labels <- unique( c(Y[,1], Y[,2]) )
+labels <- unique( c(Y[,1], Y[,3]) ) #make sure the matrix indices labels match hwi columns for ID.1 and ID.2
 A <- matrix(0, length(labels), length(labels))
 rownames(A) <- colnames(A) <- labels
-A[ Y[,1:2] ] <- as.numeric( Y[,7] )
+A[ Y[,c(1,3)] ] <- as.numeric( Y[,7] ) #make sure the matrix numeric index is matched with the hwi column for hwi.
 Ya = graph.adjacency(A, weighted = T, mode = "max", diag = F)
 
 l <- layout_with_fr(Ya)
@@ -765,48 +765,254 @@ V(Ya)$Site=as.character(y$Site[match(V(Ya)$name,y$ID.2)])#link Site info to grap
 V(Ya)$color=V(Ya)$Site 
 V(Ya)$color=gsub("AZ","red",V(Ya)$color) 
 V(Ya)$color=gsub("CA","blue",V(Ya)$color)
-deg <- degree(A)
-V(Ya)$size <- deg*10
+deg <- igraph::degree(Ya)
+V(Ya)$size <- deg*2
 
 plot(Ya, layout = l*8.0, 
-     edge.width =E(Ya)$weight*20,
+     edge.width =E(Ya)$weight*10,
      vertex.color = V(Ya)$color,
      size = V(Ya)$size*10,
      vertex.label.cex=1,
      vertex.label.color = "black")
+```
 
 
-### Now we can quantify social network metrics on individuals with the minimum number of focal follows ###
+```{r p4pt2, eval = F}
+### Social network values differ by season? ###
+# Recreate social network graphs with association data separated by season (breeding or non-breeding)
+unique(ff1$Date) #Dates from our raw data of banded-banded bird affiliative associations from above
+
+# separate Sites because breeding started earlier in AZ
+ff_AZ = ff1[which(ff1$Site == "AZ"),]
+ff_AZ$Date = as.Date(ff_AZ$Date, format = "%Y-%m-%d")
+ffAZ_bs19 = ff_AZ[which(ff_AZ$Date > "2019-03-08" & ff_AZ$Date < "2019-09-01"),] #2019 breeding season = 9 Mar to 31 Aug
+ffAZ_bs19$Season = "BS"
+ffAZ_bs20 = ff_AZ[which(ff_AZ$Date > "2020-03-08" & ff_AZ$Date < "2020-09-01"),] #2020 breeding season
+ffAZ_bs20$Season = "BS"
+ffAZ_nbs = ff_AZ[which(ff_AZ$Date < "2019-03-08" | c(ff_AZ$Date > "2019-08-31" & ff_AZ$Date < "2020-03-08")),] # nonbreeding season = 1 Sept 2019 - 8 Mar 2020
+ffAZ_nbs$Season = "NBS"
+
+ffsAZ = rbind(ffAZ_nbs,ffAZ_bs19,ffAZ_bs20)
+
+#now repeat in CA
+ff_CA = ff1[which(ff1$Site == "CA"),]
+ff_CA$Date = as.Date(ff_CA$Date, format = "%Y-%m-%d")
+ffCA_bs21 = ff_CA[which(ff_CA$Date > "2021-03-31" & ff_CA$Date < "2021-09-01"),] #2021 breeding season = 1 Apr to 31 Aug
+ffCA_bs21$Season = "BS"
+ffCA_bs22 = ff_CA[which(ff_CA$Date > "2022-03-29" & ff_CA$Date < "2022-09-01"),] #2022 breeding season = 30 Mar to 31 Aug
+ffCA_bs22$Season = "BS"
+ffCA_nbs = ff_CA[which(ff_CA$Date > "2021-08-31" & ff_CA$Date < "2022-03-30"),] # nonbreeding season = 1 Sept 2021 - 29 Mar 2022
+ffCA_nbs$Season = "NBS"
+
+ffsCA = rbind(ffCA_nbs,ffCA_bs21,ffCA_bs22)
+
+#combine sites together again
+ffs = rbind(ffsAZ,ffsCA)
+#make new network graphs and re-calculate sna metrics by season
+ffs2 = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site + Season, data = ffs, FUN = "max") #only one observation of banded-banded pair per sampling period is allowed, for 111 banded-banded associations
+
+#Create an edgelist - a two column matrix of birds seen together
+els = ffs2[,c(2:5)]
+#since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
+colnames(els)[c(1,2)]=c("ID.1","ID.2")
+els$ID.1 = as.character(els$ID.1)
+els$ID.2 = as.character(els$ID.2)
+for (i in 1:nrow(els)) {
+  tmp = els[i, c("ID.1", "ID.2")]
+  tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
+  els[i, "ID.1"] = tmp[,1]
+  els[i, "ID.2"] = tmp[,2]
+}
+
+#calculate edge weights using the half-weight index by quantifying the number of times two birds are seen together (x), the number of times bird 1 is seen without bird 2 (Y.1), and the number of times bird 2 is seen without bird 1 (Y.2)
+els$count = 1
+x = aggregate(count ~ ID.1 + ID.2 + Season + Site, data = els, FUN = "sum") #how many times are bird 1 and bird 2 observed together in each season
+colnames(x)[5]="x"
+
+tmp = els[,c(1,3:4)]
+colnames(tmp)[1] = "ID"
+tmp2 = els[,c(2,3:4)]
+colnames(tmp2)[1] = "ID"
+y = rbind(tmp, tmp2)
+y$count = 1
+y = aggregate(count ~ ID + Site + Season, data = y, FUN = "sum") #how many times each bird is seen individually each season
+colnames(y)[4] = "y"
+
+colnames(y)[1] = "ID.1" 
+hwis = merge(x,y, by = c("ID.1","Site","Season"), all = T)
+hwis$Y.1 = hwis$y - hwis$x #the number of times bird 1 was seen without bird 2 by season
+hwis = hwis[,-6]
+colnames(y)[1] = "ID.2"
+hwis = merge(hwis,y, by = c("ID.2","Site","Season"), all = T)
+hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1 by season
+hwis = hwis[-which(is.na(hwis$x)),-7] #data frame ready for half-weight index equation
+hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
+
+
+### Breeding season network
+Y2bs = as.matrix(hwis[which(hwis$Season == "BS"),])
+labels <- unique( c(Y2bs[,1], Y2bs[,4]) )
+A2bs <- matrix(0, length(labels), length(labels))
+rownames(A2bs) <- colnames(A2bs) <- labels
+A2bs[ Y2bs[,c(1,4)] ] <- as.numeric( Y2bs[,8] )
+Ya2bs = graph.adjacency(A2bs, weighted = T, mode = "max", diag = F)
+### Nonbreeding season network
+Y2nbs = as.matrix(hwis[which(hwis$Season == "NBS"),])
+labels <- unique( c(Y2nbs[,1], Y2nbs[,4]) )
+A2nbs <- matrix(0, length(labels), length(labels))
+rownames(A2nbs) <- colnames(A2nbs) <- labels
+A2nbs[ Y2nbs[,c(1,4)] ] <- as.numeric( Y2nbs[,8] )
+Ya2nbs = graph.adjacency(A2nbs, weighted = T, mode = "max", diag = F)
+
+
+
+### Now we can quantify social network metrics by season ###
 ### Calculate MaxBondStrength
-
-
+bonds1 = hwis[,c(1,3,8)]
+colnames(bonds1)[1] = "ID"
+bonds2 = hwis[,c(3,4,8)]
+colnames(bonds2)[2] = "ID"
+bonds = rbind(bonds1, bonds2)
+maxBond2 = aggregate(hwi ~ ID + Season, data = bonds, FUN = "max")
+#include grackles that had the minimum number of focal follows: 
+#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
+#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+maxBond2 = maxBond2[-which(maxBond2$ID == "Burrito" | maxBond2$ID == "Chilaquile" | maxBond2$ID == "Diablo" | 
+                             maxBond2$ID == "Fideo" | maxBond2$ID == "Marisco" | maxBond2$ID == "Mofongo" | 
+                             maxBond2$ID == "Queso" | maxBond2$ID == "Taco" | maxBond2$ID == "Taquito" | 
+                             maxBond2$ID == "Tembleque" | maxBond2$ID == "Polvorones" | maxBond2$ID == "Camote" |
+                             maxBond2$ID == "Helado" | maxBond2$ID == "Dulce de Leche" | maxBond2$ID == "Zapote Negro" | 
+                             maxBond2$ID == "Cuervo" | maxBond2$ID == "Xunub" | maxBond2$ID == "Chalupa" | 
+                             maxBond2$ID == "Tapa" | maxBond2$ID == "Yuca" | maxBond2$ID == "Galandra" | 
+                             maxBond2$ID == "Kel"),]
 
 ### Calculate IndividualStrength
+strength.bs = strength(Ya2bs, V(Ya2bs))
+strength.bs = data.frame(names(strength.bs),strength.bs)
+colnames(strength.bs) = c("ID","strength")
+strength.bs$Season = "BS"
+strength.nbs = strength(Ya2nbs, V(Ya2nbs))
+strength.nbs = data.frame(names(strength.nbs),strength.nbs)
+colnames(strength.nbs) = c("ID","strength")
+strength.nbs$Season = "NBS"
+strength2 = rbind(strength.bs,strength.nbs)
 
+#include grackles that had the minimum number of focal follows: 
+#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
+#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+strength2 = strength2[-which(strength2$ID == "Burrito" | strength2$ID == "Chilaquile" | strength2$ID == "Diablo" | 
+                             strength2$ID == "Fideo" | strength2$ID == "Marisco" | strength2$ID == "Mofongo" | 
+                             strength2$ID == "Queso" | strength2$ID == "Taco" | strength2$ID == "Taquito" | 
+                             strength2$ID == "Tembleque" | strength2$ID == "Polvorones" | strength2$ID == "Camote" |
+                             strength2$ID == "Helado" | strength2$ID == "Dulce de Leche" | strength2$ID == "Zapote Negro" | 
+                             strength2$ID == "Cuervo" | strength2$ID == "Xunub" | strength2$ID == "Chalupa" | 
+                             strength2$ID == "Tapa" | strength2$ID == "Yuca" | strength2$ID == "Galandra" | 
+                             strength2$ID == "Kel"),]
 
 
 ### Calculate Degree
+degree.bs <- igraph::degree(Ya2bs,V(Ya2bs))
+degree.bs = data.frame(names(degree.bs),degree.bs)
+colnames(degree.bs) = c("ID","degree")
+degree.bs$Season = "BS"
+degree.nbs <- igraph::degree(Ya2nbs,V(Ya2nbs))
+degree.nbs = data.frame(names(degree.nbs),degree.nbs)
+colnames(degree.nbs) = c("ID","degree")
+degree.nbs$Season = "NBS"
+degree2 = rbind(degree.bs,degree.nbs)
+
+#include grackles that had the minimum number of focal follows: 
+#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
+#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+degree2 = degree2[-which(degree2$ID == "Burrito" | degree2$ID == "Chilaquile" | degree2$ID == "Diablo" | 
+                             degree2$ID == "Fideo" | degree2$ID == "Marisco" | degree2$ID == "Mofongo" | 
+                             degree2$ID == "Queso" | degree2$ID == "Taco" | degree2$ID == "Taquito" | 
+                             degree2$ID == "Tembleque" | degree2$ID == "Polvorones" | degree2$ID == "Camote" |
+                             degree2$ID == "Helado" | degree2$ID == "Dulce de Leche" | degree2$ID == "Zapote Negro" | 
+                             degree2$ID == "Cuervo" | degree2$ID == "Xunub" | degree2$ID == "Chalupa" | 
+                             degree2$ID == "Tapa" | degree2$ID == "Yuca" | degree2$ID == "Galandra" | 
+                             degree2$ID == "Kel"),]
 
 
+### Analyze sna metrics as a function of season
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+
+hist(log(maxBond2$hwi))
+season = MCMCglmm(log(hwi) ~ Season, random=~ID, family="gaussian", data=maxBond2, verbose=F, prior=prior, nitt=300000, thin=200, burnin=30000)
+autocorr(season$Sol) #Did fixed effects converge?
+autocorr(season$VCV) #Did random effects converge?
+summary(season) # p = 0.70, no difference in strength of the max bond between nonbreeding season and breeding season
+boxplot(log(hwi)~Season,data = maxBond2)
+
+
+hist(log(strength2$strength))
+season = MCMCglmm(log(strength) ~ Season, random=~ID, family="gaussian", data=strength2, verbose=F, prior=prior, nitt=200000, thin=200, burnin=30000)
+autocorr(season$Sol) #Did fixed effects converge?
+autocorr(season$VCV) #Did random effects converge?
+summary(season) # p = 0.56, no difference in individual strength between nonbreeding season and breeding season
+boxplot(log(strength)~Season,data = strength2)
+
+
+hist(degree2$degree)
+season = MCMCglmm(degree ~ Season, random=~ID, family="poisson", data=degree2, verbose=F, prior=prior, nitt=8000000, thin=3000, burnin=50000)
+autocorr(season$Sol) #Did fixed effects converge?
+autocorr(season$VCV) #Did random effects converge?
+summary(season) # p = 0.14, no difference in individual strength between nonbreeding season and breeding season
+boxplot(degree~Season,data = degree2)
+
+```
+Neither of the social network metrics (strength or degree) vary by season, so we will proceed with the analysis of all data combined.
+
+
+```{r p4pt2, eval = F}
+### Now we can quantify social network metrics on individuals with the minimum number of focal follows ###
+### Calculate MaxBondStrength
+bonds1 = hwi[,c(1,7)]
+colnames(bonds1)[1] = "ID"
+bonds2 = hwi[,c(2,7)]
+colnames(bonds2)[1] = "ID"
+bonds = rbind(bonds1, bonds2)
+maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
+
+### Calculate IndividualStrength
+strength = strength(Ya, V(Ya))
+strength = data.frame(names(strength),strength)
+colnames(strength)[1] = "ID"
+
+### Calculate Degree
+deg <- igraph::degree(Ya,V(Ya))
+deg = data.frame(names(deg),deg)
+colnames(deg)[1] = "ID"
+
+sna = merge(deg, strength, by = "ID")
+sna = merge(sna, maxBond, by = "ID")
 
 ### Add to data sheet MaleSharesTerritory for percent territory overlap
-
-
+g = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+TO = g[,c(1,3,4)]
 
 ### Add to data sheet Relatedness of strongest bonds
 
 
+### Which birds meet the minimum requirement of 2 follows in each season (4 total)?
+g1 <- g[g$NumFollows>3,] #n=24
+g1 = g1[!is.na(g1$BirdID),]
+#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
+#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+#Exclude those who did not meet the minimum of 4 focals
+g2 <- g[g$NumFollows<4,] 
+g2 = g2[!is.na(g2$BirdID),]
+g2$BirdID #Adobo, Habanero, Mole, Pizza, Pollito, Flan, Piña, Buñuelo, Ak'xi, Kau, Tzanatl preciosa
 
-#Social network values differ by season?
-season = MCMCglmm(MaxBondStrength ~ Season, random=~ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-season = MCMCglmm(Strength ~ Season, random=~ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-season = MCMCglmm(Degree ~ Season, random=~ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
+```
 
 
+
+
+```{r p4pt4}
 ### Analyses ###
 g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 g <- data.frame(g)
