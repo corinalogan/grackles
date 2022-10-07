@@ -877,7 +877,7 @@ maxBond2 = aggregate(hwi ~ ID + Season, data = bonds, FUN = "max")
 #include grackles that had the minimum number of focal follows: 
 #Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
 #females=5: Chalupa, Tapa, Yuca, Galandra, Kel
-maxBond2 = maxBond2[-which(maxBond2$ID == "Burrito" | maxBond2$ID == "Chilaquile" | maxBond2$ID == "Diablo" | 
+maxBond2 = maxBond2[which(maxBond2$ID == "Burrito" | maxBond2$ID == "Chilaquile" | maxBond2$ID == "Diablo" | 
                              maxBond2$ID == "Fideo" | maxBond2$ID == "Marisco" | maxBond2$ID == "Mofongo" | 
                              maxBond2$ID == "Queso" | maxBond2$ID == "Taco" | maxBond2$ID == "Taquito" | 
                              maxBond2$ID == "Tembleque" | maxBond2$ID == "Polvorones" | maxBond2$ID == "Camote" |
@@ -900,7 +900,7 @@ strength2 = rbind(strength.bs,strength.nbs)
 #include grackles that had the minimum number of focal follows: 
 #Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
 #females=5: Chalupa, Tapa, Yuca, Galandra, Kel
-strength2 = strength2[-which(strength2$ID == "Burrito" | strength2$ID == "Chilaquile" | strength2$ID == "Diablo" | 
+strength2 = strength2[which(strength2$ID == "Burrito" | strength2$ID == "Chilaquile" | strength2$ID == "Diablo" | 
                              strength2$ID == "Fideo" | strength2$ID == "Marisco" | strength2$ID == "Mofongo" | 
                              strength2$ID == "Queso" | strength2$ID == "Taco" | strength2$ID == "Taquito" | 
                              strength2$ID == "Tembleque" | strength2$ID == "Polvorones" | strength2$ID == "Camote" |
@@ -924,7 +924,7 @@ degree2 = rbind(degree.bs,degree.nbs)
 #include grackles that had the minimum number of focal follows: 
 #Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
 #females=5: Chalupa, Tapa, Yuca, Galandra, Kel
-degree2 = degree2[-which(degree2$ID == "Burrito" | degree2$ID == "Chilaquile" | degree2$ID == "Diablo" | 
+degree2 = degree2[which(degree2$ID == "Burrito" | degree2$ID == "Chilaquile" | degree2$ID == "Diablo" | 
                              degree2$ID == "Fideo" | degree2$ID == "Marisco" | degree2$ID == "Mofongo" | 
                              degree2$ID == "Queso" | degree2$ID == "Taco" | degree2$ID == "Taquito" | 
                              degree2$ID == "Tembleque" | degree2$ID == "Polvorones" | degree2$ID == "Camote" |
@@ -967,36 +967,10 @@ Neither of the social network metrics (strength or degree) vary by season, so we
 
 ```{r p4pt2, eval = F}
 ### Now we can quantify social network metrics on individuals with the minimum number of focal follows ###
-### Calculate MaxBondStrength
-bonds1 = hwi[,c(1,7)]
-colnames(bonds1)[1] = "ID"
-bonds2 = hwi[,c(2,7)]
-colnames(bonds2)[1] = "ID"
-bonds = rbind(bonds1, bonds2)
-maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
-
-### Calculate IndividualStrength
-strength = strength(Ya, V(Ya))
-strength = data.frame(names(strength),strength)
-colnames(strength)[1] = "ID"
-
-### Calculate Degree
-deg <- igraph::degree(Ya,V(Ya))
-deg = data.frame(names(deg),deg)
-colnames(deg)[1] = "ID"
-
-sna = merge(deg, strength, by = "ID")
-sna = merge(sna, maxBond, by = "ID")
-
-### Add to data sheet MaleSharesTerritory for percent territory overlap
-g = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-g <- data.frame(g)
-TO = g[,c(1,3,4)]
-
-### Add to data sheet Relatedness of strongest bonds
-
-
 ### Which birds meet the minimum requirement of 2 follows in each season (4 total)?
+g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+g = g[,c(1:2,20:26)] #data frame with attribute data for analyses (Sex, dominance, site, behavioral flexibility, number of focal follows)
 g1 <- g[g$NumFollows>3,] #n=24
 g1 = g1[!is.na(g1$BirdID),]
 #Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
@@ -1007,30 +981,91 @@ g2 <- g[g$NumFollows<4,]
 g2 = g2[!is.na(g2$BirdID),]
 g2$BirdID #Adobo, Habanero, Mole, Pizza, Pollito, Flan, Piña, Buñuelo, Ak'xi, Kau, Tzanatl preciosa
 
+
+### Calculate MaxBondStrength - the strength of the strongest association value (half weight index) for each individual
+bonds1 = hwi[,c(1,7)] #select only ID.2/ID.1 and hwi
+colnames(bonds1)[1] = "ID"
+bonds2 = hwi[,c(3,7)] #select only ID.2/ID.1 and hwi
+colnames(bonds2)[1] = "ID"
+bonds = rbind(bonds1, bonds2)
+maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
+# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
+maxBond = maxBond[which(maxBond$ID == "Burrito" | maxBond$ID == "Chilaquile" | maxBond$ID == "Diablo" | 
+                             maxBond$ID == "Fideo" | maxBond$ID == "Marisco" | maxBond$ID == "Mofongo" | 
+                             maxBond$ID == "Queso" | maxBond$ID == "Taco" | maxBond$ID == "Taquito" | 
+                             maxBond$ID == "Tembleque" | maxBond$ID == "Polvorones" | maxBond$ID == "Camote" |
+                             maxBond$ID == "Helado" | maxBond$ID == "Dulce de Leche" | maxBond$ID == "Zapote Negro" | 
+                             maxBond$ID == "Cuervo" | maxBond$ID == "Xunub" | maxBond$ID == "Chalupa" | 
+                             maxBond$ID == "Tapa" | maxBond$ID == "Yuca" | maxBond$ID == "Galandra" | 
+                             maxBond$ID == "Kel"),]
+
+
+### Calculate IndividualStrength - the sum of the association values for each individual
+strength = strength(Ya, V(Ya))
+strength = data.frame(names(strength),strength)
+colnames(strength)[1] = "ID"
+# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
+strength = strength[which(strength$ID == "Burrito" | strength$ID == "Chilaquile" | strength$ID == "Diablo" | 
+                             strength$ID == "Fideo" | strength$ID == "Marisco" | strength$ID == "Mofongo" | 
+                             strength$ID == "Queso" | strength$ID == "Taco" | strength$ID == "Taquito" | 
+                             strength$ID == "Tembleque" | strength$ID == "Polvorones" | strength$ID == "Camote" |
+                             strength$ID == "Helado" | strength$ID == "Dulce de Leche" | strength$ID == "Zapote Negro" | 
+                             strength$ID == "Cuervo" | strength$ID == "Xunub" | strength$ID == "Chalupa" | 
+                             strength$ID == "Tapa" | strength$ID == "Yuca" | strength$ID == "Galandra" | 
+                             strength$ID == "Kel"),]
+
+
+### Calculate Degree
+degree <- igraph::degree(Ya,V(Ya))
+degree = data.frame(names(degree),degree)
+colnames(degree)[1] = "ID"
+# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
+degree = degree[which(degree$ID == "Burrito" | degree$ID == "Chilaquile" | degree$ID == "Diablo" | 
+                             degree$ID == "Fideo" | degree$ID == "Marisco" | degree$ID == "Mofongo" | 
+                             degree$ID == "Queso" | degree$ID == "Taco" | degree$ID == "Taquito" | 
+                             degree$ID == "Tembleque" | degree$ID == "Polvorones" | degree$ID == "Camote" |
+                             degree$ID == "Helado" | degree$ID == "Dulce de Leche" | degree$ID == "Zapote Negro" | 
+                             degree$ID == "Cuervo" | degree$ID == "Xunub" | degree$ID == "Chalupa" | 
+                             degree$ID == "Tapa" | degree$ID == "Yuca" | degree$ID == "Galandra" | 
+                             degree$ID == "Kel"),]
+
+
+
+### Add to data sheet MaleSharesTerritory for percent territory overlap
+g = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+TO = g[,c(1:4)]
+colnames(TO)[1] = "ID"
+TO = TO[-which(TO$ID == "Burrito" | TO$ID == "Chilaquile" | TO$ID == "Diablo" | 
+                             TO$ID == "Fideo" | TO$ID == "Marisco" | TO$ID == "Mofongo" | 
+                             TO$ID == "Queso" | TO$ID == "Taco" | TO$ID == "Taquito" | 
+                             TO$ID == "Tembleque" | TO$ID == "Polvorones" | TO$ID == "Camote" |
+                             TO$ID == "Helado" | TO$ID == "Dulce de Leche" | TO$ID == "Zapote Negro" | 
+                             TO$ID == "Cuervo" | TO$ID == "Xunub" | TO$ID == "Chalupa" | 
+                             TO$ID == "Tapa" | TO$ID == "Yuca" | TO$ID == "Galandra" | 
+                             TO$ID == "Kel"),]
+
+sna = merge(degree, strength, by = "ID")
+sna = merge(sna, maxBond, by = "ID")
+sna = merge(sna, TO, by = "ID")
+
+### Add to data sheet Relatedness of strongest bonds - dyadic data?
+
+
+
+
 ```
 
 
 
 
-```{r p4pt4}
+```{r p4pt4, eval = F}
 ### Analyses ###
-g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-g <- data.frame(g)
-g = g[,c(1:2,20:26)] #data frame with attribute data for analyses (Sex, dominance, site, behavioral flexibility, number of focal follows)
-
-#Include only those individuals who met the minimum of at least 4 focals (across seasons)
-g1 <- g[g$NumFollows>3,] #n=24
-#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
-
-#Exclude those who did not meet the minimum of 4 focals
-g2 <- g[g$NumFollows<4,] #n=24
-g2$BirdID #Adobo, Habanero, Mole, Pizza, Pollito, Flan, Piña, Buñuelo, Ak'xi, Kau, Tzanatl preciosa
-
-### Now add the social network data to those individuals who met the minimum sample size
-
-
 #Separate the sexes
+sex = ff1[,c(2,9)]
+colnames(sex)[1] = "ID"
+data = merge(sna, sex, by = "ID")
+
 ff <- ff[ff$Sex=="F",]
 mal <- ff[ff$Sex=="M",]
 
