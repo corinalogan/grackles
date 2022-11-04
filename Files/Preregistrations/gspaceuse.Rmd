@@ -1045,13 +1045,9 @@ library(unmarked)
 library(googlesheets4)
 library(nimble)
 
-#Reading the spreadsheets directly in from Google Docs. This may not work for you. Instead, you may have to
-#install the googlesheets4 package and connect your R account to your Google account on your end.
-#Alternatively, you could just download these spreadsheets into a CSV or Excel file and load them locally
-#from your computer.
-birdLevelOG = read_sheet("https://docs.google.com/spreadsheets/d/1X86LX5bLKykliL3ZZ3uv-zUMwoSpmvH9D3ia7zk0JXw/edit#gid=1511751427", sheet='Bird-level Data')
-1
-surveyLevelOG = read_sheet("https://docs.google.com/spreadsheets/d/1X86LX5bLKykliL3ZZ3uv-zUMwoSpmvH9D3ia7zk0JXw/edit#gid=1511751427", sheet='Survey-level Data')
+#Load the data sheets (they are online at the grackle GitHub repository)
+surveyLevelOG <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gspaceuse_density_Survey-levelData.csv"), header=T, sep=",", stringsAsFactors=F) 
+birdLevelOG <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gspaceuse_density_Bird-levelData.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 #Removing surveys that were redone and renaming points so that they are uniquely identifiable.  Right now, we
 #have a situation where point 23 could exist in both CA and AZ, so I am renaming them as 'AZ 23' or 'CA 23' to
@@ -1067,8 +1063,8 @@ surveyLevel = surveyLevelOG %>%
 
 surveyLevelAZ <- surveyLevel[surveyLevel$site=="AZ",] 
 surveyLevelCA <- surveyLevel[surveyLevel$site=="CA",]
-length(surveyLevelAZ$site) #214 AZ sites
-length(surveyLevelCA$site) #225 CA sites
+#length(surveyLevelAZ$site) #214 AZ sites
+#length(surveyLevelCA$site) #225 CA sites
 #249 CA sites and 214 AZ sites
 
 #Here I am similarly renaming points and removing any entries that don't represent a bird that was
