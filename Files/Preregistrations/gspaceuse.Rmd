@@ -1030,6 +1030,133 @@ hist(m4$resid)
 summary(m4)
 ```
 
+### RESULTS
+
+#### Population density
+
+We estimate the great-tailed grackle population density in Tempe, Arizona at 0.073 birds/ha (95% confidence interval (CI) = 0.057-0.093) and in Sacramento, California at 0.016 birds/ha (95% CI = 0.012-0.021) based on 225 point count stations in Sacramento and 214 in Tempe. Note that Tempe had fewer than the planned 225 point count sites because (CHRISTA FILL IN HERE. Also add figures showing the points on maps for AZ and CA?).
+
+```{r popdensity, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
+#Code written by Jonathon Valente
+rm(list=ls())
+
+library(tidyverse)
+library(unmarked)
+library(googlesheets4)
+library(nimble)
+
+#Reading the spreadsheets directly in from Google Docs. This may not work for you. Instead, you may have to
+#install the googlesheets4 package and connect your R account to your Google account on your end.
+#Alternatively, you could just download these spreadsheets into a CSV or Excel file and load them locally
+#from your computer.
+birdLevelOG = read_sheet("https://docs.google.com/spreadsheets/d/1X86LX5bLKykliL3ZZ3uv-zUMwoSpmvH9D3ia7zk0JXw/edit#gid=1511751427", sheet='Bird-level Data')
+1
+surveyLevelOG = read_sheet("https://docs.google.com/spreadsheets/d/1X86LX5bLKykliL3ZZ3uv-zUMwoSpmvH9D3ia7zk0JXw/edit#gid=1511751427", sheet='Survey-level Data')
+
+#Removing surveys that were redone and renaming points so that they are uniquely identifiable.  Right now, we
+#have a situation where point 23 could exist in both CA and AZ, so I am renaming them as 'AZ 23' or 'CA 23' to
+#make them uniquely identifiable.
+surveyLevel = surveyLevelOG %>% 
+  filter(resurveyed==0) %>%
+  mutate(pointID = as.character(pointID)) %>% 
+  arrange(pointID) %>% 
+  mutate(pointID = str_replace(pointID, 'N', '')) %>% 
+  mutate(pointID = as.integer(pointID)) %>% 
+  arrange(site, pointID) %>% 
+  mutate(pointID = paste(site, pointID))
+
+surveyLevelAZ <- surveyLevel[surveyLevel$site=="AZ",] 
+surveyLevelCA <- surveyLevel[surveyLevel$site=="CA",]
+length(surveyLevelAZ$site) #214 AZ sites
+length(surveyLevelCA$site) #225 CA sites
+#249 CA sites and 214 AZ sites
+
+#Here I am similarly renaming points and removing any entries that don't represent a bird that was
+#actually detected.  In other words, there was a line in here for every survey, regardless of whether
+#any birds were detected, and I want to get rid of those.
+birdLevel = birdLevelOG %>% 
+  filter(firstDetection !='-') %>% 
+  select(dataSheet, pointID, site, firstDetection, distance, originalLoc) %>% 
+  mutate(pointID = as.character(pointID)) %>% 
+  mutate(pointID = str_replace(pointID, 'N', '')) %>% 
+  mutate(pointID = as.integer(pointID)) %>% 
+  mutate(firstDetection = as.integer(as.character(firstDetection))) %>% 
+  mutate(distance = as.integer(as.character(distance))) %>% 
+  mutate(pointID = paste(site, pointID))
+
+#There were 18 birds with missing distances in Arizona.  Here I am selecting missing
+#values for these distances by randomly drawing from other distance estimates at that site
+set.seed(23) # by setting the seed, I make sure the values selected are the same each time
+tmp = birdLevel %>% 
+  filter(site=='AZ')
+tmp1 = tmp %>% 
+  filter(!is.na(distance))
+tmp2 = tmp %>% 
+  filter(is.na(distance)) %>% 
+  mutate(distance = sample(tmp1$distance, size=nrow(.), replace=T))
+tmp = rbind(tmp1, tmp2)
+
+#Combining the CA data with the new AZ data (with random values for missing distances)
+#and eliminating any birds that were detected on one of the surveys we already eliminated.
+birdLevel = birdLevel %>% 
+  filter(site=='CA') %>% 
+  rbind(tmp) %>% 
+  filter(pointID %in% surveyLevel$pointID) %>% 
+  arrange(site, distance)
+
+#Creating the response variable dataframe
+#To do that, I am splitting the distance values into 50 m distance bins and counting
+#the number of individuals detected in each of those distance bins on each survey.
+#The dataframe then has 1 row for each site and 1 column for each distance bin with a number
+#in there indicating how many individuals were detected in that distance bin at that site.
+y = birdLevel %>% 
+  select(pointID, distance) %>% 
+  mutate(distanceBin = cut(distance, breaks=seq(0, 800, 50), include.lowest=T)) %>% 
+  group_by(pointID, distanceBin) %>% 
+  summarise(birds = n()) %>% 
+  ungroup() %>% 
+  full_join(expand.grid('pointID' = unique(surveyLevel$pointID),
+                        'distanceBin'=levels(cut(birdLevel$distance, breaks=seq(0, 800, 50), include.lowest=T))), by=c('pointID', 'distanceBin')) %>% 
+  mutate(birds = ifelse(is.na(birds), 0, birds)) %>% 
+  arrange(distanceBin) %>% 
+  pivot_wider(id_cols=pointID, names_from=distanceBin, values_from=birds) %>% 
+  arrange(pointID) %>% 
+  select(-pointID)
+
+#This is just a small dataframe that indicates which state each site was located in.
+siteCovs = surveyLevel %>% 
+  arrange(pointID) %>% 
+  select(pointID, site)
+
+#This creates the unmarked data frame that we fit the distance model to
+df = unmarkedFrameGDS(y=y, siteCovs=siteCovs, numPrimary=1, dist.breaks=seq(0, 800, 50), survey='point', unitsIn='m')
+
+#Because we don't know the best parametric model to represent the distribution of the distance data,
+#I tried all 4 options
+halfNormModel = gdistsamp(~site, ~1, ~1, df, keyfun='halfnorm', output='density', unitsOut='ha', mixture='NB', K=50)
+expModel = gdistsamp(~site, ~1, ~1, df, keyfun='exp', output='density', unitsOut='ha', mixture='NB', K=50)
+hazModel = gdistsamp(~site, ~1, ~1, df, keyfun='hazard', output='density', unitsOut='ha', mixture='NB', K=50)
+uniformModel = gdistsamp(~site, ~1, ~1, df, keyfun='uniform', output='density', unitsOut='ha', mixture='NB', K=50)
+
+#The uniform model didn't fit, and when we look at the AIC values for the other 3, the halfnormal model
+#is the clear winner.
+halfNormModel@AIC #3762.6 this model has the lowest AIC, therefore this was the one that was used
+expModel@AIC #3841.7
+hazModel@AIC #5484.7
+
+#There is a strong, statistically significant negative effect of site with the density in California being
+#less than the density in Arizona
+summary(halfNormModel)
+
+
+#So we are estimating the density of grackles in AZ to be 0.07274679 birds/ha (95% confidence interval (CI) = 0.05716893, 0.09256944)
+#And the density of grackles in CA is 0.01564155 birds/ha (95% CI = 0.01176123, 0.02080207)
+newData = data.frame('site' = c('AZ', 'CA'))
+predict(halfNormModel, newData, type='lambda')
+```
+
+
+
 ### E. ETHICS
 
 This research is carried out in accordance with permits from the:
