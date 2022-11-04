@@ -156,16 +156,64 @@ The data are available at the Knowledge Network for Biocomplexity's data reposit
 
 Our sample size was 9 for our first hypothesis testing temporal repeatability of reversal learning performance.
 
-Performance was repeatable within individuals within the context of reversal learning: we obtained a repeatability value of 0.13. By design in the serial reversal learning experiment, grackles became faster at switching across serial reversals. To determine the statistical significance of R=0.13, while accounting for this non-independence, we compared the actual performance on the number of trials to switch a preference to simulated data where birds performed randomly within each reversal. We found that this repeatability value was significantly greater than expected if birds were performing randomly (p=0.001; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
+Performance was repeatable within individuals within the context of reversal learning (Fig. 2A): we obtained a repeatability value of 0.13. By design in the serial reversal learning experiment, grackles became faster at switching across serial reversals. To determine the statistical significance of R=0.13, while accounting for this non-independence, we compared the actual performance on the number of trials to switch a preference to simulated data where birds performed randomly within each reversal. We found that this repeatability value was significantly greater than expected if birds were performing randomly (p=0.001; Fig. 2B; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
 
-We then assessed the repeatability of performance across contexts by quantifying whether individuals that were fast to switch a preference in the color reversal task were also fast to switch to attempting a new solution after passing criterion on a different solution on the two MAB tasks. We converted our metric of reversal speed from trials to reverse to seconds to reverse so the measures across contexts would be on the same scale. We had repeated measures across contexts for 15 grackles that participated in at least one color reversal and one solution switch on either or both MAB tasks. We found significant repeatability across contexts (R=0.36, p=0.01; Fig. 2), where latency to switch was consistent within individuals and different among individuals.
+```{r Fig2, eval = F, echo = F, message = F, warning = F}
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
+
+#remove NAs from the variables that will be in the model
+d <- subset(d,!(is.na(d["TrialsToReverse"])))
+d <- subset(d,!(is.na(d["ReverseNumber"])))
+
+#include only those birds in the reversal tubes experiment
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+
+#factor variable
+d$ID <- as.factor(d$ID)
+
+#remove pilot birds
+d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",]
+
+# FIGURE 2 - performance on serial reversal learning
+d$ReverseNumber = as.factor(d$ReverseNumber)
+d$ID = as.factor(as.character(d$ID))
+maxrev = aggregate(as.numeric(ReverseNumber) ~ ID, data = d, FUN = "max")
+colnames(maxrev)[2] = "MaxRev"
+d = merge(d, maxrev, by = "ID",all = T)
+
+p<-ggplot(d, aes(x=reorder(ID,MaxRev),y=TrialsToReverse,shape=ReverseNumber,color = ID))+
+  geom_point(size = 4, stroke = 2, position = position_dodge(width = 0.35)) +
+  scale_shape_manual(values = c(0:6,8,15,17,19))+
+  theme_bw() +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  labs(x = "Bird", y = "Trials to pass reversal", shape = "Reversal number") +
+  scale_colour_discrete(guide = "none")
+p
+
+results = as.data.frame(results)
+f<-ggplot(results, aes(x=results)) + 
+  theme_bw() +
+  geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
+  geom_vline(xintercept = 0.13, color = "red") +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  labs(x = "Repeatability", y = "Frequency")
+
+library(ggpubr)
+fig2 = ggarrange(p,f,
+                 labels = c("A","B"),
+                 ncol = 1, nrow = 2)
+```
+
+![](g_flexmanip2rep_rep within context.png)
+Figure 2: A) The number of trials each individual took to reverse a preference across serial reversals. Each reversal is indicated by a different shape. Individuals are grouped by color and ordered on the x-axis from fastest (left) to slowest (right) to complete the serial reversal experiment. Note that as per the serial reversal experimental design, data from nearly all individuals include 2 reversals at or below 50 trials. The one exception was Memela, who never increased the speed to switch her preference. B) To determine the significance of our repeatability value while accounting for the non-independence of the serial reversal learning experimental design, we compared our repeatability value to simulated data where birds performed randomly within each reversals. The red line indicates our observed value, and it is significantly larger than the repeatability values retrieved from the simulated data. This indicates that despite the design of the serial reversal learning experiment leading to a general increase in the speed that grackles pass their last two reversals, there were still consistent individual differences in performance across time.
+
+We then assessed the repeatability of performance across contexts by quantifying whether individuals that were fast to switch a preference in the color reversal task were also fast to switch to attempting a new solution after passing criterion on a different solution on the two MAB tasks. We converted our metric of reversal speed from trials to reverse to seconds to reverse so the measures across contexts would be on the same scale. We had repeated measures across contexts for 15 grackles that participated in at least one color reversal and one solution switch on either or both MAB tasks. We found significant repeatability across contexts (R=0.36, p=0.01; Fig. 3), where latency to switch was consistent within individuals and different among individuals.
 
  
-```{r Fig2, eval=F, echo=F, message=FALSE, warning=FALSE}
+```{r Fig3, eval=F, echo=F, message=FALSE, warning=FALSE}
 # ADDED JULY 2022 - we realized we mis-specified the model for assessing repeatability of flexibility across contexts. Previously we were analyzing the relationship between overall performance on the reversal learning and MAB tasks, rather than individual consistency of performance. Consequently we conducted an analysis that evaluated performance as a function of task type, reversal/switch number and a random effect of ID.
-library(lubridate)
-library(DHARMa)
-library(lme4)
 rev <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) # data file with reversal learning measure in seconds to reverse
 rev <- rev[!rev$ID == "Diablo",] #remove Diablo who did not pass criterion on solving any MAB loci and so we can't measure solution switching
 
@@ -193,7 +241,7 @@ ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, sha
   geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
                   position = position_dodge(width = 0.5)) +
   scale_shape_manual(values = c(15,17,8,19))+
-  labs(x = "Bird", y = "Latency to switch (sec)") +
+  labs(x = "Bird", y = "Latency to switch (scaled and centered seconds)") +
   theme_bw() +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 16)) +
@@ -202,7 +250,7 @@ ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, sha
 ```
 
 ![](g_flexmanip2rep_rep across contexts.png)
-Figure 2: We found significant repeatability in switching performance across the three contexts: multi-access box (MAB) plastic (square), MAB wood (triangle), and reversal learning with color tubes (star). Points indicate the (centered and scaled) median performance of an individual in each context, the lines indicate the variation in performance across multiple switches within a context. Some individuals participated in a context, but did not experience multiple preference switches and so there is a point, but no line. Additionally, some individuals are missing points for a given context because they did not participate. Grackles are ordered on the x-axis from fastest (left) to slowest (right).
+Figure 3: We found significant repeatability in switching performance across the three contexts: multi-access box (MAB) plastic (square), MAB wood (triangle), and reversal learning with color tubes (star). Points indicate the (centered and scaled) median performance of an individual in each context, the lines indicate the variation in performance across multiple switches within a context. Some individuals participated in a context, but did not experience multiple preference switches and so there is a point, but no line. Additionally, some individuals are missing points for a given context because they did not participate. Grackles are ordered on the x-axis from fastest (left) to slowest (right).
 
 
 Table 1: We found significant repeatability of performance across time within a context (temporal repeatability model) and across contexts (contextual repeatability model).
@@ -462,10 +510,42 @@ for(i in 1:1000){
   rpt <- m$VCV[,"ID"]/(m$VCV[,"ID"]+m$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
   results[i] = mean(rpt)
 }
-hist(results)
-abline(v=0.13,col="red")
+#hist(results)
+#abline(v=0.13,col="red")
 sum(results > 0.13)/1000
 #p = 0.003 - Our repeatability value of 0.13 is significantly greater than that expected if birds are performing randomly in each reversal
+
+
+# FIGURE 2 - performance on serial reversal learning
+d$ReverseNumber = as.factor(d$ReverseNumber)
+d$ID = as.factor(as.character(d$ID))
+maxrev = aggregate(as.numeric(ReverseNumber) ~ ID, data = d, FUN = "max")
+colnames(maxrev)[2] = "MaxRev"
+d = merge(d, maxrev, by = "ID",all = T)
+
+p<-ggplot(d, aes(x=reorder(ID,MaxRev),y=TrialsToReverse,shape=ReverseNumber,color = ID))+
+  geom_point(size = 4, stroke = 2, position = position_dodge(width = 0.35)) +
+  scale_shape_manual(values = c(0:6,8,15,17,19))+
+  theme_bw() +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  labs(x = "Bird", y = "Trials to pass reversal", shape = "Reversal number") +
+  scale_colour_discrete(guide = "none")
+p
+
+results = as.data.frame(results)
+f<-ggplot(results, aes(x=results)) + 
+  theme_bw() +
+  geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
+  geom_vline(xintercept = 0.13, color = "red") +
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 16)) +
+  labs(x = "Repeatability", y = "Frequency")
+
+library(ggpubr)
+fig2 = ggarrange(p,f,
+                 labels = c("A","B"),
+                 ncol = 1, nrow = 2)
 
 
 # WE DID NOT end up using the code below because the above gave us what we needed
@@ -641,12 +721,12 @@ rev.all3 = rev %>%
                        "LatencyMABwooden"="MAB wood",
                        "Reversal" = "Reversal learning")) #%>% 
 
-#performance across all tests
+# FIGURE 3 - performance across all tests
 ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Test)) +
   geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
                   position = position_dodge(width = 0.5)) +
   scale_shape_manual(values = c(15,17,8,19))+
-  labs(x = "Bird", y = "Latency to switch (sec)") +
+  labs(x = "Bird", y = "Latency to switch (scaled and centered seconds)") +
   theme_bw() +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 16)) +
