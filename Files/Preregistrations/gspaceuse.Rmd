@@ -1037,7 +1037,6 @@ summary(m4)
 We estimate the great-tailed grackle population density in Tempe, Arizona at 0.073 birds/ha (95% confidence interval (CI) = 0.057-0.093) and in Sacramento, California at 0.016 birds/ha (95% CI = 0.012-0.021) based on 225 point count stations in Sacramento and 214 in Tempe. Note that Tempe had fewer than the planned 225 point count sites because (CHRISTA FILL IN HERE. Also add figures showing the points on maps for AZ and CA?).
 
 ```{r popdensity, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
-#Code written by Jonathon Valente
 rm(list=ls())
 
 library(tidyverse)
@@ -1049,7 +1048,7 @@ library(nimble)
 surveyLevelOG <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gspaceuse_density_Survey-levelData.csv"), header=T, sep=",", stringsAsFactors=F) 
 birdLevelOG <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gspaceuse_density_Bird-levelData.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-#Removing surveys that were redone and renaming points so that they are uniquely identifiable.  Right now, we
+#Removing surveys that were redone and renaming points so that they are uniquely identifiable. CHRISTA please clarify redone.  Right now, we
 #have a situation where point 23 could exist in both CA and AZ, so I am renaming them as 'AZ 23' or 'CA 23' to
 #make them uniquely identifiable.
 surveyLevel = surveyLevelOG %>% 
@@ -1065,11 +1064,10 @@ surveyLevel = surveyLevelOG %>%
 #surveyLevelCA <- surveyLevel[surveyLevel$site=="CA",]
 #length(surveyLevelAZ$site) #214 AZ sites
 #length(surveyLevelCA$site) #225 CA sites
-#249 CA sites and 214 AZ sites
 
 #Here I am similarly renaming points and removing any entries that don't represent a bird that was
 #actually detected.  In other words, there was a line in here for every survey, regardless of whether
-#any birds were detected, and I want to get rid of those.
+#any birds were detected, and I want to get rid of those. We used all data from a single survey conducted at each site. This is really just a step that I took to clean up the data based on the way they were entered. Christa created a "survey level" datasheet and a "bird level" datasheet. However, if no birds were detected on a particular survey, there was still a single line entered in the "bird level" datasheet for that survey with no bird-level data. I just deleted these because they were superfluous. When I re-aggregated the data for analysis, those sites where no birds were recorded would still have 0 values in all distance bins, indicating a density estimate of 0 for that site which is a sample that contributes to the overall regional density estimate.
 birdLevel = birdLevelOG %>% 
   filter(firstDetection !='-') %>% 
   select(dataSheet, pointID, site, firstDetection, distance, originalLoc) %>% 
@@ -1093,7 +1091,7 @@ tmp2 = tmp %>%
 tmp = rbind(tmp1, tmp2)
 
 #Combining the CA data with the new AZ data (with random values for missing distances)
-#and eliminating any birds that were detected on one of the surveys we already eliminated.
+#and eliminating duplicate records and any birds that were detected on one of the duplicate surveys. Some surveys were eliminated due to problems during the survey. But sometimes birds were detected on those problem surveys. So in this step, I am eliminating birds that were detected on surveys that we decided not to use in the analysis
 birdLevel = birdLevel %>% 
   filter(site=='CA') %>% 
   rbind(tmp) %>% 
