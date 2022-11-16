@@ -460,10 +460,15 @@ library(DHARMa)
 library(lme4)
 simulationOutput <- simulateResiduals(fittedModel = glmer(log(TrialsToReverse) ~ ReverseNumber + (1|ID), family=gaussian, data=d), n=250) #250 simulations, but if want higher precision change n>1000; Log transform because trials does not fit a poisson distribution.
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.84 
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05. p=1 so not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.81 so NOT heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. There does not seem to be a pattern
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
+#p=0.84 
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05. 
+#p=1 so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05.
+#p=0.81 so NOT heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel. 
+#No significant problems detected
+
 
 # GLMM
 library(MCMCglmm)
@@ -514,6 +519,76 @@ for(i in 1:1000){
 #abline(v=0.13,col="red")
 sum(results > 0.13)/1000
 #p = 0.003 - Our repeatability value of 0.13 is significantly greater than that expected if birds are performing randomly in each reversal
+
+
+
+### 10 Nov 2022 - Poisson model was overdispersed and heteroscedastic - per recommendation from the literature and reviewer, we added observation-level random effects. However, model would not converge with the preregistered uninformative priors so we are not pursuing this alternative analysis: ###
+
+# d$OLRE = as.factor(seq_len(nrow(d)))
+# simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|OLRE), family=poisson, data=d), n=250) 
+# plot(simulationOutput$scaledResiduals) 
+# #Looks randomly scattered
+# testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. 
+# #p=0.53
+# testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05. 
+# #p=1 No zeros, so not zero inflated
+# testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.78 so NOT heteroscedastic
+# plot(simulationOutput) #...there should be no pattern in the data points in the right panel. 
+# #No significant problems detected
+# 
+# prior2 = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+# serial2 <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random=~ID + OLRE, family="poisson", data=d, verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=5000)
+# ## ERROR - mixed model equations singular: use a (stronger) prior ##
+# summary(serial2)
+# autocorr(serial2$Sol) 
+# autocorr(serial2$VCV) 
+# plot(serial2)
+# 
+# #REPEATABILITY
+# 
+# #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: serial$VCV[,ID]/(serial$VCV[,ID]+serial$VCV[,units]) - advice from Maxime Dahirel
+# repeata2 <- serial2$VCV[,"ID"]/(serial2$VCV[,"ID"]+serial2$VCV[,"OLRE"]) #latent scale adjusted repeatability and its credible interval
+# mean(repeata2) 
+# var(repeata2) 
+# posterior.mode(repeata2) 
+# HPDinterval(repeata2, 0.95) 
+# 
+# 
+# # ADDED Aug 2021
+# #Test whether repeatability value is significantly greater than expected at chance by permuting number of trials to reverse among individuals.
+# #NOTE: Because the flexibility manipulation requires the last two reversals to be less than or equal to 50 trials, and ReverseNumber is significant, indicating birds generally get faster over time, we must permute TrialsToReverse across birds within ReverseNumber.
+# 
+# results2 = rep(NA, 1000)
+# for(i in 1:1000){
+#   tmp1 = data.frame("ID" = d$ID[which(d$ReverseNumber==1)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==1)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==1)],replace=F))
+#   tmp2 = data.frame("ID" = d$ID[which(d$ReverseNumber==2)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==2)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==2)],replace=F))
+#   tmp3 = data.frame("ID" = d$ID[which(d$ReverseNumber==3)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==3)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==3)],replace=F))
+#   tmp4 = data.frame("ID" = d$ID[which(d$ReverseNumber==4)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==4)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==4)],replace=F))
+#   tmp5 = data.frame("ID" = d$ID[which(d$ReverseNumber==5)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==5)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==5)],replace=F))  
+#   tmp6 = data.frame("ID" = d$ID[which(d$ReverseNumber==6)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==6)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==6)],replace=F))
+#   tmp7 = data.frame("ID" = d$ID[which(d$ReverseNumber==7)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==7)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==7)],replace=F))
+#   tmp8 = data.frame("ID" = d$ID[which(d$ReverseNumber==8)], "ReverseNumber"=d$ReverseNumber[which(d$ReverseNumber==8)], 
+#           "TrialsToReverse" = sample(d$TrialsToReverse[which(d$ReverseNumber==8)],replace=F))
+#   tmp = rbind(tmp1,tmp2,tmp3,tmp4,tmp5,tmp6,tmp7,tmp8)
+#   m2 <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random=~ID + OLRE, family="poisson", data=tmp, verbose=F, prior=prior, nitt=10000, thin=50, burnin=500)
+#   rpt2 <- m2$VCV[,"ID"]/(m2$VCV[,"ID"]+m2$VCV[,"OLRE"]) #latent scale adjusted repeatability and its credible interval
+#   results2[i] = mean(rpt2)
+# }
+# #hist(results)
+# #abline(v=,col="red")
+# #sum(results > )/1000
+# #p =  - 
+
+
+
+
 
 
 # FIGURE 2 - performance on serial reversal learning
