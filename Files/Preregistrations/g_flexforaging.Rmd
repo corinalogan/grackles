@@ -442,7 +442,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
- - **Deviation from the plan:** we added the independent dependent variable, total seconds of observation time, to account for the different amounts of observation time with regard to the number of foods eaten and foraging techniques used per individual.
+ - **Deviation from the plan:** we added the independent variable, total seconds of observation time, to account for the different amounts of observation time with regard to the number of foods eaten and foraging techniques used per individual.
 
 ```{r p1p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -722,7 +722,7 @@ el$ID.1 = as.character(el$ID.1)
 el$ID.2 = as.character(el$ID.2)
 for (i in 1:nrow(el)) {
   tmp = el[i, c("ID.1", "ID.2")]
-  tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
+  tmp = tmp[,sort.list(tmp)] 
   el[i, "ID.1"] = tmp[,1]
   el[i, "ID.2"] = tmp[,2]
 }
@@ -751,6 +751,7 @@ hwi$Y.2 = hwi$y - hwi$x #the number of times bird 2 was seen without bird 1
 hwi = hwi[-which(is.na(hwi$x)),-6] #data frame ready for half-weight index equation
 hwi$hwi = hwi$x/(0.5*(hwi$Y.1 + hwi$Y.2)+hwi$x)
 
+#convert data to adjacency graph for calculating social network metrics
 Y = as.matrix(hwi)
 labels <- unique( c(Y[,1], Y[,3]) ) #make sure the matrix indices labels match hwi columns for ID.1 and ID.2
 A <- matrix(0, length(labels), length(labels))
@@ -758,6 +759,7 @@ rownames(A) <- colnames(A) <- labels
 A[ Y[,c(1,3)] ] <- as.numeric( Y[,7] ) #make sure the matrix numeric index is matched with the hwi column for hwi.
 Ya = graph.adjacency(A, weighted = T, mode = "max", diag = F)
 
+#graphical representation of the data
 l <- layout_with_fr(Ya)
 l <- norm_coords(l, ymin=-8, ymax=8, xmin=-8, xmax=8)
 E(Ya)$weight <- hwi$hwi #link hwi to graph for edge weights
@@ -874,16 +876,14 @@ bonds2 = hwis[,c(3,4,8)]
 colnames(bonds2)[2] = "ID"
 bonds = rbind(bonds1, bonds2)
 maxBond2 = aggregate(hwi ~ ID + Season, data = bonds, FUN = "max")
-#include grackles that had the minimum number of focal follows: 
-#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+#include grackles that had the minimum number of focal follows
+g1 = g[which(g$NumFollows > 3),] #total follows n = 24
+#but only the following (n = 15) had at least 2 per season: Burrito, Chalupa, Chilaquile, Diablo, Fideo, Taco, Taquito, Yuca, Polvorones, Dulce de Leche, Zapote Negro, Galandra, Cuervo, Kel, Cutuy
 maxBond2 = maxBond2[which(maxBond2$ID == "Burrito" | maxBond2$ID == "Chilaquile" | maxBond2$ID == "Diablo" | 
-                             maxBond2$ID == "Fideo" | maxBond2$ID == "Marisco" | maxBond2$ID == "Mofongo" | 
-                             maxBond2$ID == "Queso" | maxBond2$ID == "Taco" | maxBond2$ID == "Taquito" | 
-                             maxBond2$ID == "Tembleque" | maxBond2$ID == "Polvorones" | maxBond2$ID == "Camote" |
-                             maxBond2$ID == "Helado" | maxBond2$ID == "Dulce de Leche" | maxBond2$ID == "Zapote Negro" | 
-                             maxBond2$ID == "Cuervo" | maxBond2$ID == "Xunub" | maxBond2$ID == "Chalupa" | 
-                             maxBond2$ID == "Tapa" | maxBond2$ID == "Yuca" | maxBond2$ID == "Galandra" | 
+                             maxBond2$ID == "Fideo" |  maxBond2$ID == "Taco" | maxBond2$ID == "Taquito" | 
+                             maxBond2$ID == "Yuca" | maxBond2$ID == "Chalupa" | 
+                             maxBond2$ID == "Polvorones" | maxBond2$ID == "Dulce de Leche" | maxBond2$ID == "Zapote Negro" | 
+                             maxBond2$ID == "Cuervo" | maxBond2$ID == "Galandra" | maxBond2$ID == "Cutuy" | 
                              maxBond2$ID == "Kel"),]
 
 ### Calculate IndividualStrength
@@ -898,17 +898,12 @@ strength.nbs$Season = "NBS"
 strength2 = rbind(strength.bs,strength.nbs)
 
 #include grackles that had the minimum number of focal follows: 
-#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
 strength2 = strength2[which(strength2$ID == "Burrito" | strength2$ID == "Chilaquile" | strength2$ID == "Diablo" | 
-                             strength2$ID == "Fideo" | strength2$ID == "Marisco" | strength2$ID == "Mofongo" | 
-                             strength2$ID == "Queso" | strength2$ID == "Taco" | strength2$ID == "Taquito" | 
-                             strength2$ID == "Tembleque" | strength2$ID == "Polvorones" | strength2$ID == "Camote" |
-                             strength2$ID == "Helado" | strength2$ID == "Dulce de Leche" | strength2$ID == "Zapote Negro" | 
-                             strength2$ID == "Cuervo" | strength2$ID == "Xunub" | strength2$ID == "Chalupa" | 
-                             strength2$ID == "Tapa" | strength2$ID == "Yuca" | strength2$ID == "Galandra" | 
+                             strength2$ID == "Fideo" |  strength2$ID == "Taco" | strength2$ID == "Taquito" | 
+                             strength2$ID == "Yuca" | strength2$ID == "Chalupa" | 
+                             strength2$ID == "Polvorones" | strength2$ID == "Dulce de Leche" | strength2$ID == "Zapote Negro" | 
+                             strength2$ID == "Cuervo" | strength2$ID == "Galandra" | strength2$ID == "Cutuy" | 
                              strength2$ID == "Kel"),]
-
 
 ### Calculate Degree
 degree.bs <- igraph::degree(Ya2bs,V(Ya2bs))
@@ -922,17 +917,12 @@ degree.nbs$Season = "NBS"
 degree2 = rbind(degree.bs,degree.nbs)
 
 #include grackles that had the minimum number of focal follows: 
-#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
 degree2 = degree2[which(degree2$ID == "Burrito" | degree2$ID == "Chilaquile" | degree2$ID == "Diablo" | 
-                             degree2$ID == "Fideo" | degree2$ID == "Marisco" | degree2$ID == "Mofongo" | 
-                             degree2$ID == "Queso" | degree2$ID == "Taco" | degree2$ID == "Taquito" | 
-                             degree2$ID == "Tembleque" | degree2$ID == "Polvorones" | degree2$ID == "Camote" |
-                             degree2$ID == "Helado" | degree2$ID == "Dulce de Leche" | degree2$ID == "Zapote Negro" | 
-                             degree2$ID == "Cuervo" | degree2$ID == "Xunub" | degree2$ID == "Chalupa" | 
-                             degree2$ID == "Tapa" | degree2$ID == "Yuca" | degree2$ID == "Galandra" | 
+                             degree2$ID == "Fideo" |  degree2$ID == "Taco" | degree2$ID == "Taquito" | 
+                             degree2$ID == "Yuca" | degree2$ID == "Chalupa" | 
+                             degree2$ID == "Polvorones" | degree2$ID == "Dulce de Leche" | degree2$ID == "Zapote Negro" | 
+                             degree2$ID == "Cuervo" | degree2$ID == "Galandra" | degree2$ID == "Cutuy" | 
                              degree2$ID == "Kel"),]
-
 
 ### Analyze sna metrics as a function of season
 library(MCMCglmm)
@@ -942,15 +932,15 @@ hist(log(maxBond2$hwi))
 season = MCMCglmm(log(hwi) ~ Season, random=~ID, family="gaussian", data=maxBond2, verbose=F, prior=prior, nitt=300000, thin=200, burnin=30000)
 autocorr(season$Sol) #Did fixed effects converge?
 autocorr(season$VCV) #Did random effects converge?
-summary(season) # p = 0.70, no difference in strength of the max bond between nonbreeding season and breeding season
-boxplot(log(hwi)~Season,data = maxBond2)
+summary(season) # p < 0.01, Significantly smaller hwi in nonbreeding than breeding season
+boxplot(hwi~Season,data = maxBond2)
 
 
 hist(log(strength2$strength))
 season = MCMCglmm(log(strength) ~ Season, random=~ID, family="gaussian", data=strength2, verbose=F, prior=prior, nitt=200000, thin=200, burnin=30000)
 autocorr(season$Sol) #Did fixed effects converge?
 autocorr(season$VCV) #Did random effects converge?
-summary(season) # p = 0.56, no difference in individual strength between nonbreeding season and breeding season
+summary(season) # p = 0.09, no difference in individual strength between nonbreeding season and breeding season
 boxplot(log(strength)~Season,data = strength2)
 
 
