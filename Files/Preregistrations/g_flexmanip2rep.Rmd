@@ -189,11 +189,12 @@ p<-ggplot(d, aes(x=reorder(ID,MaxRev),y=TrialsToReverse,shape=ReverseNumber,colo
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 16)) +
   labs(x = "Bird", y = "Trials to pass reversal", shape = "Reversal number") +
-  scale_colour_discrete(guide = "none")
+  scale_colour_discrete(guide = "none") +
+  scale_shape_discrete(guide = "none")
 p
 
 results = as.data.frame(results)
-f<-ggplot(results, aes(x=results)) + 
+f<-ggplot(results, aes(x=x)) + 
   theme_bw() +
   geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
   geom_vline(xintercept = 0.13, color = "red") +
@@ -201,10 +202,15 @@ f<-ggplot(results, aes(x=results)) +
         axis.title = element_text(size = 16)) +
   labs(x = "Repeatability", y = "Frequency")
 
+
+
 library(ggpubr)
-fig2 = ggarrange(p,f,
-                 labels = c("A)","B)"),
-                 ncol = 1, nrow = 2)
+legend = as_ggplot(get_legend(p))
+fig2 = ggarrange(p,legend+theme(plot.margin = margin(0.5,0,0.5,0, "cm")),f, 
+                 labels = c("A)","","B)"),
+                 ncol = 2, nrow = 2,
+                 widths = c(2, 0.5),
+                 align = "h") #, common.legend = T, legend = "right")
 ```
 
 ![](g_flexmanip2rep_rep within context.png)
