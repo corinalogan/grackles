@@ -165,6 +165,7 @@ Our sample size was 9 for our first hypothesis testing temporal repeatability of
 Performance was repeatable within individuals within the context of reversal learning (Fig. 2A): we obtained a repeatability value of 0.13 (95% credible interval (CI) = 4.64x10^-16 - 0.43). We found that this repeatability value was significantly greater than expected if birds were performing randomly (p=0.003; Fig. 2B; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
 
 ```{r Fig2, eval = F, echo = F, message = F, warning = F}
+library(ggplot2)
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
 results <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SimulationResults_FlexManipRepeatability.csv")
 
@@ -192,14 +193,22 @@ p<-ggplot(d, aes(x=reorder(ID,MaxRev),y=TrialsToReverse,shape=ReverseNumber,colo
   geom_point(size = 4, stroke = 2, position = position_dodge(width = 0.35)) +
   scale_shape_manual(values = c(0:6,8,15,17,19))+
   theme_bw() +
-  theme(axis.text = element_text(size = 10),
+  theme(axis.text = element_text(size = 14),
         axis.title = element_text(size = 16)) +
   labs(x = "Bird", y = "Trials to pass reversal", shape = "Reversal number") +
   scale_colour_discrete(guide = "none") +
   scale_shape_discrete(guide = "none")
 p
+```
 
+![](g_flexmanip2rep_rep within context.png)
+Figure 2: The number of trials each individual took to reverse a preference across serial reversals. The clustering of data points within each individual illustrates the temporal repeatability in performance. Each reversal is indicated by a different shape. Individuals are grouped by color and arranged from fastest to slowest to complete the serial reversal experiment. Note that as per the serial reversal experimental design, data from nearly all individuals include 2 reversals at or below 50 trials. The one exception was Memela, who never increased the speed to switch her preference. 
+
+
+```{r Fig3, eval = F, echo = F, message = F, warning = F}
+results <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SimulationResults_FlexManipRepeatability.csv")
 results = as.data.frame(results)
+
 f<-ggplot(results, aes(x=x)) + 
   theme_bw() +
   geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
@@ -207,25 +216,18 @@ f<-ggplot(results, aes(x=x)) +
   theme(axis.text = element_text(size = 10),
         axis.title = element_text(size = 16)) +
   labs(x = "Repeatability", y = "Frequency")
+f
 
-
-
-library(ggpubr)
-legend = as_ggplot(get_legend(p))
-fig2 = ggarrange(p,legend+theme(plot.margin = margin(0.5,0,0.5,0, "cm")),f, 
-                 labels = c("A)","","B)"),
-                 ncol = 2, nrow = 2,
-                 widths = c(2, 0.5),
-                 align = "h") #, common.legend = T, legend = "right")
 ```
 
-![](g_flexmanip2rep_rep within context.png)
-Figure 2: A) The number of trials each individual took to reverse a preference across serial reversals. Each reversal is indicated by a different shape. Individuals are grouped by color and ordered on the x-axis from fastest (left) to slowest (right) to complete the serial reversal experiment. Note that as per the serial reversal experimental design, data from nearly all individuals include 2 reversals at or below 50 trials. The one exception was Memela, who never increased the speed to switch her preference. B) To determine the significance of our repeatability value while accounting for the non-independence of the serial reversal learning experimental design, we compared our repeatability value to simulated data where birds performed randomly within each reversals. The red line indicates our observed value, and it is significantly larger than the repeatability values retrieved from the simulated data. This indicates that despite the design of the serial reversal learning experiment leading to a general increase in the speed that grackles pass their last two reversals, there were still consistent individual differences in performance across time.
+![](g_flexmanip2rep_rep compared to random.png)
+Figure 3: To determine the significance of our repeatability value while accounting for the non-independence of the serial reversal learning experimental design, we compared our repeatability value to repeatability values calculated from simulated data where birds performed randomly within each reversals. The red line indicates our observed value, and it is significantly larger than the repeatability values retrieved from the simulated data. This indicates that despite the design of the serial reversal learning experiment leading to a general increase in the speed that grackles pass each reversal, there were still consistent individual differences in performance across time.
+
 
 We then assessed the repeatability of performance across contexts by quantifying whether individuals that were fast to switch a preference in the color reversal task were also fast to switch to attempting a new solution after passing criterion on a different solution on the two MAB tasks. We converted our metric of reversal speed from trials to reverse to seconds to reverse so the measures across contexts would be on the same scale. We had repeated measures across contexts for 15 grackles that participated in at least one color reversal and one solution switch on either or both MAB tasks. We found significant repeatability across contexts (R=0.36, CI = 0.10 - 0.64, p=0.01; Fig. 3), where latency to switch was consistent within individuals and different among individuals.
 
  
-```{r Fig3, eval=F, echo=F, message=FALSE, warning=FALSE}
+```{r Fig4, eval=F, echo=F, message=FALSE, warning=FALSE}
 # ADDED JULY 2022 - we realized we mis-specified the model for assessing repeatability of flexibility across contexts. Previously we were analyzing the relationship between overall performance on the reversal learning and MAB tasks, rather than individual consistency of performance. Consequently we conducted an analysis that evaluated performance as a function of task type, reversal/switch number and a random effect of ID.
 rev <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip2rep_data_xcontext.csv"), header=T, sep=",", stringsAsFactors=F) # data file with reversal learning measure in seconds to reverse
 rev <- rev[!rev$ID == "Diablo",] #remove Diablo who did not pass criterion on solving any MAB loci and so we can't measure solution switching
