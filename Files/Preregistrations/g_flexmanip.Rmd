@@ -788,6 +788,14 @@ summary(condition)
 #(Intercept)                     4.28760  4.09032  4.51160      420 <0.002 **
 #ExperimentalGroupManipulation  -0.07978 -0.31236  0.15703      420  0.457   
 
+#see whether removing batch makes a difference in the results (we removed batch for all P2 analyses)
+prior2 = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
+	    nu = 0)))
+conditionwobatch <- MCMCglmm(TrialsToReverse ~ ExperimentalGroup, random = ~ID, 
+	    family = "poisson", data = d, verbose = F, prior = prior2, 
+	    nitt = 300000, thin = 500, burnin = 90000)
+summary(conditionwobatch) #results are very similar to and conclusions are not different from the "condition" model
+
 #Output table
 # FIRST: Extract 89 percentile compatability interval from the model output and update the table's csv
 library(rethinking)
@@ -983,6 +991,14 @@ library(rethinking)
 #autocorr(serial2$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
 #autocorr(serial2$VCV)
+
+#a comparison to see if the results of the model without batch make a difference in the conclusions = no
+serial2wobatch <- glm(d$TrialsLastReversal ~ d$Condition, family=poisson)
+summary(serial2wobatch)
+#            Estimate Std. Error z value Pr(>|z|)    
+#(Intercept)  4.35671    0.03581 121.677   <2e-16 ***
+#d$Condition -0.55500    0.06135  -9.047   <2e-16 ***
+
 
 #Output table
 cond <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_table3output.csv"), header=F, sep=",", stringsAsFactors=F)
