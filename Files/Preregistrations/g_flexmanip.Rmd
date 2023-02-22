@@ -199,6 +199,25 @@ d$ID <- as.factor(d$ID)
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
+
+# using MCMCglmm
+library(MCMCglmm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
+model <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, family = "poisson", data = d, verbose = F, prior = prior, nitt = 300000, thin = 500, burnin = 90000)
+
+### Making DHARMa work for MCMCglmm
+# instructions on applying DHARMa to Bayesian models (using BRMS): https://frodriguezsanchez.net/post/using-dharma-to-check-bayesian-models-fitted-with-brms/. To get it to work for MCMCglmm, I had to change posterior_predict to predict (https://rdrr.io/cran/MCMCglmm/man/predict.MCMCglmm.html). Dieter Lukas then figured out the code for simulatedResponse
+modelcheck <- createDHARMa(
+  simulatedResponse = simulate(model,nsim=250),
+  observedResponse = d$TrialsToReverse,
+  fittedPredictedResponse = apply(simulate(model,nsim=250), 1, mean),
+  integerResponse = TRUE)
+plot(modelcheck)
+#KS test p=0.06 so not heteroscedastic, dispersion test p=0.88 so not dispersed, outlier test p=1 so not zero inflated, residual vs predicted: no significant problems detected.
+#compared to how we previously applied DHARMa to a glm (because we couldn't figure out how to apply it to a MCMCglmm), the results are the same except the MCMCglmm version is not dispersed, whereas the GLM version was.
+
+
+# using glm - we ended up using this in the article
 simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
 #Looks randomly scattered
@@ -487,6 +506,8 @@ summary(imp)
  - **Deviations from the plan:** We used the average latency rather than the number of trials to attempt a new locus because this would make the model comparable with the model in P2. Using the number of trials was an artifact from a previous version and we had missed updating this. We omitted the number of trials to solve a new locus as described in the deviation from the plan in P2 above. We used a GLM rather than a GLMM because there was only one data point per bird.
 
 ```{r diversity1P, eval=F}
+### NOTE: did not end up using this analysis because only the wooden MAB met the conditions for P2 alternative 2
+
 #Latency to attempt to solve a new locus
 dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -518,6 +539,7 @@ dp <- subset(dp,!(is.na(dp["MotorActionsPlastic"])) & !(is.na(dp["TrialsLastReve
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
+
 simulationOutp <- simulateResiduals(fittedModel = glmer(AverageLatencyAttemptNewLocusMABplastic ~ TrialsLastReversal + MotorActionsPlastic + (1|Bird), family=poisson, data=dp), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutp$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
 testDispersion(simulationOutp) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.992 so not over or under dispersed
@@ -526,7 +548,7 @@ testUniformity(simulationOutp) #check for heteroscedasticity ("a systematic depe
 plot(simulationOutp) #...there should be no pattern in the data points in the right panel. There is no pattern
 
 # GLM
-motp <- glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic)
+motp <- glm(dp$AverageLatencyAttemptNewLocusMABplastic ~ dp$TrialsLastReversal + dp$MotorActionsPlastic, family = poisson)
 
 # AIC calculation
 library(MuMIn)
@@ -536,8 +558,24 @@ library(knitr)
 kable(dredgemp, caption = "")
 #Akaike weights are all >0.5, therefore the models are essentially the same
 
+#22 Feb 2023: realized that the glm default family was used, which is gaussian and we specified in the preregistration that this was a poisson family. So I ran the model with both families and found the exact same results so nothing needs to be changed in the table
+#gaussian family results
+	#(Intercept)	dpMotorActionsPlastic|dpTrialsLastReversal	df	logLik	AICc	delta	weight	
+#1	207.63636	NA	NA	2	-74.69601	154.8920	0.0000000	0.49007426
+#3	-60.94031	NA	5.155922	3	-72.96256	155.3537	0.4616654	0.38905637
+#2	430.86441	-16.37006	NA	3	-74.40936	158.2473	3.3552730	0.09155322
+#4	-161.40544	5.74627	5.580313	4	-72.92910	160.5249	5.6328367	0.02931615
 
-# GLMM - can't use this because only 1 data point per bird
+#poisson family results
+#	(Intercept)	dpMotorActionsPlastic|dpTrialsLastReversal	df	logLik	AICc	delta	weight	
+#1	207.63636	NA	NA	2	-74.69601	154.8920	0.0000000	0.49007426
+#3	-60.94031	NA	5.155922	3	-72.96256	155.3537	0.4616654	0.38905637
+#2	430.86441	-16.37006	NA	3	-74.40936	158.2473	3.3552730	0.09155322
+#4	-161.40544	5.74627	5.580313	4	-72.92910	160.5249	5.6328367	0.02931615
+
+
+
+### GLMM - can't use this because only 1 data point per bird
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
@@ -590,7 +628,7 @@ simulationOutw <- simulateResiduals(fittedModel = glm(dw$AverageLatencyAttemptNe
 plot(simulationOutw$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. Looks randomly scattered
 testDispersion(simulationOutw) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.744 so not over or under dispersed
 testZeroInflation(simulationOutw) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so not zero inflated
-testUniformity(simulationOutw) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.53 so not heterscedastic
+testUniformity(simulationOutw) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.53 so not heteroscedastic
 plot(simulationOutw) #...there should be no pattern in the data points in the right panel. It says "quantile deviations detected"
 
 # GLM
@@ -628,6 +666,8 @@ kable(base1, caption = "")
 ```
 
 ```{r diversity2P, eval=F}
+### NOTE: did not end up using this analysis because only the wooden MAB met the conditions for P2 alternative 2
+
 #Latency to solve a new locus
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
@@ -667,28 +707,60 @@ kable(base1, caption = "")
 ```
 
 ```{r diversity2W, eval=F}
-#Latency to solve a new locus
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
-diversity <- read.csv ("/Users/corina/GTGR/data/data_reversemulti.csv", header=T, sep=",", stringsAsFactors=F) 
+### NOTE: did not end up using this analysis because the total number of loci solved on the wooden MAB did not meet the conditions for P2 alternative 2
 
 # WOODEN MULTI-ACCESS BOX (W)
+#Latency to solve a new locus
+dw <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+dw <- data.frame(dw)
+colnames(dw) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
+
+# Remove NAs
+dw <- subset(dw,!(is.na(dw["MotorActionsWooden"])) & !(is.na(dw["TrialsLastReversal"])) & !(is.na(dw["TotalLociSolvedMABwooden"])))
+
+# n=12: 6 in manipulated group, 6 in control group
+#length(dw$TotalLociSolvedMABwooden)
+
+# look at the data
+#hist(dw$TotalLociSolvedMABwooden)
+#mean(dw$TotalLociSolvedMABwooden) #3.25
+#sd(dw$TotalLociSolvedMABwooden) #1.22
+
+#hist(dw$MotorActionsWooden)
+#mean(dw$MotorActionsWooden) #12.4
+#sd(dw$MotorActionsWooden) #5.2
+
+#mean(dw$TrialsLastReversal) #58
+#sd(dw$TrialsLastReversal) #36
+
+
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutpu <- simulateResiduals(fittedModel = glmer(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW + (1|ID), family=poisson, data=diversity), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutpu$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel
-plotResiduals(NumberMotorActionsMultiW, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
-plotResiduals(TrialsToReverseLast, simulationOutpu$scaledResiduals)
+simulationOutpu <- simulateResiduals(fittedModel = glm(TotalLociSolvedMABwooden ~ TrialsLastReversal + MotorActionsWooden, family=poisson, data=dw), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutpu$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutpu) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p<0.05 so under or overdispersed
+testZeroInflation(simulationOutpu) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=0.8 so not zero inflated
+testUniformity(simulationOutpu) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.2 so not heteroscedastic. Also...
+plot(simulationOutpu) ##...there should be no pattern in the data points in the right panel. Dispersion test significant
+plotResiduals(dw$MotorActionsWooden, simulationOutpu$scaledResiduals) #plot the residuals against other predictors - can't get this code to work yet
+plotResiduals(dw$TrialsLastReversal, simulationOutpu$scaledResiduals)
 
+# AIC calculation
+library(MuMIn)
+options(na.action = "na.fail")
+base1 <- dredge(glm(TotalLociSolvedMABwooden ~ TrialsLastReversal + MotorActionsWooden, family=poisson, data=dw))
+library(knitr)
+kable(base1, caption = "")
+
+
+### glmm doesn't work because only 1 data point per bird
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
     nu = 0)))
-div <- MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+div <- MCMCglmm(TrialsToAttemptNewLociW ~ TrialsLastReversal + MotorActionsWooden, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000)
 summary(div)
@@ -698,7 +770,7 @@ summary(div)
 # AIC calculation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(MCMCglmm(TrialsToAttemptNewLociW ~ TrialsToReverseLast + NumberMotorActionsMultiW, random = ~ID, 
+base1 <- dredge(MCMCglmm(TotalLociSolvedMABwooden ~ TrialsLastReversal + MotorActionsWooden, random = ~ID, 
     family = "poisson", data = diversity, verbose = F, prior = prior, 
     nitt = 13000, thin = 10, burnin = 3000))
 library(knitr)
