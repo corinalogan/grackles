@@ -189,12 +189,12 @@ d <- d[!d$ID=="Fajita" & !d$ID=="Empanada",] #remove Fajita because she was a pi
 d <- subset(d,!(is.na(d["TrialsToReverse"])))
 d <- subset(d,!(is.na(d["ReverseNumber"])))
 
-#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate)
-d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation",]
+#include only those birds in the reversal tubes experiment and only those in the manipulation condition bc only these will have more than one reversal (and thus something to correlate). Exclude Memela because she never passed the manipulation criterion
+d <- d[d$TubesOrTouchscreen=="TUBES" & d$ExperimentalGroup=="Manipulation" & !d$ID=="Memela",]
 
 #factor variables
 d$Batch <- as.factor(d$Batch)
-d$ID <- as.factor(d$ID)
+d$ID <- as.factor(d$ID) #n=8 individuals
 
 # DATA CHECKING
 library(DHARMa)
@@ -202,8 +202,10 @@ library(lme4)
 
 # using MCMCglmm
 library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
-model <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, family = "poisson", data = d, verbose = F, prior = prior, nitt = 300000, thin = 500, burnin = 90000)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0))) 
+model <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):ID+Batch, 
+	    family = "poisson", data = d, verbose = F, prior = prior, 
+	    nitt = 300000, thin = 500, burnin = 90000)
 
 ### Making DHARMa work for MCMCglmm
 # instructions on applying DHARMa to Bayesian models (using BRMS): https://frodriguezsanchez.net/post/using-dharma-to-check-bayesian-models-fitted-with-brms/. To get it to work for MCMCglmm, I had to change posterior_predict to predict (https://rdrr.io/cran/MCMCglmm/man/predict.MCMCglmm.html). Dieter Lukas then figured out the code for simulatedResponse
@@ -213,11 +215,10 @@ modelcheck <- createDHARMa(
   fittedPredictedResponse = apply(simulate(model,nsim=250), 1, mean),
   integerResponse = TRUE)
 plot(modelcheck)
-#KS test p=0.06 so not heteroscedastic, dispersion test p=0.88 so not dispersed, outlier test p=1 so not zero inflated, residual vs predicted: no significant problems detected.
+#KS test p=0.47 so not heteroscedastic, dispersion test p=0.66 so not dispersed, outlier test p=0.92 so not zero inflated, residual vs predicted: no significant problems detected.
 #compared to how we previously applied DHARMa to a glm (because we couldn't figure out how to apply it to a MCMCglmm), the results are the same except the MCMCglmm version is not dispersed, whereas the GLM version was.
 
-
-# using glm - we ended up using this in the article
+# using glm - we did not use this in the article - we used the one for MCMCglmm above
 simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverse ~ ReverseNumber + (1|ID) + (1|Batch), family=poisson, data=d), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
 #Looks randomly scattered
@@ -233,17 +234,20 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 
 # GLMM
 library(MCMCglmm)
-prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0), G2 = list(V = 1, nu = 0)))
-serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, 
-	    family = "poisson", data = d, verbose = F, prior = prior, 
-	    nitt = 300000, thin = 500, burnin = 90000)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, nu = 0), G2 = list(V = 1, nu = 0)))
+serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~ID+Batch, family = "poisson", data = d, verbose = F, prior = prior, nitt = 300000, thin = 500, burnin = 90000)
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation
 summary(serial)
 #Did fixed effects converge (<0.1)? Yes
 autocorr(serial$Sol) 
 #Did random effects converge (<0.1)? Yes except for 2 values: 0.11 and 0.12
 autocorr(serial$VCV)
+
+# with random slope for ID
+priorr = list(R = list(R1 = list(V = 1, nu = 0.002)), G = list(G1 = list(V=diag(2), nu=0.002), G2 = list(V = 1, nu = 0.002))) #set nu to 0.002 (because it must be >0) according to p13 https://cran.microsoft.com/snapshot/2019-12-07/web/packages/MCMCglmm/vignettes/CourseNotes.pdf. nu is the belief parameter so a small nu means less belief (uninformed priors)
+serialr <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~idh(1+ReverseNumber):ID+Batch, family = "poisson", data = d, verbose = F, prior = priorr, nitt = 300000, thin = 500, burnin = 90000)
+summary(serialr)
+#same result as without random slopes: a significant negative correlation between trials to reverse and reversal number
 
 #AIC calculation
 library(MuMIn)
@@ -913,7 +917,7 @@ d$ID <- as.factor(d$ID)
 # GLMM
 library(MCMCglmm)
 prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1, 
-	    nu = 0), G2 = list(V = 1, nu = 0)))
+	    nu = 0), G2 = list(V = 1, nu = 0))) 
 serial <- MCMCglmm(TrialsToReverse ~ ReverseNumber, random = ~us(ReverseNumber):ID+Batch, 
 	    family = "poisson", data = d, verbose = F, prior = prior, 
 	    nitt = 300000, thin = 500, burnin = 90000)
@@ -1326,7 +1330,7 @@ library("Rcpp")
 library("rstan")
 #rebuild_cmdstan() #run this if you get an error about a PCH file https://discourse.mc-stan.org/t/struggling-to-get-cmdstan-working-on-mac-os-big-sur/19774/4
 
-# MODEL 9: batch was excluded because of what was learned in the previous sections
+# MODEL 9: MAB plastic latency - batch was excluded because of what was learned in the previous sections
 dl <- list(trials = standardize(as.numeric(d3$TrialsLastReversal)), 
            latency = as.integer(d3$AverageLatencyAttemptNewLocusMABplastic), 
            batch = as.integer(d3$Batch)
@@ -1365,7 +1369,7 @@ median(p3) #139, narrower and shifted left than the curve from the simulations
 #trankplot(mplat1) 
 
 
-# MODEL 10: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
+# MODEL 10: MAB plastic latency - see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
 #mean(d2$TrialsFirstReversal) #73.6
 #sd(d2$TrialsFirstReversal) #34.1
 
@@ -1401,7 +1405,7 @@ precis( diffmplat2 )
 #conditons are different from each other in their average latency to switch because CI does not cross zero. This means that the manipulated individuals are faster to switch than control individuals. This suggests that the experience involved in the flexibility manipulation had a direct effect on mab performance
 
 
-# MODEL 11: see whether the flexibility manipulation actually had an effect on MAB performance by replacing trials to LAST reversal with trials to FIRST reversal
+# MODEL 11: MAB plastic latency - see whether the flexibility manipulation actually had an effect on MAB performance by replacing trials to LAST reversal with trials to FIRST reversal
 dl3 <- list(locisolved = d3$AverageLatencyAttemptNewLocusMABplastic,
             trials = standardize(d3$TrialsFirstReversal)
               )
@@ -1477,6 +1481,15 @@ d4 <- subset(d4,!(is.na(d4["AverageLatencyAttemptNewLocusMABwooden"])) & !(is.na
 # n=11: 5 in manipulated group, 6 in control group
 #length(d4$AverageLatencyAttemptNewLocusMABwooden)
 
+
+### 23 Feb 2023: Cross validation checks
+# Remove Taquito who has a 160 trial reversal speed (note: he doesn't have data for latency on the plastic MAB, but he does for the other three analyses)
+dT <- d4[!d4$Bird=="Taquito",]
+
+# Remove a different random bird from the data set to do a cross check validation about whether it is just removing Taquito or any random bird. Used random.org to generate a random number between 1 and 11 and used Table SM5 to count individuals (who had Total loci solved data for both the wooden and plastic MABs) from the top of the table down to reach the randomized bird: 4 = Mofongo
+dR <- d4[!d4$Bird=="Mofongo",]
+
+
 # make Batch a factor (assigned Taco to batch 3 because 3a doesn't work with the model)
 d4$Batch <- as.factor(d4$Batch)
 levels(d4$Batch)[c(3)] <- c("3")
@@ -1536,6 +1549,44 @@ postmwplat1 <- extract.samples(mwlat1)
 #traceplot(mwlat1)
 #check the chain a different way - "histograms overlap and stay within the same range" ≠ looks good (p.285 Rethinking)
 #trankplot(mwlat1) 
+
+### Cross validation check 1: exclude Taquito
+dT1 <- list(trials = standardize(as.numeric(dT$TrialsLastReversal)), 
+           latency = as.integer(dT$AverageLatencyAttemptNewLocusMABwooden)
+           )
+
+mwlat1T <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * trials, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dT1, chains=4, log_lik = TRUE, messages = FALSE)
+precis(mwlat1T,depth=2)
+#result is the same as with Taquito: the confidence interval for b (the slope) crosses zero, indicating that there is no correlation between MAB switch latency and trials to reverse
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+#a    5.79 0.31  5.27  6.27  1172     1
+#b   -0.15 0.38 -0.76  0.46  1395     1
+#phi  0.91 0.38  0.38  1.59  1417     1
+
+### Cross validation check 2: exclude random bird (Mofongo)
+dR1 <- list(trials = standardize(as.numeric(dR$TrialsLastReversal)), 
+           latency = as.integer(dR$AverageLatencyAttemptNewLocusMABwooden)
+           )
+
+mwlat1R <- ulam(alist(
+  latency ~ dgampois(lambda, phi), 
+  log(lambda) <- a + b * trials, 
+  a ~ dnorm(1, 1), 
+  b ~ dnorm(0, 1), 
+  phi ~ dexp(1)
+  ), data = dR1, chains=4, log_lik = TRUE, messages = FALSE)
+precis(mwlat1R,depth=2)
+#result is the same as with Taquito: the confidence interval for b (the slope) crosses zero, indicating that there is no correlation between MAB switch latency and trials to reverse
+#    mean   sd 5.5% 94.5% n_eff Rhat4
+#a    5.64 0.31  5.1  6.13   926  1.01
+#b   -0.40 0.35 -0.9  0.21  1059  1.00
+#phi  0.90 0.38  0.4  1.54  1256  1.00
 
 
 # MODEL 13: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
@@ -1746,6 +1797,45 @@ postmwobatch <- extract.samples(mwobatch)
 #result: The posterior: the mean y axis point where the intercept is is 0.50 (meaning they solve on average 50% of the loci = 2), which means this is when trials to reverse is at the average
 
 
+### Cross validation check 1: exclude Taquito
+# Remove Taquito
+dTlw <- d[!d$Bird=="Taquito",]
+dT2 <- list(locisolved = dTlw$TotalLociSolvedMABplastic,
+            trials = standardize(dTlw$TrialsLastReversal),
+            batch = dTlw$Batch
+              )
+mwobatchT <- ulam( alist(
+  locisolved ~ dbinom(4,p) , 
+  logit(p) <- a + b*trials, #standardize trials so 0=mean
+  a ~ dnorm(0,0.5) , 
+  b ~ dnorm(0,2)
+) , data=dT2 , chains=4 , log_lik=TRUE )
+precis(mwobatchT,depth=2)
+#result is different when Taquito is excluded: the confidence interval for b (the slope) crosses zero, indicating that there is no correlation between MAB plastic loci solved and trials to reverse
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+#a 0.11 0.25 -0.28  0.50  1257     1
+#b 0.10 0.29 -0.35  0.56  1519     1
+
+### Cross validation check 2: exclude random bird (Mofongo)
+# Remove a different random bird
+dRlw <- d[!d$Bird=="Mofongo",]
+dR2 <- list(locisolved = dRlw$TotalLociSolvedMABplastic,
+            trials = standardize(dRlw$TrialsLastReversal),
+            batch = dRlw$Batch
+              )
+mwobatchR <- ulam( alist(
+  locisolved ~ dbinom(4,p) , 
+  logit(p) <- a + b*trials, #standardize trials so 0=mean
+  a ~ dnorm(0,0.5) , 
+  b ~ dnorm(0,2)
+) , data=dR2 , chains=4 , log_lik=TRUE )
+precis(mwobatchR,depth=2)
+#result is different when a random bird is excluded: the confidence interval for b (the slope) crosses zero, indicating that there is no correlation between MAB plastic loci solved and trials to reverse
+#   mean   sd  5.5% 94.5% n_eff Rhat4
+#a -0.07 0.24 -0.45  0.31  1335     1
+#b -0.42 0.32 -0.94  0.06  1469     1
+
+
 # MODEL 3: see whether the confound of batch in m1 is an issue of the composition of control and manipulated individuals in a particular batch that is causing the batch differences in the MAB models
 #trialsbatch <- ulam( alist(
 #  trials ~ normal(mu,sigma),
@@ -1933,6 +2023,46 @@ postm6 <- extract.samples(m6)
 #traceplot(m6)
 #check the chain a different way - "histograms overlap and stay within the same range" ≠ looks good (p.285 Rethinking)
 #trankplot(m6) 
+
+
+### Cross validation check 1: exclude Taquito
+# Remove Taquito
+dTl <- d2[!d2$Bird=="Taquito",]
+dT3 <- list(locisolved = dTl$TotalLociSolvedMABwooden,
+            trials = standardize(dTl$TrialsLastReversal),
+            batch = dTl$Batch
+              )
+m6T <- ulam( alist(
+  locisolved ~ dbinom(4,p) , 
+  logit(p) <- a + b*trials, #standardize trials so 0=mean
+  a ~ dnorm(0,0.5) , 
+  b ~ dnorm(0,2)
+) , data=dT3 , chains=4 , log_lik=TRUE )
+precis(m6T,depth=2)
+#result is the same when Taquito is excluded: the confidence interval for b (the slope) crosses zero, indicating that there is no correlation
+#    mean   sd  5.5% 94.5% n_eff Rhat4
+#a 0.93 0.28  0.47  1.38  1268     1
+#b 0.05 0.37 -0.52  0.61  1223     1
+
+### Cross validation check 2: exclude random bird (Mofongo)
+# Remove a different random bird
+dRl <- d2[!d2$Bird=="Mofongo",]
+dR3 <- list(locisolved = dTl$TotalLociSolvedMABwooden,
+            trials = standardize(dTl$TrialsLastReversal),
+            batch = dTl$Batch
+              )
+m6R <- ulam( alist(
+  locisolved ~ dbinom(4,p) , 
+  logit(p) <- a + b*trials, #standardize trials so 0=mean
+  a ~ dnorm(0,0.5) , 
+  b ~ dnorm(0,2)
+) , data=dR3 , chains=4 , log_lik=TRUE )
+precis(m6R,depth=2)
+#result is the same when a random bird is excluded: the confidence interval for b (the slope) crosses zero, indicating that there is no correlation
+#   mean   sd  5.5% 94.5% n_eff Rhat4
+#a 0.92 0.29  0.45  1.39  1094     1
+#b 0.05 0.36 -0.52  0.61  1158     1
+
 
 
 # MODEL 7: see whether the flexibility manipulation actually had an effect on MAB performance by replacing batch with condition (control, manipulated) and REMOVING trials
