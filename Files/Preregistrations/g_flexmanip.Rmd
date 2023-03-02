@@ -49,7 +49,7 @@ library(formatR)
 knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE) 
 #Make code chunks wrap text so it doesn't go off the page when knitting to PDF
 
-knitr::opts_chunk$set(echo=T, include=T, results='asis', warning=F, message=F) 
+knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 #set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
 ```
@@ -147,10 +147,10 @@ We stopped testing birds after we completed two full aviary seasons because the 
 **Figure 2.** The experimental apparatuses: reversal learning using dark gray and light gray tubes or two different shapes on a touchscreen, and the wooden and plastic multi-access boxes (MAB). The wooden MAB has four loci, each containing food and each locus has a distinct way of being opened: lift up flap (A), swing open flap (B), pull out drawer (C), or push in flap (D). The plastic MAB has four loci that all provide access to one piece of food and each locus has a distinct way of being opened: open the window (left side), pull the string (top side), push the shovel (right side), or twist the shovel (bottom side).
 
 #### Open materials
-\
-- [Design files](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) for the plastic multi-access box: 3D printer files and laser cutter files
 
-- [Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all experiments: shaded tube reversal learning, plastic multi-access box, wooden multi-access box, and touchscreen reversal learning
+ - [Design files](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) for the plastic multi-access box: 3D printer files and laser cutter files
+
+ - [Testing protocols](https://docs.google.com/document/d/18D80XZV_XCG9urVzR9WzbfOKFprDV62v3P74upu01xU/edit?usp=sharing) for all experiments: shaded tube reversal learning, plastic multi-access box, wooden multi-access box, and touchscreen reversal learning
 
 #### Open data
 \
@@ -168,7 +168,7 @@ Analyses were conducted in R [current version `r getRversion()`; @rcoreteam], us
 
 #### Data checking
 \
-The data were checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html).
+The data were checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html).
 
 #### P1: negative relationship between the number of trials to reverse a preference and the number of reversals?
 \
@@ -257,10 +257,8 @@ kable(base, caption="")
 **Unregistered analyses:** We evaluated whether the individuals in both conditions (manipulated and control) required a similar number of trials to pass their first reversal (dependent variable: trials to reverse in first reversal, explanatory variable: condition, random variables: ID and batch; Table 1), and their last reversal (dependent variable: trials to reverse in last reversal, explanatory variable: condition, random variables: ID and batch; Table 3). 
 
 #### P2: serial reversal improves rule switching and innovativeness
-
-**Analyses:**
-
-One model was run per response variable: average latency to attempt to solve a new locus after solving a different locus, and total number of loci solved. Explanatory variable: Number of trials to reverse a preference in the last reversal. Random variable: batch. 
+\
+**Analyses:** One model was run per response variable: average latency to attempt to solve a new locus after solving a different locus, and total number of loci solved. Explanatory variable: Number of trials to reverse a preference in the last reversal. Random variable: batch. 
 
 The model for the number of loci solved takes the form of:
 
@@ -499,7 +497,7 @@ d2 <- d[!d$Bird=="Fajita" & !d$Bird=="Empanada",]
 Post-data collection, we added an additional unregistered analyses comparing first versus last reversal performance for the individuals in the manipulated group (see r code chunk “posthoc_conditionalimprovement” for model details).
 
 #### P2 alternative 2: additional analysis: latency and motor diversity
-
+\
 **Analyses:** We ran one model per response variable: average latency to attempt a new locus on the multi-access boxes, and number of trials to solve (meet criterion) a new locus on the multi-access boxes. Explanatory variables: Number of trials to reverse a preference in the last reversal that an individual participated in, the number of different motor actions used when attempting to solve the multi-access boxes (motor diversity). A General Linear Model (GLM; glm function) was used with a Poisson distribution and log link.
 
 ```{r diversity1P, eval=F}
@@ -775,7 +773,7 @@ kable(base1, caption = "")
 ```
 
 #### P4: learning strategies (for birds in the manipulated group only)
-
+\
 **Analysis 1 (qualitative):** Learning strategies were identified by matching them to the two known approximate strategies of the contextual, binary multi-armed bandit: epsilon-first and epsilon-decreasing [@mcinerney2010; as in @logan2016behavioral]. We used the criterion for the epsilon-first strategy of learning the correct choice after one trial and then choosing correctly thereafter. Other patterns were classified as the epsilon-decreasing strategy where individuals gradually increase their number of successes as the number of trials increases. This method of qualitative inspection of learning curves is standard for this type of learning strategy assessment [@mcinerney2010]. The variable for visual inspection was the proportion of correct choices in a non-overlapping sliding window of 4-trial bins across the total number of trials required to reach the criterion of 17/20 correct choices per individual. 
 
 **Analysis 2 (quantitative):** We then quantitatively determined to what degree each bird used the exploration versus exploitation strategy using methods in @federspiel2017adjusting by calculating the number of 20-trial blocks where birds were choosing “randomly” (6-14 correct choices; called sampling blocks; akin to the exploration phase above) and dividing it by the total number of blocks to reach criterion per bird. This ratio was also calculated for “acquisition” blocks where birds made primarily correct choices (15-20 correct choices; akin to the exploitation phase above). These ratios, calculated for each bird for their serial reversals, quantitatively discern the exploration from the exploitation phases.
@@ -1076,7 +1074,7 @@ library(rethinking)
 
 #a comparison to see if the results of the model without batch make a difference in the conclusions = no
 serial2wobatch <- glm(d$TrialsLastReversal ~ d$Condition, family=poisson)
-summary(serial2wobatch)
+#summary(serial2wobatch)
 #            Estimate Std. Error z value Pr(>|z|)    
 #(Intercept)  4.35671    0.03581 121.677   <2e-16 ***
 #d$Condition -0.55500    0.06135  -9.047   <2e-16 ***
@@ -1097,7 +1095,6 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 \newpage
 
 ![](gflexmanip_figure_manipulatedbirdstrialimprovement.png)
-
 **Figure 6.** All eight manipulated birds needed fewer trials to reverse in their last reversal than in their first. Their improvement depended on their starting value, with steeper slopes for those birds that needed more trials to reverse in the first reversal (blue = observed values and changes, black = model estimates). However, birds who needed more trials in the first reversal did not completely catch up, such that the birds that needed more trials in their first reversal also needed more trials in their last reversal relative to other grackles.
 
 ```{r posthoc_conditionalimprovement, eval=F}
@@ -2365,7 +2362,7 @@ To address the power analysis issues, we ran simulations on our Arizona data set
 
 To run the simulations, we first constructed a **hypothesis-appropriate mathematical model** that encompasseds the relationship between the variables of interest for each analysis: 1) number of loci solved on the multi-access box ~ trials to reverse, and 2) latency to attempt a new locus on the multi-access box ~ trials to reverse. 
 
-**Simulation and model: number of loci solved on the multi-access box ~ trials to reverse**
+### **Simulation and model: number of loci solved on the multi-access box ~ trials to reverse**
 
 The model takes the form of:
 
@@ -2517,7 +2514,7 @@ mean(individuals[9:16,1])
 #result = really similar to model m1
 ```
 
-**Simulation and model: latency to attempt a new locus on the multi-access box ~ trials to reverse**
+### **Simulation and model: latency to attempt a new locus on the multi-access box ~ trials to reverse**
 
 For the average latency to attempt a new locus on the multi-access box as it relates to trials to reverse (both are measures of flexibility), we simulated data and set the model as follows: 
 
@@ -2688,7 +2685,7 @@ To determine whether experimenters coded the dependent variables in a repeatable
 
 Video coders then analyzed all videos from these birds. The experimenter's data was compared with the video coder data using the intra-class correlation coefficient (ICC) to determine the degree of bias in the regression slope (@hutcheon2010random, using the irr package in R: @gamer2012package). Note that the data in columns from coders 1 and 2 in the data sheets were aligned based on similar numbers between coders to prevent disagreements near the top of the data sheet from misaligning all subsequent entries.
 
-##### Interobserver reliability training
+### INTEROBSERVER RELIABILITY TRAINING
 
 To pass **interobserver reliability (IOR) training**, video coders needed an ICC score of 0.90 or greater to ensure the instructions were clear and that there was a high degree of agreement across coders (see R code comments for details). 
 
@@ -2717,8 +2714,8 @@ Note: Breen was not a hypothesis-blind video coder. She contributed to extensive
  - Multi-access log: locus solved unweighted Cohen's Kappa=1.00 (confidence boundaries=1.00-1.00, n=29 data points) 
 
  
-##### Interobserver reliability
-
+### INTEROBSERVER RELIABILITY
+\
 Interobserver reliability scores (minimum 20% of the videos) were as follows:
    
 ***Brynna Hood*** (compared with experimenter's live coding): 
