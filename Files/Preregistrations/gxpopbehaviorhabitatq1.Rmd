@@ -2088,6 +2088,217 @@ HPDinterval(repeata, 0.95)
 
 
 
+```{r resltsflex, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
+library(rethinking)
+library(dplyr)
+
+# We first obtain values for phi and lambda from the raw reversal data
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+## We need to perform some modifications on these data to set them up for the STAN model
+
+### remove -1 (did not participate in this trial) from the Correct column
+d <- d[!d$Correct==-1,]
+
+### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+d$Site <- as.factor(d$Site)
+levels(d$Site) <- c("Sacramento", "Tempe", "Sacramento")
+
+### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
+d$id <- sapply(1:nrow(d), function (i) which(unique(d$ID) == d$ID[i]) )
+d <- d[with(d, order(d$id)), ]
+d$Choice <- NA
+for (i in 1: nrow(d)) {
+  if (d$Reversal[i] == 0){
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 1
+    } else {
+      d$Choice[i] <- 2
+    } 
+  } else {
+    if (d$Correct[i] == 1){
+      d$Choice[i] <- 2
+    } else {
+      d$Choice[i] <- 1
+    } 
+  }
+}
+
+d$Reversal <- as.integer(d$Reversal)
+
+# We can now extract the relevant data for the STAN model. In the model, we want to estimate the phi and lambda for each individual that was tested based on their choices during the initial learning phase (R0) and the reversal learning phase (R1). Run a STAN model with all sites, estimating both means of phi and lambda for each site as well as each individual's phi and lambda
+
+## We set up the data for the model
+dat <- as.list(d)
+dat$N <- nrow(d)
+dat$N_id <- length(unique(d$id))
+dat$N_exp <- length(unique(d$Site))
+dat$Choice <- as.numeric(as.factor(d$Choice))
+
+## This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose
+reinforcement_model_id_site_nonzeroattraction <- "
+data{
+   int N;
+   int N_id;
+   int N_exp;
+   int id[N];
+   int Site[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+
+  // Varying effects clustered on experimenter
+  matrix[2,N_exp] z_EXP;
+  vector<lower=0>[2] sigma_EXP;
+  cholesky_factor_corr[2] Rho_EXP;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on individuals
+matrix[N_exp,2] v_EXP; // varying effects on experimenter
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+to_vector(z_EXP) ~ normal(0,1);
+sigma_EXP ~ exponential(1);
+Rho_EXP ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1;
+}
+
+// loop over Choices
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+L =  exp(log_L + v_ID[id[i],1]+ v_EXP[Site[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+phi =  inv_logit(logit_phi + v_ID[id[i],2]+ v_EXP[Site[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]);
+}//i
+}
+"
+
+
+# RUN the model, but STAN was acting up so need to run it with cmdstan (these instructions were copied from g_flexmanip2post.Rmd starting at line 342)
+library(cmdstanr)
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+# access the output file created by the model running the reinforcement model
+write(reinforcement_model_id_site_nonzeroattraction,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+d$Reversal<-as.numeric(as.factor(d$Reversal))
+
+# RUN the model
+fit <- mod$sample(
+  data = dat,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+
+# Extract relevant variables
+outcome_firstsimulated<-data.frame(fit$summary())
+rownames(outcome_firstsimulated)<-outcome_firstsimulated$variable
+
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+library(posterior)
+library(rethinking)
+drawsarray_firstsimulated<-fit$draws()
+drawsdataframe_firstsimulated<-as_draws_df(drawsarray_firstsimulated)
+drawsdataframe_firstsimulated<-data.frame(drawsdataframe_firstsimulated)
+firstsimulated_lambda <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(drawsdataframe_firstsimulated$log_L) + mean(drawsdataframe_firstsimulated[,x+3])))
+firstsimulated_phi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(drawsdataframe_firstsimulated$logit_phi) + mean(drawsdataframe_firstsimulated[,x+33])))
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+
+#####
+# We extract the estimated phi and lambda values for each bird from the STAN model
+s <- extract.samples(m)
+santabarbara_lambda <- sapply(1 : dat$N_id, function(x) exp( mean(s$log_L) + mean(s$v_ID[ ,x, 1])))
+santabarbara_phi <- sapply(1 : dat$N_id, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_ID[ ,x, 2])))
+
+#These values are what we will use to set up our expectations
+# For phi, we see a mean of 0.025 and a standard deviation of 0.007
+mean(santabarbara_phi)
+sd(santabarbara_phi)
+range(santabarbara_phi)
+
+
+### We now run a STAN model to see whether we estimate that these samples come from the same or from different populations
+        #This sets up the data sheet with the simulated data that the model will run on
+        dat <- list(phi = as.numeric(sites[,1]),
+                    site = as.integer(sites[,2])
+        ) 
+        
+        # Our model, which will estimate a different mean and variance of phi for each site
+        s1 <- ulam(
+          alist(
+            phi~dnorm(a[site],sigma[site]),
+            a[site] ~ dnorm(0,1),
+            sigma[site] ~ dunif(0,2)
+          ),data=dat, log_lik=TRUE, messages=FALSE,cmdstan=T)
+        
+        # Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi / lambda. For this, we calculate all pairwise differences in the posterior estimates of the sites.
+        for (sample in 1:13) {
+          for (comparison in (sample+1):14) {
+        
+        post1 <- extract.samples(s1) 
+        post1$diff <- post1$a[,sample] - post1$a[,comparison]
+        currentoutcome[counter]<-ifelse( precis(post1,depth=2)[29,1]<0 , currentoutcome[counter]<-precis(post1,depth=2)[29,4]<0, currentoutcome[counter]<-precis(post1,depth=2)[29,3]>0 )
+        
+        currentsamplesize[counter]<-samplesizes[samplesize]
+        counter<-counter+1
+           }
+        }
+}
+```
+
 ### Innovation
 
 
@@ -2132,7 +2343,7 @@ This research is funded by the Department of Human Behavior, Ecology and Culture
 
 ## CONFLICT OF INTEREST DISCLOSURE
 
-We, the authors, declare that we have no financial conflicts of interest with the content of this article. CJ Logan and D Lukas are Recommenders at PCI Ecology, and CJ Logan is on the Managing Board at PCI Ecology.
+We, the authors, declare that we have no financial conflicts of interest with the content of this article. CJ Logan and D Lukas are Recommenders at PCI Ecology, and CJ Logan used to be on the Managing Board at PCI Ecology (2018-2022).
 
 ## ACKNOWLEDGEMENTS
 
