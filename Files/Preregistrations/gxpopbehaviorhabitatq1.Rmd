@@ -2093,40 +2093,43 @@ library(rethinking)
 library(dplyr)
 
 # We first obtain values for phi and lambda from the raw reversal data
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
+d0 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 ## We need to perform some modifications on these data to set them up for the STAN model
 
 ### remove -1 (did not participate in this trial) from the Correct column
-d <- d[!d$Correct==-1,]
+d0 <- d0[!d$Correct==-1,]
 
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
-d$Site <- as.factor(d$Site)
-levels(d$Site) <- c("Sacramento", "Tempe", "Sacramento")
+d0$Site <- as.factor(d0$Site)
+levels(d0$Site) <- c("Sacramento", "Tempe", "Sacramento")
 
 ### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
-d$id <- sapply(1:nrow(d), function (i) which(unique(d$ID) == d$ID[i]) )
-d <- d[with(d, order(d$id)), ]
-d$Choice <- NA
-for (i in 1: nrow(d)) {
-  if (d$Reversal[i] == 0){
-    if (d$Correct[i] == 1){
-      d$Choice[i] <- 1
+d0$id <- sapply(1:nrow(d0), function (i) which(unique(d0$ID) == d0$ID[i]) )
+d0 <- d0[with(d0, order(d0$id)), ]
+d0$Choice <- NA
+for (i in 1: nrow(d0)) {
+  if (d0$Reversal[i] == 0){
+    if (d0$Correct[i] == 1){
+      d0$Choice[i] <- 1
     } else {
-      d$Choice[i] <- 2
+      d0$Choice[i] <- 2
     } 
   } else {
-    if (d$Correct[i] == 1){
-      d$Choice[i] <- 2
+    if (d0$Correct[i] == 1){
+      d0$Choice[i] <- 2
     } else {
-      d$Choice[i] <- 1
+      d0$Choice[i] <- 1
     } 
   }
 }
 
-d$Reversal <- as.integer(d$Reversal)
+d0$Reversal <- as.integer(d0$Reversal)
 
 # We can now extract the relevant data for the STAN model. In the model, we want to estimate the phi and lambda for each individual that was tested based on their choices during the initial learning phase (R0) and the reversal learning phase (R1). Run a STAN model with all sites, estimating both means of phi and lambda for each site as well as each individual's phi and lambda
+
+## Exclude columns that will not be analyzed
+d <- select(d0,Site,id,Reversal,Trial,Correct,Choice)
 
 ## We set up the data for the model
 dat <- as.list(d)
@@ -2157,7 +2160,7 @@ parameters{
   vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
   cholesky_factor_corr[2] Rho_ID;
 
-  // Varying effects clustered on experimenter
+  // Varying effects clustered on site
   matrix[2,N_exp] z_EXP;
   vector<lower=0>[2] sigma_EXP;
   cholesky_factor_corr[2] Rho_EXP;
@@ -2165,7 +2168,7 @@ parameters{
 
 transformed parameters{
 matrix[N_id,2] v_ID; // varying effects on individuals
-matrix[N_exp,2] v_EXP; // varying effects on experimenter
+matrix[N_exp,2] v_EXP; // varying effects on site
 
 v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
 v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
@@ -2236,18 +2239,67 @@ fit <- mod$sample(
   refresh = 500
 )
 
-# Extract relevant variables
-outcome_firstsimulated<-data.frame(fit$summary())
-rownames(outcome_firstsimulated)<-outcome_firstsimulated$variable
-
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
 library(posterior)
 library(rethinking)
-drawsarray_firstsimulated<-fit$draws()
-drawsdataframe_firstsimulated<-as_draws_df(drawsarray_firstsimulated)
-drawsdataframe_firstsimulated<-data.frame(drawsdataframe_firstsimulated)
-firstsimulated_lambda <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(drawsdataframe_firstsimulated$log_L) + mean(drawsdataframe_firstsimulated[,x+3])))
-firstsimulated_phi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(drawsdataframe_firstsimulated$logit_phi) + mean(drawsdataframe_firstsimulated[,x+33])))
+drawsarray<-fit$draws()
+drawsdf<-as_draws_df(drawsarray)
+drawsdf<-data.frame(drawsdf)
+
+# Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi / lambda. For this, we calculate all pairwise differences in the posterior estimates of the sites.
+# We extract the estimated phi and lambda values for each bird from the STAN model. v_ID.x.2 = offset from the mean in phi for individual x, v_ID.x.1 = same but for lambda. v_EXP.x.2 = offset from the mean in phi for individuals at site x, v_EXP.x.1 = same for lambda
+
+drawsdf$diffSiteLambda <- drawsdf$v_EXP.2.1. - drawsdf$v_EXP.1.1. #contrasting site 2 with site 1
+drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site 2 with site 1
+look <- precis(drawsdf) #there are no differences between sites in either phi or lambda
+
+# CONVERT the means for phi and lambda for each site to the actual scale to see what the actual difference is and compare with our power analysis
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.78
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301
+# Table 2 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
+
+# convert the posterior as well
+site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #4.78
+site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #4.52
+site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) #0.0306
+site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) #0.0301
+
+# and run a contrast on this scale too to get the range
+lambdap <- precis(site1lambdap - site2lambdap)
+phip <- precis(site1phip - site2phip)
+# the site differences are unlikely to be larger than 0.1 for phi and 1.4 for lambda
+
+
+# to calculate the values for each individual, we need to take the overall mean across all inds from both sites, the offset for the site that this individual belongs to, and these first two values give us the average value for individuals in that site. Then add the offset for individuals at the site to get each individual's value
+indlambdasite=NA
+indphisite=NA
+individualsatsite = data.frame( d %>% group_by(Site) %>% summarise(unique(id))) #assign each individual to its associated site
+
+for (i in 1:dat$N_id){
+indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+148]) + ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.)))
+
+indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+105])+ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.2.),mean(drawsdf$v_EXP.2.2.)))
+}
+
+# make a dataframe with the values in the actual scale associated with the bird's names and sites
+individualsatsite$phi=indphisite
+individualsatsite$lambda=indlambdasite
+
+originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
+individualsatsite$name=originalid$unique.ID. #this is the final dataframe
+
+# visualize each bird at each site
+library(lattice)
+library(gridExtra)
+plot1 <- bwplot(indphisite~individualsatsite$Site, d, ylab="Phi", col="black", panel = function(...) {
+  panel.bwplot(..., pch = "|")
+  panel.xyplot(..., jitter.x = TRUE)})
+plot2 <- bwplot(indlambdasite~individualsatsite$Site, d, ylab="Lambda", col="black", panel = function(...) {
+  panel.bwplot(..., pch = "|")
+  panel.xyplot(..., jitter.x = TRUE)})
+grid.arrange(plot1,plot2, ncol=2)
 
 # Remove the stan command line file we created for this particular model from your computer
 fn<-"myowntrial"
@@ -2255,48 +2307,6 @@ file.remove(fn)
 
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
-
-
-#####
-# We extract the estimated phi and lambda values for each bird from the STAN model
-s <- extract.samples(m)
-santabarbara_lambda <- sapply(1 : dat$N_id, function(x) exp( mean(s$log_L) + mean(s$v_ID[ ,x, 1])))
-santabarbara_phi <- sapply(1 : dat$N_id, function(x) inv_logit( mean(s$logit_phi) + mean(s$v_ID[ ,x, 2])))
-
-#These values are what we will use to set up our expectations
-# For phi, we see a mean of 0.025 and a standard deviation of 0.007
-mean(santabarbara_phi)
-sd(santabarbara_phi)
-range(santabarbara_phi)
-
-
-### We now run a STAN model to see whether we estimate that these samples come from the same or from different populations
-        #This sets up the data sheet with the simulated data that the model will run on
-        dat <- list(phi = as.numeric(sites[,1]),
-                    site = as.integer(sites[,2])
-        ) 
-        
-        # Our model, which will estimate a different mean and variance of phi for each site
-        s1 <- ulam(
-          alist(
-            phi~dnorm(a[site],sigma[site]),
-            a[site] ~ dnorm(0,1),
-            sigma[site] ~ dunif(0,2)
-          ),data=dat, log_lik=TRUE, messages=FALSE,cmdstan=T)
-        
-        # Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi / lambda. For this, we calculate all pairwise differences in the posterior estimates of the sites.
-        for (sample in 1:13) {
-          for (comparison in (sample+1):14) {
-        
-        post1 <- extract.samples(s1) 
-        post1$diff <- post1$a[,sample] - post1$a[,comparison]
-        currentoutcome[counter]<-ifelse( precis(post1,depth=2)[29,1]<0 , currentoutcome[counter]<-precis(post1,depth=2)[29,4]<0, currentoutcome[counter]<-precis(post1,depth=2)[29,3]>0 )
-        
-        currentsamplesize[counter]<-samplesizes[samplesize]
-        counter<-counter+1
-           }
-        }
-}
 ```
 
 ### Innovation
