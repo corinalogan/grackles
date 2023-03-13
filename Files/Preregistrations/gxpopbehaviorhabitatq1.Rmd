@@ -2469,12 +2469,34 @@ plot1 <- bwplot(latency~site, datexp, ylab="Average latency to approach within 2
 ```
 
 ![](gxpopbehaviorhabitatq1_figexploration.png)
-**Figure 9.** Average latency to approach within 20 cm of a novel environent in the exploration assay per individual at each site (n=32 Sacramento, n=19 Tempe). Note that if an individual did not approach to within 20 cm of the novel environment at Time 1 or 2, they were given a ceiling value of 2701, which is one second longer than the session length.
+**Figure 9.** Average latency to approach within 20 cm of a novel environment in the exploration assay per individual at each site (n=32 Sacramento, n=19 Tempe). Note that if an individual did not approach to within 20 cm of the novel environment at Time 1 or 2, they were given a ceiling value of 2701, which is one second longer than the session length.
 
 
 ### Persistence
 
+
+
+**Table 7.** Contrasts between sites for the persistence measure: proportion of trials participated in across the reversal and multi-access box experiments.
+
+```{r resltspersisttable, eval=T, warning=FALSE, results='asis', include=TRUE}
+library(kableExtra)
+exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_TablePersist.csv"), header=F, sep=",", stringsAsFactors=F)
+exptable <- data.frame(exptable)
+colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+
+knitr::kable(exptable) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+```
+
 ```{r resltspersist, eval=F, warning=FALSE, results='asis', include=TRUE}
+library(rethinking)
+library(rstan)
+library(Rcpp)
+
+# calculate persistence
+
+
+
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","ExplorationLatency","Persistence","Notes")
@@ -2486,8 +2508,37 @@ levels(d$Population) <- c("Sacramento", "Tempe", "Sacramento")
 # remove the birds who had no data for this experiment
 d <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
 
+#RUN THE MODEL (this is the simulated data that the model (below) will use) Generate values for simulated individuals from 3 simulated sites: vary the alpha site mean (expected number of trials participated in and whether sites differ) and alpha sd (the noise/variance in the population in the number of trials participated in), and sample size
+dat_list <- list( participated = as.integer(testdata$participated),
+                  totaltrials = as.integer(testdata$totaltrials),
+                  site = as.integer(testdata$site) )
 
+m1<-ulam(
+  alist(
+    participated ~ dbinom( totaltrials , p ) , 
+    logit(p) <- a[site], 
+    a[site] ~ dnorm (0,1.5)
+    ) , data=dat_list , chains=4 )
+
+#Plot it
+post <- extract.samples(m1) 
+probability <- inv_logit(post$a)
+labels <- paste( "a[" , 1:3 , "]:" , levels(dat_list$site) , sep="" ) 
+plot( precis( as.data.frame(probability) ) , xlim=c(0,1), labels=labels ,  xlab="proportion of trials participated in" ) #contrasts plot p.157
+
+#Summary data
+precis(m1,depth=2) #depth=2 means to show any vector parameters (p.156)
+
+#Compute pairwise contrasts
+#Comparing sites 1 and 2
+post1 <- extract.samples(m1) 
+post1$diff_12 <- inv_logit(post1$a[,1]) - inv_logit(post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
 ```
+
+![](gxpopbehaviorhabitatq1_figexploration.png)
+
+**Figure 10.** The proportion of trials participated in across the reversal and multi-access box experiments was the measure of persistence per individual at each site (n= Sacramento, n= Tempe).
 
 
 ### Repeatability of exploration and persistence
