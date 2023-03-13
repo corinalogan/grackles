@@ -2357,6 +2357,18 @@ levels(d$Population) <- c("Sacramento", "Tempe", "Sacramento")
 # also removed the two birds where some of the doors accidentally fell shut during habituation, therefore we had to remove these doors from their test. This ended up with Kau and Galandra only having the opportunity to solve 2 or 3 doors during their test, which makes their data incomparable to the other birds unless we moved to a proportion scale (proportion of doors solved). MABsolved 2/2 and 3/3? n=38 with them in, they are from Sac, which has n=24 with them in
 d <- d[!d$MABsolved=="-" & !d$MABsolved=="X" & !d$MABsolved=="2/2" & !d$MABsolved=="3/3",]
 
+# get the mean number of loci solved per site
+sac <- d[d$Population=="Sacramento",]
+sac$MABsolved <- as.numeric(sac$MABsolved)
+mean(sac$MABsolved) #3.0
+length(sac$MABsolved) #21
+
+tem <- d[d$Population=="Tempe",]
+tem$MABsolved <- as.numeric(tem$MABsolved)
+mean(tem$MABsolved) #2.0
+length(tem$MABsolved) #15
+
+
 #set up data sheet for model
 dat <- list(locisolved = as.numeric(d$MABsolved),
             site = as.factor(d$Population)
@@ -2387,7 +2399,7 @@ plot1 <- bwplot(locisolved~site, dat, ylab="Number of loci solved on the multi-a
 
 ![](gxpopbehaviorhabitatq1_figinnovation.png)
 
-**Figure 8.** Number of loci solved on the multi-access box in the innovativeness test per individual at each site.
+**Figure 8.** Number of loci solved on the multi-access box in the innovativeness test per individual at each site (n=21 birds in Sacramento, n=15 birds in Tempe).
 
 
 ### Exploration
@@ -2419,8 +2431,9 @@ colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","Rever
 d$Population <- as.factor(d$Population)
 levels(d$Population) <- c("Sacramento", "Tempe", "Sacramento")
 
-# remove the birds who had no data for this experiment
-d <- d[!d$MABsolved=="-",]
+# remove the bird who had no data for this experiment
+d <- d[!d$ExplorationLatency=="-",]
+
 
 # set up the data sheet for the model
 datexp <- list(latency = as.numeric(d$ExplorationLatency),
@@ -2456,8 +2469,7 @@ plot1 <- bwplot(latency~site, datexp, ylab="Average latency to approach within 2
 ```
 
 ![](gxpopbehaviorhabitatq1_figexploration.png)
-**Figure 9.** Average latency to approach within 20 cm of a novel environent in the exploration assay per individual at each site. Note that if an individual did not approach to within 20 cm of the novel environment at Time 1 or 2, they were given a ceiling value of 2701, which is one second longer than the session length.
-
+**Figure 9.** Average latency to approach within 20 cm of a novel environent in the exploration assay per individual at each site (n=32 Sacramento, n=19 Tempe). Note that if an individual did not approach to within 20 cm of the novel environment at Time 1 or 2, they were given a ceiling value of 2701, which is one second longer than the session length.
 
 
 ### Persistence
