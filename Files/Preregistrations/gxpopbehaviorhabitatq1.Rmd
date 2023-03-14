@@ -2088,7 +2088,7 @@ In the preregistration, we said that for the exploration measure we would use th
 
 ### Flexibility
 
-There were no strong site differences for either component of reversal learning: phi or lambda (Figure 7). We would need a difference of 0.01+ for phi and 3+ for lambda to detect a difference between the sites (Table 2). However, phi differed by only 0.0005 (Sacramento=0.0306, Tempe=0.0301) and lambda by 0.26 (Sacramento=4.78, Tempe=4.52), and the site differences are unlikely to be larger than 0.1 for phi and 1.4 for lambda (Table 4).
+There were no strong site differences for either component of reversal learning: phi or lambda (Figure 7). We would need a difference of 0.01+ for phi and 3+ for lambda to detect a difference between the sites (Table SM1). However, phi differed by only 0.0005 (Sacramento=0.0306, Tempe=0.0301) and lambda by 0.26 (Sacramento=4.78, Tempe=4.52), and the site differences are unlikely to be larger than 0.01 for phi and 1.4 for lambda (Table 4).
 
 **Table 4.** Contrasts between sites for the flexibility measure of reversal learning: phi and lambda.
 
@@ -2272,7 +2272,7 @@ site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.78
 site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52
 site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306
 site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301
-# Table 2 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
+# Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
 # convert the posterior as well
 site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #4.78
@@ -2474,17 +2474,17 @@ plot1 <- bwplot(latency~site, datexp, ylab="Average latency to approach within 2
 
 ### Persistence
 
-
+There were no strong site differences for persistence: the proportion of trials participated in across the reversal and multi-access box experiments (Figure 10). We would need a difference of 0.08+ in the proportion of trials participated in to detect a difference between the sites (Table SM1). However, the proportion differed only 0.02 (Sacramento=0.72, Tempe=0.80), and the site differences are unlikely to be larger than 0.08 (Table 7).
 
 **Table 7.** Contrasts between sites for the persistence measure: proportion of trials participated in across the reversal and multi-access box experiments.
 
-```{r resltspersisttable, eval=T, warning=FALSE, results='asis', include=TRUE}
+```{r resltspersisttable, eval=F, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
-exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_TablePersist.csv"), header=F, sep=",", stringsAsFactors=F)
-exptable <- data.frame(exptable)
-colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+pertable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_TablePersist.csv"), header=F, sep=",", stringsAsFactors=F)
+pertable <- data.frame(pertable)
+colnames(pertable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
-knitr::kable(exptable) %>%
+knitr::kable(pertable) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
@@ -2492,53 +2492,78 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 library(rethinking)
 library(rstan)
 library(Rcpp)
+library(dplyr)
 
-# calculate persistence
+# calculate persistence: need a column for number of trials a bird participated in and another column for total number of trials offered
+dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_data_persist.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-
-
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
-
-colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","ExplorationLatency","Persistence","Notes")
+colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choice","Notes")
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
-d$Population <- as.factor(d$Population)
-levels(d$Population) <- c("Sacramento", "Tempe", "Sacramento")
+dp$Population <- as.factor(dp$Population)
+levels(dp$Population) <- c("Sacramento", "Tempe", "Sacramento")
 
-# remove the birds who had no data for this experiment
-d <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
+# calculate per bird: number of trials participated in (choice = 0, 1)
+participate <- as.data.frame(dp %>% group_by(Population, ID, Choice) %>% summarize(n())) #n=number of values in a vector
+colnames(participate)[4] <- c("Count")
+participate <- as.data.frame(participate %>% pivot_wider(names_from=Choice,values_from = "Count"))
+participate$sum <- participate$'0' + participate$'1'
 
-#RUN THE MODEL (this is the simulated data that the model (below) will use) Generate values for simulated individuals from 3 simulated sites: vary the alpha site mean (expected number of trials participated in and whether sites differ) and alpha sd (the noise/variance in the population in the number of trials participated in), and sample size
-dat_list <- list( participated = as.integer(testdata$participated),
-                  totaltrials = as.integer(testdata$totaltrials),
-                  site = as.integer(testdata$site) )
+# calculate per bird: total number of trials offered (choice = 0, 1, or -1)
+total <- as.data.frame(dp %>% group_by(Population, ID) %>% summarize(n())) #n=number of values in a vector
+participate$total <- total$`n()`
+
+# add the proportion per bird for the summary data sheet
+participate$prop <- participate$sum/participate$total
+
+#remove NAs from the variables that will be in the model
+participate <- subset(participate,!(is.na(participate["sum"])))
+participate <- subset(participate,!(is.na(participate["total"])))
+
+#RUN THE MODEL
+datper <- list( participated = as.integer(participate$sum),
+                  totaltrials = as.integer(participate$total),
+                  site = as.integer(participate$Population) )
 
 m1<-ulam(
   alist(
     participated ~ dbinom( totaltrials , p ) , 
     logit(p) <- a[site], 
     a[site] ~ dnorm (0,1.5)
-    ) , data=dat_list , chains=4 )
+    ) , data=datper , chains=4 )
 
-#Plot it
-post <- extract.samples(m1) 
-probability <- inv_logit(post$a)
-labels <- paste( "a[" , 1:3 , "]:" , levels(dat_list$site) , sep="" ) 
-plot( precis( as.data.frame(probability) ) , xlim=c(0,1), labels=labels ,  xlab="proportion of trials participated in" ) #contrasts plot p.157
-
-#Summary data
-precis(m1,depth=2) #depth=2 means to show any vector parameters (p.156)
-
-#Compute pairwise contrasts
-#Comparing sites 1 and 2
+#Compute pairwise contrasts to compare sites 1 and 2
 post1 <- extract.samples(m1) 
 post1$diff_12 <- inv_logit(post1$a[,1]) - inv_logit(post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
+
+#       mean   sd  5.5% 94.5% histogram
+#a[1]    1.29 0.04  1.22  1.36   ▁▁▃▇▇▁▁
+#a[2]    1.31 0.04  1.24  1.37   ▁▁▇▇▂▁▁
+#diff_12 0.00 0.01 -0.02  0.01 ▁▁▁▅▇▇▂▁▁
+
+
+# visualize each bird at each site
+library(lattice)
+library(gridExtra)
+plotp <- bwplot(prop~Population, participate, ylab="Proportion of trials participated in", col="black", cex="2", panel = function(...) {
+  panel.bwplot(..., pch = "|")
+  panel.xyplot(..., jitter.x = TRUE)})
+
+
+# get the mean proportion of trials participated in per site
+sac <- participate[participate$Population=="Sacramento",]
+mean(sac$sum/sac$total) #0.72
+length(sac$sum) #n=25 birds
+
+tem <- participate[participate$Population=="Tempe",]
+mean(tem$sum/tem$total) #0.80
+length(tem$sum) #n=20 birds
 ```
 
-![](gxpopbehaviorhabitatq1_figexploration.png)
+![](gxpopbehaviorhabitatq1_figpersist.png)
 
-**Figure 10.** The proportion of trials participated in across the reversal and multi-access box experiments was the measure of persistence per individual at each site (n= Sacramento, n= Tempe).
+**Figure 10.** The proportion of trials participated in across the reversal and multi-access box experiments was the measure of persistence per individual at each site (n=25 Sacramento, n=20 Tempe).
 
 
 ### Repeatability of exploration and persistence
