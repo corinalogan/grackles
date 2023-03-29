@@ -2281,12 +2281,6 @@ site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.03
 site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301
 # Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
-# get the means, SDs, and intervals for the converted scale for phi and lamda per site
-precis(site1lambda)
-precis(site2lambda)
-precis(site1phi)
-precis(site2phi)
-
 # convert the posterior as well
 site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #4.78
 site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #4.52
@@ -2316,6 +2310,19 @@ individualsatsite$lambda=indlambdasite
 
 originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
 individualsatsite$name=originalid$unique.ID. #this is the final dataframe
+
+
+# PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
+wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
+#           mean   sd 5.5% 94.5%    histogram
+#phi         0.03 0.01 0.02  0.05     ▃▂▇▇▁▃▂▁
+#lambda      5.84 5.96 1.79 12.00       ▇▂▁▁▁▁
+
+te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
+#            mean   sd  5.5% 94.5%  histogram
+#phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
+#lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
+
 
 # visualize each bird at each site
 library(lattice)
