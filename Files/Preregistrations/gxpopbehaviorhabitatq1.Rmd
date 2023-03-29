@@ -1684,7 +1684,7 @@ We then ran the **mathematical model** and performed pairwise contrasts and dete
 ```{r tableparam, eval=TRUE, warning=FALSE, results='asis', include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_table_simoutputs.csv"), header=F, sep=",", stringsAsFactors=F) 
 
-colnames(d) <- c("Response variable","n","mu1","mu2","mu3","mu1_sd","mu2_sd","mu3_sd","Difference crosses zero? S1-S2","Difference crosses zero? S1-S3","Difference crosses zero? S2-S3","Notes")
+colnames(d) <- c("Response variable","n","mu site 1","mu site 2","mu site 3","mu_sd site 1","mu_sd site 2","mu_sd site 3","Difference crosses zero? Sites 1 vs 2","Difference crosses zero? Sites 1 vs 3","Difference crosses zero? Sites 2 vs 3","Notes")
 
 library(kableExtra)
 knitr::kable(d) %>%
@@ -2097,7 +2097,7 @@ In the preregistration, we said that for the exploration measure we would use th
 
 There were no strong site differences for either component of reversal learning: phi or lambda (Figure 5). We would need a difference of 0.01+ for phi and 3+ for lambda to detect a difference between the sites (Table SM1). However, phi differed by only 0.0005 (Sacramento=0.0306, Tempe=0.0301) and lambda by 0.26 (Sacramento=4.78, Tempe=4.52), and the site differences are unlikely to be larger than 0.01 for phi and 1.4 for lambda (Table 3).
 
-**Table 3.** Contrasts between sites for the flexibility measure of reversal learning: phi and lambda.
+**Table 3.** Contrasts (indicated by "diff") between sites for the flexibility measure of reversal learning: phi and lambda.
 
 ```{r resltsflextable, eval=T, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
@@ -2114,16 +2114,16 @@ library(rethinking)
 library(dplyr)
 
 # We first obtain values for phi and lambda from the raw reversal data
-d0 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 ## We need to perform some modifications on these data to set them up for the STAN model
 
 ### remove -1 (did not participate in this trial) from the Correct column
-d0 <- d0[!d$Correct==-1,]
+d0 <- d[!d$Correct==-1,]
 
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d0$Site <- as.factor(d0$Site)
-levels(d0$Site) <- c("Sacramento", "Tempe", "Sacramento")
+levels(d0$Site) <- c("Woodland", "Tempe", "Woodland")
 
 ### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
 d0$id <- sapply(1:nrow(d0), function (i) which(unique(d0$ID) == d0$ID[i]) )
@@ -2311,6 +2311,19 @@ individualsatsite$lambda=indlambdasite
 originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
 individualsatsite$name=originalid$unique.ID. #this is the final dataframe
 
+
+# PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
+wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
+#           mean   sd 5.5% 94.5%    histogram
+#phi         0.03 0.01 0.02  0.05     ▃▂▇▇▁▃▂▁
+#lambda      5.84 5.96 1.79 12.00       ▇▂▁▁▁▁
+
+te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
+#            mean   sd  5.5% 94.5%  histogram
+#phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
+#lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
+
+
 # visualize each bird at each site
 library(lattice)
 library(gridExtra)
@@ -2359,7 +2372,7 @@ colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","Rever
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d$Population <- as.factor(d$Population)
-levels(d$Population) <- c("Sacramento", "Tempe", "Sacramento")
+levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
 
 # remove the birds who had no data for this experiment
 d <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
@@ -2382,12 +2395,18 @@ m1 <- ulam( alist(
 
 #Compute pairwise contrasts: site 1 = Sacramento, site 2 = Tempe
 post1 <- extract.samples(m1) 
+
+#Convert to the measured scale (the proportion of loci solved)
+post1$a[,1] <- inv_logit(post1$a[,1])
+post1$a[,2] <- inv_logit(post1$a[,2])
+
+#Run the contrast
 post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post1,depth=2) #look at the last row: diff_12
 #        mean   sd  5.5% 94.5%     histogram
-#a[1]    1.12 0.24  0.74  1.53    ▁▁▁▂▅▇▅▂▁▁
-#a[2]    0.00 0.25 -0.41  0.39    ▁▁▁▃▇▇▃▁▁▁
-#diff_12 1.13 0.36  0.55  1.69 ▁▁▁▁▃▇▇▇▃▂▁▁▁
+#a[1]    0.76 0.04 0.69  0.83     ▁▁▁▅▇▂▁
+#a[2]    0.50 0.06 0.41  0.60  ▁▁▁▃▇▇▃▁▁▁
+#diff_12 0.26 0.07 0.14  0.37 ▁▁▁▁▃▇▇▅▂▁▁
 
 
 # visualize each bird at each site
@@ -2444,7 +2463,7 @@ colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","Rever
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d$Population <- as.factor(d$Population)
-levels(d$Population) <- c("Sacramento", "Tempe", "Sacramento")
+levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
 
 # remove the bird who had no data for this experiment
 d <- d[!d$ExplorationLatency=="-",]
@@ -2467,13 +2486,20 @@ m2 <- ulam(
 #Compute pairwise contrasts
 #Comparing sites 1 and 2
 post1 <- extract.samples(m2) 
+
+#Convert to the measured scale (the proportion of loci solved)
+post1$a[,1] <- exp(post1$a[,1])
+post1$a[,2] <- exp(post1$a[,2])
+
+#Run the contrast
 post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) Arizona (site 2) grackles have lower latencies and thus are more exploratory than Sacramento (site 1) grackles. The distribution does not cross 0, which means that there are differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
 #        mean   sd 5.5% 94.5%      histogram
-#a[1]    7.35 0.14 7.13  7.59    ▁▁▃▇▇▇▂▁▁▁▁
-#a[2]    6.95 0.20 6.64  7.27  ▁▁▃▅▇▇▇▅▂▁▁▁▁
-#phi     1.37 0.28 0.99  1.81   ▁▂▇▇▅▃▁▁▁▁▁▁
-#diff_12 0.40 0.24 0.02  0.79 ▁▁▁▁▂▃▅▇▅▅▃▂▂▁
+#           mean     sd    5.5%   94.5%    histogram
+#a[1]    1697.40 229.76 1368.91 2058.43    ▁▁▅▇▃▁▁▁▁
+#a[2]    1137.56 181.84  875.64 1448.64 ▁▂▇▇▇▅▃▂▁▁▁▁
+#phi        1.59   0.29    1.15    2.09     ▁▂▃▇▅▃▁▁
+#diff_12  559.84 285.99  103.84 1017.56  ▁▁▂▅▇▅▃▁▁▁▁
 
 # visualize each bird at each site
 library(lattice)
@@ -2481,6 +2507,15 @@ library(gridExtra)
 plot1 <- bwplot(latency~site, datexp, ylab="Average latency to approach within 20 cm of a novel environment", col="black", cex="2", panel = function(...) {
   panel.bwplot(..., pch = "|")
   panel.xyplot(..., jitter.x = TRUE)})
+
+
+#UNREGISTERED ANALYSIS: from the boxplot, it looks like there is larger variance in persistence in the Woodland population. We conducted a test to see if the difference shows up statistically: Levene's Test for Homogeneity of Variance (center = median)
+library(car)
+#leveneTest(latency~as.factor(site),data=datexp)
+#      Df F value Pr(>F)
+#group  1  1.9463 0.1693
+#      49   
+#p=0.17, which is larger than 0.05, indicating that there is no significant difference between the variances of the two groups
 ```
 
 ![](gxpopbehaviorhabitatq1_figexploration.png)
@@ -2511,6 +2546,7 @@ library(rethinking)
 library(rstan)
 library(Rcpp)
 library(dplyr)
+library(tidyr)
 
 # calculate persistence: need a column for number of trials a bird participated in and another column for total number of trials offered
 dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_data_persist.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -2519,7 +2555,7 @@ colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choic
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 dp$Population <- as.factor(dp$Population)
-levels(dp$Population) <- c("Sacramento", "Tempe", "Sacramento")
+levels(dp$Population) <- c("Woodland", "Tempe", "Woodland")
 
 # calculate per bird: number of trials participated in (choice = 0, 1)
 participate <- as.data.frame(dp %>% group_by(Population, ID, Choice) %>% summarize(n())) #n=number of values in a vector
@@ -2552,13 +2588,19 @@ m1<-ulam(
 
 #Compute pairwise contrasts to compare sites 1 and 2
 post1 <- extract.samples(m1) 
-post1$diff_12 <- inv_logit(post1$a[,1]) - inv_logit(post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+
+#Convert to the measured scale (the proportion of loci solved)
+post1$a[,1] <- inv_logit(post1$a[,1])
+post1$a[,2] <- inv_logit(post1$a[,2])
+
+#Run the contrast
+post1$diff_12 <- (post1$a[,1]) - (post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
 
 #       mean   sd  5.5% 94.5% histogram
-#a[1]    1.29 0.04  1.22  1.36   ▁▁▃▇▇▁▁
-#a[2]    1.31 0.04  1.24  1.37   ▁▁▇▇▂▁▁
-#diff_12 0.00 0.01 -0.02  0.01 ▁▁▁▅▇▇▂▁▁
+#a[1]    0.78 0.01  0.77  0.80    ▁▁▂▅▇▇▃▂▁▁
+#a[2]    0.79 0.01  0.78  0.80    ▁▁▁▃▇▇▇▂▁▁
+#diff_12 0.00 0.01 -0.02  0.01 ▁▁▁▂▅▇▇▇▃▂▁▁▁
 
 
 # visualize each bird at each site
