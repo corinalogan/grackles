@@ -2504,6 +2504,9 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 ```
 
 ```{r resltspersist, eval=F, warning=FALSE, results='asis', include=TRUE}
+# The bespoke models require the packages rstan and rethinking which may not be available to download from CRAN. See instructions to get these packages here: https://www.rdocumentation.org/packages/rethinking/versions/2.13
+
+
 library(rethinking)
 library(rstan)
 library(Rcpp)
@@ -2590,13 +2593,127 @@ e <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master
 colnames(e) <- c("CodingDate","VideoCoder","VideoFileName","TrialDate","Experimenter","BirdID","Test","Condition","Time","Session","IndicatedTrial","LatFirstLand","LatFirstLand2","LatFirstLandSum","TotalSecPt1","Lat20cmThisVideo","Lat20cm","LatTouch","LatEnterTent","TentDuration","DurationNear","DurationFar","DurationOutOfView","ClosestDistance","TrialEndTime","TrialDuration","Notes")
 
 #remove NAs from the variables that will be in the model
-e1 <- subset(e,!(is.na(e["Lat20cm"])))
+e1 <- subset(e,!(is.na(e["Lat20cm"]))) # We only want data for the Test = Environment and Condition = Novel
+e1$BirdID <- as.factor(e1$BirdID)
+e1$Time <- as.factor(e1$Time)
 
+### FIGURING OUT DATA STRUCTURE FOR REPEATABILITY ANALYSIS ###
+hist(e1$Lat20cm) 
+# function from Ben Bolker for calculating overdispersion in glmm
+overdisp_fun <- function(model) {
+    rdf <- df.residual(model)
+    rp <- residuals(model,type="pearson")
+    Pearson.chisq <- sum(rp^2)
+    prat <- Pearson.chisq/rdf
+    pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+    c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+ 
+
+d1 = glmer(round(Lat20cm) ~ Time + (1|BirdID), data = e1, family = poisson)
+overdisp_fun(d1) #significantly overdispersed
+d2 = glmer.nb(round(Lat20cm) ~ Time + (1|BirdID), data = e1)
+overdisp_fun(d2) #not overdispersed
+
+## Deviation - our dependent variable is overdispersed and thus a Poisson model is not appropriate. We used the negative binomial model instead.
 
 
 
 # persistence
-## see code in r code chunk "resltspersist" for the persistence calculation. I presume you will need a data sheet that separates individuals by test (reversal or MAB), which should be doable by adding a bit to that code
+# calculate persistence: need a column for number of trials a bird participated in and another column for total number of trials offered
+dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_data_persist.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choice","Notes")
+
+# combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+dp$Population <- as.factor(dp$Population)
+levels(dp$Population) <- c("Sacramento", "Tempe", "Sacramento")
+
+# calculate per bird: number of trials participated in (choice = 0, 1)
+participate <- as.data.frame(dp %>% group_by(Experiment, Population, ID, Choice) %>% summarize(n())) #n=number of values in a vector
+colnames(participate)[5] <- c("Count")
+participate <- as.data.frame(participate %>% pivot_wider(names_from=Choice,values_from = "Count"))
+participate = participate[,-7]
+participate$'-1'[which(is.na(participate$'-1'))]<-0 # assign a count of zero to cells where choice is NA
+participate$'0'[which(is.na(participate$'0'))]<-0
+participate$'1'[which(is.na(participate$'1'))]<-0
+
+participate$sum <- participate$'0' + participate$'1'
+
+# calculate per bird: total number of trials offered (choice = 0, 1, or -1)
+participate$total <- participate$'0' + participate$'1' + participate$'-1'
+
+# add the proportion per bird for the summary data sheet
+participate$prop <- participate$sum/participate$total
+
+### Persistence repeatability
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(prop ~ Population + (1|ID), data=participate, weights = total, family = "binomial"), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+#looks very uniform
+
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+#p=0.94 so not over or under dispersed
+
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+#p=0.008 zero inflated ... There are basically no zeros in the data though, so I am not sure why I am getting this.
+
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p = 0.32, data normally distributed. 
+
+plot(simulationOutput)#...there should be no pattern in the data points in the right panel
+# looks good, all tests ns
+
+# REPEATABILITY MODELS
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+pers <- MCMCglmm(cbind(sum,total-sum) ~ Population + (1|ID), data=participate, family = "binomial", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000) #Binomial not a supported distribution for MCMC?
+summary(pers)
+autocorr(pers$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(pers$VCV) #Did random effects converge? Yes
+
+
+#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
+
+repeata <- pers$VCV[,"ID"]/(pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.68
+var(repeata) #0.02
+posterior.mode(repeata) #0.73
+HPDinterval(repeata, 0.95) #0.37-0.92
+
+# Repeatability on the data/observed scale (accounting for fixed effects)
+#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(pers[["Sol"]]), function(i) {
+   var(predict(pers, it=i))  
+}) #estimates for each iteration of the MCMC
+
+repeataF <- (vf+pers$VCV[,"ID"])/(vf+pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted + data scale
+mean(repeataF) #0.69
+posterior.mode(repeataF) #0.79
+HPDinterval(repeataF, 0.95) #0.43-0.95
+
+# Now compare with the raw repeatability (no fixed effects)
+persraw <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+summary(persraw)
+
+repeataraw <- persraw$VCV[,"BirdID"]/(persraw$VCV[,"BirdID"]+persraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeataraw) #0.68
+posterior.mode(repeataraw) #0.72
+HPDinterval(repeataraw, 0.95) #0.40-0.90
+#RESULT: Exp Env = repeatable
+
+
+### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
+colnames(participate)[4]="NP"
+library(rptR)
+p1 = rpt(cbind(sum,NP) ~ Population + (1|ID), grname = "ID", datatype = "Proportion", data=participate, nboot=2000, npermut=300)
+p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
+
+
+
+
 ```
 
 ## DISCUSSION
