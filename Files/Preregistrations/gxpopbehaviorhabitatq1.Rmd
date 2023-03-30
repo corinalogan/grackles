@@ -2628,7 +2628,12 @@ length(tem$sum) #n=20 birds
 
 ### Repeatability of exploration and persistence
 
+
+
 ```{r resltsrepeatability, eval=F, warning=FALSE, results='asis', include=TRUE}
+library(dplyr)
+library(tidyr)
+
 # exploration
 e <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_data_exploration.csv"), header=T, sep=",", stringsAsFactors=F) 
 
@@ -2669,7 +2674,7 @@ colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choic
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 dp$Population <- as.factor(dp$Population)
-levels(dp$Population) <- c("Sacramento", "Tempe", "Sacramento")
+levels(dp$Population) <- c("Woodland", "Tempe", "Woodland")
 
 # calculate per bird: number of trials participated in (choice = 0, 1)
 participate <- as.data.frame(dp %>% group_by(Experiment, Population, ID, Choice) %>% summarize(n())) #n=number of values in a vector
@@ -2716,6 +2721,18 @@ summary(pers)
 autocorr(pers$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(pers$VCV) #Did random effects converge? Yes
 
+#instructions on how to do repeatability with MCMCglmm for binomial data at https://rdrr.io/rforge/rptR/man/rpt.binomGLMM.add.html. Proportion data = multinomial2 distribution
+prior1 = list(R=list(V=1e-10,nu=-1),G=list(G1=list(V=1,nu=1,alpha.mu=0,alpha.V=25^2)))
+pers1 <- MCMCglmm(prop ~ Population + (1|ID), data=participate, family = "multinomial2", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+#NOTE: the preregistered model had Test as the explanatory variable and ID as the random, but it makes more sense to replace Test with Population because we are interested in differences betweent the populations and not in differences between the tests. In making this change, that meant that each bird only had 1 data point, therefore ID could no longer be a random effect and we had to conduct a glm instead as follows in...
+
+### UNREGISTERED ANALYSIS - compare R values with rptR function and Likelihood Ratio Test test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
+colnames(participate)[4]="NP"
+library(rptR)
+p1 = rpt(cbind(sum,NP) ~ Population + (1|ID), grname = "ID", datatype = "Proportion", data=participate, nboot=2000, npermut=300)
+p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
+
+
 
 #Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 
@@ -2745,17 +2762,6 @@ mean(repeataraw) #0.68
 posterior.mode(repeataraw) #0.72
 HPDinterval(repeataraw, 0.95) #0.40-0.90
 #RESULT: Exp Env = repeatable
-
-
-### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
-colnames(participate)[4]="NP"
-library(rptR)
-p1 = rpt(cbind(sum,NP) ~ Population + (1|ID), grname = "ID", datatype = "Proportion", data=participate, nboot=2000, npermut=300)
-p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
-
-
-
-
 ```
 
 ## DISCUSSION
