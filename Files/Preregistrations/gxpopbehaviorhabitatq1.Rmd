@@ -2724,7 +2724,7 @@ autocorr(pers$VCV) #Did random effects converge? Yes
 #instructions on how to do repeatability with MCMCglmm for binomial data at https://rdrr.io/rforge/rptR/man/rpt.binomGLMM.add.html. Proportion data = multinomial2 distribution
 prior1 = list(R=list(V=1e-10,nu=-1),G=list(G1=list(V=1,nu=1,alpha.mu=0,alpha.V=25^2)))
 pers1 <- MCMCglmm(prop ~ Population + (1|ID), data=participate, family = "multinomial2", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
-#NOTE: the preregistered model had Test as the explanatory variable and ID as the random, but it makes more sense to replace Test with Population because we are interested in differences betweent the populations and not in differences between the tests. In making this change, that meant that each bird only had 1 data point, therefore ID could no longer be a random effect and we had to conduct a glm instead as follows in...
+#NOTE: the preregistered model had Test as the explanatory variable and ID as the random, but it makes more sense to replace Test with Population because we are interested in differences between the populations and not in differences between the tests. 
 
 ### UNREGISTERED ANALYSIS - compare R values with rptR function and Likelihood Ratio Test test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
 colnames(participate)[4]="NP"
@@ -2734,34 +2734,7 @@ p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
 
 
 
-#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 
-repeata <- pers$VCV[,"ID"]/(pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) #0.68
-var(repeata) #0.02
-posterior.mode(repeata) #0.73
-HPDinterval(repeata, 0.95) #0.37-0.92
-
-# Repeatability on the data/observed scale (accounting for fixed effects)
-#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
-vf <- sapply(1:nrow(pers[["Sol"]]), function(i) {
-   var(predict(pers, it=i))  
-}) #estimates for each iteration of the MCMC
-
-repeataF <- (vf+pers$VCV[,"ID"])/(vf+pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted + data scale
-mean(repeataF) #0.69
-posterior.mode(repeataF) #0.79
-HPDinterval(repeataF, 0.95) #0.43-0.95
-
-# Now compare with the raw repeatability (no fixed effects)
-persraw <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(persraw)
-
-repeataraw <- persraw$VCV[,"BirdID"]/(persraw$VCV[,"BirdID"]+persraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeataraw) #0.68
-posterior.mode(repeataraw) #0.72
-HPDinterval(repeataraw, 0.95) #0.40-0.90
-#RESULT: Exp Env = repeatable
 ```
 
 ## DISCUSSION
