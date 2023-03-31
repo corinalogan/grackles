@@ -2633,6 +2633,7 @@ length(tem$sum) #n=20 birds
 ```{r resltsrepeatability, eval=F, warning=FALSE, results='asis', include=TRUE}
 library(dplyr)
 library(tidyr)
+library(rptR)
 
 # exploration
 e <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_data_exploration.csv"), header=T, sep=",", stringsAsFactors=F) 
@@ -2745,6 +2746,7 @@ plot(simulationOutput)#...there should be no pattern in the data points in the r
 # looks good, all tests ns
 
 # REPEATABILITY MODELS
+# the prereg says we will use a Poisson distribution, but that is incorrect because this is proportion data. Therefore, a binomial distribution is required. Unfortunately, we were unable to figure out how to get MCMCglmm to work for our proportion response variable. Instead, we used the unregistered analysis (below). I previous articles on the Tempe grackles, the rpt output matches that of MCMCglmm for repeatability analyses, therefore we are confident that this analysis will give us the same results as would the MCMCglmm
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 pers <- MCMCglmm(cbind(sum,total-sum) ~ Population + (1|ID), data=participate, family = "binomial", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000) #Binomial not a supported distribution for MCMC?
@@ -2752,20 +2754,17 @@ summary(pers)
 autocorr(pers$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(pers$VCV) #Did random effects converge? Yes
 
-#instructions on how to do repeatability with MCMCglmm for binomial data at https://rdrr.io/rforge/rptR/man/rpt.binomGLMM.add.html. Proportion data = multinomial2 distribution
+#instructions on how to do repeatability with MCMCglmm for binomial data at https://rdrr.io/rforge/rptR/man/rpt.binomGLMM.add.html. Proportion data = multinomial2 distribution. However, the function rpt.binomGLMM.add() no longer seems to exist so we were not able to implement an MCMCglmm solution
+participate$ID <- as.factor(participate$ID)
 prior1 = list(R=list(V=1e-10,nu=-1),G=list(G1=list(V=1,nu=1,alpha.mu=0,alpha.V=25^2)))
-pers1 <- MCMCglmm(prop ~ Population + (1|ID), data=participate, family = "multinomial2", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+pers1 <- MCMCglmm(cbind(sum,NP) ~ Population + (1|ID), data=participate, family = "multinomial2", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
 #NOTE: the preregistered model had Test as the explanatory variable and ID as the random, but it makes more sense to replace Test with Population because we are interested in differences between the populations and not in differences between the tests. 
 
-### UNREGISTERED ANALYSIS - compare R values with rptR function and Likelihood Ratio Test test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
+### UNREGISTERED ANALYSIS - compare R values with rptR function and Likelihood Ratio Test test to make sure the interpretation of MCMCglmm results is correct ###
 colnames(participate)[4]="NP"
 library(rptR)
 p1 = rpt(cbind(sum,NP) ~ Population + (1|ID), grname = "ID", datatype = "Proportion", data=participate, nboot=2000, npermut=300)
 p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
-
-
-
-
 ```
 
 ## DISCUSSION
