@@ -2644,8 +2644,12 @@ e1 <- subset(e,!(is.na(e["Lat20cm"]))) # We only want data for the Test = Enviro
 e1$BirdID <- as.factor(e1$BirdID)
 e1$Time <- as.factor(e1$Time)
 
+#Only want Edge population (Woodland, CA) grackle data
+e.CA = e1[str_detect(e1$BirdID, "C"),]
+
+
 ### FIGURING OUT DATA STRUCTURE FOR REPEATABILITY ANALYSIS ###
-hist(e1$Lat20cm) 
+hist(e.CA$Lat20cm) 
 # function from Ben Bolker for calculating overdispersion in glmm
 overdisp_fun <- function(model) {
     rdf <- df.residual(model)
@@ -2657,13 +2661,40 @@ overdisp_fun <- function(model) {
 }
  
 
-d1 = glmer(round(Lat20cm) ~ Time + (1|BirdID), data = e1, family = poisson)
+d1 = glmer(round(Lat20cm) ~ (1|BirdID), data = e.CA, family = poisson)
 overdisp_fun(d1) #significantly overdispersed
-d2 = glmer.nb(round(Lat20cm) ~ Time + (1|BirdID), data = e1)
+d2 = glmer.nb(round(Lat20cm) ~ (1|BirdID), data = e.CA)
 overdisp_fun(d2) #not overdispersed
 
-## Deviation - our dependent variable is overdispersed and thus a Poisson model is not appropriate. We used the negative binomial model instead.
+## Deviation - our dependent variable is overdispersed and thus a Poisson model is not appropriate. Negative binomial not overdispersed with this funtion, but fails data checks below.
 
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(Lat20cm) ~ Time + (1|BirdID), data=e.CA), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+#looks okay
+
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+#p=0.90 so not over or under dispersed
+
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+#p=1 not zero inflated 
+
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p = 0.01, data not normally distributed. 
+
+plot(simulationOutput)#...there should be no pattern in the data points in the right panel
+# does not look good
+
+# REPEATABILITY MODELS... in process for CA ExpEnv...
+library(MCMCglmm)
+# prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+# expl <- MCMCglmm( ~  + (1|BirdID), data=e.CA, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000) 
+# summary(expl)
+# autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1.
+# autocorr(expl$VCV) #Did random effects converge? 
+# 
 
 
 # persistence
