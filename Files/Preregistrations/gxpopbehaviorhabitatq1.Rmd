@@ -2649,53 +2649,66 @@ e1$Time <- as.factor(e1$Time)
 e.CA = e1[str_detect(e1$BirdID, "C"),]
 
 
-### FIGURING OUT DATA STRUCTURE FOR REPEATABILITY ANALYSIS ###
-hist(e.CA$Lat20cm) 
-# function from Ben Bolker for calculating overdispersion in glmm
-overdisp_fun <- function(model) {
-    rdf <- df.residual(model)
-    rp <- residuals(model,type="pearson")
-    Pearson.chisq <- sum(rp^2)
-    prat <- Pearson.chisq/rdf
-    pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
-    c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
-}
- 
+## Both Lat20cm and DurationNear fail some of the data checks below as Gaussian, Poisson, or negative binomial.
+## For either Lat20cm or DurationNear, over 50% of data are zeros. Perhaps a binary/logistic model is better?
+e.CA$binLat = ifelse(e.CA$Lat20cm == 2701, 0, 1)
 
-d1 = glmer(round(Lat20cm) ~ (1|BirdID), data = e.CA, family = poisson)
-overdisp_fun(d1) #significantly overdispersed
-d2 = glmer.nb(round(Lat20cm) ~ (1|BirdID), data = e.CA)
-overdisp_fun(d2) #not overdispersed
-
-## Deviation - our dependent variable is overdispersed and thus a Poisson model is not appropriate. Negative binomial not overdispersed with this funtion, but fails data checks below.
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(Lat20cm) ~ Time + (1|BirdID), data=e.CA), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(binLat ~ Time + (1|BirdID), family = "binomial", data=e.CA), n=1500) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-#looks okay
+#looks good
 
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-#p=0.90 so not over or under dispersed
+#p=0.61 so not over or under dispersed
 
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
 #p=1 not zero inflated 
 
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
-# p = 0.01, data not normally distributed. 
+# p=0.33, data normally distributed. 
 
 plot(simulationOutput)#...there should be no pattern in the data points in the right panel
-# does not look good
+# looks good
+## DEVIATION - use binomial model instead of poisson
 
-# REPEATABILITY MODELS... in process for CA ExpEnv...
+# REPEATABILITY MODELS
 library(MCMCglmm)
-# prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-# expl <- MCMCglmm( ~  + (1|BirdID), data=e.CA, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000) 
-# summary(expl)
-# autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1.
-# autocorr(expl$VCV) #Did random effects converge? 
-# 
+prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+expl <- MCMCglmm(binLat ~ Time, random=~ BirdID, data=e.CA, verbose=F, family = "categorical", prior=prior, nitt=1000000, thin=500, burnin=10000) 
+summary(expl) # Had to increase nitt, etc. to get fixed and random effects to converge
+autocorr(expl$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(expl$VCV) #Did random effects converge? Yes
+
+#Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
+
+repeata <- expl$VCV[,"BirdID"]/(expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # 0.77
+var(repeata) # 0.03
+posterior.mode(repeata) # 0.89
+HPDinterval(repeata, 0.95) # 0.4-1.0
+
+# Repeatability on the data/observed scale (accounting for fixed effects)
+#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(expl[["Sol"]]), function(i) {
+   var(predict(expl, it=i))  
+}) #estimates for each iteration of the MCMC
+
+repeataF <- (vf+expl$VCV[,"BirdID"])/(vf+expl$VCV[,"BirdID"]+expl$VCV[,"units"]) #latent scale adjusted + data scale
+mean(repeataF) # 0.77
+posterior.mode(repeataF) # 0.89
+HPDinterval(repeataF, 0.95) # 0.41-0.98
+
+### UNREGISTERED ANALYSIS - compare R values with rptR function and Likelihood Ratio Test test to get a p-value and make sure the interpretation of MCMCglmm results is correct ###
+library(rptR)
+exp2 = rpt(binLat ~ Time + (1|BirdID), grname = "BirdID", datatype = "Binary", data=e.CA, nboot=8000, npermut=800)
+exp2 # R = 0.69, CI: 0.17-0.99, p = 0.001
+#qualitatively similar results between frequentist and bayesian analysis
+
+#RESULT: Exp Env = Repeatable
+
 
 
 # persistence
@@ -2751,13 +2764,14 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 pers <- MCMCglmm(cbind(sum,total-sum) ~ Population + (1|ID), data=participate, family = "binomial", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000) #Binomial not a supported distribution for MCMC?
 summary(pers)
-autocorr(pers$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
-autocorr(pers$VCV) #Did random effects converge? Yes
+autocorr(pers$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. 
+autocorr(pers$VCV) #Did random effects converge? 
 
 #instructions on how to do repeatability with MCMCglmm for binomial data at https://rdrr.io/rforge/rptR/man/rpt.binomGLMM.add.html. Proportion data = multinomial2 distribution. However, the function rpt.binomGLMM.add() no longer seems to exist so we were not able to implement an MCMCglmm solution
 participate$ID <- as.factor(participate$ID)
 prior1 = list(R=list(V=1e-10,nu=-1),G=list(G1=list(V=1,nu=1,alpha.mu=0,alpha.V=25^2)))
 pers1 <- MCMCglmm(cbind(sum,NP) ~ Population + (1|ID), data=participate, family = "multinomial2", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+
 #NOTE: the preregistered model had Test as the explanatory variable and ID as the random, but it makes more sense to replace Test with Population because we are interested in differences between the populations and not in differences between the tests. 
 
 ### UNREGISTERED ANALYSIS - compare R values with rptR function and Likelihood Ratio Test test to make sure the interpretation of MCMCglmm results is correct ###
