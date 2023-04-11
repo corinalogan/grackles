@@ -2783,8 +2783,226 @@ p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
 
 
 ```{r resltsbtgr, eval=F, warning=FALSE, results='asis', include=TRUE}
+##### Flexibility
+library(dplyr)
+
+# We first obtain values for phi and lambda from the raw reversal data
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+## We need to perform some modifications on these data to set them up for the STAN model
+
+### remove -1 (did not participate in this trial) from the Correct column
+d0 <- d[!d$Correct==-1,]
+
+### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+d0$Site <- as.factor(d0$Site)
+levels(d0$Site) <- c("Woodland", "Tempe", "Woodland")
+
+### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
+d0$id <- sapply(1:nrow(d0), function (i) which(unique(d0$ID) == d0$ID[i]) )
+d0 <- d0[with(d0, order(d0$id)), ]
+d0$Choice <- NA
+for (i in 1: nrow(d0)) {
+  if (d0$Reversal[i] == 0){
+    if (d0$Correct[i] == 1){
+      d0$Choice[i] <- 1
+    } else {
+      d0$Choice[i] <- 2
+    } 
+  } else {
+    if (d0$Correct[i] == 1){
+      d0$Choice[i] <- 2
+    } else {
+      d0$Choice[i] <- 1
+    } 
+  }
+}
+
+d0$Reversal <- as.integer(d0$Reversal)
+
+# We can now extract the relevant data for the STAN model. In the model, we want to estimate the phi and lambda for each individual that was tested based on their choices during the initial learning phase (R0) and the reversal learning phase (R1). Run a STAN model with all sites, estimating both means of phi and lambda for each site as well as each individual's phi and lambda
+
+## Exclude columns that will not be analyzed
+d <- select(d0,Site,id,Reversal,Trial,Correct,Choice)
+
+## We set up the data for the model
+dat <- as.list(d)
+dat$N <- nrow(d)
+dat$N_id <- length(unique(d$id))
+dat$N_exp <- length(unique(d$Site))
+dat$Choice <- as.numeric(as.factor(d$Choice))
+
+## This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose
+reinforcement_model_id_site_nonzeroattraction <- "
+data{
+   int N;
+   int N_id;
+   int N_exp;
+   int id[N];
+   int Site[N];
+   int Trial[N];
+   int Choice[N];
+   int Correct[N];
+}
+
+parameters{
+  real logit_phi;
+  real log_L;
+
+  // Varying effects clustered on individual
+  matrix[2,N_id] z_ID;
+  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
+  cholesky_factor_corr[2] Rho_ID;
+
+  // Varying effects clustered on site
+  matrix[2,N_exp] z_EXP;
+  vector<lower=0>[2] sigma_EXP;
+  cholesky_factor_corr[2] Rho_EXP;
+}
+
+transformed parameters{
+matrix[N_id,2] v_ID; // varying effects on individuals
+matrix[N_exp,2] v_EXP; // varying effects on site
+
+v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
+v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+}
+
+model{
+matrix[N_id,2] A; // attraction matrix
+
+logit_phi ~  normal(0,1);
+log_L ~  normal(0,1);
+
+// varying effects
+to_vector(z_ID) ~ normal(0,1);
+sigma_ID ~ exponential(1);
+Rho_ID ~ lkj_corr_cholesky(4);
+
+to_vector(z_EXP) ~ normal(0,1);
+sigma_EXP ~ exponential(1);
+Rho_EXP ~ lkj_corr_cholesky(4);
+
+// initialize attraction scores
+for ( i in 1:N_id ) {
+A[i,1] = 0.1; A[i,2] = 0.1;
+}
+
+// loop over Choices
+for ( i in 1:N ) {
+vector[2] pay;
+vector[2] p;
+real L;
+real phi;
+
+// first, what is log-prob of observed choice
+L =  exp(log_L + v_ID[id[i],1]+ v_EXP[Site[i],1]);
+p = softmax(L*A[id[i],1:2]' );
+Choice[i] ~ categorical( p );
+
+// second, update attractions conditional on observed choice
+phi =  inv_logit(logit_phi + v_ID[id[i],2]+ v_EXP[Site[i],2]);
+pay[1:2] = rep_vector(0,2);
+pay[ Choice[i] ] = Correct[i];
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]);
+}//i
+}
+"
+
+
+# RUN the model, but STAN was acting up so need to run it with cmdstan (these instructions were copied from g_flexmanip2post.Rmd starting at line 342)
+library(cmdstanr)
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+# access the output file created by the model running the reinforcement model
+write(reinforcement_model_id_site_nonzeroattraction,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+d$Reversal<-as.numeric(as.factor(d$Reversal))
+
+# RUN the model
+fit <- mod$sample(
+  data = dat,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+library(posterior)
 library(rethinking)
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZBTGR.csv"), header=T, sep=",", stringsAsFactors=F) 
+drawsarray<-fit$draws()
+drawsdf<-as_draws_df(drawsarray)
+drawsdf<-data.frame(drawsdf)
+
+# Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi / lambda. For this, we calculate all pairwise differences in the posterior estimates of the sites.
+# We extract the estimated phi and lambda values for each bird from the STAN model. v_ID.x.2 = offset from the mean in phi for individual x, v_ID.x.1 = same but for lambda. v_EXP.x.2 = offset from the mean in phi for individuals at site x, v_EXP.x.1 = same for lambda
+
+drawsdf$diffSiteLambda <- drawsdf$v_EXP.2.1. - drawsdf$v_EXP.1.1. #contrasting site 2 with site 1
+drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site 2 with site 1
+look <- precis(drawsdf) #there are no differences between sites in either phi or lambda
+
+# CONVERT the means for phi and lambda for each site to the actual scale to see what the actual difference is and compare with our power analysis
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.78
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301
+# Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
+
+# convert the posterior as well
+site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #4.78
+site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #4.52
+site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) #0.0306
+site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) #0.0301
+
+# and run a contrast on this scale too to get the range
+lambdap <- precis(site1lambdap - site2lambdap)
+phip <- precis(site1phip - site2phip)
+# the site differences are unlikely to be larger than 0.1 for phi and 1.4 for lambda
+
+
+# to calculate the values for each individual, we need to take the overall mean across all inds from both sites, the offset for the site that this individual belongs to, and these first two values give us the average value for individuals in that site. Then add the offset for individuals at the site to get each individual's value
+indlambdasite=NA
+indphisite=NA
+individualsatsite = data.frame( d %>% group_by(Site) %>% summarise(unique(id))) #assign each individual to its associated site
+
+for (i in 1:dat$N_id){
+indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+148]) + ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.)))
+
+indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+105])+ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.2.),mean(drawsdf$v_EXP.2.2.)))
+}
+
+# make a dataframe with the values in the actual scale associated with the bird's names and sites
+individualsatsite$phi=indphisite
+individualsatsite$lambda=indlambdasite
+
+originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
+individualsatsite$name=originalid$unique.ID. #this is the final dataframe
+
+
+# PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
+wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
+#           mean   sd 5.5% 94.5%    histogram
+#phi         0.03 0.01 0.02  0.05     ▃▂▇▇▁▃▂▁
+#lambda      5.84 5.96 1.79 12.00       ▇▂▁▁▁▁
+
+te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
+#            mean   sd  5.5% 94.5%  histogram
+#phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
+#lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
+
+
+
+
+
+##### Innovativeness and persistence
+library(rethinking)
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
 
@@ -2834,7 +3052,6 @@ precis(post1,depth=2)
 
 # PERSISTENCE
 # The bespoke models require the packages rstan and rethinking which may not be available to download from CRAN. See instructions to get these packages here: https://www.rdocumentation.org/packages/rethinking/versions/2.13
-library(rethinking)
 library(rstan)
 library(Rcpp)
 library(dplyr)
@@ -2847,7 +3064,7 @@ colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choic
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 dp$Population <- as.factor(dp$Population)
-levels(dp$Population) <- c("Woodland", "Tempe", "Woodland")
+levels(dp$Population) <- c("BTGR","Woodland", "Tempe", "Woodland")
 
 # calculate per bird: number of trials participated in (choice = 0, 1)
 participate <- as.data.frame(dp %>% group_by(Population, ID, Choice) %>% summarize(n())) #n=number of values in a vector
@@ -2871,27 +3088,35 @@ datper <- list( participated = as.integer(participate$sum),
                   totaltrials = as.integer(participate$total),
                   site = as.integer(participate$Population) )
 
-m1<-ulam(
+mpbtgr <-ulam(
   alist(
     participated ~ dbinom( totaltrials , p ) , 
     logit(p) <- a[site], 
     a[site] ~ dnorm (0,1.5)
     ) , data=datper , chains=4 )
 
-#Compute pairwise contrasts to compare sites 1 and 2
-post1 <- extract.samples(m1) 
+#Compute pairwise contrasts to compare sites: 1=BTGR, 2=Woodland, 3=Tempe
+postp <- extract.samples(mpbtgr) 
 
 #Convert to the measured scale (the proportion of loci solved)
-post1$a[,1] <- inv_logit(post1$a[,1])
-post1$a[,2] <- inv_logit(post1$a[,2])
+postp$a[,1] <- inv_logit(postp$a[,1])
+postp$a[,2] <- inv_logit(postp$a[,2])
+postp$a[,3] <- inv_logit(postp$a[,3])
 
 #Run the contrast
-post1$diff_12 <- (post1$a[,1]) - (post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
+postp$diff_12 <- (postp$a[,1]) - (postp$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+postp$diff_13 <- (postp$a[,1]) - (postp$a[,3]) #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
+precis(postp,depth=2) 
+#         mean   sd  5.5% 94.5%      histogram
+#a[1]     0.69 0.02  0.66  0.72 ▁▁▁▁▂▃▇▇▇▅▃▁▁▁
+#a[2]     0.78 0.01  0.77  0.79    ▁▁▁▂▅▇▇▃▁▁▁
+#a[3]     0.79 0.01  0.78  0.80    ▁▁▁▁▂▅▇▅▂▁▁
+#diff_12 -0.10 0.02 -0.13 -0.06       ▁▁▂▇▇▃▁▁
+#diff_13 -0.10 0.02 -0.13 -0.06      ▁▁▁▃▇▇▃▁▁
+# BTGR are less persistent than the two GTGR populations
 
 
-
-# table of model outputs
+# TABLE of model outputs
 library(kableExtra)
 btgrtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_BTGRmodeloutputs.csv"), header=F, sep=",", stringsAsFactors=F)
 exptable <- data.frame(btgrtable)
