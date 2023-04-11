@@ -2370,6 +2370,9 @@ d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master
 
 colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
 
+# remove BTGR
+d <- d[!d$Population=="BTGR",]
+
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d$Population <- as.factor(d$Population)
 levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
@@ -2460,6 +2463,9 @@ library(Rcpp)
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
+
+# remove BTGR
+d <- d[!d$Population=="BTGR",]
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d$Population <- as.factor(d$Population)
@@ -2796,7 +2802,7 @@ d0 <- d[!d$Correct==-1,]
 
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d0$Site <- as.factor(d0$Site)
-levels(d0$Site) <- c("Woodland", "Tempe", "Woodland")
+levels(d0$Site) <- c("BTGR","Woodland", "Tempe", "Woodland")
 
 ### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
 d0$id <- sapply(1:nrow(d0), function (i) which(unique(d0$ID) == d0$ID[i]) )
@@ -2945,25 +2951,48 @@ drawsdf<-data.frame(drawsdf)
 
 drawsdf$diffSiteLambda <- drawsdf$v_EXP.2.1. - drawsdf$v_EXP.1.1. #contrasting site 2 with site 1
 drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site 2 with site 1
+drawsdf$diffSiteLambda <- drawsdf$v_EXP.3.1. - drawsdf$v_EXP.1.1. #contrasting site 3 with site 1
+drawsdf$diffSitePhi <- drawsdf$v_EXP.3.2. - drawsdf$v_EXP.1.2. #contrasting site 3 with site 1
 look <- precis(drawsdf) #there are no differences between sites in either phi or lambda
 
 # CONVERT the means for phi and lambda for each site to the actual scale to see what the actual difference is and compare with our power analysis
-site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.78
-site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52
-site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306
-site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.97 BTGR
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.80 Woodland
+site3lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.3.1.)) #4.60 Tempe
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0296 BTGR
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0307 Woodland
+site3phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.3.2.)) #0.0298 Tempe
 # Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
 # convert the posterior as well
-site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #4.78
-site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #4.52
-site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) #0.0306
-site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) #0.0301
+site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) 
+site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) 
+site3lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.3.1.)) 
+site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) 
+site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) 
+site3phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.3.2.)) 
 
-# and run a contrast on this scale too to get the range
+# BTGR vs Woodland: and run a contrast on this scale too to get the range
 lambdap <- precis(site1lambdap - site2lambdap)
+# mean   sd  5.5% 94.5%  histogram
+#site1lambdap...site2lambdap 0.23 0.97 -1.06  1.97 ▁▁▇▇▂▁▁▁▁▁
+#diff crosses zero so no site differences
+
 phip <- precis(site1phip - site2phip)
-# the site differences are unlikely to be larger than 0.1 for phi and 1.4 for lambda
+# mean   sd  5.5% 94.5%   histogram
+#site1phip...site2phip    0 0.01 -0.01  0.01 ▁▁▂▇▇▁▁▁▁▁▁
+#diff crosses zero so no site differences
+
+# BTGR vs Tempe
+lambdaT <- precis(site1lambdap - site3lambdap)
+# mean   sd  5.5% 94.5%  histogram
+#site1lambdap...site3lambdap 0.43 1.01 -0.79  2.32 ▁▁▅▇▂▁▁▁▁▁
+#diff crosses zero so no site differences
+
+phiT <- precis(site1phip - site3phip)
+# mean   sd  5.5% 94.5%   histogram
+#site1phip...site3phip    0 0.01 -0.01  0.01 ▁▁▁▇▇▁▁▁▁▁▁
+#diff crosses zero so no site differences
 
 
 # to calculate the values for each individual, we need to take the overall mean across all inds from both sites, the offset for the site that this individual belongs to, and these first two values give us the average value for individuals in that site. Then add the offset for individuals at the site to get each individual's value
@@ -2984,6 +3013,14 @@ individualsatsite$lambda=indlambdasite
 originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
 individualsatsite$name=originalid$unique.ID. #this is the final dataframe
 
+## BTGR phis and lambdas in individualsatsite:
+#      Site unique.id.        phi   lambda
+#1     BTGR         44 0.03957788 6.038243
+#2     BTGR         45 0.02231290 3.183476
+#3     BTGR         46 0.03536739 4.675341
+#4     BTGR         47 0.02461878 5.535139
+#5     BTGR         48 0.02827357 3.094296 
+
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
 wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
@@ -2996,8 +3033,10 @@ te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 #phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
 #lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
 
-
-
+btgr <- precis(individualsatsite[individualsatsite$Site=="BTGR",])
+#            mean   sd  5.5% 94.5%  histogram
+#phi         0.03 0.01  0.02  0.04  ▇▇▁▇▁▁▇▁▇
+#lambda      4.51 1.34  3.11  5.93    ▇▁▁▃▁▃▃
 
 
 ##### Innovativeness and persistence
