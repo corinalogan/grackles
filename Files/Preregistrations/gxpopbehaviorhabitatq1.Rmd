@@ -2540,8 +2540,6 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 
 ```{r resltspersist, eval=F, warning=FALSE, results='asis', include=TRUE}
 # The bespoke models require the packages rstan and rethinking which may not be available to download from CRAN. See instructions to get these packages here: https://www.rdocumentation.org/packages/rethinking/versions/2.13
-
-
 library(rethinking)
 library(rstan)
 library(Rcpp)
@@ -2786,34 +2784,101 @@ p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
 
 ```{r resltsbtgr, eval=F, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZBTGR.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d$Population <- as.factor(d$Population)
-levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
+levels(d$Population) <- c("BTGR","Woodland", "Tempe", "Woodland")
 
+
+# INNOVATIVENESS
 # remove the birds who had no data for this experiment
-d <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
-
-# there were two birds (Kau and Galandra) where some of the doors accidentally fell shut during habituation, therefore we had to remove these doors from their test. This ended up with Kau and Galandra only having the opportunity to solve 2 or 3 doors during their test. To make their data comparable to the other birds, we added a column "MAB max loci available" to the data sheet and updated the model to accommodate a 2 column response variable. 
-#MABsolved 2/2 and 3/3? n=38 with them in, they are from Sac, which has n=24 with them in
+dm <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
 
 # set up data sheet for model
-dat <- list(locisolved = as.numeric(d$MABsolved),
-            maxloci = as.numeric(d$MABmax),
-            site = as.factor(d$Population)
+dat <- list(locisolved = as.numeric(dm$MABsolved),
+            maxloci = as.numeric(dm$MABmax),
+            site = as.factor(dm$Population)
               )
 
 # run the model
-m1 <- ulam( alist(
+## rebuild_cmdstan() #NOTE: run this if you get an error about a PCH file https://discourse.mc-stan.org/t/struggling-to-get-cmdstan-working-on-mac-os-big-sur/19774/4
+mb <- ulam( alist(
   locisolved ~ dbinom(maxloci,p) , #p=probability of solving a locus
   logit(p) <- a[site] , #site=random effect
   a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
-) , data=dat , chains=4 , log_lik=TRUE )
+) , data=dat , chains=4 , log_lik=TRUE)
 
-#Compute pairwise contrasts: site 1 = Sacramento, site 2 = Tempe
+#Compute pairwise contrasts: site 1 = BTGR, site 2 = Woodland, site 3 = Tempe
+post1 <- extract.samples(mb) 
+
+#Convert to the measured scale (the proportion of loci solved)
+post1$a[,1] <- inv_logit(post1$a[,1])
+post1$a[,2] <- inv_logit(post1$a[,2])
+post1$a[,3] <- inv_logit(post1$a[,3])
+
+#Run the contrast
+post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+post1$diff_13 <- post1$a[,1] - post1$a[,3] #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
+precis(post1,depth=2)
+#         mean   sd  5.5% 94.5%       histogram
+#a[1]     0.36 0.11  0.19  0.53  ▁▁▂▃▅▇▇▅▃▂▁▁▁▁
+#a[2]     0.76 0.04  0.69  0.83 ▁▁▁▁▁▂▃▅▇▇▇▅▂▁▁
+#a[3]     0.50 0.06  0.40  0.60        ▁▁▅▇▇▃▁▁
+#diff_12 -0.41 0.12 -0.59 -0.22        ▁▁▃▇▇▃▁▁
+#diff_13 -0.14 0.13 -0.34  0.07        ▁▂▅▇▅▂▁▁
+#there is no difference between innovativeness in BTGR and GTGR in Tempe, but BTGR is less innovative than GTGR in Woodland
+
+
+# PERSISTENCE
+# The bespoke models require the packages rstan and rethinking which may not be available to download from CRAN. See instructions to get these packages here: https://www.rdocumentation.org/packages/rethinking/versions/2.13
+library(rethinking)
+library(rstan)
+library(Rcpp)
+library(dplyr)
+library(tidyr)
+
+# calculate persistence: need a column for number of trials a bird participated in and another column for total number of trials offered
+dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_data_persist.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choice","Notes")
+
+# combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+dp$Population <- as.factor(dp$Population)
+levels(dp$Population) <- c("Woodland", "Tempe", "Woodland")
+
+# calculate per bird: number of trials participated in (choice = 0, 1)
+participate <- as.data.frame(dp %>% group_by(Population, ID, Choice) %>% summarize(n())) #n=number of values in a vector
+colnames(participate)[4] <- c("Count")
+participate <- as.data.frame(participate %>% pivot_wider(names_from=Choice,values_from = "Count"))
+participate$sum <- participate$'0' + participate$'1'
+
+# calculate per bird: total number of trials offered (choice = 0, 1, or -1)
+total <- as.data.frame(dp %>% group_by(Population, ID) %>% summarize(n())) #n=number of values in a vector
+participate$total <- total$`n()`
+
+# add the proportion per bird for the summary data sheet
+participate$prop <- participate$sum/participate$total
+
+#remove NAs from the variables that will be in the model
+participate <- subset(participate,!(is.na(participate["sum"])))
+participate <- subset(participate,!(is.na(participate["total"])))
+
+#RUN THE MODEL
+datper <- list( participated = as.integer(participate$sum),
+                  totaltrials = as.integer(participate$total),
+                  site = as.integer(participate$Population) )
+
+m1<-ulam(
+  alist(
+    participated ~ dbinom( totaltrials , p ) , 
+    logit(p) <- a[site], 
+    a[site] ~ dnorm (0,1.5)
+    ) , data=datper , chains=4 )
+
+#Compute pairwise contrasts to compare sites 1 and 2
 post1 <- extract.samples(m1) 
 
 #Convert to the measured scale (the proportion of loci solved)
@@ -2821,17 +2886,18 @@ post1$a[,1] <- inv_logit(post1$a[,1])
 post1$a[,2] <- inv_logit(post1$a[,2])
 
 #Run the contrast
-post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post1,depth=2) #look at the last row: diff_12
+post1$diff_12 <- (post1$a[,1]) - (post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
+
 
 
 # table of model outputs
 library(kableExtra)
-exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_TableInnov.csv"), header=F, sep=",", stringsAsFactors=F)
-exptable <- data.frame(exptable)
-colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+btgrtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_BTGRmodeloutputs.csv"), header=F, sep=",", stringsAsFactors=F)
+exptable <- data.frame(btgrtable)
+colnames(btgrtable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
-knitr::kable(exptable) %>%
+knitr::kable(btgrtable) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
