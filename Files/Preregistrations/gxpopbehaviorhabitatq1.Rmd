@@ -121,9 +121,9 @@ We stopped collecting data on wild-caught great-tailed grackles once we complete
 
   - Experimental protocols are online [here](https://docs.google.com/document/d/1oqucJ4mH-glh9Hv9JaiDSyhEGi0yVpMuqqzqR2IwQeA/edit?usp=sharing).
   
-  - **Flexibility** protocol (from @logan2019flexmanip) using reversal learning with color tubes. Grackles are first habituated to a yellow tube and trained to search for hidden food. A light gray tube and a dark gray tube are placed on the table or floor: one color always contains a food reward (not visible by the bird) while the other color never contains a reward. The bird is allowed to choose one tube per trial. An individual is considered to have a preference if it chose the rewarded option at least 85% of the time (17/20 correct) in the most recent 20 trials (with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). We use a sliding window in 1-trial increments to calculate whether they passed after their first 20 trials. Once a bird learns to prefer one color, the contingency is reversed: food is always in the other color and never in the previously rewarded color. The flexibility measure is how many trials it takes them to reverse their color preference using the same passing criterion.
+  - **Flexibility** protocol [from @logan2019flexmanip] using reversal learning with color tubes. Grackles are first habituated to a yellow tube and trained to search for hidden food. A light gray tube and a dark gray tube are placed on the table or floor: one color always contains a food reward (not visible by the bird) while the other color never contains a reward. The bird is allowed to choose one tube per trial. An individual is considered to have a preference if it chose the rewarded option at least 85% of the time (17/20 correct) in the most recent 20 trials (with a minimum of 8 or 9 correct choices out of 10 on the two most recent sets of 10 trials). We use a sliding window in 1-trial increments to calculate whether they passed after their first 20 trials. Once a bird learns to prefer one color, the contingency is reversed: food is always in the other color and never in the previously rewarded color. The flexibility measure is how many trials it takes them to reverse their color preference using the same passing criterion.
   
-  - **Innovativeness** protocol (from @logan2019flexmanip and based on the experimental design by @auersperg_flexibility_2011) using a multi-access log. Grackles are first habituated to the log apparatus with all of the doors locked open and food inside each locus. After habituation, the log, which has four ways of accessing food (pull drawer, push door, lift door up, swing door out), is placed on the ground and grackles are allowed to attempt to solve or successfully solve one option per trial. Once a bird has successfully solved an option three times, it becomes non-functional (the door is locked open and there is no food at that locus). The experiment ends when all four loci become non-functional, if a bird does not come to the ground within 10 min in three consecutive test sessions, or if a bird does not obtain the food within 10 min (or 15 min if the bird was on the ground at 10 min) in three consecutive test sessions.
+  - **Innovativeness** protocol [from @logan2019flexmanip and based on the experimental design by @auersperg_flexibility_2011] using a multi-access log. Grackles are first habituated to the log apparatus with all of the doors locked open and food inside each locus. After habituation, the log, which has four ways of accessing food (pull drawer, push door, lift door up, swing door out), is placed on the ground and grackles are allowed to attempt to solve or successfully solve one option per trial. Once a bird has successfully solved an option three times, it becomes non-functional (the door is locked open and there is no food at that locus). The experiment ends when all four loci become non-functional, if a bird does not come to the ground within 10 min in three consecutive test sessions, or if a bird does not obtain the food within 10 min (or 15 min if the bird was on the ground at 10 min) in three consecutive test sessions.
   
   - **Persistence** is measured as the proportion of trials participated in during the flexibility and innovativeness experiments (after habituation, thus it is not confounded with neophobia). The higher the number, the more persistent they are. This measure indicates that those birds who do not participate as often are less persistent in terms of their persistence with engaging with the task. We generally offer a grackle the chance to participate in a trial for 5 min. If they don't participate within that time, we record -1 in the data sheet, the apparatus is removed and the trial is re-attempted later. 
   
@@ -2782,6 +2782,58 @@ p1 #Repeatable at R = 0.24, p = 0.03, CI: 0.03-0.46
 ```
 
 ## DISCUSSION
+
+
+```{r resltsbtgr, eval=F, warning=FALSE, results='asis', include=TRUE}
+library(rethinking)
+d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
+
+# combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+d$Population <- as.factor(d$Population)
+levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
+
+# remove the birds who had no data for this experiment
+d <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
+
+# there were two birds (Kau and Galandra) where some of the doors accidentally fell shut during habituation, therefore we had to remove these doors from their test. This ended up with Kau and Galandra only having the opportunity to solve 2 or 3 doors during their test. To make their data comparable to the other birds, we added a column "MAB max loci available" to the data sheet and updated the model to accommodate a 2 column response variable. 
+#MABsolved 2/2 and 3/3? n=38 with them in, they are from Sac, which has n=24 with them in
+
+# set up data sheet for model
+dat <- list(locisolved = as.numeric(d$MABsolved),
+            maxloci = as.numeric(d$MABmax),
+            site = as.factor(d$Population)
+              )
+
+# run the model
+m1 <- ulam( alist(
+  locisolved ~ dbinom(maxloci,p) , #p=probability of solving a locus
+  logit(p) <- a[site] , #site=random effect
+  a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
+) , data=dat , chains=4 , log_lik=TRUE )
+
+#Compute pairwise contrasts: site 1 = Sacramento, site 2 = Tempe
+post1 <- extract.samples(m1) 
+
+#Convert to the measured scale (the proportion of loci solved)
+post1$a[,1] <- inv_logit(post1$a[,1])
+post1$a[,2] <- inv_logit(post1$a[,2])
+
+#Run the contrast
+post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post1,depth=2) #look at the last row: diff_12
+
+
+# table of model outputs
+library(kableExtra)
+exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_TableInnov.csv"), header=F, sep=",", stringsAsFactors=F)
+exptable <- data.frame(exptable)
+colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+
+knitr::kable(exptable) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+```
 
 We conducted behavioral experiments with great-tailed grackles from two populations: an older population in the middle of the expansion front (Tempe, Arizona), and a more recent population on the northern edge of their expansion in Woodland/Sacramento, California. We found that the edge population was more innovative and less exploratory than the population in the middle of the expansion front, and that there were no population differences in behavioral flexibility or persistence. This supports the hypothesis that changes in particular behavioral traits are associated with this species' rapid geographic range expansion. Flexibility [using serial reversals in the Tempe population; @mccune2022flexmanip], exploration [Tempe: @mccune2019exploration; Woodland/Sacramento: reported here], and persistence (Woodland/Sacramento: reported here) is repeatable, which validates that these are stable traits that can be meaningfully compared.
 
