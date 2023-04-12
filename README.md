@@ -74,18 +74,12 @@
 
 # The Grackle Project
 
-Many experiments will be conducted over the next several years and I post the **reproducible manuscripts** (.Rmd files including text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions. It starts off as a **PREREGISTRATION** where I list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected. In most cases, the preregistration will undergo pre-study peer review at PCI Ecology, then the study will be conducted, and the resulting articles will undergo post-study peer review at PCI Ecology.
+Many experiments have been and are being conducted with grackles. We post the **reproducible manuscripts** (.Rmd files including text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions. It starts off as a **REGISTERED REPORT** where we list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected. The registered report undergoes pre-study peer review at PCI Registered Reports, then the study is conducted, and the resulting articles undergo post-study peer review at PCI Registered Reports.
 
 The version is noted in the Commit comment, and the different versions can be seen in the History of the file of interest. Following the version history of ONE file allows one to track how this piece of work has changed through the entire investigation.
 
-# 5-year Project Overview
-
-<img src="./Files/GrackleProjectTimeline.png" width=500>
-
-The same individuals will experience the experiments listed in each column (i.e., the same ~32 individuals in the left column (Years 1 and 2) will experience numbers 1-5 and A-D, and the same ~32 individuals in the right column (Years 3-5) will experience I-IV, plus number 5 and A-D). Year 1 started in September 2018.
-
 ### License
 
-[CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/legalcode): share alike and attribute the original source using the citations above
+[CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode): attribute the original source using the citations above
 
 [![DOI](https://zenodo.org/badge/109032304.svg)](https://zenodo.org/badge/latestdoi/109032304)
