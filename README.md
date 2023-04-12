@@ -1,10 +1,8 @@
-# Table of Contents
-
 *Click the article **title** to be taken directly to that page. The **.Rmd** file is a version-tracked reproducible manuscript*
 
 &ast; = undergraduate co-author, ^ = this article underwent pre- and post-study peer review
 
-### Articles
+## Articles
 
  - ^Summers J, Lukas D, Logan CJ, Chen N. 2023. **[The role of climate change and niche shifts in divergent range dynamics of a sister-species pair](https://doi.org/10.24072/pcjournal.248)**. doi: 10.24072/pcjournal.248. [Data](https://knb.ecoinformatics.org/view/urn%3Auuid%3A60291cb3-139e-43e2-ac8a-3182993b2e3f), [GitHub repository](https://github.com/jtsummers53/grackle_SDM_project) with code. [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitatPassedPreStudyPeerReview16Dec2021.pdf), [pre-study](https://doi.org/10.24072/pci.ecology.100062) and [post-study](https://doi.org/10.24072/pci.ecology.100424) peer review history.
  - Pacheco MA, Ferreira FC, Logan CJ, McCune KB, MacPherson MP, Albino Miranda S, Santiago-Alarcon D, Escalante AA. 2022. **[Great-tailed grackles (*Quiscalus mexicanus*) as a tolerant host of avian malaria parasites](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0268161)**. doi: https://doi.org/10.1371/journal.pone.0268161
@@ -14,18 +12,18 @@
  - Seitz BM, McCune KB, MacPherson M, Bergeron LM, Blaisdell AP, Logan CJ. 2021. **[Using touchscreen equipped operant chambers to study comparative cognition. Benefits, limitations, and advice](https://doi.org/10.1371/journal.pone.0246446)**. PLOS ONE 16(2): e0246446. [bioRxiv preprint](https://doi.org/10.1101/2020.10.03.324814), [data](https://doi.org/10.5063/F1J964SR)
 
 
-### Articles in review: passed pre-study peer review & currently in post-study peer review
+## Articles in review: passed pre-study peer review & currently in post-study peer review
 
   - ^Logan CJ, Lukas D, Blaisdell AP, Johnson-Ulrich Z, MacPherson M, Seitz BM, &ast;Sevchik A, McCune KB. 2023. **[Behavioral flexibility is manipulable and it improves flexibility and innovativeness in a new context](http://corinalogan.com/Preregistrations/g_flexmanip2.html)** (http://corinalogan.com/Preregistrations/g_flexmanip2.html). [EcoEvoRxiv](https://doi.org/10.32942/osf.io/5z8xs), [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip.Rmd). [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf) received in principle acceptance by *Peer Community in Ecology* on 26 Mar 2019 ([html](http://corinalogan.com/Preregistrations/g_flexmanip.html), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_flexmanip.Rmd); [pre-study peer review history](https://doi.org/10.24072/pci.ecology.100019)).
   - ^McCune KB, Blaisdell AP, Johnson-Ulrich Z, Lukas D, MacPherson M, Seitz BM, &ast;Sevchik A, Logan CJ. 2023. **[Repeatability of performance within and across contexts measuring behavioral flexibility](http://corinalogan.com/Preregistrations/g_flexmanip2rep.html)** (http://corinalogan.com/Preregistrations/g_flexmanip2rep.html). [EcoEvoRxiv](https://doi.org/10.32942/osf.io/kevqp), [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip2rep.Rmd). [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf) received in principle acceptance by *Peer Community in Ecology* on 26 Mar 2019 ([html](http://corinalogan.com/Preregistrations/g_flexmanip.html), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_flexmanip.Rmd); [pre-study peer review history](https://doi.org/10.24072/pci.ecology.100019)).
   -  Lukas D, McCune KB, Blaisdell AP, Johnson-Ulrich Z, MacPherson M, Seitz BM,  &ast;Sevchik A, Logan CJ. 2022. **[Behavioral flexibility is manipulatable and it improves flexibility and problem solving in a new context: post-hoc analyses of the components of behavioral flexibility](http://corinalogan.com/Preregistrations/g_flexmanip2post.html)** (http://corinalogan.com/Preregistrations/g_flexmanip2post.html). [EcoEvoRxiv](https://doi.org/10.32942/osf.io/4ycps), [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip2post.Rmd). [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf) received in principle acceptance by *Peer Community in Ecology* on 26 Mar 2019 ([html](http://corinalogan.com/Preregistrations/g_flexmanip.html), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_flexmanip.Rmd); [pre-study peer review history](https://doi.org/10.24072/pci.ecology.100019)).
-  -  ^Logan CJ, McCune KB, Rolls C, Marfori Z, Hubbard J, Lukas D. 2023. **[Implementing a rapid geographic range expansion - the role of behavior changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitatq1.html)**. [EcoEvoRxiv](). [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitatPassedPreStudyPeerReview16Dec2021.pdf), [pre-study](https://doi.org/10.24072/pci.ecology.100062) and [post-study](https://doi.org/10.24072/pci.ecology.100424) peer review history.
+  -  ^Logan CJ, McCune KB, Rolls C, Marfori Z, Hubbard J, Lukas D. 2023. **[Implementing a rapid geographic range expansion - the role of behavior changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitatq1.html)**. [EcoEvoRxiv](https://doi.org/10.32942/X2N30J). [Preregistration](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitatPassedPreStudyPeerReview16Dec2021.pdf), [pre-study](https://doi.org/10.24072/pci.ecology.100062) and [post-study](https://doi.org/10.24072/pci.ecology.100424) peer review history.
 
-### Undergraduate senior thesis
+## Undergraduate senior thesis
 
   - &ast;Berens JM, Logan CJ, Folsom M, Bergeron L, McCune KB. 2019. **[Validating morphological condition indices and their relationship with reproductive success in great-tailed grackles](http://corinalogan.com/Preregistrations/gcondition.html)**. In principle acceptance by *Peer Community in Ecology* of the version on 8 Nov 2019 [https://github.com/corinalogan/grackles/blob/4475c742a9523bdfd71be12020e40de31993954b/Files/Preregistrations/gcondition.Rmd](https://github.com/corinalogan/grackles/blob/4475c742a9523bdfd71be12020e40de31993954b/Files/Preregistrations/gcondition.Rmd). [EcoEvoRxiv](https://doi.org/10.32942/osf.io/857gt). [Pre-study](https://doi.org/10.24072/pci.ecology.100035) peer review history.
 
-### Preregistrations / registered reports: passed pre-study peer review & now collecting data
+## Preregistrations / registered reports: passed pre-study peer review & now collecting data
 
 2) McCune KB, MacPherson M, Rowney C, Bergeron L, Folsom M, Deffner D, Logan CJ. 2019. **[Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](http://corinalogan.com/Preregistrations/g_exploration.html)** (http://corinalogan.com/Preregistrations/g_exploration.html) In principle acceptance by *PCI Ecology* of the version on 27 Mar 2019 [https://github.com/corinalogan/grackles/blob/a4ef45b5225fd2ae937202333d9e0c5c75e76b88/Files/Preregistrations/g_exploration.Rmd](https://github.com/corinalogan/grackles/blob/a4ef45b5225fd2ae937202333d9e0c5c75e76b88/Files/Preregistrations/g_exploration.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100020) peer review history.
 
@@ -40,7 +38,7 @@
  - I) Logan CJ, McCune KB, Chen N, Lukas D. 2020. **[Implementing a rapid geographic range expansion - the role of behavior and habitat changes](http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html)**. In principle acceptance by *PCI Ecology* of the version on 16 Dec 2021 [https://github.com/corinalogan/grackles/blob/0fb956040a34986902a384a1d8355de65010effd/Files/Preregistrations/gxpopbehaviorhabitat.Rmd](https://github.com/corinalogan/grackles/blob/0fb956040a34986902a384a1d8355de65010effd/Files/Preregistrations/gxpopbehaviorhabitat.Rmd). [Pre-study](https://doi.org/10.24072/pci.ecology.100062) peer review history.
 
  
-### Preregistrations
+## Preregistrations
 
 *(Note: preregistrations A-C were reviewed as part of the [causal cognition preregistration peer review](https://ecology.peercommunityin.org/public/rec?id=25&reviews=True) by Reviewer 1)*
 
@@ -50,11 +48,9 @@
 
  - C) Logan CJ, Rowney C, Bergeron L, McCune K, Bond A, Blackwell A, Lukas D. 2018. **[The genetics of behavioral flexibility across the range of a rapidly expanding species](http://corinalogan.com/Preregistrations/g_flexgenes.html)**. ([.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexgenes.Rmd) version). 
 
-*Preregistrations are study plans that are written before the data are collected (or before analyzing the data when using data that already exist). We get them peer reviewed before we conduct the study to ensure that we get the most out of the resources we invest by correcting any issues before they arise. Additionally, once a preregistration has passed pre-study peer review, it is almost guaranteed to be published upon a quick post-study peer review, which checks to make sure we did what we said we were going to do and if there were any deviations, that these deviations maintain the scientific validity of the work.*
-
 *Note: full references are listed in [MyLibrary.bib](./Files/MyLibrary.bib)*
 
-### Open Materials
+## Open Materials
 
 - [Multiaccess box](https://github.com/corinalogan/grackles/tree/master/Files/MultiaccessBoxDesignFiles) (3D printer and laser cutter) for [Is behavioral flexibility manipulatable and, if so, does it improve flexibility and problem solving in a new context?](http://corinalogan.com/Preregistrations/g_flexmanip.html)
 
@@ -74,18 +70,12 @@
 
 # The Grackle Project
 
-Many experiments will be conducted over the next several years and I post the **reproducible manuscripts** (.Rmd files including text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions. It starts off as a **PREREGISTRATION** where I list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected. In most cases, the preregistration will undergo pre-study peer review at PCI Ecology, then the study will be conducted, and the resulting articles will undergo post-study peer review at PCI Ecology.
+Many experiments have been and are being conducted with grackles. We post the **reproducible manuscripts** (.Rmd files including text and code) here. Each investigation (a group of hypotheses) has one .Rmd file that goes through different versions. It starts off as a **REGISTERED REPORT** where we list the hypotheses, predictions, methods, and analysis plan BEFORE any data are collected. The registered report undergoes pre-study peer review at PCI Registered Reports, then the study is conducted, and the resulting articles undergo post-study peer review at PCI Registered Reports.
 
 The version is noted in the Commit comment, and the different versions can be seen in the History of the file of interest. Following the version history of ONE file allows one to track how this piece of work has changed through the entire investigation.
 
-# 5-year Project Overview
+## License
 
-<img src="./Files/GrackleProjectTimeline.png" width=500>
-
-The same individuals will experience the experiments listed in each column (i.e., the same ~32 individuals in the left column (Years 1 and 2) will experience numbers 1-5 and A-D, and the same ~32 individuals in the right column (Years 3-5) will experience I-IV, plus number 5 and A-D). Year 1 started in September 2018.
-
-### License
-
-[CC-BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/legalcode): share alike and attribute the original source using the citations above
+[CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/legalcode): attribute the original source using the citations above
 
 [![DOI](https://zenodo.org/badge/109032304.svg)](https://zenodo.org/badge/latestdoi/109032304)
