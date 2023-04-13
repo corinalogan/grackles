@@ -163,7 +163,7 @@ All data are available at the Knowledge Network for Biocomplexity’s data repos
 
 Our sample size was 9 for our first hypothesis testing temporal repeatability of reversal learning performance.
 
-Performance was repeatable within individuals within the context of reversal learning (Fig. 2): we obtained a repeatability value of 0.13 (95% credible interval (CI) = 4.64x10^-16^ - 0.43). We found that this repeatability value was significantly greater than expected if birds were performing randomly (p=0.003; Fig. 3; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
+Performance was repeatable within individuals within the context of reversal learning (Fig. 2): we obtained a repeatability value of 0.13 (95% credible interval (CI) = 4.64x10^-16^ - 0.43). We found that, although the lower bound of the credible interval is approximately zero, the repeatability value was significantly greater than expected if birds were performing randomly [p=0.003; @nakagawa2010repeatability]. Furthermore, the distribution of the posterior estimates for the actual data were much less skewed towards zero compared to the permuted data (Fig. 3; see analysis details in the R code for Analysis Plan > P3a). Consequently, and as preregistered, we did not need to conduct the analysis for the P3a alternative to determine whether a lack of repeatability was due to motivation or hunger.
 
 ```{r Fig2, eval = F, echo = F, message = F, warning = F}
 library(ggplot2)
@@ -205,23 +205,9 @@ p
 **Figure 2:** The number of trials each individual took to reverse a preference across serial reversals. The clustering of data points within each individual illustrates the temporal repeatability in performance. Each reversal is indicated by a different shape. Individuals are grouped by color and arranged from fastest to slowest to complete the serial reversal experiment. Note that as per the serial reversal experimental design, data from nearly all individuals include 2 reversals at or below 50 trials. The one exception was Memela, who never increased the speed to switch her preference. 
 
 
-```{r Fig3, eval = F, echo = F, message = F, warning = F}
-results <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/SimulationResults_FlexManipRepeatability.csv")
-results = as.data.frame(results)
 
-f<-ggplot(results, aes(x=x)) + 
-  theme_bw() +
-  geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
-  geom_vline(xintercept = 0.13, color = "red") +
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 16)) +
-  labs(x = "Repeatability", y = "Frequency")
-f
-
-```
-
-![](g_flexmanip2rep_rep compared to random.png)
-**Figure 3:** To determine the significance of our repeatability value while accounting for the non-independence of the serial reversal learning experimental design, we compared our repeatability value to repeatability values calculated from simulated data where birds performed randomly within each reversals. The red line indicates our observed value, and it is significantly larger than the repeatability values retrieved from the simulated data. This indicates that despite the design of the serial reversal learning experiment leading to a general increase in the speed that grackles pass each reversal, there were still consistent individual differences in performance across time.
+![](FlexManip_rpt_Fig3.jpg)
+**Figure 3:** Frequency histograms of posterior repeatability estimates from the model testing the latency to switch a color preference in a serial reversal learning experiment. To determine the significance of our repeatability value while accounting for the non-independence of the serial reversal learning experimental design, we compared our repeatability value to repeatability posterior estimates calculated from permuted data where birds performed randomly within each reversals. Estimates from actual data (red) are compared to the distribution of estimates from randomized permutations of the data (green). The vertical red line at 0.13 is the observed mean repeatability estimate reported in this manuscript and it was significantly greater than random.
 
 
 
@@ -540,12 +526,12 @@ rpt_permut = as.data.frame(rpt)
 rpt_permut$choice = sample(repeata,nrow(rpt_permut),replace = T)
 rpt_permut$gt_rand = rpt_permut$choice > rpt_permut$rpt
 sum(rpt_permut$gt_rand)
-#7809723
-7809723/9900000
+#7811656
+7811656/9900000
 #0.79
 # 21% chance p-value of observed data is not different from random
 
-
+## Figure 3:
 library(tidyr)
 library(ggplot2)
 rpt.plot = gather(rpt_permut, data.type, estimate, rpt:choice)
@@ -814,7 +800,7 @@ HPDinterval(repeata, 0.95) #0.10-0.64
 library(rptR) # check significance of repeatability using rptR package
 xcontx.rpt = rpt(log(Dur.sec) ~ Test + cent.rev + (1|ID), grname = "ID", 
                  data = rev, datatype="Gaussian", nboot=1000, npermut=100)
-#summary(xcontx.rpt)
+xcontx.rpt
 # R = 0.36, CI: 0.11-0.58, p = 0.01
 # Almost exact same results for R and CI.
 
