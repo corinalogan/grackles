@@ -1236,22 +1236,58 @@ p_mu <- apply( p_post , 2 , mean )
 p_mu<-p_mu[c(1,2,5,6,9,10,11,12,3,4,13,14,15,16,7,8)]
 p_ci <- apply( p_post , 2 , PI )
 p_ci<-p_ci[,c(1,2,5,6,9,10,11,12,3,4,13,14,15,16,7,8)]
+
+
+
+singlereversaldata
+
+dat_change_trials_single <- list(
+  trials = singlereversaldata$TrialsFirstReversal, 
+  bird = as.factor(singlereversaldata$Bird)
+)
+
+
+# Model 16.b
+mchangetrialnoncentered_single <- ulam(
+  alist(
+    trials ~ normal(mu,sigma),
+    mu <- a_reversal[bird],
+    a_reversal[bird] ~ normal(70,40),
+    sigma ~ exponential(1)
+  ) , data=dat_change_trials_single , chains=4 , cores=4 , log_lik=TRUE )
+
+precis(mchangetrialnoncentered_single,depth=2)
+
+pl_s <- by( c(singlereversaldata$TrialsFirstReversal) , list( c(as.factor(singlereversaldata$Bird)) , c(rep(1,nrow(singlereversaldata))))  , mean )
+pl_s<-pl_s[rev(c(4,3,10,5,6,2,7,11,8,1,9)),]
+
+# generate posterior predictions using link
+datp_s <- list(
+  bird=rep(1:11,each=1)  )
+p_post_s <- link( mchangetrialnoncentered_single , data=datp_s )
+p_mu_s <- apply( p_post_s , 2 , mean )
+p_ci_s <- apply( p_post_s , 2 , PI )
+p_mu_s<-p_mu_s[rev(c(4,3,10,5,6,2,7,11,8,1,9))]
+
+
 # set up plot
-plot( NULL , xlim=c(1,16) , ylim=c(0,130) , xlab="" ,
-    ylab="Trials to reverse" , xaxt="n" , yaxt="n" )
-axis( 2 , at=c(0,25,50,75,100) , labels=c(0,25,50,75,100) )
+plot( NULL , xlim=c(1,19.25) , ylim=c(0,200) , xlab="" ,
+      ylab="Trials to reverse" , xaxt="n" , yaxt="n" )
+axis( 2 , at=c(0,25,50,75,100,125,150) , labels=c(0,25,50,75,100,125,150) )
 abline( h=25 , lty=2, col="grey90" )
 abline( h=50 , lty=2, col="grey90" )
 abline( h=75 , lty=2, col="grey90" )
 abline( h=100 , lty=2, col="grey90" )
-abline( h=120 , lty=1 )
-for ( j in 1:8 ) abline( v=(j*2+0.5) , lwd=0.5 )
+abline( h=125 , lty=2, col="grey90" )
+abline( h=150 , lty=2, col="grey90" )
+abline( h=180 , lty=1 )
+for ( j in 1:8 ) abline( v=(j*2+0.5) , lwd=c(rep(0.5,7),3)[j] )
 improvementdatabirds<-improvementdata[c(1,3,5,6,2,7,8,4),]$Bird
-for ( j in 1:8 ) text( (j-1)*2+1.5 , 125 , improvementdatabirds[j] , xpd=TRUE )
+for ( j in 1:8 ) text( (j-1)*2+1.5 , 185 , improvementdatabirds[j] , xpd=TRUE )
 xo <- 0.01 # offset distance to stagger raw data and predictions
 # raw data
 for ( j in (1:8) ) {
-    lines( (j-1)*2+c(1,2)-xo , pl[j,c(1,2)] , lwd=2 , col=rangi2 )
+  lines( (j-1)*2+c(1,2)-xo , pl[j,c(1,2)] , lwd=2 , col=rangi2 )
 }
 points( 1:16-xo , t(pl) , pch=16 , col="white" , cex=1.7 )
 points( 1:16-xo , t(pl) , pch=c(1,16,1,16) , col=rangi2 , lwd=2 )
@@ -1262,11 +1298,25 @@ text( 2-0.7 , pl[1,2]-12 , "Model estimate" , pos=3 , cex=0.8 , col="black")
 
 # posterior predictions
 for ( j in (1:8) ) {
-    lines( (j-1)*2+c(1,2)+xo , p_mu[(j-1)*2+c(1,2)]*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , lwd=2 )
+  lines( (j-1)*2+c(1,2)+xo , p_mu[(j-1)*2+c(1,2)]*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , lwd=2 )
 }
 for ( i in 1:16 ) lines( c(i,i)+xo , p_ci[,i]*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , lwd=1,col="grey50" )
 points( 1:16+xo , p_mu*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , pch=16 , col="white" , cex=1.3 )
 points( 1:16+xo , p_mu*sd(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal))+mean(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)) , pch=c(1,16,1,16) )
+
+points(seq(from=16.75,to=19.75,length=11),pl_s,pch=16 , col="white" , cex=1.7 )
+points(seq(from=16.75,to=19.75,length=11),pl_s, pch=1 , col=rangi2 , lwd=2 )
+
+for ( j in 1:10 ){abline( v=seq(from=16.9,to=19.6,length=10) , lwd=0.5,lty=1,col="grey" )}
+
+singledatabirds<-singlereversaldata[rev(c(4,3,10,5,6,2,7,11,8,1,9)),]$Bird
+for ( j in 1:11 ) {text( seq(from=16.75,to=19.75,length=11)[j] , 185 , substr(singledatabirds[j],1,1) , xpd=TRUE )}
+
+rect(xleft=16.75,ybottom=192,xright=19.75,ytop=207,col="white",border=NA)
+text(18.25,200,"control birds",vfont=c("serif","italic"))
+
+rect(xleft=0.75,ybottom=192,xright=15.75,ytop=207,col="white",border=NA)
+text(8.5,200,"manipulated birds",vfont=c("serif","italic"))
 
 ```
 
