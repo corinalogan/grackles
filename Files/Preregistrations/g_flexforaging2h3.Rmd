@@ -175,6 +175,10 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
+### P7: no difference in human population density across sites
+
+Human population density (population per square mile) in 2020 was obtained from the US Census Bureau for Tempe, Arizona (4,521.2; https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220) and Woodland, California (3,985.1; https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220). A t-test is used to determine whether there are differences between populations.
+
 
 ## RESULTS
 
@@ -388,19 +392,14 @@ summary(f2)
 
 This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology (@alberti2001quantifying & @tews2004animal).
 
-### P7: no difference in human population density across sites - wrote this in Aug 2022
+### P7: no difference in human population density across sites
 
-Human population density (population per square mile) in 2020 was obtained from the US Census Bureau for Tempe, Arizona (4,521.2) and Sacramento, California (5,323.4; https://www.census.gov/quickfacts/fact/table/sacramentocitycalifornia,tempecityarizona/POP060220).
+Human population density (population per square mile) in 2020 was significantly higher in Tempe, Arizona (4,521.2) than in Woodland, California (3,985.1) (t-test: t=15.87, df=1, p=0.04).
 
 ```{r p7, eval=FALSE}
-pd <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-pd <- data.frame(pd)
-
-#exclude NAs from the Phi column
-pd <- subset(pd, is.na(pd$Phi) == FALSE)
-
-glmer(phi ~ HumanPopulationDensity + (1|Population), family=gaussian, data=pd)
-glmer(lambda ~ HumanPopulationDensity + (1|Population), family=gaussian, data=pd)
+hpd <- c(4521.2,3985.1) #human population density in Tempe and Woodland
+t.test(hpd)
+#t = 15.867, df = 1, p-value = 0.04007
 ```
 
 ### P8: flexible = particular habitats
@@ -421,6 +420,9 @@ mp8lambda <- glmer(Lambda ~ ProportionFollows*Microhabitat + (1|ID), family=gaus
 
 ## DISCUSSION
 
+Contrary to our prediction (P7), human population density was higher in Tempe than in Woodland.
+
+In conclusion,
 
 
 ## ETHICS
@@ -434,7 +436,7 @@ This research was carried out in accordance with permits from:
 5) Institutional Animal Care and Use Committee at Arizona State University (protocol number 17-1594R)
 6) Institutional Animal Care and Use Committee at the University of California Santa Barbara (protocol number 958)
 7) University of Cambridge ethical review process (non-regulated use of animals in scientific procedures: zoo4/17 [2017])
-8) Regionalsan access permit (number AP 2021-01)
+8) RegionalSan access permit (number AP 2021-01)
 
 ## AUTHOR CONTRIBUTIONS
 
@@ -588,7 +590,7 @@ Microhabitat: Cohen's unweighted kappa = 1.00
 
 Group size = 1.00
 
-```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r iorrolls, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Cohen's kappa for CLR=Christa Rolls' recoded data vs the original transcribed data
 library(psych) #Cohen's kappa package
 
