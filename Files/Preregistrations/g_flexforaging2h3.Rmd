@@ -396,10 +396,67 @@ This species is primarily found within urbanized environments, however there are
 
 Human population density (population per square mile) in 2020 was significantly higher in Tempe, Arizona (4,521.2) than in Woodland, California (3,985.1) (t-test: t=15.87, df=1, p=0.04).
 
+The model takes the form of:
+
+$popden_{i}$ ~ Normal($\mu_{i}$, $\sigma_{i}$) *[likelihood]*,
+
+log($\mu_{i}$) ~ $\alpha$  *[model]*,
+
+$\mu$ ~ Normal(0,1) *[$\mu$ prior]*,
+
+$\sigma$ ~ Uniform(0.1) *[$\sigma$ prior]*,
+
+
+
 ```{r p7, eval=FALSE}
+library(rethinking)
+
 hpd <- c(4521.2,3985.1) #human population density in Tempe and Woodland
 t.test(hpd)
 #t = 15.867, df = 1, p-value = 0.04007
+
+# Human population density 2009-2020 (but no data for 2019 so n=10 data points per city)
+pd <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_datap7.csv"), header=T, sep=",", stringsAsFactors=F)
+pd <- data.frame(pd)
+
+# look at the data: each city's pop is generally increasing every year
+f <- plot(pd$HumanPopDensity~pd$Year)
+
+# Set up the data sheet for the model
+dat <- list(
+  year = as.numeric(pd$Year),
+  city = as.factor(pd$City),
+  popden = as.numeric(pd$HumanPopDensity)
+)
+
+# Run the model: normal distribution bc pop density is a sum with a large mean (McElreath 2nd edition, Fig 10.6)
+pop <- ulam(
+    alist(
+        popden ~ dnorm(mu,sigma),
+        mu <- a[city],
+        a[city] ~ dnorm(a_bar,sigma_a),
+        a_bar~dnorm(0,1),
+        sigma_a~dexp(1),
+        sigma~dexp(1)
+    ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+output <- precis( pop , depth=2 ) #level 1=Tempe, 2=Woodland
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      0.44  1.83  -1.97   3.09   544  1.01
+#a[2]      0.45  1.68  -1.89   3.00   539  1.02
+#a_bar     0.24  0.99  -1.33   1.89   602  1.01
+#sigma_a   1.10  1.04   0.16   2.97   336  1.00
+#sigma   700.10 15.27 675.68 724.05   973  1.00
+
+#run a CONTRAST to determine whether there is a difference between cities
+post <- extract.samples(pop)
+diff_a <- post$a[,1] - post$a[,2]
+diff_p <- exp(post$a[,1]) - exp(post$a[,2]) #convert the log link to the probability scale p.341
+precis( list( diff_a=diff_a , diff_p=diff_p ) )
+#        mean   sd  5.5% 94.5%     histogram
+#diff_a    -0.01       2.09  -2.92  2.90 ▁▁▁▁▁▇▇▁▁▁▁▁▁▁▁
+#diff_p 38491.44 1088366.54 -13.36 15.33       ▇▃▁▁▁▁▁▁▁
+#there is no difference between the cities because diff interval crosses zero
 ```
 
 ### P8: flexible = particular habitats
