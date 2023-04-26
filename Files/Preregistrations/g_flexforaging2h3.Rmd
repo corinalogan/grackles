@@ -177,7 +177,15 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 
 ### P7: no difference in human population density across sites
 
-Human population density (population per square mile) in 2020 was obtained from the US Census Bureau for Tempe, Arizona (4,521.2; https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220) and Woodland, California (3,985.1; https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220). A t-test is used to determine whether there are differences between populations.
+Human population density (population per square mile) is obtained from the U.S. Census Bureau for Tempe, Arizona (https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220) and Woodland, California (https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220) for 2010 and 2020 (the Census data), and from the U.S. Census American Community Survey (https://www.opendatanetwork.com/entity/1600000US0686328-1600000US0473000/Woodland_CA-Tempe_AZ/geographic.population.density?year=2018&ref=compare-entity) for the rest of the years from 2009 to 2018 (note that there is no data for 2019). We design a bespoke Bayesian model to determine whether there are differences between populations and we conduct a simulation to determine how much of a difference between the means (at least 250 people per square mile) would result in there being a difference between the cities.
+
+The model takes the form of:
+
+$p_{i}$ ~ Normal($\mu_{i}$, $\sigma_{i}$) *[likelihood]*,
+
+log($\mu_{i}$) ~ $\alpha$[city]  *[model]*,
+
+where $p_{i}$ is the human population density (total population divided by the land area per square mile) for each observation i, $\mu_{i}$ is the mean and $\sigma_{i}$ is the standard deviation, and $\alpha$[city] is the intercept for each city.
 
 
 ## RESULTS
@@ -394,46 +402,47 @@ This species is primarily found within urbanized environments, however there are
 
 ### P7: no difference in human population density across sites
 
-Human population density (population per square mile) in 2020 was significantly higher in Tempe, Arizona (4,521.2) than in Woodland, California (3,985.1) (t-test: t=15.87, df=1, p=0.04).
-
-The model takes the form of:
-
-$popden_{i}$ ~ Normal($\mu_{i}$, $\sigma_{i}$) *[likelihood]*,
-
-log($\mu_{i}$) ~ $\alpha$  *[model]*,
-
-$\mu$ ~ Normal(0,1) *[$\mu$ prior]*,
-
-$\sigma$ ~ Uniform(0.1) *[$\sigma$ prior]*,
-
-
+Human population density (population per square mile) is higher in Tempe, Arizona (mean=4,283, standard deviation=187) than in Woodland, California (mean=3,710, standard deviation=140) (contrast: mean=572.84 sd=32.21 89% compatibility interval=520.78-622.69).
 
 ```{r p7, eval=FALSE}
 library(rethinking)
 
-hpd <- c(4521.2,3985.1) #human population density in Tempe and Woodland
-t.test(hpd)
-#t = 15.867, df = 1, p-value = 0.04007
-
-# Human population density 2009-2020 (but no data for 2019 so n=10 data points per city)
+# Human population density 2009-2020 (but no data for 2019 so n=10 data points per city) from the Open Data Network, which used data from the U.S. Census American Community Survey ("Population Density is computed by dividing the total population by Land Area Per Square Mile"), except for the data points from 2010 and 2020, which were from the census.
 pd <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_datap7.csv"), header=T, sep=",", stringsAsFactors=F)
 pd <- data.frame(pd)
 
 # look at the data: each city's pop is generally increasing every year
 f <- plot(pd$HumanPopDensity~pd$Year)
 
-# Set up the data sheet for the model
+# SIMULATE data to figure out the model boundaries
+n=10 #sample size
+offset=250 #expect no difference between the cities when offset=0 (bc they have the same means)
+city1_mean=5000 #avg pop density of city 1
+city2_mean=city1_mean+offset #avg pop density of city 2
+act1=rnorm(n/2, mean=city1_mean, sd=100) #alpha simulation for city 1
+act2=rnorm(n/2, mean=city2_mean, sd=100) #alpha simulation for city 2
+
+#boxplot(c(act1,act2)~c(rep("City1",n/2),rep("City2",n/2))) #look at the sim
+plotsim <- plot(c(act1,act2)~c(rep(1,n/2),rep(2,n/2))) #look at the sim
+for (j in 1:(n/2) ) {
+  lines(x=c(1,2),y=c(act1[j],act2[j]),lwd=2,col=2)
+}
+
+# will run a contrast on the actual data to determine whether the cities differ, so run simulated contrasts and look at the histogram to see if any values cross zero. Centered on the offset and the spread reflects the SD. Ran the contrasts with varying offsets and found the values stop crossing zero when the difference between the city means is at least 250 (at n=50 and n=10, SD always=100).
+contrast <- act2-act1
+hist(contrast)
+
+# USING ACTUAL DATA: Set up the data sheet for the model
 dat <- list(
-  year = as.numeric(pd$Year),
   city = as.factor(pd$City),
-  popden = as.numeric(pd$HumanPopDensity)
+  p = as.numeric(pd$HumanPopDensity)
 )
 
 # Run the model: normal distribution bc pop density is a sum with a large mean (McElreath 2nd edition, Fig 10.6)
 pop <- ulam(
     alist(
-        popden ~ dnorm(mu,sigma),
-        mu <- a[city],
+        p ~ dnorm(mu,sigma),
+        log(mu) <- a[city],
         a[city] ~ dnorm(a_bar,sigma_a),
         a_bar~dnorm(0,1),
         sigma_a~dexp(1),
@@ -442,21 +451,27 @@ pop <- ulam(
 
 output <- precis( pop , depth=2 ) #level 1=Tempe, 2=Woodland
 #        mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1]      0.44  1.83  -1.97   3.09   544  1.01
-#a[2]      0.45  1.68  -1.89   3.00   539  1.02
-#a_bar     0.24  0.99  -1.33   1.89   602  1.01
-#sigma_a   1.10  1.04   0.16   2.97   336  1.00
-#sigma   700.10 15.27 675.68 724.05   973  1.00
+#a[1]     8.36 0.01  8.35  8.37  2773     1
+#a[2]     8.22 0.01  8.21  8.23  3191     1
+#a_bar    0.82 1.00 -0.80  2.47  1583     1
+#sigma_a  4.80 1.37  3.04  7.19  1304     1
+#sigma   76.46 4.72 69.24 84.35  1884     1
 
-#run a CONTRAST to determine whether there is a difference between cities
+# run a CONTRAST to determine whether there is a difference between cities
 post <- extract.samples(pop)
 diff_a <- post$a[,1] - post$a[,2]
 diff_p <- exp(post$a[,1]) - exp(post$a[,2]) #convert the log link to the probability scale p.341
 precis( list( diff_a=diff_a , diff_p=diff_p ) )
 #        mean   sd  5.5% 94.5%     histogram
-#diff_a    -0.01       2.09  -2.92  2.90 ▁▁▁▁▁▇▇▁▁▁▁▁▁▁▁
-#diff_p 38491.44 1088366.54 -13.36 15.33       ▇▃▁▁▁▁▁▁▁
-#there is no difference between the cities because diff interval crosses zero
+#diff_a   0.14  0.01   0.13   0.16 ▁▁▁▃▅▇▇▃▂▁▁▁
+#diff_p 572.84 32.21 520.78 622.69 ▁▁▁▃▅▇▇▃▂▁▁▁
+#there is a difference between the cities because diff interval crosses zero and there is a difference larger than 250 between the means
+
+# summary
+#mean(pd[pd$City=="Tempe",]$HumanPopDensity) #4282.755
+#mean(pd[pd$City=="Woodland",]$HumanPopDensity) #3710.073
+#sd(pd[pd$City=="Tempe",]$HumanPopDensity) #187.4377
+#sd(pd[pd$City=="Woodland",]$HumanPopDensity) #140.2587
 ```
 
 ### P8: flexible = particular habitats
