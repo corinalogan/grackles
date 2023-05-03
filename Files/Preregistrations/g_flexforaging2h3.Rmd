@@ -175,7 +175,7 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
-### P7: no difference in human population density across sites
+### P7: human population density across sites
 
 Human population density (population per square mile) is obtained from the U.S. Census Bureau for Tempe, Arizona (https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220), Woodland, California (https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220), and Sacramento, California (https://www.census.gov/quickfacts/fact/table/sacramentocitycalifornia,tempecityarizona,US/POP060220) for 2010 and 2020 (the Census data), and from the U.S. Census American Community Survey (https://www.opendatanetwork.com/entity/1600000US0664000-1600000US0686328-1600000US0473000/Sacramento_CA-Woodland_CA-Tempe_AZ/geographic.population.density?year=2018&ref=compare-entity) for the rest of the years from 2009 to 2018 (note that there is no data for 2019). The Woodland population consists of two trapping locations: one in Woodland and the other in Sacramento. The two locations represent the same population because some of the same individuals are found at both locations. We design a bespoke Bayesian model to determine whether there are differences between populations and we conduct a simulation to determine how much of a difference between the means (at least 250 people per square mile) would result in there being a difference between the cities.
 
@@ -186,6 +186,10 @@ $p_{i}$ ~ Normal($\mu_{i}$, $\sigma_{i}$) *[likelihood]*,
 log($\mu_{i}$) ~ $\alpha$[city]  *[model]*,
 
 where $p_{i}$ is the human population density (total population divided by the land area per square mile) for each observation i, $\mu_{i}$ is the mean and $\sigma_{i}$ is the standard deviation, and $\alpha$[city] is the intercept for each city.
+
+### P8: flexibility and presence in diverse microhabitats
+
+
 
 
 ## RESULTS
@@ -407,7 +411,7 @@ Human population density (population per square mile) is higher in Sacramento, C
 
 **Table.** Contrasts showing that the human population density at each trap site is different from the others.
 
-```{r resltsp7table, eval=T, warning=FALSE, results='asis', include=TRUE}
+```{r resltsp7table, eval=T}
 library(kableExtra)
 exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep7.csv"), header=F, sep=",", stringsAsFactors=F)
 exptable <- data.frame(exptable)
@@ -456,9 +460,7 @@ pop <- ulam(
     alist(
         p ~ dnorm(mu,sigma),
         log(mu) <- a[city],
-        a[city] ~ dnorm(a_bar,sigma_a),
-        a_bar~dnorm(0,1),
-        sigma_a~dexp(1),
+        a[city] ~ dnorm(8,2), #mean of 8 because the actual mean across the cities is around 3000 so log(3000)=8. Set the sd of expected values at 2 because pop densities could range from 100 (log=5) to 10,000 (log=9)
         sigma~dexp(1)
     ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
@@ -479,9 +481,9 @@ diff_p13 <- exp(post$a[,1]) - exp(post$a[,3]) #convert the log link to the proba
 diff_p32 <- exp(post$a[,2]) - exp(post$a[,3]) #convert the log link to the probability scale p.341
 precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 #        mean   sd  5.5% 94.5%     histogram
-#diff_p12  612.48 36.32  555.64  670.52         ▁▁▅▇▂▁
-#diff_p13 1185.28 37.53 1124.43 1245.74 ▁▁▁▁▂▅▇▇▅▃▂▁▁▁
-#diff_p32 -572.79 39.02 -634.85 -510.76        ▁▁▃▇▃▁▁
+#diff_p12  612.15 36.01  556.47  670.68  ▁▁▁▂▃▇▇▇▅▂▁▁▁
+#diff_p13 1184.74 36.10 1129.14 1241.31 ▁▁▁▁▂▃▇▇▅▃▁▁▁▁
+#diff_p32  572.59 36.15  515.65  630.09  ▁▁▁▂▃▇▇▇▅▂▁▁▁
 #there is a difference between all cities because diff interval crosses zero and there is a difference larger than 250 between the means
 
 # summary
@@ -499,17 +501,48 @@ precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 
 ### P8: flexible = particular habitats
 
-**Analysis:** We examined the proportion of focal follows associated with each microhabitat per individual and related this to their flexibility scores on their most recent reversal learning color tube experiment. This will allow us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
+**Analysis:** We examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal in the tube experiment. This allows us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
 
-```{r p8, eval=FALSE}
+```{r p8, eval=F}
 p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
 p8 <- data.frame(p8)
 
-#exclude NAs from the Phi column
-p8 <- subset(p8, is.na(p8$Phi) == FALSE)
+#Separate the sexes
+f8 <- p8[p8$Sex=="F",]
+m8 <- p8[p8$Sex=="M",]
 
-mp8phi <- glmer(Phi ~ ProportionFollows*Microhabitat + (1|ID), family=gaussian, data=p8f)
-mp8lambda <- glmer(Lambda ~ ProportionFollows*Microhabitat + (1|ID), family=gaussian, data=p8f)
+#Summary
+f8$BirdID <- as.factor(f8$BirdID)
+#length(levels(f8$BirdID)) #9 females
+
+m8$BirdID <- as.factor(m8$BirdID)
+#length(levels(m8$BirdID)) #26 males
+
+# SIMULATE
+#participate <- as.data.frame(m8 %>% group_by(Microhabitat) %>% summarize(n())) #n=number of values in a vector
+plot(m8$ProportionFollows,m8$Phi)
+
+# RUN THE MODEL on the actual data
+# set up data sheet for model
+dat <- list(follows = as.numeric(m8$ProportionFollows),
+            phi = as.numeric(m8$Phi),
+            lambda = as.numeric(m8$Lambda),
+            habitat = as.factor(m8$Microhabitat),
+            bird = as.factor(m8$ID)
+              )
+#run model
+m8phi <- ulam( alist(
+  follows ~ dbinom(1,p) , #p=probability of being in a microhabitat
+  logit(p) <- a + b[bird]*phi + c[bird]*habitat , #bird=random variable
+  a ~ dnorm(0,1) 
+) , data=dat , chains=4 , log_lik=TRUE)
+
+
+f8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=f8)
+f8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=f8)
+
+m8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=m8)
+m8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=m8)
 ```
 
 
