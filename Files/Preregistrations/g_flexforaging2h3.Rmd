@@ -175,9 +175,9 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
-### P7: no difference in human population density across sites
+### P7: human population density across sites
 
-Human population density (population per square mile) is obtained from the U.S. Census Bureau for Tempe, Arizona (https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220) and Woodland, California (https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220) for 2010 and 2020 (the Census data), and from the U.S. Census American Community Survey (https://www.opendatanetwork.com/entity/1600000US0686328-1600000US0473000/Woodland_CA-Tempe_AZ/geographic.population.density?year=2018&ref=compare-entity) for the rest of the years from 2009 to 2018 (note that there is no data for 2019). We design a bespoke Bayesian model to determine whether there are differences between populations and we conduct a simulation to determine how much of a difference between the means (at least 250 people per square mile) would result in there being a difference between the cities.
+Human population density (population per square mile) is obtained from the U.S. Census Bureau for Tempe, Arizona (https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220), Woodland, California (https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220), and Sacramento, California (https://www.census.gov/quickfacts/fact/table/sacramentocitycalifornia,tempecityarizona,US/POP060220) for 2010 and 2020 (the Census data), and from the U.S. Census American Community Survey (https://www.opendatanetwork.com/entity/1600000US0664000-1600000US0686328-1600000US0473000/Sacramento_CA-Woodland_CA-Tempe_AZ/geographic.population.density?year=2018&ref=compare-entity) for the rest of the years from 2009 to 2018 (note that there is no data for 2019). The Woodland population consists of two trapping locations: one in Woodland and the other in Sacramento. The two locations represent the same population because some of the same individuals are found at both locations. We design a bespoke Bayesian model to determine whether there are differences between populations and we conduct a simulation to determine how much of a difference between the means (at least 250 people per square mile) would result in there being a difference between the cities.
 
 The model takes the form of:
 
@@ -186,6 +186,10 @@ $p_{i}$ ~ Normal($\mu_{i}$, $\sigma_{i}$) *[likelihood]*,
 log($\mu_{i}$) ~ $\alpha$[city]  *[model]*,
 
 where $p_{i}$ is the human population density (total population divided by the land area per square mile) for each observation i, $\mu_{i}$ is the mean and $\sigma_{i}$ is the standard deviation, and $\alpha$[city] is the intercept for each city.
+
+### P8: flexibility and presence in diverse microhabitats
+
+
 
 
 ## RESULTS
@@ -248,7 +252,8 @@ summary(f2)
 #autocorr(f2$VCV) #Did random effects converge?
 ```
 
-#### P6: flexible = wider range of habitats
+
+### P6: flexible = wider range of habitats
 
 **Analysis:** A GLMM was conducted as in P5.
 
@@ -402,7 +407,19 @@ This species is primarily found within urbanized environments, however there are
 
 ### P7: no difference in human population density across sites
 
-Human population density (population per square mile) is higher in Tempe, Arizona (mean=4,283, standard deviation=187) than in Woodland, California (mean=3,710, standard deviation=140) (contrast: mean=572.84 sd=32.21 89% compatibility interval=520.78-622.69).
+Human population density (population per square mile) is higher in Sacramento, California (mean=4,895, standard deviation=185), which is higher than Tempe, Arizona (mean=4,283, standard deviation=187), which is higher than Woodland, California (mean=3,710, standard deviation=140) (contrast: mean=572.84 sd=32.21 89% compatibility interval=520.78-622.69).
+
+**Table.** Contrasts showing that the human population density at each trap site is different from the others.
+
+```{r resltsp7table, eval=T}
+library(kableExtra)
+exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep7.csv"), header=F, sep=",", stringsAsFactors=F)
+exptable <- data.frame(exptable)
+colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+
+knitr::kable(exptable) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+```
 
 ```{r p7, eval=FALSE}
 library(rethinking)
@@ -443,56 +460,95 @@ pop <- ulam(
     alist(
         p ~ dnorm(mu,sigma),
         log(mu) <- a[city],
-        a[city] ~ dnorm(a_bar,sigma_a),
-        a_bar~dnorm(0,1),
-        sigma_a~dexp(1),
+        a[city] ~ dnorm(8,2), #mean of 8 because the actual mean across the cities is around 3000 so log(3000)=8. Set the sd of expected values at 2 because pop densities could range from 100 (log=5) to 10,000 (log=9)
         sigma~dexp(1)
     ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-output <- precis( pop , depth=2 ) #level 1=Tempe, 2=Woodland
+output <- precis( pop , depth=2 ) #level 1=Sacramento, 2=Tempe, 3=Woodland
 #        mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1]     8.36 0.01  8.35  8.37  2773     1
-#a[2]     8.22 0.01  8.21  8.23  3191     1
-#a_bar    0.82 1.00 -0.80  2.47  1583     1
-#sigma_a  4.80 1.37  3.04  7.19  1304     1
-#sigma   76.46 4.72 69.24 84.35  1884     1
+#a[1]     8.50 0.01  8.49  8.50  3111     1
+#a[2]     8.36 0.01  8.35  8.37  2850     1
+#a[3]     8.22 0.01  8.21  8.23  3295     1
+#a_bar    0.99 1.05 -0.64  2.67  1581     1
+#sigma_a  5.11 1.37  3.33  7.47  1775     1
+#sigma   87.91 5.11 80.00 96.21  1882     1
 
 # run a CONTRAST to determine whether there is a difference between cities
 post <- extract.samples(pop)
 diff_a <- post$a[,1] - post$a[,2]
-diff_p <- exp(post$a[,1]) - exp(post$a[,2]) #convert the log link to the probability scale p.341
-precis( list( diff_a=diff_a , diff_p=diff_p ) )
+diff_p12 <- exp(post$a[,1]) - exp(post$a[,2]) #convert the log link to the probability scale p.341
+diff_p13 <- exp(post$a[,1]) - exp(post$a[,3]) #convert the log link to the probability scale p.341
+diff_p32 <- exp(post$a[,2]) - exp(post$a[,3]) #convert the log link to the probability scale p.341
+precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 #        mean   sd  5.5% 94.5%     histogram
-#diff_a   0.14  0.01   0.13   0.16 ▁▁▁▃▅▇▇▃▂▁▁▁
-#diff_p 572.84 32.21 520.78 622.69 ▁▁▁▃▅▇▇▃▂▁▁▁
-#there is a difference between the cities because diff interval crosses zero and there is a difference larger than 250 between the means
+#diff_p12  612.15 36.01  556.47  670.68  ▁▁▁▂▃▇▇▇▅▂▁▁▁
+#diff_p13 1184.74 36.10 1129.14 1241.31 ▁▁▁▁▂▃▇▇▅▃▁▁▁▁
+#diff_p32  572.59 36.15  515.65  630.09  ▁▁▁▂▃▇▇▇▅▂▁▁▁
+#there is a difference between all cities because diff interval crosses zero and there is a difference larger than 250 between the means
 
 # summary
 #mean(pd[pd$City=="Tempe",]$HumanPopDensity) #4282.755
 #mean(pd[pd$City=="Woodland",]$HumanPopDensity) #3710.073
+#mean(pd[pd$City=="Sacramento",]$HumanPopDensity) #4895.055
 #sd(pd[pd$City=="Tempe",]$HumanPopDensity) #187.4377
 #sd(pd[pd$City=="Woodland",]$HumanPopDensity) #140.2587
+#sd(pd[pd$City=="Sacramento",]$HumanPopDensity) #185.2717
+
+### land cover classifications (https://www.usgs.gov/media/images/land-cover-conterminous-us-shown-16-thematic-classes)
+## Tempe and Sacramento = Developed, medium intensity
+## Woodland = Cultivated crops
 ```
 
 ### P8: flexible = particular habitats
 
-**Analysis:** We examined the proportion of focal follows associated with each microhabitat per individual and related this to their flexibility scores on their most recent reversal learning color tube experiment. This will allow us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
+**Analysis:** We examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal in the tube experiment. This allows us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
 
-```{r p8, eval=FALSE}
+```{r p8, eval=F}
 p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
 p8 <- data.frame(p8)
 
-#exclude NAs from the Phi column
-p8 <- subset(p8, is.na(p8$Phi) == FALSE)
+#Separate the sexes
+f8 <- p8[p8$Sex=="F",]
+m8 <- p8[p8$Sex=="M",]
 
-mp8phi <- glmer(Phi ~ ProportionFollows*Microhabitat + (1|ID), family=gaussian, data=p8f)
-mp8lambda <- glmer(Lambda ~ ProportionFollows*Microhabitat + (1|ID), family=gaussian, data=p8f)
+#Summary
+f8$BirdID <- as.factor(f8$BirdID)
+#length(levels(f8$BirdID)) #9 females
+
+m8$BirdID <- as.factor(m8$BirdID)
+#length(levels(m8$BirdID)) #26 males
+
+# SIMULATE
+#participate <- as.data.frame(m8 %>% group_by(Microhabitat) %>% summarize(n())) #n=number of values in a vector
+plot(m8$ProportionFollows,m8$Phi)
+
+# RUN THE MODEL on the actual data
+# set up data sheet for model
+dat <- list(follows = as.numeric(m8$ProportionFollows),
+            phi = as.numeric(m8$Phi),
+            lambda = as.numeric(m8$Lambda),
+            habitat = as.factor(m8$Microhabitat),
+            bird = as.factor(m8$ID)
+              )
+#run model
+m8phi <- ulam( alist(
+  follows ~ dbinom(1,p) , #p=probability of being in a microhabitat
+  logit(p) <- a + b[bird]*phi + c[bird]*habitat , #bird=random variable
+  a ~ dnorm(0,1) 
+) , data=dat , chains=4 , log_lik=TRUE)
+
+
+f8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=f8)
+f8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=f8)
+
+m8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=m8)
+m8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=m8)
 ```
 
 
 ## DISCUSSION
 
-Contrary to our prediction (P7), human population density was higher in Tempe than in Woodland.
+Human population density varies within and between the grackle populations: it is the highest and lowest at the Woodland trap sites, which are different from each other and from Tempe. This indicates that the environments that individuals on the edge experience do not differ systematically in human population density.
 
 In conclusion,
 
