@@ -504,8 +504,18 @@ precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 **Analysis:** We examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal in the tube experiment. This allows us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
 
 ```{r p8, eval=F}
-p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
+library(rethinking)
+#p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
+#p8 <- data.frame(p8)
+
+# use shannon diversity index to represent the degree of diversity of habitats used
+p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 p8 <- data.frame(p8)
+
+# remove NAs
+p8 <- subset(p8,!(is.na(p8["ShannonDiversityIndex"])))
+p8 <- subset(p8,!(is.na(p8["Phi"])))
+p8 <- subset(p8,!(is.na(p8["Lambda"])))
 
 #Separate the sexes
 f8 <- p8[p8$Sex=="F",]
@@ -522,27 +532,30 @@ m8$BirdID <- as.factor(m8$BirdID)
 #participate <- as.data.frame(m8 %>% group_by(Microhabitat) %>% summarize(n())) #n=number of values in a vector
 plot(m8$ProportionFollows,m8$Phi)
 
-# RUN THE MODEL on the actual data
+# RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
 # set up data sheet for model
-dat <- list(follows = as.numeric(m8$ProportionFollows),
+dat <- list(follows = as.numeric(m8$ShannonDiversityIndex),
             phi = as.numeric(m8$Phi),
             lambda = as.numeric(m8$Lambda),
-            habitat = as.factor(m8$Microhabitat),
-            bird = as.factor(m8$ID)
+            bird = as.factor(m8$BirdID)
               )
 #run model
 m8phi <- ulam( alist(
-  follows ~ dbinom(1,p) , #p=probability of being in a microhabitat
-  logit(p) <- a + b[bird]*phi + c[bird]*habitat , #bird=random variable
-  a ~ dnorm(0,1) 
+  follows ~ dbinom(1.54,p) , #p=probability of being in a microhabitat
+  logit(p) <- a[bird] + b[bird]*phi , #bird=random variable
+  a[bird] ~ dnorm(0,1),
+  b[bird] ~ dnorm(0,1)
 ) , data=dat , chains=4 , log_lik=TRUE)
 
+precis(m8phi,depth=2)
 
 f8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=f8)
 f8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=f8)
 
 m8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=m8)
 m8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=m8)
+
+
 ```
 
 
