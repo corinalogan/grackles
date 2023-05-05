@@ -175,6 +175,17 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
+### P6: Flexibility and habitat diversity
+
+The model takes the form of:
+
+$div_{i}$ ~ Normal($\mu_{i}$, $\sigma_{i}$) *[likelihood]*,
+
+log($\mu_{i}$) ~ $\alpha$ + $\beta_{p}$$\phi$ + $\beta_{r}$$rank$ *[model]*,
+
+where $div_{i}$ is the Shannon Diversity Index [see @vegan for mathematical definition] for each individual i, $\mu_{i}$ is the mean and $\sigma_{i}$ is the standard deviation, $\alpha$ is the intercept, $\beta_{p}$ is the slope for the interaction with $\phi$, and $\beta_{r}$ is the slope for the interaction with dominance $rank$. Note that the model is the same when analyzing $\lambda$, which replaces $\phi$ in the above model. We determine that $\phi$ and $\lambda$ are strongly related to the diversity index if the compatibility interval for the slope does not cross zero.
+
+
 ### P7: human population density across sites
 
 Human population density (population per square mile) is obtained from the U.S. Census Bureau for Tempe, Arizona (https://www.census.gov/quickfacts/fact/table/tempecityarizona,US/POP060220), Woodland, California (https://www.census.gov/quickfacts/fact/table/woodlandcitycalifornia/POP060220), and Sacramento, California (https://www.census.gov/quickfacts/fact/table/sacramentocitycalifornia,tempecityarizona,US/POP060220) for 2010 and 2020 (the Census data), and from the U.S. Census American Community Survey (https://www.opendatanetwork.com/entity/1600000US0664000-1600000US0686328-1600000US0473000/Sacramento_CA-Woodland_CA-Tempe_AZ/geographic.population.density?year=2018&ref=compare-entity) for the rest of the years from 2009 to 2018 (note that there is no data for 2019). The Woodland population consists of two trapping locations: one in Woodland and the other in Sacramento. The two locations represent the same population because some of the same individuals are found at both locations. We design a bespoke Bayesian model to determine whether there are differences between populations and we conduct a simulation to determine how much of a difference between the means (at least 250 people per square mile) would result in there being a difference between the cities.
@@ -255,9 +266,19 @@ summary(f2)
 
 ### P6: flexible = wider range of habitats
 
-**Analysis:** A GLMM was conducted as in P5.
+The Shannon Diversity Index does not have a strong relationship with either flexibility component, phi or lambda, for either sex as indicated by the low means and the compatibility interval crossing zero (Table X). As such, prediction 6 (the more flexible individuals have a higher diversity index) and prediction 6 alternative (the more flexible individuals have a low diversity index indicating that they are specialists) are not supported.
 
- - **Deviation from the preregistration:** we originally planned on running models with a Poisson distribution, however MCMCglmm does not allow non-integers and the Shannon Diversity Index is an integer. Therefore, we used the Gaussian distribution and identity link instead.
+**Table.** Model output showing that phi and lambda did not have a strong relationship with the Shannon Diversity Index for either sex as indicated by the slopes. n_eff is the effective sample size and Rhat4 is an indicator of model convergence (1.00 is ideal).
+
+```{r resltsp6table, eval=T}
+library(kableExtra)
+t6 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep6.csv"), header=F, sep=",", stringsAsFactors=F)
+t6 <- data.frame(t6)
+colnames(t6) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)","n_eff","Rhat4")
+
+knitr::kable(t6) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+```
 
 ```{r p6, eval=FALSE}
 ### Calculate the Shannon diversity index (SDI) per bird
@@ -340,70 +361,146 @@ zan <- sdi[sdi$BirdID=="Zapote Negro",]
 #diversity(zan$ProportionFollows, index = "shannon", equalize.groups = FALSE, MARGIN = 1, base = exp(1)) #=1.322879
 #entered this data into the main data sheet used below
 
+### RUN THE MODELS
+library(rethinking)
+p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+p8 <- data.frame(p8)
 
-### Now run the analyses for the predictions
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-ff <- data.frame(ff)
-
-#exclude NAs from the DomRank column
-ff <- subset(ff, is.na(ff$DomRank) == FALSE)
+# remove NAs
+p8 <- subset(p8,!(is.na(p8["ShannonDiversityIndex"])))
+p8 <- subset(p8,!(is.na(p8["Phi"])))
+p8 <- subset(p8,!(is.na(p8["Lambda"])))
+p8 <- subset(p8,!(is.na(p8["DomRank"])))
 
 #Separate the sexes
-fem <- ff[ff$Sex=="F",]
-mal <- ff[ff$Sex=="M",]
+f8 <- p8[p8$Sex=="F",]
+m8 <- p8[p8$Sex=="M",]
 
-#Factor the random effect variables
-fem$ID <- as.factor(fem$BirdID)
-fem$Population <- as.factor(fem$Population)
-mal$ID <- as.factor(mal$BirdID)
-mal$Population <- as.factor(mal$Population)
+#Summary
+f8$BirdID <- as.factor(f8$BirdID)
+#length(levels(f8$BirdID)) #9 females
+m8$BirdID <- as.factor(m8$BirdID)
+#length(levels(m8$BirdID)) #26 males
 
-#sample sizes
-length(unique(fem$ID)) #9 females
-length(unique(mal$ID)) #26 males
+# SIMULATE
+n = 100
+p = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
+d = rnorm(n,mean=0,sd=0.2) #rank can range from 0 to 1, but standardize it
+sdi = rnorm(n,mean=(-1*p + 1*d),sd=0.5) #shannon diversity index, standardize it. Now change the slope (b) - tried 0, 1, and -1
+#plot(p,sdi)
+#plot(d,sdi)
+#plots look good - any relationship is possible, but all values are within the feasible range
 
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
+#Just to check: unstandardize for plotting to interpret: standardized value * sd of original data + mean of original data
+pu = sd(m8$Phi)*p+mean(m8$Phi)
+sdiu = sd(m8$ShannonDiversityIndex)*sdi+mean(m8$ShannonDiversityIndex)
+#plot(pu,sdiu)
 
-#Data checking for female GLMM - USE ZERO INFLATED MODEL?
-simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=gaussian, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.3 so not dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so zero inflated, but when I look at fem$ShannonDiversityIndex, there are only 2 zeros out of 9 females
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.4 so ok to proceed. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Looks good
-plotResiduals(fem$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined quantile test significant, but don't know what this means
 
-#Data checking for male GLMM - USE ZERO INFLATED MODEL?
-simulationOutput <- simulateResiduals(fittedModel = glmer(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|Population), family=gaussian, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.6 so not dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p<0.05 so zero inflated
-hist(mal$ShannonDiversityIndex) #6 zeros out of 26
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.7 so looks good. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Looks good
-plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined quantile test significant, but don't know what this means
+# RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
+# MALES, phi. Set up data sheet for model
+dat <- list(div = standardize(m8$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
+            phi = standardize(m8$Phi),
+            lambda = standardize(m8$Lambda),
+            rank = standardize(m8$DomRank)
+              )
 
-#GLMM
-#MCMCglmm family.types<-c("gaussian", "poisson", "multinomial", "notyet_weibull", "exponential", "cengaussian", "cenpoisson", "notyet_cenweibull", "cenexponential",  "notyet_zigaussian", "zipoisson", "notyet_ziweibull", "notyet_ziexponential", "ordinal", "hupoisson", "ztpoisson", "geometric", "zapoisson", "zibinomial", "threshold", "zitobit", "nzbinom", "ncst", "msst", "hubinomial", "ztmb", "ztmultinomial") from https://rdrr.io/cran/MCMCglmm/src/R/MCMCglmm.R
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+m8phi <- ulam(
+    alist(
+        div ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*phi + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-#females
-f1 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population, family="gaussian", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000) #removed ID because only one data point per bird
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
+outputm8p <- precis( m8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether phi is strongly related to the diversity index (does not cross 0) or not (does cross 0). Look at the direction of the relationship to determine whether higher phi (more flexible bc associated with reversing in fewer trials, see Lukas et al. 2023 figs 2 & 3) have lower SDIs, which would indicate that they are specializing in particular microhabitats
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.87 0.57 -2.82 -1.03  1225  1.00
+#bp     0.05 0.55 -0.81  0.92  1127  1.00
+#br     0.27 0.51 -0.46  1.11   932  1.01
+#sigma  1.04 0.15  0.82  1.30  1474  1.00
+# The result here and for all of the below models is the same: bp interval crosses zero and the slope is negative (-0.02 to -0.33) so not much relationship between phi and the shannon diversity index, indicating that the more flexible individuals do not specialize or generalize in microhabitat types, but are somewhere in the middle. This means that P6 and P6 alt are not supported and do not need to be analyzed. Do need to analyze P8 though because can't tell from this analysis whether different birds preferred different habitats. We can only see how they split their time among the habitats, not what the habitats are.
 
-#males
-f2 <- MCMCglmm(ShannonDiversityIndex ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population, family="gaussian", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000) #removed ID because only one data point per bird
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
+
+# MALES, lambda
+m8lam <- ulam(
+    alist(
+        div ~ dnorm(mu,sigma),
+        log(mu) <- a + bl*lambda + br*rank , #bird=random variable
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bl ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputm8l <- precis( m8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.86 0.58 -2.89 -1.00  1081     1
+#bl    -0.02 0.47 -0.83  0.66  1071     1
+#br     0.31 0.54 -0.48  1.23  1114     1
+#sigma  1.05 0.15  0.83  1.32  1467     1
+
+
+# FEMALES, phi
+daf <- list(div = standardize(f8$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
+            phi = standardize(f8$Phi),
+            lambda = standardize(f8$Lambda),
+            rank = standardize(f8$DomRank)
+              )
+
+f8phi <- ulam(
+    alist(
+        div ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*phi + br*rank , #bird=random variable
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=daf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputfp <- precis( f8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#a     -1.50 0.62 -2.54 -0.61   904     1
+#bp    -0.14 0.58 -1.17  0.65   905     1
+#br     0.44 0.70 -0.66  1.57  1005     1
+#sigma  1.08 0.29  0.71  1.59  1180     1
+
+f8lam <- ulam(
+    alist(
+        div ~ dnorm(mu,sigma),
+        log(mu) <- a + bl*lambda + br*rank , #bird=random variable
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bl ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=daf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputfl <- precis( f8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.50 0.60 -2.53 -0.60   975     1
+#bl    -0.33 0.59 -1.30  0.59   943     1
+#br     0.39 0.65 -0.56  1.47   805     1
+#sigma  1.05 0.29  0.69  1.58  1153     1
+
+# the figure
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
+plot(daf$div ~ daf$phi , pch=1 , col="black" , xlab="Female: Phi (standardized)" , ylab="Shannon Diversity Index (standardized)" , xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+#mu <- link( f8phi , data=data.frame( trials=trialsp_seq ) )
+#mu_mean <- apply( mu , 2 , mean )
+#mu_ci <- apply( mu , 2 , PI , prob=0.89 )
+#lines( trialsp_seq , mu_mean , lwd=2 )
+#shade( mu_ci , unstandardizedtrialseq , col=col.alpha(rangi2,0.3) )
+plot(daf$div ~ daf$lambda , pch=1 , col="black" , xlab="Female: Lambda (standardized)" , ylab="Shannon Diversity Index (standardized)", xlim=c(-2,2), cex.lab=2, cex.axis=2, cex=2 )
+plot(dat$div ~ dat$phi , pch=1 , col="black" , xlab="Male: Phi (standardized)" , ylab="Shannon Diversity Index (standardized)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(dat$div ~ dat$lambda , pch=1 , col="black" , xlab="Male: Lambda (standardized)" , ylab="Shannon Diversity Index (standardized)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+par(op)
 ```
 
-This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology (@alberti2001quantifying & @tews2004animal).
+**Figure.** Scatterplots showing the lack of relationship between the Shannon DIversity Index and phis and lambdas for both sexes.
+
+This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology [@alberti2001quantifying; @tews2004animal].
 
 ### P7: no difference in human population density across sites
 
@@ -505,57 +602,106 @@ precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 
 ```{r p8, eval=F}
 library(rethinking)
-#p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
-#p8 <- data.frame(p8)
-
-# use shannon diversity index to represent the degree of diversity of habitats used
-p8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-p8 <- data.frame(p8)
+d8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
+d8 <- data.frame(d8)
 
 # remove NAs
-p8 <- subset(p8,!(is.na(p8["ShannonDiversityIndex"])))
-p8 <- subset(p8,!(is.na(p8["Phi"])))
-p8 <- subset(p8,!(is.na(p8["Lambda"])))
+d8 <- subset(d8,!(is.na(d8["ProportionFollows"])))
+d8 <- subset(d8,!(is.na(d8["Phi"])))
+d8 <- subset(d8,!(is.na(d8["Lambda"])))
+d8 <- subset(d8,!(is.na(d8["Microhabitat"])))
 
 #Separate the sexes
-f8 <- p8[p8$Sex=="F",]
-m8 <- p8[p8$Sex=="M",]
+ff8 <- d8[d8$Sex=="F",]
+mm8 <- d8[d8$Sex=="M",]
 
 #Summary
-f8$BirdID <- as.factor(f8$BirdID)
-#length(levels(f8$BirdID)) #9 females
-
-m8$BirdID <- as.factor(m8$BirdID)
-#length(levels(m8$BirdID)) #26 males
+ff8$BirdID <- as.factor(ff8$BirdID)
+#length(levels(ff8$BirdID)) #9 females
+mm8$BirdID <- as.factor(mm8$BirdID)
+#length(levels(mm8$BirdID)) #26 males
 
 # SIMULATE
-#participate <- as.data.frame(m8 %>% group_by(Microhabitat) %>% summarize(n())) #n=number of values in a vector
-plot(m8$ProportionFollows,m8$Phi)
+n = 100
+p = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
+d = rnorm(n,mean=0,sd=0.2) #rank can range from 0 to 1, but standardize it
+sdi = rnorm(n,mean=(-1*p + 1*d),sd=0.5) #shannon diversity index, standardize it. Now change the slope (b) - tried 0, 1, and -1
+plot(p,sdi)
+plot(d,sdi)
+#plots look good - any relationship is possible, but all values are within the feasible range
+
+#Just to check: unstandardize for plotting to interpret: standardized value * sd of original data + mean of original data
+pu = sd(mm8$Phi)*p+mean(d8$Phi)
+sdiu = sd(mm8$ShannonDiversityIndex)*sdi+mean(mm8$ShannonDiversityIndex)
+plot(pu,sdiu)
+
 
 # RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
-# set up data sheet for model
-dat <- list(follows = as.numeric(m8$ShannonDiversityIndex),
-            phi = as.numeric(m8$Phi),
-            lambda = as.numeric(m8$Lambda),
-            bird = as.factor(m8$BirdID)
+# MALES, phi. Set up data sheet for model
+dat8 <- list(follows = standardize(mm8$ProportionFollows), #range=0-1.54 so standardizing centers on 0
+            phi = standardize(mm8$Phi),
+            lambda = standardize(mm8$Lambda),
+            hab = as.factor(mm8$Microhabitat)
               )
-#run model
-m8phi <- ulam( alist(
-  follows ~ dbinom(1.54,p) , #p=probability of being in a microhabitat
-  logit(p) <- a[bird] + b[bird]*phi , #bird=random variable
-  a[bird] ~ dnorm(0,1),
-  b[bird] ~ dnorm(0,1)
-) , data=dat , chains=4 , log_lik=TRUE)
 
-precis(m8phi,depth=2)
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6). If get an ERROR "csvfiles does not contain any CSV file name", then run: 
+#remotes::install_github("stan-dev/cmdstanr") # version should be 0.4.0.9001 or newer
+#cmdstanr::rebuild_cmdstan()
+d8phi <- ulam(
+    alist(
+        follows ~ dbinom(1,p),
+        logit(p) <- a[hab] + b[hab]*phi , #microhabitat=random variable
+        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ normal(0,1)
+    ) , data=dat8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-f8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=f8)
-f8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=f8)
+outputd8p <- precis( d8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether phi is strongly related to the diversity index (does not cross 0) or not (does cross 0). Look at the direction of the relationship to determine whether higher phi (more flexible bc associated with reversing in fewer trials, see Lukas et al. 2023 figs 2 & 3) have lower SDIs, which would indicate that they are specializing in particular microhabitats
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#
+# The result here and for all of the below models is the same: bp interval crosses zero and the slope is negative (-0.02 to -0.33) so not much relationship between phi and the shannon diversity index, indicating that the more flexible individuals do not specialize or generalize in microhabitat types, but are somewhere in the middle. This means that P6 and P6 alt are not supported and do not need to be analyzed. Do need to analyze P8 though because can't tell from this analysis whether different birds preferred different habitats. We can only see how they split their time among the habitats, not what the habitats are.
 
-m8phi <- glmer(ProportionFollows ~ Phi*Microhabitat + (1|ID), family=gaussian, data=m8)
-m8lambda <- glmer(ProportionFollows ~ Lambda*Microhabitat + (1|ID), family=gaussian, data=m8)
+# MALES, lambda
+d8lam <- ulam(
+    alist(
+        div ~ dbinom(1,p),
+        logit(p) <- a[hab] + b[hab]*lambda , #microhabitat=random variable
+        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ normal(0,1)
+    ) , data=dat8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
+outputd8l <- precis( d8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#
 
+# FEMALES, phi
+daf8 <- list(div = standardize(ff8$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
+            phi = standardize(ff8$Phi),
+            lambda = standardize(ff8$Lambda),
+            rank = standardize(ff8$Microhabitat)
+              )
+
+df8phi <- ulam(
+    alist(
+        div ~ dbinom(1,p),
+        logit(p) <- a[hab] + b[hab]*phi , #microhabitat=random variable
+        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ normal(0,1)
+    ) , data=daf8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputdfp <- precis( df8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#
+
+df8lam <- ulam(
+    alist(
+        div ~ dbinom(1,p),
+        logit(p) <- a[hab] + b[hab]*lambda , #microhabitat=random variable
+        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ normal(0,1)
+    ) , data=daf8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputdfl <- precis( df8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#
 ```
 
 
