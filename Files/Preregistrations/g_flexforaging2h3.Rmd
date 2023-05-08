@@ -175,6 +175,17 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 
 The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
+### P5: Flexibility and immigration
+
+The model takes the form of:
+
+$pimmigrant_{i}$ ~ Binomial(1, $p$) *[likelihood]*,
+
+logit($p$) ~ $\alpha_{i}$[habitat] + $\beta_{i}$$\phi$ *[model]*,
+
+where $pimmigrant_{i}$ is the probability of being an immigrant for each individual i, $p$ is the probability of being an immigrant, $\alpha_{i}$ is the intercept (one per observation), and $\beta_{i}$ is the slope for the interaction with $\phi$. Note that the model is the same when analyzing $\lambda$, which replaces $\phi$ in the above model. We determine that $\phi$ and $\lambda$ are strongly related to the probability of being an immigrant if the compatibility interval for the slope does not cross zero.
+
+
 ### P6: Flexibility and habitat diversity
 
 The model takes the form of:
@@ -198,56 +209,58 @@ log($\mu_{i}$) ~ $\alpha$[city]  *[model]*,
 
 where $p_{i}$ is the human population density (total population divided by the land area per square mile) for each observation i, $\mu_{i}$ is the mean and $\sigma_{i}$ is the standard deviation, and $\alpha$[city] is the intercept for each city.
 
-### P8: flexibility and presence in diverse microhabitats
+### P8: flexibility and microhabitat types
 
+The model takes the form of:
 
+$follows_{i}$ ~ Binomial(1, $p$) *[likelihood]*,
+
+logit($p$) ~ $\alpha_{i}$[habitat] + $\beta_{i}$$\phi$ *[model]*,
+
+where $follows_{i}$ is the proportion of focal follows that were recorded in a particular microhabitat for each individual i, $p$ is the probability of being in a given microhabitat, $\alpha_{i}$ is the intercept (one per observation), and $\beta_{i}$ is the slope for the interaction with $\phi$. Note that the model is the same when analyzing $\lambda$, which replaces $\phi$ in the above model. We determine that $\phi$ and $\lambda$ are strongly related to the proportion of focal follows in a given habitat if the compatibility interval for the slope does not cross zero.
 
 
 ## RESULTS
 
-### P5: flexible = immigrants
+### P5: Flexibility and immigration
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 ```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-ff <- read.csv ("/Users/corina/GTGR/data/data_flexforaging.csv", header=T, sep=",", stringsAsFactors=F) 
+library(rethinking)
+p5 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+p% <- data.frame(p5)
+
+# remove NAs
+p5 <- subset(p5,!(is.na(p5["ProbImmigrant"])))
+p5 <- subset(p5,!(is.na(p5["Phi"])))
+p5 <- subset(p5,!(is.na(p5["Lambda"])))
 
 #Separate the sexes
-fem <- ff[ff$Sex=="f",]
-mal <- ff[ff$Sex=="m",]
+f5 <- p5[p5$Sex=="F",]
+m5 <- p5[p5$Sex=="M",]
 
-#Factor the random effect variables
-ID <- as.factor(fem$ID)
-Population <- as.factor(fem$Population)
-ID <- as.factor(mal$ID)
-Population <- as.factor(mal$Population)
+#Summary
+f5$BirdID <- as.factor(f5$BirdID)
+#length(levels(f8$BirdID)) # females
+m5$BirdID <- as.factor(m5$BirdID)
+#length(levels(m8$BirdID)) # males
 
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
+# RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
+# MALES, phi. Set up data sheet for model
+dat5 <- list(follows = mm8$Probimmigrant, 
+            phi = standardize(mm8$Phi),
+            lambda = standardize(mm8$Lambda)
+              )
 
-#Data checking for female GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ImmigrantProbability ~ Phi + Lambda + (1|Population), family=poisson, data=fem), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ImmigrantProbability, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+# Run the model
+m5phi <- ulam( alist(
+        follows ~ dbinom(1,p),
+        logit(p) <- a + b*phi , #microhabitat=random variable
+        a ~ dnorm(0,1) #mean=0 bc response variable is standardized
+    ) , data=dat5 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-#Data checking for male GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(ImmigrantProbability ~ Phi + Lambda + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ImmigrantProbability, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+outputm5p <- precis( m5phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
 
 #GLMM 
 #females
@@ -498,7 +511,7 @@ plot(dat$div ~ dat$lambda , pch=1 , col="black" , xlab="Male: Lambda (standardiz
 par(op)
 ```
 
-**Figure.** Scatterplots showing the lack of relationship between the Shannon DIversity Index and phis and lambdas for both sexes.
+**Figure.** Scatterplots showing the lack of relationship between the Shannon Diversity Index with $\phi$ and $\lambda$ for both sexes.
 
 This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology [@alberti2001quantifying; @tews2004animal].
 
@@ -600,6 +613,21 @@ precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 
 **Analysis:** We examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal in the tube experiment. This allows us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
 
+There is not a strong relationship between phi or lambda and the proportion of focal follows in a given micro habitat type: the compatibility intervals for the slopes cross zero in all microhabitat types (Table, Figure).
+
+**Table.** Model output showing that phi and lambda did not have a strong relationship with the proportion of focal follows in a given microhabitat type for either sex as indicated by the slopes. n_eff is the effective sample size and Rhat4 is an indicator of model convergence (1.00 is ideal).
+
+```{r resltsp8table, eval=T}
+library(kableExtra)
+t8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep8.csv"), header=F, sep=",", stringsAsFactors=F)
+t8 <- data.frame(t8)
+colnames(t8) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)","n_eff","Rhat4")
+
+knitr::kable(t8) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+```
+
+
 ```{r p8, eval=F}
 library(rethinking)
 d8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -622,87 +650,154 @@ mm8$BirdID <- as.factor(mm8$BirdID)
 #length(levels(mm8$BirdID)) #26 males
 
 # SIMULATE
-n = 100
-p = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
-d = rnorm(n,mean=0,sd=0.2) #rank can range from 0 to 1, but standardize it
-sdi = rnorm(n,mean=(-1*p + 1*d),sd=0.5) #shannon diversity index, standardize it. Now change the slope (b) - tried 0, 1, and -1
-plot(p,sdi)
-plot(d,sdi)
+n = 99 #99 rows / 9 microhabitat types = 11 individuals
+ph = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
+ha = rep(c(1:9),11) #go through all individuals 1 time (microhabitat is a categorical variable) 
+slopes0 = rep(c(0,0,0,0,0,0,0,0,0),11) #repeat 0 nine times (one time per habitat) for 11 inds. Use zeros for no relationship. 
+slopes1 = rep(c(-1,-1,-1,0,0,0,1,1,1),11) #use a mixture of slopes to simulate what happens at different values
+pf = rnorm(n,mean=(0*ha + slopes1*ph),sd=0.5) #proportion follows
+#plot(ha,pf,cex=ph*2) #Multiply by 2 so the tiny dots show up better
 #plots look good - any relationship is possible, but all values are within the feasible range
-
-#Just to check: unstandardize for plotting to interpret: standardized value * sd of original data + mean of original data
-pu = sd(mm8$Phi)*p+mean(d8$Phi)
-sdiu = sd(mm8$ShannonDiversityIndex)*sdi+mean(mm8$ShannonDiversityIndex)
-plot(pu,sdiu)
-
 
 # RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
 # MALES, phi. Set up data sheet for model
-dat8 <- list(follows = standardize(mm8$ProportionFollows), #range=0-1.54 so standardizing centers on 0
+dat8 <- list(follows = mm8$ProportionFollows, 
             phi = standardize(mm8$Phi),
             lambda = standardize(mm8$Lambda),
             hab = as.factor(mm8$Microhabitat)
               )
 
-# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6). If get an ERROR "csvfiles does not contain any CSV file name", then run: 
-#remotes::install_github("stan-dev/cmdstanr") # version should be 0.4.0.9001 or newer
-#cmdstanr::rebuild_cmdstan()
-d8phi <- ulam(
-    alist(
+# Run the model
+d8phi <- ulam( alist(
         follows ~ dbinom(1,p),
         logit(p) <- a[hab] + b[hab]*phi , #microhabitat=random variable
-        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
-        b[hab] ~ normal(0,1)
+        a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
     ) , data=dat8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputd8p <- precis( d8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether phi is strongly related to the diversity index (does not cross 0) or not (does cross 0). Look at the direction of the relationship to determine whether higher phi (more flexible bc associated with reversing in fewer trials, see Lukas et al. 2023 figs 2 & 3) have lower SDIs, which would indicate that they are specializing in particular microhabitats
+outputd8p <- precis( d8phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to determine whether phi is strongly related to the proportion of follows (does not cross 0) or not (does cross 0). b1=building, b2=dumpster, b3=grass, b4=human surface, b5=misc human, b6=natural ground, b7=rock, b8=shrub, b9=tree
 #        mean   sd  5.5% 94.5% n_eff Rhat4
-#
-# The result here and for all of the below models is the same: bp interval crosses zero and the slope is negative (-0.02 to -0.33) so not much relationship between phi and the shannon diversity index, indicating that the more flexible individuals do not specialize or generalize in microhabitat types, but are somewhere in the middle. This means that P6 and P6 alt are not supported and do not need to be analyzed. Do need to analyze P8 though because can't tell from this analysis whether different birds preferred different habitats. We can only see how they split their time among the habitats, not what the habitats are.
+#b[1] -0.02 0.58 -0.96  0.90  2345     1
+#b[2]  0.23 0.54 -0.62  1.10  3214     1
+#b[3] -0.02 0.61 -1.00  0.93  2660     1
+#b[4] -0.27 0.55 -1.16  0.57  2854     1
+#b[5] -0.01 0.59 -0.97  0.92  2987     1
+#b[6] -0.02 0.57 -0.92  0.89  2601     1
+#b[7] -0.03 0.57 -0.94  0.90  2815     1
+#b[8] -0.02 0.58 -0.96  0.88  2693     1
+#b[9] -0.33 0.47 -1.07  0.42  2810     1
+# The result here and for all of the below models is the same: the b intervals cross zero in all microhabitat types and the slope is negative, so not much relationship between phi and the proportion of follows, indicating that the more flexible individuals do not specialize in a particular microhabitat type
 
 # MALES, lambda
-d8lam <- ulam(
-    alist(
-        div ~ dbinom(1,p),
+d8lam <- ulam( alist(
+        follows ~ dbinom(1,p),
         logit(p) <- a[hab] + b[hab]*lambda , #microhabitat=random variable
-        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
-        b[hab] ~ normal(0,1)
+        a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
     ) , data=dat8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputd8l <- precis( d8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+outputd8l <- precis( d8lam , depth=2 )
 #       mean   sd  5.5% 94.5% n_eff Rhat4
-#
+#b[1] -0.08 0.59 -1.04  0.84  2610     1
+#b[2] -0.26 0.56 -1.18  0.59  2123     1
+#b[3] -0.08 0.58 -1.09  0.80  2531     1
+#b[4] -0.11 0.56 -1.01  0.75  3014     1
+#b[5] -0.07 0.58 -1.03  0.81  1705     1
+#b[6] -0.08 0.58 -1.10  0.81  2744     1
+#b[7] -0.07 0.57 -0.99  0.83  3115     1
+#b[8] -0.09 0.59 -1.06  0.77  2644     1
+#b[9]  0.42 0.45 -0.28  1.12  2415     1
+#look at b9 Tree because it has a large mean relative to the others
+#plot(mm8[mm8$Microhabitat=="Tree",]$ProportionFollows ~ mm8[mm8$Microhabitat=="Tree",]$Lambda)
+#this relationship is pretty randomly scattered, with the zero proportions having lower lambdas
 
 # FEMALES, phi
-daf8 <- list(div = standardize(ff8$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
+daf8 <- list(follows = ff8$ProportionFollows, 
             phi = standardize(ff8$Phi),
             lambda = standardize(ff8$Lambda),
-            rank = standardize(ff8$Microhabitat)
+            hab = as.factor(ff8$Microhabitat)
               )
 
-df8phi <- ulam(
-    alist(
-        div ~ dbinom(1,p),
+df8phi <- ulam( alist(
+        follows ~ dbinom(1,p),
         logit(p) <- a[hab] + b[hab]*phi , #microhabitat=random variable
-        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
-        b[hab] ~ normal(0,1)
+        a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
     ) , data=daf8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputdfp <- precis( df8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
-#
+outputdfp <- precis( df8phi , depth=2 ) 
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#b[1] -0.12 0.73 -1.32  0.98  3283     1
+#b[2] -0.11 0.72 -1.29  0.99  2439     1
+#b[3] -0.13 0.71 -1.28  0.94  2915     1
+#b[4] -0.11 0.70 -1.28  0.99  3604     1
+#b[5] -0.26 0.71 -1.45  0.82  3307     1
+#b[6] -0.11 0.67 -1.21  0.94  2994     1
+#b[7] -0.09 0.71 -1.34  0.98  2787     1
+#b[8] -0.11 0.71 -1.28  0.98  3012     1
+#b[9] -0.29 0.72 -1.50  0.78  3101     1
 
-df8lam <- ulam(
-    alist(
-        div ~ dbinom(1,p),
+df8lam <- ulam(alist(
+        follows ~ dbinom(1,p),
         logit(p) <- a[hab] + b[hab]*lambda , #microhabitat=random variable
-        a[hab] ~ normal(0,1), #mean=0 bc response variable is standardized
-        b[hab] ~ normal(0,1)
+        a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
     ) , data=daf8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 outputdfl <- precis( df8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
 #       mean   sd  5.5% 94.5% n_eff Rhat4
-#
+#b[1] -0.03 0.67 -1.10  1.01  2861     1
+#b[2] -0.01 0.67 -1.07  1.02  2932     1
+#b[3] -0.06 0.71 -1.23  1.03  2212     1
+#b[4] -0.04 0.69 -1.18  1.04  2739     1
+#b[5]  0.56 0.66 -0.47  1.62  2977     1
+#b[6] -0.02 0.69 -1.14  1.06  2949     1
+#b[7]  0.00 0.67 -1.10  1.06  3289     1
+#b[8] -0.02 0.67 -1.09  1.02  2355     1
+#b[9] -0.09 0.66 -1.12  0.96  2884     1
+
+#look at b5 MiscHuman because it has a large mean relative to the others
+#plot(ff8[ff8$Microhabitat=="MiscHuman",]$ProportionFollows ~ ff8[ff8$Microhabitat=="MiscHuman",]$Lambda)
+#this relationship is due to 1 female that spends 100% of her time in this habitat, while the others don't often visit it
+
+# put all of the model outputs into a csv file
+#write.csv(c(outputdfp,outputdfl,outputd8l,outputd8l),file="flexforaging_P8outputs.csv")
 ```
+
+```{r p8figure, eval=T}
+library(ggplot2)
+library(cowplot)
+
+d8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
+d8 <- data.frame(d8)
+
+# remove NAs
+d8 <- subset(d8,!(is.na(d8["ProportionFollows"])))
+d8 <- subset(d8,!(is.na(d8["Phi"])))
+d8 <- subset(d8,!(is.na(d8["Lambda"])))
+d8 <- subset(d8,!(is.na(d8["Microhabitat"])))
+
+#Separate the sexes
+ff8 <- d8[d8$Sex=="F",]
+mm8 <- d8[d8$Sex=="M",]
+ff8$BirdID <- as.factor(ff8$BirdID)
+mm8$BirdID <- as.factor(mm8$BirdID)
+
+# factor categorical variable
+ff8$Microhabitat <- as.factor(ff8$Microhabitat)
+mm8$Microhabitat <- as.factor(mm8$Microhabitat)
+
+# visualize
+mp <- ggplot() + geom_point(data=mm8,aes(x=Microhabitat, y=ProportionFollows, size=Phi), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "Proportion follows")
+ml <- ggplot() + geom_point(data=mm8,aes(x=Microhabitat, y=ProportionFollows, size=Lambda), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "")
+fp <- ggplot() + geom_point(data=ff8,aes(x=Microhabitat, y=ProportionFollows, size=Phi), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "Proportion follows")
+fl <- ggplot() + geom_point(data=ff8,aes(x=Microhabitat, y=ProportionFollows, size=Lambda), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "")
+
+theme_set(theme_cowplot(font_size=12))
+plot_grid(mp, ml, fp, fl, align='h', ncol=2, labels=c('A','B','C','D'), label_size=12)
+```
+
+**Figure.** Scatterplots for females (top row) and males (bottom row) showing the relationship between the proportion of follows in a particular microhabitat and phi (left column) or lambda (right column). Larger diameter circles indicate a larger phi or lambda.
 
 
 ## DISCUSSION
