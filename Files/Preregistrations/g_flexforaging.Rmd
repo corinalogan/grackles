@@ -466,12 +466,13 @@ ff <- data.frame(ff)
 ff1 <- ff[!ff$FocalBirdID=="NA" & !ff$NonFocalBirdID=="NA" & !ff$NonFocalBirdID=="unbanded adult female" & !ff$NonFocalBirdID=="unbanded adult male" & !ff$NonFocalBirdID=="unbanded juvenile" & !ff$NonFocalBirdID=="unbanded juvenile female" & !ff$NonFocalBirdID=="unbanded juvenile male" & !ff$NonFocalBirdID=="unbanded unknown female" & !ff$NonFocalBirdID=="unbanded unknown male"  & !ff$NonFocalBirdID=="unknown adult female" & !ff$NonFocalBirdID=="unknown adult male" & !ff$NonFocalBirdID=="unknown adult male " & !ff$NonFocalBirdID=="unknown banded female" & !ff$NonFocalBirdID=="unknown female" & !ff$NonFocalBirdID=="unknown grackle"  & !ff$NonFocalBirdID=="unknown individual" & !ff$NonFocalBirdID=="unknown juvenile" & !ff$NonFocalBirdID=="unknown juvenile female"  & !ff$NonFocalBirdID=="unknown juvenile male" & !ff$NonFocalBirdID=="unknown male" & !ff$NonFocalBirdID=="unknown unbanded male",] 
 
 ff1 <- subset(ff1, is.na(ff1$FocalBirdID) == FALSE) #257 banded-banded bird associations
+ff1aff <- subset(ff1, ff1$BehavType == "affiliative") #171 affiliative (86 aggressive for use in dominance calculations)
 
 # Recreate social network graphs with association data separated by season (breeding or non-breeding)
-unique(ff1$Date) #Dates from our raw data of banded-banded bird affiliative associations from above
+unique(ff1aff$Date) #Dates from our raw data of banded-banded bird affiliative associations from above
 
 # separate Sites because breeding started earlier in AZ
-ff_AZ = ff1[which(ff1$Site == "AZ"),]
+ff_AZ = ff1aff[which(ff1aff$Site == "AZ"),]
 ff_AZ$Date = as.Date(ff_AZ$Date, format = "%Y-%m-%d")
 ffAZ_bs19 = ff_AZ[which(ff_AZ$Date > "2019-03-08" & ff_AZ$Date < "2019-09-01"),] #2019 breeding season = 9 Mar to 31 Aug
 ffAZ_bs19$Season = "BS"
@@ -483,7 +484,7 @@ ffAZ_nbs$Season = "NBS"
 ffsAZ = rbind(ffAZ_nbs,ffAZ_bs19,ffAZ_bs20)
 
 #now repeat in CA
-ff_CA = ff1[which(ff1$Site == "CA"),]
+ff_CA = ff1aff[which(ff1aff$Site == "CA"),]
 ff_CA$Date = as.Date(ff_CA$Date, format = "%Y-%m-%d")
 ffCA_bs21 = ff_CA[which(ff_CA$Date > "2021-03-31" & ff_CA$Date < "2021-09-01"),] #2021 breeding season = 1 Apr to 31 Aug
 ffCA_bs21$Season = "BS"
@@ -499,14 +500,14 @@ ffs = rbind(ffsAZ,ffsCA)
 #make new network graphs and re-calculate sna metrics by season
 ffs2 = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site + Season, data = ffs, FUN = "max") #only one observation of banded-banded pair per sampling period is allowed, for 111 banded-banded associations
 
-#but only the following grackles (n = 15) had at least 2 per season: Burrito, Chalupa, Chilaquile, Diablo, Fideo, Taco, Taquito, Yuca, Polvorones, Dulce de Leche, Zapote Negro, Galandra, Cuervo, Kel, Cutuy
+#but only the following grackles (n = 15) had at least 2 follows per season: Burrito, Chalupa, Chilaquile, Diablo, Fideo, Taco, Taquito, Yuca, Polvorones, Dulce de Leche, Zapote Negro, Galandra, Cuervo, Kel, Cutuy
 ffs3 = ffs2[which(ffs2$FocalBirdID == "Burrito" | ffs2$FocalBirdID == "Chilaquile" | ffs2$FocalBirdID == "Diablo" | 
-                             ffs2$FocalBirdID == "FFocalBirdIDeo" |  ffs2$FocalBirdID == "Taco" | ffs2$FocalBirdID == "Taquito" | 
+                             ffs2$FocalBirdID == "Fideo" |  ffs2$FocalBirdID == "Taco" | ffs2$FocalBirdID == "Taquito" | 
                              ffs2$FocalBirdID == "Yuca" | ffs2$FocalBirdID == "Chalupa" | 
                              ffs2$FocalBirdID == "Polvorones" | ffs2$FocalBirdID == "Dulce de Leche" | ffs2$FocalBirdID == "Zapote Negro" | 
                              ffs2$FocalBirdID == "Cuervo" | ffs2$FocalBirdID == "Galandra" | ffs2$FocalBirdID == "Cutuy" | 
                              ffs2$FocalBirdID == "Kel"),]
-#this decreases the sample size from 111 banded-banded associations to 22. And, the majority of these are in the non-breeding season (only 4 breeding season)
+#this decreases the sample size from 111 banded-banded associations to 27. And, the majority of these are in the non-breeding season (only 5 breeding season)
 
 #Create an edgelist - a two column matrix of birds seen together
 els = ffs3[,c(2:5)]
