@@ -510,26 +510,33 @@ ffs3 = ffs2[which(ffs2$FocalBirdID == "Burrito" | ffs2$FocalBirdID == "Chilaquil
 #this decreases the sample size from 111 banded-banded associations to 27. And, the majority of these are in the non-breeding season (only 5 breeding season)
 
 #Create an edgelist - a two column matrix of birds seen together
-els = ffs3[,c(2:5)]
+els.nb = ffs3[which(ffs3$Season == "NBS"),c(2:3)] #FocalBirdID and NonFocalBirdID in non-breeding season only (because 5 breeding season associations do not need to by symmetrized)
 #since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
-colnames(els)[c(1,2)]=c("ID.1","ID.2")
-els$ID.1 = as.character(els$ID.1)
-els$ID.2 = as.character(els$ID.2)
-for (i in 1:nrow(els)) {
-  tmp = els[i, c("ID.1", "ID.2")]
+colnames(els.nb)[c(1,2)]=c("ID.1","ID.2")
+els.nb$ID.1 = as.character(els.nb$ID.1)
+els.nb$ID.2 = as.character(els.nb$ID.2)
+for (i in 1:nrow(els.nb)) {
+  tmp = els.nb[i, c("ID.1", "ID.2")]
   tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
-  els[i, "ID.1"] = tmp[,1]
-  els[i, "ID.2"] = tmp[,2]
+  els.nb[i, "ID.1"] = tmp[,1]
+  els.nb[i, "ID.2"] = tmp[,2]
 }
 
 #calculate edge weights using the half-weight index by quantifying the number of times two birds are seen together (x), the number of times bird 1 is seen without bird 2 (Y.1), and the number of times bird 2 is seen without bird 1 (Y.2)
-els$count = 1
-x = aggregate(count ~ ID.1 + ID.2 + Season + Site, data = els, FUN = "sum") #how many times are bird 1 and bird 2 observed together in each season
-colnames(x)[5]="x"
+els.nb$count = 1
+x = aggregate(count ~ ID.1 + ID.2, data = els.nb, FUN = "sum") #how many times are bird 1 and bird 2 observed together in each season
+colnames(x)[3]="x"
+#add back in season and site variables
+x$Season = "NBS"
+x$Site = ifelse(x$ID.1 == "Camote" | x$ID.1 == "Cuervo" | x$ID.1 == "Cutuy" | x$ID.1 == "Galandra", "CA", "AZ")
+x2 = ffs3[which(ffs3$Season == "BS"),-c(1,6)]
+colnames(x2)[c(1:2)] = c("ID.1","ID.2")
+x2$x = 1 #no repeated observations of the same two birds together across follows
+x = rbind(x, x2) #combine with breeding season association data
 
-tmp = els[,c(1,3:4)]
+tmp = ffs3[,c(2,4:5)] #FocalBirdID, Site, Season
 colnames(tmp)[1] = "ID"
-tmp2 = els[,c(2,3:4)]
+tmp2 = ffs3[,c(3:5)] #NonFocalBirdID, Site, Season
 colnames(tmp2)[1] = "ID"
 y = rbind(tmp, tmp2)
 y$count = 1
@@ -546,7 +553,7 @@ hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1 b
 hwis = hwis[-which(is.na(hwis$x)),-7] #data frame ready for half-weight index equation
 hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
 
-
+library(igraph)
 ### Breeding season network
 Y2bs = as.matrix(hwis[which(hwis$Season == "BS"),])
 labels <- unique( c(Y2bs[,1], Y2bs[,4]) )
@@ -566,9 +573,9 @@ Ya2nbs = graph.adjacency(A2nbs, weighted = T, mode = "max", diag = F)
 
 ### Now we can quantify social network metrics by season ###
 ### Calculate MaxBondStrength
-bonds1 = hwis[,c(1,3,8)]
+bonds1 = hwis[,c(1,3,8)] #ID.2, Season, hwi
 colnames(bonds1)[1] = "ID"
-bonds2 = hwis[,c(3,4,8)]
+bonds2 = hwis[,c(3,4,8)] #ID.1, Season, hwi
 colnames(bonds2)[2] = "ID"
 bonds = rbind(bonds1, bonds2)
 maxBond2 = aggregate(hwi ~ ID + Season, data = bonds, FUN = "max")
@@ -619,10 +626,10 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 
 hist(log(maxBond2$hwi))
-season = MCMCglmm(log(hwi) ~ Season, random=~ID, family="gaussian", data=maxBond2, verbose=F, prior=prior, nitt=300000, thin=200, burnin=30000)
-autocorr(season$Sol) #Did fixed effects converge?
-autocorr(season$VCV) #Did random effects converge?
-summary(season) # p < 0.01, Significantly smaller hwi in nonbreeding than breeding season
+seasonmb = MCMCglmm(log(hwi) ~ Season, random=~ID, family="gaussian", data=maxBond2, verbose=F, prior=prior, nitt=300000, thin=200, burnin=30000)
+autocorr(seasonmb$Sol) #Did fixed effects converge?
+autocorr(seasonmb$VCV) #Did random effects converge?
+summary(seasonmb) # p < 0.01, Significantly smaller hwi in nonbreeding than breeding season
 boxplot(hwi~Season,data = maxBond2)
 # Note from Corina: what is hwi?
 
@@ -630,15 +637,15 @@ hist(log(strength2$strength))
 seasons = MCMCglmm(log(strength) ~ Season, random=~ID, family="gaussian", data=strength2, verbose=F, prior=prior, nitt=200000, thin=200, burnin=30000)
 autocorr(seasons$Sol) #Did fixed effects converge?
 autocorr(seasons$VCV) #Did random effects converge?
-summary(seasons) # p = 0.09, no difference in individual strength between nonbreeding season and breeding season
-boxplot(log(strength)~Season,data = strength2)
+summary(seasons) # p = 0.43, no difference in individual strength between nonbreeding season and breeding season
+boxplot(strength~Season,data = strength2)
 
-
+prior = list(R=list(R1=list(V=1,nu=0)))
 hist(degree2$degree)
-seasond = MCMCglmm(degree ~ Season, random=~ID, family="poisson", data=degree2, verbose=F, prior=prior, nitt=8000000, thin=3000, burnin=50000)
+seasond = MCMCglmm(degree ~ Season, family="poisson", data=degree2, verbose=F, prior=prior, nitt=8000000, thin=8000, burnin=30000)
 autocorr(seasond$Sol) #Did fixed effects converge?
 autocorr(seasond$VCV) #Did random effects converge?
-summary(seasond) # p = 0.14, no difference in individual strength between nonbreeding season and breeding season
+summary(seasond) # p = 0.10, no difference in individual strength between nonbreeding season and breeding season
 boxplot(degree~Season,data = degree2)
 # Note from Corina: this model is not running. The reason it ran before is because it had the same name (season) as the previous model. I gave this model a unique name and ran it and the error message says "Mixed model equations singular: use a (stronger) prior"
 ```
