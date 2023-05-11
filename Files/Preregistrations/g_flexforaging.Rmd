@@ -510,7 +510,7 @@ ffs3 = ffs2[which(ffs2$FocalBirdID == "Burrito" | ffs2$FocalBirdID == "Chilaquil
 #this decreases the sample size from 111 banded-banded associations to 27. And, the majority of these are in the non-breeding season (only 5 breeding season)
 
 #Create an edgelist - a two column matrix of birds seen together
-els.nb = ffs3[which(ffs3$Season == "NBS"),c(2:3)] #FocalBirdID and NonFocalBirdID in non-breeding season only (because 5 breeding season associations do not need to by symmetrized)
+els.nb = ffs3[which(ffs3$Season == "NBS"),c(2:3)] #FocalBirdID and NonFocalBirdID in non-breeding season only (because 5 breeding season associations do not need to be symmetrized)
 #since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
 colnames(els.nb)[c(1,2)]=c("ID.1","ID.2")
 els.nb$ID.1 = as.character(els.nb$ID.1)
@@ -579,8 +579,14 @@ bonds2 = hwis[,c(3,4,8)] #ID.1, Season, hwi
 colnames(bonds2)[2] = "ID"
 bonds = rbind(bonds1, bonds2)
 maxBond2 = aggregate(hwi ~ ID + Season, data = bonds, FUN = "max")
-#this includes only grackles that had the minimum number of focal follows
 
+#include only grackles that had the minimum number of focal follows
+maxBond2 = maxBond2[which(maxBond2$ID == "Burrito" | maxBond2$ID == "Chilaquile" | maxBond2$ID == "Diablo" | 
+                             maxBond2$ID == "Fideo" |  maxBond2$ID == "Taco" | maxBond2$ID == "Taquito" | 
+                             maxBond2$ID == "Yuca" | maxBond2$ID == "Chalupa" | 
+                             maxBond2$ID == "Polvorones" | maxBond2$ID == "Dulce de Leche" | maxBond2$ID == "Zapote Negro" | 
+                             maxBond2$ID == "Cuervo" | maxBond2$ID == "Galandra" | maxBond2$ID == "Cutuy" | 
+                             maxBond2$ID == "Kel"),]
 
 
 ### Calculate IndividualStrength
@@ -622,32 +628,37 @@ degree2 = degree2[which(degree2$ID == "Burrito" | degree2$ID == "Chilaquile" | d
                              degree2$ID == "Kel"),]
 
 ### Analyze sna metrics as a function of season
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+### We only have 7 data points from the breeding season with no variability in the social network metrics. Therefore, we do not think we have an adequate breeding season sample to be able to compare social network metrics across season. 
+### There could be a season difference that we are unable to detect with our sample size and as preregistered, we will proceed using only the non-breeding season data.
 
-# hwi = half-weight index, the social association indices that we said we would use to weight the edges in the social network analysis
-hist(log(maxBond2$hwi))
-seasonmb = MCMCglmm(log(hwi) ~ Season, random=~ID, family="gaussian", data=maxBond2, verbose=F, prior=prior, nitt=300000, thin=200, burnin=30000)
-autocorr(seasonmb$Sol) #Did fixed effects converge?
-autocorr(seasonmb$VCV) #Did random effects converge?
-summary(seasonmb) # p < 0.01, Significantly smaller hwi in nonbreeding than breeding season
-boxplot(hwi~Season,data = maxBond2)
 
-hist(log(strength2$strength))
-seasons = MCMCglmm(log(strength) ~ Season, random=~ID, family="gaussian", data=strength2, verbose=F, prior=prior, nitt=200000, thin=200, burnin=30000)
-autocorr(seasons$Sol) #Did fixed effects converge?
-autocorr(seasons$VCV) #Did random effects converge?
-summary(seasons) # p = 0.43, no difference in individual strength between nonbreeding season and breeding season
-boxplot(strength~Season,data = strength2)
 
-prior = list(R=list(R1=list(V=1,nu=0)))
-hist(degree2$degree)
-degree2$Season <- as.factor(degree2$Season) #factor to see if it makes the fixed effects converge. It helped
-seasond = MCMCglmm(degree ~ Season, family="poisson", data=degree2, verbose=F, prior=prior, nitt=300000, thin=1000, burnin=50000) #NOTE from Corina: degree should be a count, but there are only 1s or 0s in this vector. Should it be a binomial response variable so it is a binomial distribution (family=categorical with a logit link)?
-autocorr(seasond$Sol) #Did fixed effects converge? No so factored season, increased nitt/burnin, decreased thin and it worked
-autocorr(seasond$VCV) #Did random effects converge?
-summary(seasond) # p = 0.10, no difference in individual strength between nonbreeding season and breeding season
-boxplot(degree~Season,data = degree2)
+# library(MCMCglmm)
+# prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+# 
+# # hwi = half-weight index, the social association indices that we said we would use to weight the edges in the social network analysis
+# hist(log(maxBond2$hwi))
+# seasonmb = MCMCglmm(log(hwi) ~ Season, random=~ID, family="gaussian", data=maxBond2, verbose=F, prior=prior, nitt=300000, thin=200, burnin=30000)
+# autocorr(seasonmb$Sol) #Did fixed effects converge?
+# autocorr(seasonmb$VCV) #Did random effects converge?
+# summary(seasonmb) 
+# boxplot(hwi~Season,data = maxBond2)
+# 
+# hist(log(strength2$strength))
+# seasons = MCMCglmm(log(strength) ~ Season, random=~ID, family="gaussian", data=strength2, verbose=F, prior=prior, nitt=200000, thin=200, burnin=30000)
+# autocorr(seasons$Sol) #Did fixed effects converge?
+# autocorr(seasons$VCV) #Did random effects converge?
+# summary(seasons) 
+# boxplot(strength~Season,data = strength2)
+# 
+# prior = list(R=list(R1=list(V=1,nu=0)))
+# hist(degree2$degree)
+# degree2$Season <- as.factor(degree2$Season) #factor to see if it makes the fixed effects converge. It helped
+# seasond = MCMCglmm(degree ~ Season, family="poisson", data=degree2, verbose=F, prior=prior, nitt=300000, thin=1000, burnin=50000)
+# autocorr(seasond$Sol) #Did fixed effects converge? No so factored season, increased nitt/burnin, decreased thin and it worked
+# autocorr(seasond$VCV) #Did random effects converge?
+# summary(seasond) 
+# boxplot(degree~Season,data = degree2)
 ```
 
 Social network data are not independent (@croft2011hypothesis), therefore, to determine whether individuals are associating non-randomly based on flexibility (i.e., association strength between two grackles is larger than would be expected by random chance), we will compare our model results to those obtained from random networks. To make a random network, we will use the R package sna (@butts2016sna) and the function “rperm” to randomly rearrange the association strengths (edges) of grackles in our network. We will conduct this edge randomization (called permutation) 10,000 times to create our sample of random networks. We will then re-calculate our dependent variables from the random networks and re-run the same models (as in @croft2011hypothesis and @whitehead2005testing). We will conclude that social bonds are significantly related to flexibility if the coefficients describing the relationship in our observed data are in the top 2.5% and bottom 2.5% of the coefficients resulting from models run on the random networks.
