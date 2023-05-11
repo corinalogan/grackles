@@ -966,7 +966,7 @@ summary(c1)
 The social network is... (say something general about Figure) (Figure).
 
 ```{r p4pt1socialnetwork, eval=T}
-### Create social network graph from associations between banded birds ###
+### Create social network graph figure from associations between banded birds ###
 #Load social data
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
 ff <- data.frame(ff)
@@ -975,12 +975,13 @@ ff <- data.frame(ff)
 ff1 <- ff[!ff$FocalBirdID=="NA" & !ff$NonFocalBirdID=="NA" & !ff$NonFocalBirdID=="unbanded adult female" & !ff$NonFocalBirdID=="unbanded adult male" & !ff$NonFocalBirdID=="unbanded juvenile" & !ff$NonFocalBirdID=="unbanded juvenile female" & !ff$NonFocalBirdID=="unbanded juvenile male" & !ff$NonFocalBirdID=="unbanded unknown female" & !ff$NonFocalBirdID=="unbanded unknown male"  & !ff$NonFocalBirdID=="unknown adult female" & !ff$NonFocalBirdID=="unknown adult male" & !ff$NonFocalBirdID=="unknown adult male " & !ff$NonFocalBirdID=="unknown banded female" & !ff$NonFocalBirdID=="unknown female" & !ff$NonFocalBirdID=="unknown grackle"  & !ff$NonFocalBirdID=="unknown individual" & !ff$NonFocalBirdID=="unknown juvenile" & !ff$NonFocalBirdID=="unknown juvenile female"  & !ff$NonFocalBirdID=="unknown juvenile male" & !ff$NonFocalBirdID=="unknown male" & !ff$NonFocalBirdID=="unknown unbanded male",] 
 
 ff1 <- subset(ff1, is.na(ff1$FocalBirdID) == FALSE) #257 banded-banded bird associations
-ff2 = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ff1, FUN = "max") #only one observation of banded-banded pair per sampling period is allowed, for 111 banded-banded associations
+ff1aff <- subset(ff1, ff1$BehavType == "affiliative")
+ff2 = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ff1aff, FUN = "max") #only one observation of banded-banded pair per sampling period is allowed, for 111 banded-banded associations
 
 library(igraph)
 library(sna)
 #Create an edgelist - a two column matrix of birds seen together
-el = ff2[,c(1:4)]
+el = ff2
 #since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
 colnames(el)[c(2,3)]=c("ID.1","ID.2")
 el$ID.1 = as.character(el$ID.1)
@@ -1048,20 +1049,39 @@ plot(Ya, layout = l*8.0,
 
 ```{r p4pt2socnetmetrics, eval = F}
 ### Now we can quantify social network metrics on individuals with the minimum number of focal follows ###
-### Which birds meet the minimum requirement of 2 follows in each season (4 total)?
+### We do not have enough breeding season data, so we are only using nonbreeding season data. Which birds meet the minimum requirement of 4 total follows?
+
+#load attribute data
 g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 g <- data.frame(g)
-g = g[,c(1:2,21:27)] #data frame with attribute data for analyses (BirdID, Sex, DomRank, Population, behavioral flexibility [phi & lambda], NumFollows)
+g = g[,c(1:2,21:27)] #data frame with attribute data for analyses (BirdID, Sex, ShannonDI, behavioral flexibility [Phi & Lambda], DomRank, Population, NumFollows)
 g1 <- g[g$NumFollows>3,] #n=24
 g1 = g1[!is.na(g1$BirdID),]
-#Males=17: Burrito, Chilaquile, Diablo, Fideo, Marisco, Mofongo, Queso, Taco, Taquito, Tomatillo, Tembleque, Polvorones, Camote, Helado, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#females=5: Chalupa, Tapa, Yuca, Galandra, Kel
+#Also, we only want birds with data from the non-breeding season
+g1 = g1[-which(g1$BirdID == "Marisco" | g1$BirdID == "Mofongo" | g1$BirdID == "Queso" | g1$BirdID == "Tapa" | g1$BirdID == "Tomatillo" | g1$BirdID == "Helado"),]
+#Males=13: Burrito, Chilaquile, Diablo, Fideo, Taco, Taquito, Tembleque, Polvorones, Camote, Dulce de Leche, Zapote Negro, Cuervo, Xunub
+#females=5: Chalupa, Yuca, Galandra, Kel, Cutuy
 
-#Exclude those who did not meet the minimum of 4 focals
-g2 <- g[g$NumFollows<4,] 
-g2 = g2[!is.na(g2$BirdID),]
-g2$BirdID #Adobo, Habanero, Mole, Pizza, Pollito, Flan, Piña, Buñuelo, Ak'xi, Kau, Tzanatl preciosa
+#load social association data
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
+ff <- data.frame(ff)
 
+## Data filtering
+#Exclude unbanded birds
+ff1 <- ff[!ff$FocalBirdID=="NA" & !ff$NonFocalBirdID=="NA" & !ff$NonFocalBirdID=="unbanded adult female" & !ff$NonFocalBirdID=="unbanded adult male" & !ff$NonFocalBirdID=="unbanded juvenile" & !ff$NonFocalBirdID=="unbanded juvenile female" & !ff$NonFocalBirdID=="unbanded juvenile male" & !ff$NonFocalBirdID=="unbanded unknown female" & !ff$NonFocalBirdID=="unbanded unknown male"  & !ff$NonFocalBirdID=="unknown adult female" & !ff$NonFocalBirdID=="unknown adult male" & !ff$NonFocalBirdID=="unknown adult male " & !ff$NonFocalBirdID=="unknown banded female" & !ff$NonFocalBirdID=="unknown female" & !ff$NonFocalBirdID=="unknown grackle"  & !ff$NonFocalBirdID=="unknown individual" & !ff$NonFocalBirdID=="unknown juvenile" & !ff$NonFocalBirdID=="unknown juvenile female"  & !ff$NonFocalBirdID=="unknown juvenile male" & !ff$NonFocalBirdID=="unknown male" & !ff$NonFocalBirdID=="unknown unbanded male",] 
+
+ff1 <- subset(ff1, is.na(ff1$FocalBirdID) == FALSE) #257 banded-banded bird associations
+#Exlude aggressive assocations
+ff1aff <- subset(ff1, ff1$BehavType == "affiliative")
+colnames(ff1aff)[2] = "ID"
+#Exlude birds that don't meet minimum focal follow sample size
+ff2 = ff1aff[which(ff1aff$ID == "Burrito" | ff1aff$ID == "Chilaquile" | ff1aff$ID == "Chalupa" | 
+                             ff1aff$ID == "Diablo" | ff1aff$ID == "Fideo" | 
+                             ff1aff$ID == "Taco" | ff1aff$ID == "Taquito" |  ff1aff$ID == "Yuca" | 
+                             ff1aff$ID == "Tembleque" | ff1aff$ID == "Polvorones" | ff1aff$ID == "Camote" |
+                             ff1aff$ID == "Dulce de Leche" | ff1aff$ID == "Zapote Negro" | 
+                             ff1aff$ID == "Cuervo" | ff1aff$ID == "Xunub" | 
+                             ff1aff$ID == "Galandra" | ff1aff$ID == "Kel" | ff1aff$ID == "Cutuy"),]
 
 ### Calculate MaxBondStrength - the strength of the strongest association value (half weight index) for each individual
 bonds1 = hwi[,c(1,7)] #select only ID.2/ID.1 and hwi
@@ -1071,14 +1091,7 @@ colnames(bonds2)[1] = "ID"
 bonds = rbind(bonds1, bonds2)
 maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
 # only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
-maxBond = maxBond[which(maxBond$ID == "Burrito" | maxBond$ID == "Chilaquile" | maxBond$ID == "Diablo" | 
-                             maxBond$ID == "Fideo" | maxBond$ID == "Marisco" | maxBond$ID == "Mofongo" | 
-                             maxBond$ID == "Queso" | maxBond$ID == "Taco" | maxBond$ID == "Taquito" | 
-                             maxBond$ID == "Tembleque" | maxBond$ID == "Polvorones" | maxBond$ID == "Camote" |
-                             maxBond$ID == "Helado" | maxBond$ID == "Dulce de Leche" | maxBond$ID == "Zapote Negro" | 
-                             maxBond$ID == "Cuervo" | maxBond$ID == "Xunub" | maxBond$ID == "Chalupa" | 
-                             maxBond$ID == "Tapa" | maxBond$ID == "Yuca" | maxBond$ID == "Galandra" | 
-                             maxBond$ID == "Kel"),]
+
 
 #maxbond #this shows the hwi per bird. ADD THIS DATA TO THE GENERAL DATA SHEET
 
