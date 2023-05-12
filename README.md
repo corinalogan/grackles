@@ -1,4 +1,4 @@
-*Click the article **title** to be taken directly to that page. The **.Rmd** file is a version-tracked reproducible manuscript*
+*Click article **title** to be taken directly to that page. The **.Rmd** file is a version-tracked reproducible manuscript*
 
 &ast; = undergraduate co-author, ^ = this article underwent pre- and post-study peer review
 
