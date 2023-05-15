@@ -720,112 +720,281 @@ where $follows_{i}$ is the proportion of focal follows that were recorded in a p
 
  - **Deviation from the plan:** we added the independent variable, total seconds of observation time, to account for the different amounts of observation time with regard to the number of foods eaten and foraging techniques used per individual.
 
-```{r p1p2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+```{r p1foodsanalysis, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(rethinking)
+h1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+h1 <- data.frame(h1)
 
-ff <- data.frame(ff)
-
-#exclude NAs from the DomRank column
-ff <- subset(ff, is.na(ff$DomRank) == FALSE)
+#exclude NAs from the variables in this model
+h2 <- subset(h1, is.na(h1$FoodTypesPerSec) == FALSE)
+h2 <- subset(h2, is.na(h2$Phi) == FALSE)
+h2 <- subset(h2, is.na(h2$Lambda) == FALSE)
+h2 <- subset(h2, is.na(h2$DomRank) == FALSE)
 
 #Separate the sexes
-ff <- ff[ff$Sex=="F",]
-mal <- ff[ff$Sex=="M",]
-
-#Factor the random effect variables
-ff$ID <- as.factor(ff$BirdID)
-ff$Population <- as.factor(ff$Population)
-mal$ID <- as.factor(mal$BirdID)
-mal$Population <- as.factor(mal$Population)
+f <- h2[h2$Sex=="F",]
+m <- h2[h2$Sex=="M",]
 
 #sample sizes
-length(unique(ff$ID)) #9 ffales
-length(unique(mal$ID)) #26 males
+length(unique(f$BirdID)) #9 females
+length(unique(m$BirdID)) #26 males
+mean(f$NumFollows) #4.2 follows for females
+range(f$NumFollows) #1-6 follows for females
+mean(m$NumFollows) #4.6 follows for females
+range(m$NumFollows) #1-8 follows for females
 
-## figuring out how to treat the differences in observation time (SumFocalTime)
-plot(ff$NumFoodTypes ~ ff$SumFocalTime)
-plot(mal$NumFoodTypes ~ mal$SumFocalTime)
-plot(ff$NumForageTechs ~ ff$SumFocalTime)
-plot(mal$NumForageTechs ~ mal$SumFocalTime)
+### figuring out how to treat the differences in observation time (SumFocalTime) - made a new variable FoodTypesPerSec to account for the different observation times across birds
+plot(f$NumFoodTypes ~ f$SumFocalTime)
+plot(m$NumFoodTypes ~ m$SumFocalTime)
+plot(f$NumForageTechs ~ f$SumFocalTime)
+plot(m$NumForageTechs ~ m$SumFocalTime)
 
 #male data are significantly correlated - need to include observation time; female data are not significantly correlated - don't need to include observation time. However, there is a larger sample size for the males so perhaps this would be a pattern found in the females too if we had data on more individuals
-cor.test(ff$NumFoodTypes, ff$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 1.6156, df = 7, p-value = 0.1502, 95 percent confidence interval:  -0.2186279  0.8805227, cor 0.5211645 
-cor.test(mal$NumFoodTypes, mal$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 3.1879, df = 24, p-value = 0.003954, 95 percent confidence interval: 0.2004097 0.7700786, cor 0.5454211 
-cor.test(ff$NumForageTechs, ff$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 0.88938, df = 7, p-value = 0.4033, 95 percent confidence interval: -0.4382205  0.8111143, cor 0.3186338 
-cor.test(mal$NumForageTechs, mal$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 2.4232, df = 24, p-value = 0.0233, 95 percent confidence interval:0.06761479 0.70895493, cor 0.3186338 
+cor.test(f$NumFoodTypes, f$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 1.6156, df = 7, p-value = 0.1502, 95 percent confidence interval:  -0.2186279  0.8805227, cor 0.5211645 
+cor.test(m$NumFoodTypes, m$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 3.1879, df = 24, p-value = 0.003954, 95 percent confidence interval: 0.2004097 0.7700786, cor 0.5454211 
+cor.test(f$NumForageTechs, f$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 0.88938, df = 7, p-value = 0.4033, 95 percent confidence interval: -0.4382205  0.8111143, cor 0.3186338 
+cor.test(m$NumForageTechs, m$SumFocalTime, conf.level = 0.95, method = "pearson", alternative = "two.sided") #t = 2.4232, df = 24, p-value = 0.0233, 95 percent confidence interval:0.06761479 0.70895493, cor 0.3186338 
 
 
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-
-#Data checking for GLMM 1 ffales
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.88 so it is fine
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p=0.05. p<0.99 so not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.72 so it is fine. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel. Says combined adjusted quantile test significant
-plotResiduals(ff$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
-
-#Data checking for GLMM 1 males
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.88 so it is fine
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=0.86 so it is fine
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.76 so it is fine. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
-
-#Data checking for GLMM 2 ffales
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.336 so it is fine
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=1 so it is fine
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.49 so it is fine. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ff$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
-
-#Data checking for GLMM 2 males
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank + (1|ID) + (1|Population) + (1|SumFocalTime), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation. p=0.94 so it is fine
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05. p=0.77 so it is fine
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. p=0.84 so it is fine. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(mal$Phi, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect). Says combined adjusted quantile test significant, but not sure what it means in this context
+# SIMULATE
+n = 100
+p = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
+d = rnorm(n,mean=0,sd=0.3) #rank can range from -1 to 1, but standardize it
+type = rnorm(n,mean=(1*p + 1*d),sd=0.001) #food types per second is a rate and the sd of the actual data is really small bc it only ranges from 0.000-0.002. Now change the slope (b) - tried 0, 1, and -1
+#plot(p,type)
+#plot(d,type)
+#plots look good - any relationship is possible, but all values are within the feasible range
 
 
-#GLMM 
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0),R5=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+### NUMBER OF DIFFERENT FOOD TYPES EATEN - RUN the models on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
+# Females, PHI
+fem <- list(types = standardize(f$FoodTypesPerSec),
+            phi = standardize(f$Phi),
+            lambda = standardize(f$Lambda),
+            rank = standardize(f$DomRank)
+              )
 
-#GLMM 1 with response variable = NumberFoodsEaten
-#ffales
-f1 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+fphi <- ulam(
+    alist(
+        types ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*phi + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=fem , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-#males
-f2 <- MCMCglmm(NumFoodTypes ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
+outputfphip <- precis( fphi , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.46 0.62 -2.54 -0.51   973  1.00
+#bp    -0.37 0.58 -1.36  0.47  1008  1.00
+#br     0.28 0.69 -0.78  1.42   911  1.01
+#sigma  1.09 0.29  0.72  1.63  1009  1.00
+# bp interval crosses zero so not much relationship between phi and number of food types eaten per second
 
-#GLMM 2 with response variable = NumberForagingTechniques
-#female
-f3 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f3)
-#autocorr(f3$Sol) #Did fixed effects converge?
-#autocorr(f3$VCV) #Did random effects converge?
+# females, lambda
+flam <- ulam(
+    alist(
+        types ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*lambda + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=fem , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-#male
-f4 <- MCMCglmm(NumForageTechs ~ Phi + Lambda + FlexibilityManipulated + DomRank, random=~Population+ID+SumFocalTime, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f4)
-#autocorr(f4$Sol) #Did fixed effects converge?
-#autocorr(f4$VCV) #Did random effects converge?
+outputfphil <- precis( flam , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.53 0.61 -2.59 -0.62   876     1
+#bp     0.07 0.64 -0.97  1.02   878     1
+#br     0.18 0.70 -0.84  1.38   888     1
+#sigma  1.09 0.29  0.72  1.59   956     1
+# bp interval crosses zero so not much relationship between phi and number of food types eaten per second
+
+
+# males, PHI
+mal <- list(types = standardize(m$FoodTypesPerSec),
+            phi = standardize(m$Phi),
+            lambda = standardize(m$Lambda),
+            rank = standardize(m$DomRank)
+              )
+
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+mphi <- ulam(
+    alist(
+        types ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*phi + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=mal , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputmphip <- precis( mphi , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.88 0.58 -2.86 -1.00   939  1.00
+#bp     0.02 0.58 -0.91  0.93   902  1.01
+#br     0.16 0.46 -0.51  0.93   815  1.00
+#sigma  1.06 0.16  0.83  1.33  1387  1.00
+# bp interval crosses zero so not much relationship between phi and number of food types eaten per second
+
+# males, lambda
+mlam <- ulam(
+    alist(
+        types ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*lambda + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=mal , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputmphil <- precis( mlam , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.87 0.58 -2.86 -1.04   887     1
+#bp     0.32 0.53 -0.61  1.08   695     1
+#br     0.09 0.50 -0.63  0.92   999     1
+#sigma  1.03 0.15  0.82  1.29  1456     1
+# bp interval crosses zero so not much relationship between phi and number of food types eaten per second
+
+
+# VISUALIZE
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
+plot(fem$types ~ fem$phi , pch=1 , col="black" , xlab="" , ylab="Food types eaten per second (std)" , xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(fem$types ~ fem$lambda , pch=1 , col="black" , xlab="" , ylab="", xlim=c(-2,2), cex.lab=2, cex.axis=2, cex=2 )
+plot(mal$types ~ mal$phi , pch=1 , col="black" , xlab="Phi (std)" , ylab="Food types eaten per second (std)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(mal$types ~ mal$lambda , pch=1 , col="black" , xlab="Lambda (std)" , ylab="", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+par(op)
 ```
+
+```{r p1techanalysis, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### NUMBER OF FORAGING TECHNIQUES
+library(rethinking)
+h1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+h1 <- data.frame(h1)
+
+#exclude NAs from the variables in this model
+h3 <- subset(h1, is.na(h1$ForageTechsPerSec) == FALSE)
+h3 <- subset(h3, is.na(h3$Phi) == FALSE)
+h3 <- subset(h3, is.na(h3$Lambda) == FALSE)
+h3 <- subset(h3, is.na(h3$DomRank) == FALSE)
+
+#Separate the sexes
+f2 <- h3[h3$Sex=="F",]
+m2 <- h3[h3$Sex=="M",]
+
+#sample sizes
+length(unique(f2$BirdID)) #9 females
+length(unique(m2$BirdID)) #26 males
+mean(f2$NumFollows) #4.2 follows for females
+range(f2$NumFollows) #1-6 follows for females
+mean(m2$NumFollows) #4.6 follows for females
+range(m2$NumFollows) #1-8 follows for females
+
+# SIMULATION is the same as the previous R code chunk p1foodsanalysis
+
+# RUN the models
+# Females, PHI
+femt <- list(techs = standardize(f2$ForageTechsPerSec),
+            phi = standardize(f2$Phi),
+            lambda = standardize(f2$Lambda),
+            rank = standardize(f2$DomRank)
+              )
+
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+ftphi <- ulam(
+    alist(
+        techs ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*phi + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=femt , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputftphip <- precis( ftphi , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.50 0.61 -2.53 -0.62  1229     1
+#bp    -0.34 0.60 -1.38  0.53  1075     1
+#br     0.22 0.68 -0.76  1.36  1090     1
+#sigma  1.10 0.29  0.74  1.63  1427     1
+# bp interval for this output and those below are the same: it crosses zero so not much relationship between phi and number of foraging techniques used per second
+
+# females, lambda
+ftlam <- ulam(
+    alist(
+        techs ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*lambda + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=femt , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputftphil <- precis( ftlam , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.53 0.61 -2.56 -0.62   924     1
+#bp    -0.30 0.64 -1.34  0.70  1091     1
+#br     0.16 0.63 -0.77  1.21  1075     1
+#sigma  1.09 0.30  0.72  1.62  1170     1
+
+
+# males, PHI
+malt <- list(techs = standardize(m2$ForageTechsPerSec),
+            phi = standardize(m2$Phi),
+            lambda = standardize(m2$Lambda),
+            rank = standardize(m2$DomRank)
+              )
+
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+mtphi <- ulam(
+    alist(
+        techs ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*phi + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=malt , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputmtphip <- precis( mtphi , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.88 0.59 -2.91 -1.03   916     1
+#bp    -0.24 0.51 -1.08  0.58  1206     1
+#br     0.14 0.52 -0.62  1.05   881     1
+#sigma  1.06 0.16  0.84  1.34  1148     1
+
+# males, lambda
+mtlam <- ulam(
+    alist(
+        techs ~ dnorm(mu,sigma),
+        log(mu) <- a + bp*lambda + br*rank ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=malt , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputmtphil <- precis( mtlam , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.88 0.57 -2.86 -1.05   889  1.01
+#bp     0.14 0.50 -0.73  0.85   768  1.01
+#br     0.17 0.50 -0.54  1.05   894  1.01
+#sigma  1.04 0.16  0.82  1.31  1405  1.00
+
+
+# VISUALIZE
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
+plot(femt$techs ~ femt$phi , pch=1 , col="black" , xlab="" , ylab="Foraging techniques used/sec (std)" , xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(femt$techs ~ femt$lambda , pch=1 , col="black" , xlab="" , ylab="", xlim=c(-2,2), cex.lab=2, cex.axis=2, cex=2 )
+plot(malt$techs ~ malt$phi , pch=1 , col="black" , xlab="Phi (std)" , ylab="Foraging techniques used/sec (std)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(malt$techs ~ malt$lambda , pch=1 , col="black" , xlab="Lambda (std)" , ylab="", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2)
+par(op)
+```
+
+**Figure.** Scatterplots for females (top row) and males (bottom row) showing the relationship between the number of different food types eaten per second and phi (left column) or lambda (right column). Larger diameter circles indicate a larger phi or lambda.
+
 
 We will quantify the number of different food types and foraging techniques during focal follows according to the [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing). If a grackle forages during a focal follow we record WHAT it eats, as well as HOW the bird is searching for food. Foraging techniques include: Flipping over objects (flip), digging in ground with bill or feet (dig), sweeping head back and forth [i.e., actually sweeping the bill across the substrate; (sw)], extracting from a substrate (ex), lowers body posture to be parallel to ground to stalk/catch prey from air, from ground, from tree, etc (sc), using gaping bill to search through substrate (ga), lifting or nudging objects with bill (ln). 
 
@@ -837,6 +1006,86 @@ Prediction: If there is a negative correlation between flexibility and the numbe
 
 ## P2: Flexibility manipulation and foraging behavior 
 
+
+
+```{r p2manipvsctrl, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### NUMBER OF FORAGING TECHNIQUES for flexibility manipulated vs control birds
+library(rethinking)
+c1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+c1 <- data.frame(c1)
+
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+c1 <- c1[c1$Population=="AZ",]
+
+#exclude NAs from the variables in this model
+c2 <- subset(c1, is.na(c1$ForageTechsPerSec) == FALSE)
+c2 <- subset(c2, is.na(c2$Phi) == FALSE)
+c2 <- subset(c2, is.na(c2$Lambda) == FALSE)
+c2 <- subset(c2, is.na(c2$DomRank) == FALSE)
+
+#Separate the sexes - too few females (n=3) to separate the sexes so combining the sexes for this analysis
+f3 <- c2[c2$Sex=="F",]
+m3 <- c2[c2$Sex=="M",]
+
+#sample sizes
+length(unique(f3$BirdID)) #3 females
+length(unique(m3$BirdID)) #15 males
+mean(f3$NumFollows) #4.7 follows for females
+range(f3$NumFollows) #4-6 follows for females
+mean(m3$NumFollows) #4.7 follows for females
+range(m3$NumFollows) #1-8 follows for females
+
+# SIMULATION
+n = 100
+p = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
+d = rnorm(n,mean=0,sd=0.2) #rank can range from 0 to 1, but standardize it
+sdi = rnorm(n,mean=(-1*p + 1*d),sd=0.5) #shannon diversity index, standardize it. Now change the slope (b) - tried 0, 1, and -1
+#plot(p,sdi)
+#plot(d,sdi)
+#plots look good - any relationship is possible, but all values are within the feasible range
+
+
+# RUN the models
+# PHI
+manip <- list(tech = standardize(c2$ForageTechsPerSec),
+            treatment = standardize(c2$FlexibilityManipulated)
+              )
+
+# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+phimanip <- ulam(
+    alist(
+        tech ~ dnorm(mu,sigma),
+        log(mu) <- a[treatment] + bp[treatment] ,
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        bp ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputtphimanipp <- precis( phimanip , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#
+# bp interval for this output and those below are the same: it crosses zero so not much relationship between phi and number of foraging techniques used per second
+
+# lambda
+lammanip <- ulam(
+    alist(
+        tech ~ dnorm(mu,sigma),
+        log(mu) <- a[treatment] + bp[treatment] ,
+        a ~ dnorm(0,1),
+        bp ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputlammanip <- precis( lammanip , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% n_eff Rhat4
+#
+
+# VISUALIZE
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
+plot(malt$techs ~ malt$phi , pch=1 , col="black" , xlab="Phi (std)" , ylab="Foraging techniques used/sec (std)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(malt$techs ~ malt$lambda , pch=1 , col="black" , xlab="Lambda (std)" , ylab="", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2)
+par(op)
+```
 
 
 ## P3: flexible = more human foods
