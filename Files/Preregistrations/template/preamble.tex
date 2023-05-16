@@ -1,0 +1,164 @@
+%%%%%%%%%%TO FORMAT A PREPRINT%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%main packages to use%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{xstring}
+\usepackage[margin=1in,marginparwidth=4.2cm,marginparsep=0.5cm]{geometry}
+\usepackage{ifthen}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{marginnote}
+\reversemarginpar  % sets margin notes to the left
+\usepackage{lipsum} % Required to insert dummy text
+\usepackage{calc}
+\usepackage{siunitx}
+\usepackage{lineno}
+%\usepackage[none]{hyphenat} % use only if there is a problem
+% Use Unicode characters
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% Clean citations with biblatex
+\usepackage[
+backend=biber,
+natbib=true,
+sortcites=true,
+defernumbers=true,
+style=authoryear,
+citestyle=authoryear-comp,
+maxnames=99,
+maxcitenames=2,
+giveninits=true,
+terseinits=true,
+url=false
+]{biblatex}
+%%%%%%%%%%%%%%%%%%%%%%end main package list %%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%% adjustments to bibliography settings%%%%%%%%%%%%%
+\DeclareFieldFormat{doi}{%
+  \ifhyperref
+    {\href{https://doi.org/#1}{\nolinkurl{https://doi.org/#1}}}
+    {\nolinkurl{https://doi.org/#1}}}
+
+\AtEveryBibitem{\clearfield{month}}
+\AtEveryBibitem{\clearfield{day}}
+\AtEveryBibitem{\clearfield{language}}
+\AtEveryBibitem{\clearfield{issn}}
+\AtEveryBibitem{\clearfield{id}}
+\AtEveryBibitem{\clearfield{eprint}}
+\AtEveryBibitem{\clearfield{annotation}}
+
+\DeclareNameAlias{default}{family-given}
+\renewcommand*{\revsdnamepunct}{} % no comma between family and given names
+\renewbibmacro{in:}{%
+  \ifentrytype{article}{}{\printtext{\bibstring{in}\intitlepunct}}} % remove 'In:' before journal name
+\DeclareFieldFormat[article]{pages}{#1} % remove pp.
+\AtEveryBibitem{\ifentrytype{article}{\clearfield{number}}{}} % don't print issue numbers
+\DeclareFieldFormat[article, inbook, incollection, inproceedings, misc, thesis, unpublished]{title}{#1} % title without quotes
+\usepackage{csquotes}
+\RequirePackage[english]{babel} % must be called after biblatex
+
+\addbibresource{\myrefs}% add the main bibliography
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\DeclareBibliographyCategory{ignore}
+\addtocategory{ignore}{recommendation} % adding recommendation to 'ignore' category so that it does not appear in the References
+\newcommand{\mybibexclude}[1]{\addtocategory{ignore}{#1}}
+% Clickable references. Use \url{www.example.com} or \href{www.example.com}{description} to add a clicky url
+\usepackage{nameref}
+\usepackage[pdfborder={0 0 0},   
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue]{hyperref}  % sets link border to white
+
+\urlstyle{same}
+%%%%%%%%%%%%%%%%%%%%%%% end bibliography settings%%%%%%%
+
+
+%%%%%% Figure and table management
+\usepackage{graphbox}  % loads graphicx ppackage with extended options for vertical alignment of figures
+\usepackage{floatrow}
+\floatsetup[figure]{capposition=\captionside}
+\floatsetup[table]{style=plaintop}
+\usepackage[justification=centering]{caption} %center caption relative to figure/table
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%% typesetting%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Line numbers
+%\usepackage[right]{lineno}
+% Improve typesetting in LaTex
+\usepackage{microtype}
+\DisableLigatures[f]{encoding = *, family = * }
+% Text layout and font (Open Sans)
+\setlength{\parindent}{0.4cm}
+\linespread{1.2}
+\RequirePackage[default,scale=0.90]{opensans}
+% Defining document colors
+\usepackage{xcolor}
+\definecolor{darkgray}{HTML}{808080}
+\definecolor{mediumgray}{HTML}{6D6E70}
+\definecolor{ligthgray}{HTML}{d9d9d9}
+\definecolor{pciblue}{HTML}{74adca}
+\definecolor{opengreen}{HTML}{77933c}
+% Use adjustwidth environment to exceed text width
+\usepackage{changepage}
+% Adjust caption style
+\usepackage[aboveskip=1pt,labelfont=bf,labelsep=period,singlelinecheck=off]{caption}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%begin the preprint%%%%%%%%%%
+  \newcommand{\beginningpreprint}{
+\vspace*{0.5cm}
+\begin{flushleft}
+\baselineskip=30pt
+%no page number
+\pagenumbering{gobble}
+{\Huge
+\fontseries{sb}\selectfont{\preprinttitle}}
+\end{flushleft}
+\vspace*{0.25cm}
+\begin{flushleft}
+\Large
+\listauthors
+\end{flushleft}
+\bigskip
+{\raggedright
+\listinstitutions}
+{\raggedright
+\authorshipnotes}
+
+\vspace*{0.5cm}
+\fcolorbox{pciblue}{pciblue}{
+\parbox{\textwidth - 2\fboxsep}{
+\vspace{0.25cm}
+\begin{internallinenumbers}
+
+\textbf{\large{\textsc{Abstract}}}\\
+\preprintabstract\\
+
+\footnotesize{\textbf{\emph{Keywords: }}\preprintkeywords}
+\end{internallinenumbers}
+
+\vspace{0.25cm}}
+}
+\newgeometry{margin=1in}
+}
+ 
+
+
+
+
+
