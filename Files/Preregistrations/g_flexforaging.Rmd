@@ -436,7 +436,15 @@ To begin to understand what kinds of effect sizes we will be able to detect give
 ## P1:
 
 
-## P2:
+## P2: Flexibility manipulation and food types/foraging techniques
+
+The model takes the form of:
+
+$tech_{i}$ ~ Binomial(12, $p$) *[likelihood]*,
+
+logit($p$) ~ $\alpha_{i}$[$treatment$] + $\beta_{i}$$time$ *[model]*,
+
+where $tech_{i}$ is the probability of individual, i, using one of the 12 foraging techniques, $p$ is the probability of using a given technique, $\alpha_{i}$ is the intercept (one per level of $treatment$: control and manipulated), and $\beta_{i}$ is the slope for the interaction with total number of seconds of observation $time$ for individual, i. Note that the model is the same when analyzing the number of food types eaten for each individual, $foods_{i}$, which replaces $tech_{i}$ in the above model. We use a contrast to determine whether there is a difference between $treatment$ and conclude that there is a difference if the 89% compatibility interval does not cross zero.
 
 
 ## P3:
@@ -1018,71 +1026,111 @@ c1 <- data.frame(c1)
 c1 <- c1[c1$Population=="AZ",]
 
 #exclude NAs from the variables in this model
-c2 <- subset(c1, is.na(c1$ForageTechsPerSec) == FALSE)
+c2 <- subset(c1, is.na(c1$NumForageTechs) == FALSE)
+c2 <- subset(c2, is.na(c2$SumFocalTime) == FALSE)
 c2 <- subset(c2, is.na(c2$Phi) == FALSE)
 c2 <- subset(c2, is.na(c2$Lambda) == FALSE)
 c2 <- subset(c2, is.na(c2$DomRank) == FALSE)
 
 #Separate the sexes - too few females (n=3) to separate the sexes so combining the sexes for this analysis
-f3 <- c2[c2$Sex=="F",]
-m3 <- c2[c2$Sex=="M",]
+#f3 <- c2[c2$Sex=="F",]
+#m3 <- c2[c2$Sex=="M",]
 
 #sample sizes
-length(unique(f3$BirdID)) #3 females
-length(unique(m3$BirdID)) #15 males
-mean(f3$NumFollows) #4.7 follows for females
-range(f3$NumFollows) #4-6 follows for females
-mean(m3$NumFollows) #4.7 follows for females
-range(m3$NumFollows) #1-8 follows for females
+#length(unique(f3$BirdID)) #3 females
+#length(unique(m3$BirdID)) #15 males
+#mean(f3$NumFollows) #4.7 follows for females
+#range(f3$NumFollows) #4-6 follows for females
+#mean(m3$NumFollows) #4.7 follows for females
+#range(m3$NumFollows) #1-8 follows for females
 
 # SIMULATION
 n = 100
-t = rnorm(n,mean=0,sd=0.2) #treatment is a categorical variable
-m = rnorm(n,mean=(0 + 1*t),sd=0.5) #shannon diversity index, standardize it. Now change the slope (b) - tried 0, 1, and -1
-#plot(t,m)
+t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
+time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
+m = rbinom(n=n,size=12, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.45)+(1/6000)*time),sd=0.2)) #12 techniques used. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+boxplot(m~t)
+plot(m~time)
 #plots look good - any relationship is possible, but all values are within the feasible range
 
+#run the simulated data through the model
+s_manip <- list(m = m,
+            time = standardize(time),
+            t = t
+              )
+simmanip <- ulam( alist(
+        m ~ dbinom(12,p), #max 12 foraging techniques used across both populations (from data_FlexForaging > Foraging > How, and then counted the categories)
+        logit(p) <- a[t] + b*time, #include total observation time because this varied per focal (with a target max time of 10 min)
+        a[t] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc response variable is standardized
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=s_manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+s_output <- precis( simmanip , depth=2 )
+
+#contrast
+posts <- extract.samples(simmanip)
+diff <- inv_logit( posts$a[,1]) - inv_logit( posts$a[,2])
+precis( diff )
+#shows a difference between the treatment groups when means differ by 0.04 when sd=0.1
 
 # RUN the models
 # PHI
-manip <- list(tech = standardize(c2$ForageTechsPerSec),
-            treatment = standardize(c2$FlexibilityManipulated)
+manip <- list(tech = c2$NumForageTechs,
+            obstime = standardize(c2$SumFocalTime),
+            treatment = as.integer(as.factor(c2$FlexibilityManipulated)) #1=control, 2=manipulated
               )
 
-# Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
-phimanip <- ulam(
-    alist(
-        tech ~ dnorm(mu,sigma),
-        log(mu) <- a + b*treatment ,
-        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
-        b ~ dnorm(0,1),
-        sigma~dexp(1)
+# Run the model: binomial distribution bc it is a count of events occurring over a continuous period of time that is a bounded period of time (McElreath 2nd edition, Fig 10.6)
+phimanip <- ulam( alist(
+        tech ~ dbinom(12,p), #max 12 foraging techniques used across both populations (from data_FlexForaging > Foraging > How, and then counted the categories)
+        logit(p) <- a[treatment] + b*obstime, #include total observation time because this varied per focal (with a target max time of 10 min)
+        a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc response variable is standardized
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
     ) , data=manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputtphimanipp <- precis( phimanip , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
-#        mean   sd  5.5% 94.5% n_eff Rhat4
-#
-# bp interval for this output and those below are the same: it crosses zero so not much relationship between phi and number of foraging techniques used per second
+outputtphimanipp <- precis( phimanip , depth=2 )
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1] -1.75 0.27 -2.18 -1.33  1563     1
+#a[2] -1.16 0.25 -1.57 -0.77  1783     1
+#b     0.77 0.19  0.46  1.09  1668     1
 
-# lambda
-lammanip <- ulam(
-    alist(
-        tech ~ dnorm(mu,sigma),
-        log(mu) <- a[treatment] + bp[treatment] ,
-        a ~ dnorm(0,1),
-        bp ~ dnorm(0,1),
-        sigma~dexp(1)
-    ) , data=manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+#contrast to see if treatment groups differ
+postphi <- extract.samples(phimanip)
+diff <- inv_logit( postphi$a[,1])*12 - inv_logit( postphi$a[,2])*12 #it shows a probability so multiply by 12 techniques
+precis( diff )
+#      mean   sd  5.5% 94.5%  histogram
+#diff -1.09 0.66 -2.14 -0.06 ▁▁▂▅▇▇▃▁▁▁
+#control group has 1.1 fewer foraging techniques than the manipulated group
 
-outputlammanip <- precis( lammanip , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the dependent variable (does not cross 0) or not (does cross 0)
-#        mean   sd  5.5% 94.5% n_eff Rhat4
-#
+#look at the predicted number of techniques that manipulated indivduals are expected to show if they would be observed for the full 10 min
+manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*12
+precis(manipulated[,1])
+#                 mean   sd 5.5% 94.5% histogram
+#manipulated...1. 6.06 1.05 4.37  7.65  ▁▁▂▇▇▃▁▁
+#they would use an average of 6.1 techniques
 
-# VISUALIZE
-op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
-plot(malt$techs ~ malt$phi , pch=1 , col="black" , xlab="Phi (std)" , ylab="Foraging techniques used/sec (std)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
-plot(malt$techs ~ malt$lambda , pch=1 , col="black" , xlab="Lambda (std)" , ylab="", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2)
-par(op)
+#look at the predicted number of techniques that control indivduals are expected to show if they would be observed for the full 10 min
+control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*12
+precis(control[,1])
+#             mean   sd 5.5% 94.5%   histogram
+#control...1. 4.37 0.84 3.08  5.78 ▁▁▃▅▇▇▃▂▁▁▁
+#they would use an average of 4.4 techniques
+
+#it looks like a positive linear relationship between techniques used and observation time
+#plot(manip$tech~manip$obstime)
+
+#Probability of using a technique
+#inv_logit( outputtphimanipp[1,1]) # 0.1480472 control
+#inv_logit( outputtphimanipp[2,1]) # 0.2386673 manipulated
+#how much more likely are manipulated birds to use a technique?
+inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #1.61 times more likely
+
+
+# visualize
+library(ggplot2)
+library(cowplot)
+manipplot <- ggplot() + geom_point(data=c2,aes(x=FlexibilityManipulated, y=NumForageTechs), size=4, shape=1) + geom_jitter(height=0.5) + theme(axis.text.x = element_text(angle=0, vjust = 0.5)) + labs(x = "", y = "Foraging techniques used") + scale_x_discrete(labels=c('Control', 'Manipulated'))
+theme_set(theme_cowplot(font_size=12))
+plot_grid(manipplot, align='h', ncol=1, label_size=12)
 ```
 
 
