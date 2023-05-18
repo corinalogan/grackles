@@ -1348,79 +1348,127 @@ plot(Ya, layout = l*8.0,
 #load attribute data
 g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 g <- data.frame(g)
-g = g[,c(1:2,21:27)] #data frame with attribute data for analyses (BirdID, Sex, ShannonDI, behavioral flexibility [Phi & Lambda], DomRank, Population, NumFollows)
-g1 <- g[g$NumFollows>3,] #n=24
-g1 = g1[!is.na(g1$BirdID),]
-#Also, we only want birds with data from the non-breeding season
-g1 = g1[-which(g1$BirdID == "Marisco" | g1$BirdID == "Mofongo" | g1$BirdID == "Queso" | g1$BirdID == "Tapa" | g1$BirdID == "Tomatillo" | g1$BirdID == "Helado"),]
-#Males=13: Burrito, Chilaquile, Diablo, Fideo, Taco, Taquito, Tembleque, Polvorones, Camote, Dulce de Leche, Zapote Negro, Cuervo, Xunub
-#females=5: Chalupa, Yuca, Galandra, Kel, Cutuy
 
 #load social association data
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
 ff <- data.frame(ff)
 
-## Data filtering
-#Exclude unbanded birds
-ff1 <- ff[!ff$FocalBirdID=="NA" & !ff$NonFocalBirdID=="NA" & !ff$NonFocalBirdID=="unbanded adult female" & !ff$NonFocalBirdID=="unbanded adult male" & !ff$NonFocalBirdID=="unbanded juvenile" & !ff$NonFocalBirdID=="unbanded juvenile female" & !ff$NonFocalBirdID=="unbanded juvenile male" & !ff$NonFocalBirdID=="unbanded unknown female" & !ff$NonFocalBirdID=="unbanded unknown male"  & !ff$NonFocalBirdID=="unknown adult female" & !ff$NonFocalBirdID=="unknown adult male" & !ff$NonFocalBirdID=="unknown adult male " & !ff$NonFocalBirdID=="unknown banded female" & !ff$NonFocalBirdID=="unknown female" & !ff$NonFocalBirdID=="unknown grackle"  & !ff$NonFocalBirdID=="unknown individual" & !ff$NonFocalBirdID=="unknown juvenile" & !ff$NonFocalBirdID=="unknown juvenile female"  & !ff$NonFocalBirdID=="unknown juvenile male" & !ff$NonFocalBirdID=="unknown male" & !ff$NonFocalBirdID=="unknown unbanded male",] 
-
-ff1 <- subset(ff1, is.na(ff1$FocalBirdID) == FALSE) #257 banded-banded bird associations
 #Exlude aggressive assocations
-ff1aff <- subset(ff1, ff1$BehavType == "affiliative")
-colnames(ff1aff)[2] = "ID"
-#Exlude birds that don't meet minimum focal follow sample size
-ff2 = ff1aff[which(ff1aff$ID == "Burrito" | ff1aff$ID == "Chilaquile" | ff1aff$ID == "Chalupa" | 
-                             ff1aff$ID == "Diablo" | ff1aff$ID == "Fideo" | 
-                             ff1aff$ID == "Taco" | ff1aff$ID == "Taquito" |  ff1aff$ID == "Yuca" | 
-                             ff1aff$ID == "Tembleque" | ff1aff$ID == "Polvorones" | ff1aff$ID == "Camote" |
-                             ff1aff$ID == "Dulce de Leche" | ff1aff$ID == "Zapote Negro" | 
-                             ff1aff$ID == "Cuervo" | ff1aff$ID == "Xunub" | 
-                             ff1aff$ID == "Galandra" | ff1aff$ID == "Kel" | ff1aff$ID == "Cutuy"),]
+ff1aff <- subset(ff, ff$BehavType == "affiliative")
 
-### Calculate MaxBondStrength - the strength of the strongest association value (half weight index) for each individual
-bonds1 = hwi[,c(1,7)] #select only ID.2/ID.1 and hwi
+# Only want non-breeding season data
+# separate Sites because breeding started earlier in AZ
+ff_AZ = ff1aff[which(ff1aff$Site == "AZ"),]
+ff_AZ$Date = as.Date(ff_AZ$Date, format = "%Y-%m-%d")
+ffAZ_nbs = ff_AZ[which(ff_AZ$Date < "2019-03-08" | c(ff_AZ$Date > "2019-08-31" & ff_AZ$Date < "2020-03-08")),] # nonbreeding season = 1 Sept 2019 - 8 Mar 2020
+ffAZ_nbs$Season = "NBS"
+#now repeat in CA
+ff_CA = ff1aff[which(ff1aff$Site == "CA"),]
+ff_CA$Date = as.Date(ff_CA$Date, format = "%Y-%m-%d")
+ffCA_nbs = ff_CA[which(ff_CA$Date > "2021-08-31" & ff_CA$Date < "2022-03-30"),] # nonbreeding season = 1 Sept 2021 - 29 Mar 2022
+ffCA_nbs$Season = "NBS"
+#combine sites together again
+ffs = rbind(ffAZ_nbs,ffCA_nbs) 
+#aggregate to only one association per pair per follow
+els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
+
+## For the strength of bonds, we use the half-weight index to quantify the association strength between two banded birds.
+# For the half-weight index we need the number of times bird 1 is seen without bird 2 (Y.1), and the number of times bird 2 is seen without bird 1 (Y.2). Use raw data, including UB and UNK birds, to get the number of times each bird is seen.
+tmp = els.nb[,c(2,4)] #FocalBirdID, Site
+colnames(tmp)[1] = "ID"
+tmp2 = els.nb[,c(3:4)] #NonFocalBirdID, Site
+colnames(tmp2)[1] = "ID"
+y = rbind(tmp, tmp2)
+y$count = 1
+y = aggregate(count ~ ID + Site, data = y, FUN = "sum") #how many times each bird is seen individually
+colnames(y)[3] = "y"
+
+#For the half-weight index we also need the number of times two banded birds are seen together (x). 
+#Filter for Focal birds that went through flexibility assays and had the minimum number of focal follows (at least 2 in non-breeding season) from data frame of affiliative, non-breeding season associations.
+els.nb = els.nb[which(els.nb$FocalBirdID == "Adobo" | els.nb$FocalBirdID == "Burrito" | els.nb$FocalBirdID == "Chilaquile" | els.nb$FocalBirdID == "Chalupa" | els.nb$FocalBirdID == "Diablo" | els.nb$FocalBirdID == "Fideo" | els.nb$FocalBirdID == "Taco" | els.nb$FocalBirdID == "Taquito" |  els.nb$FocalBirdID == "Yuca" | els.nb$FocalBirdID == "Tembleque" | els.nb$FocalBirdID == "Polvorones" | els.nb$FocalBirdID == "Camote" | els.nb$FocalBirdID == "Dulce de Leche" | els.nb$FocalBirdID == "Zapote Negro" | els.nb$FocalBirdID == "Cuervo" | els.nb$FocalBirdID == "Xunub" | els.nb$FocalBirdID == "Galandra" | els.nb$FocalBirdID == "Kel" | els.nb$FocalBirdID == "Kau" | els.nb$FocalBirdID == "Cutuy"),]
+
+#Exclude unbanded birds
+els.nb2 <- els.nb[!els.nb$NonFocalBirdID=="NA" & !els.nb$NonFocalBirdID=="unbanded adult female" & !els.nb$NonFocalBirdID=="unbanded adult male" & !els.nb$NonFocalBirdID=="unbanded juvenile" & !els.nb$NonFocalBirdID=="unbanded juvenile female" & !els.nb$NonFocalBirdID=="unbanded juvenile male" & !els.nb$NonFocalBirdID=="unbanded unknown female" & !els.nb$NonFocalBirdID=="unbanded unknown male"  & !els.nb$NonFocalBirdID=="unknown adult female" & !els.nb$NonFocalBirdID=="unknown adult male" & !els.nb$NonFocalBirdID=="unknown adult male " & !els.nb$NonFocalBirdID=="unknown banded female" & !els.nb$NonFocalBirdID=="unknown female" & !els.nb$NonFocalBirdID=="unknown grackle"  & !els.nb$NonFocalBirdID=="unknown individual" & !els.nb$NonFocalBirdID=="unknown juvenile" & !els.nb$NonFocalBirdID=="unknown juvenile female"  & !els.nb$NonFocalBirdID=="unknown juvenile male" & !els.nb$NonFocalBirdID=="unknown male" & !els.nb$NonFocalBirdID=="unknown unbanded male",] 
+
+
+#Create an edgelist - a two column matrix of birds seen together
+#since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
+colnames(els.nb2)[c(2,3)]=c("ID.1","ID.2")
+els.nb2$ID.1 = as.character(els.nb2$ID.1)
+els.nb2$ID.2 = as.character(els.nb2$ID.2)
+for (i in 1:nrow(els.nb2)) {
+  tmp = els.nb2[i, c("ID.1", "ID.2")]
+  tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
+  els.nb2[i, "ID.1"] = tmp[,1]
+  els.nb2[i, "ID.2"] = tmp[,2]
+}
+
+
+#For the half-weight index, calculate the number of times two birds are seen together (x)
+els.nb2$count = 1
+x = aggregate(count ~ ID.1 + ID.2 + Site, data = els.nb2, FUN = "sum") #how many times are bird 1 and bird 2 observed together in each season
+colnames(x)[4]="x"
+
+
+colnames(y)[1] = "ID.1" 
+hwis = merge(x,y, by = c("ID.1","Site"))
+hwis$Y.1 = hwis$y - hwis$x #the number of times bird 1 was seen without bird 2
+hwis = hwis[,-5]
+colnames(y)[1] = "ID.2"
+hwis = merge(hwis,y, by = c("ID.2","Site"))
+hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1 by season
+#data frame ready for half-weight index equation
+### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
+hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
+
+
+### Calculate MaxBondStrength - the strength of the strongest association value (half-weight index) for each individual
+bonds1 = hwis[,c(1,8)] #select only ID.2/ID.1 and hwi
 colnames(bonds1)[1] = "ID"
-bonds2 = hwi[,c(3,7)] #select only ID.2/ID.1 and hwi
+bonds2 = hwis[,c(3,8)] #select only ID.2/ID.1 and hwi
 colnames(bonds2)[1] = "ID"
 bonds = rbind(bonds1, bonds2)
 maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
-# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
+# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
+maxBond = maxBond[-which(maxBond$ID == "Aquaman" | maxBond$ID == "Guapo" | maxBond$ID == "Morada" | maxBond$ID == "Naranja" | maxBond$ID == "Pepino" | maxBond$ID == "Pico" | maxBond$ID == "Tortilla" | maxBond$ID == "Urraca" | maxBond$ID == "Wachil"),]
+### n = 18
 
 
-#maxbond #this shows the hwi per bird. ADD THIS DATA TO THE GENERAL DATA SHEET
+#Combining MaxBond strength with general data sheet that will be used for analyses
+colnames(maxBond) = c("BirdID","MaxBondStrength")
+#Edit names of 2 birds to match across data sheets
+g$BirdID[which(g$BirdID == "Piña")]<-"Pina"
+g$BirdID[which(g$BirdID == "Tzanatl preciosa")]<-"Tzanatl Preciosa"
+g = merge(g, maxBond, by = "BirdID", all = T)
+
+
+
+
 
 ### Calculate IndividualStrength - the sum of the association values for each individual
-strength = strength(Ya, V(Ya))
-strength = data.frame(names(strength),strength)
-colnames(strength)[1] = "ID"
-# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
-strength = strength[which(strength$ID == "Burrito" | strength$ID == "Chilaquile" | strength$ID == "Diablo" | 
-                             strength$ID == "Fideo" | strength$ID == "Marisco" | strength$ID == "Mofongo" | 
-                             strength$ID == "Queso" | strength$ID == "Taco" | strength$ID == "Taquito" | 
-                             strength$ID == "Tembleque" | strength$ID == "Polvorones" | strength$ID == "Camote" |
-                             strength$ID == "Helado" | strength$ID == "Dulce de Leche" | strength$ID == "Zapote Negro" | 
-                             strength$ID == "Cuervo" | strength$ID == "Xunub" | strength$ID == "Chalupa" | 
-                             strength$ID == "Tapa" | strength$ID == "Yuca" | strength$ID == "Galandra" | 
-                             strength$ID == "Kel"),]
+strength = aggregate(hwi ~ ID, data = bonds, FUN = "sum")
+# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
+strength = strength[-which(strength$ID == "Aquaman" | strength$ID == "Guapo" | strength$ID == "Morada" | strength$ID == "Naranja" | strength$ID == "Pepino" | strength$ID == "Pico" | strength$ID == "Tortilla" | strength$ID == "Urraca" | strength$ID == "Wachil"),]
+### n = 18
 
-strength  #this shows the strength per bird. ADD THIS DATA TO THE GENERAL DATA SHEET
+#Combining strength with general data sheet that will be used for analyses
+colnames(strength) = c("BirdID","Strength")
+g = merge(g, strength, by = "BirdID", all = T)
+
+
+
 
 ### Calculate Degree
-degree <- igraph::degree(Ya,V(Ya))
-degree = data.frame(names(degree),degree)
-colnames(degree)[1] = "ID"
-# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season): n = 24
-degree = degree[which(degree$ID == "Burrito" | degree$ID == "Chilaquile" | degree$ID == "Diablo" | 
-                             degree$ID == "Fideo" | degree$ID == "Marisco" | degree$ID == "Mofongo" | 
-                             degree$ID == "Queso" | degree$ID == "Taco" | degree$ID == "Taquito" | 
-                             degree$ID == "Tembleque" | degree$ID == "Polvorones" | degree$ID == "Camote" |
-                             degree$ID == "Helado" | degree$ID == "Dulce de Leche" | degree$ID == "Zapote Negro" | 
-                             degree$ID == "Cuervo" | degree$ID == "Xunub" | degree$ID == "Chalupa" | 
-                             degree$ID == "Tapa" | degree$ID == "Yuca" | degree$ID == "Galandra" | 
-                             degree$ID == "Kel"),]
+bonds$degree = 1
+degree = aggregate(degree ~ ID, data = bonds, FUN = "sum")
+degree = degree[-which(degree$ID == "Aquaman" | degree$ID == "Guapo" | degree$ID == "Morada" | degree$ID == "Naranja" | degree$ID == "Pepino" | degree$ID == "Pico" | degree$ID == "Tortilla" | degree$ID == "Urraca" | degree$ID == "Wachil"),]
+### n = 18
 
-#degree #this shows the degree per bird. ADD THIS DATA TO THE GENERAL DATA SHEET
+#Combining degree with general data sheet that will be used for analyses
+colnames(degree) = c("BirdID","Degree")
+g = merge(g, degree, by = "BirdID", all = T)
 
+### We also said we would calculate a degree-like variable using the group size from the scan sample at the end of the focal follow.
 
 ### TO DO: Add to data sheet Relatedness of strongest bonds - dyadic data? Have to wait for DNA data to be available (Sep 2023) 
 
