@@ -1081,48 +1081,225 @@ manip <- list(tech = c2$NumForageTechs,
 
 # Run the model: binomial distribution bc it is a count of events occurring over a continuous period of time that is a bounded period of time (McElreath 2nd edition, Fig 10.6)
 phimanip <- ulam( alist(
-        tech ~ dbinom(12,p), #max 12 foraging techniques used across both populations (from data_FlexForaging > Foraging > How, and then counted the categories)
-        logit(p) <- a[treatment] + b*obstime, #include total observation time because this varied per focal (with a target max time of 10 min)
-        a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc response variable is standardized
+        tech ~ dbinom(10,p), #max 10 foraging techniques used in the AZ population (from data_FlexForaging > Foraging > How, and then counted the categories - don't count tolerated theft)
+        logit(p) <- a[treatment] + b*obstime, #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
+        a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
         b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
     ) , data=manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 outputtphimanipp <- precis( phimanip , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1] -1.75 0.27 -2.18 -1.33  1563     1
-#a[2] -1.16 0.25 -1.57 -0.77  1783     1
-#b     0.77 0.19  0.46  1.09  1668     1
+#a[1] -1.54 0.26 -1.98 -1.13  1684     1
+#a[2] -0.92 0.27 -1.37 -0.50  1633     1
+#b     0.83 0.20  0.52  1.15  1333     1
+
+#VISUALIZE: the manipulated birds had consistently more techniques across all observation times and the rate of observing a given technique is higher for manipulated birds, therefore the difference between them and the control group gets larger as time increases
+#Richard's code for standardized time
+plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="total techniques" ,
+    col=ifelse( manip$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
+    ylim=c(0,10) , cex=1+normalize(k) )
+time_seq <- seq(from=min(manip$obstime),to=max(manip$obstime),length=100)
+time_seq_unst<-seq(from=min(c2$SumFocalTime),to=max(c2$SumFocalTime),length=100)
+
+lambda <- link( phimanip , data=data.frame( obstime=time_seq , treatment=1 ) )*10
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=2 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(4,0.3))
+
+lambda <- link( phimanip , data=data.frame( obstime=time_seq , treatment=2 ) )*10
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
+
+points(c2[c2$FlexibilityManipulated=="No",]$NumForageTechs~c2[c2$FlexibilityManipulated=="No",]$SumFocalTime)
+points(c2[c2$FlexibilityManipulated=="Yes",]$NumForageTechs~c2[c2$FlexibilityManipulated=="Yes",]$SumFocalTime,col="red")
 
 #contrast to see if treatment groups differ
 postphi <- extract.samples(phimanip)
-diff <- inv_logit( postphi$a[,1])*12 - inv_logit( postphi$a[,2])*12 #it shows a probability so multiply by 12 techniques
+diff <- inv_logit( postphi$a[,1])*10 - inv_logit( postphi$a[,2])*10 #it shows a probability so multiply by 12 techniques
 precis( diff )
 #      mean   sd  5.5% 94.5%  histogram
-#diff -1.09 0.66 -2.14 -0.06 ▁▁▂▅▇▇▃▁▁▁
-#control group has 1.1 fewer foraging techniques than the manipulated group
+#diff -1.31 0.8 -2.62 -0.02 ▁▁▂▃▇▇▅▃▁▁▁
+#control group has 1.3 fewer foraging techniques than the manipulated group
 
 #look at the predicted number of techniques that manipulated indivduals are expected to show if they would be observed for the full 10 min
-manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*12
+manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*10
 precis(manipulated[,1])
 #                 mean   sd 5.5% 94.5% histogram
-#manipulated...1. 6.06 1.05 4.37  7.65  ▁▁▂▇▇▃▁▁
-#they would use an average of 6.1 techniques
+#manipulated...1. 5.84 0.91 4.36  7.29 ▁▁▁▂▃▇▇▇▅▂▁▁
+#they would use an average of 5.8 techniques
 
 #look at the predicted number of techniques that control indivduals are expected to show if they would be observed for the full 10 min
-control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*12
+control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*10
 precis(control[,1])
 #             mean   sd 5.5% 94.5%   histogram
-#control...1. 4.37 0.84 3.08  5.78 ▁▁▃▅▇▇▃▂▁▁▁
-#they would use an average of 4.4 techniques
-
-#it looks like a positive linear relationship between techniques used and observation time
-#plot(manip$tech~manip$obstime)
+#control...1. 4.33 0.75 3.15  5.58 ▁▁▂▅▇▇▃▁▁▁
+#they would use an average of 4.3 techniques
 
 #Probability of using a technique
-#inv_logit( outputtphimanipp[1,1]) # 0.1480472 control
-#inv_logit( outputtphimanipp[2,1]) # 0.2386673 manipulated
+inv_logit( outputtphimanipp[1,1]) # 0.1759748 control
+inv_logit( outputtphimanipp[2,1]) # 0.2854975 manipulated
 #how much more likely are manipulated birds to use a technique?
-inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #1.61 times more likely
+inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #1.62 times more likely
+
+
+# visualize
+library(ggplot2)
+library(cowplot)
+manipplot <- ggplot() + geom_point(data=c2,aes(x=FlexibilityManipulated, y=NumForageTechs), size=4, shape=1) + geom_jitter(height=0.5) + theme(axis.text.x = element_text(angle=0, vjust = 0.5)) + labs(x = "", y = "Foraging techniques used") + scale_x_discrete(labels=c('Control', 'Manipulated'))
+theme_set(theme_cowplot(font_size=12))
+plot_grid(manipplot, align='h', ncol=1, label_size=12)
+
+
+
+# POISSON model - equally likely to switch among techs, but the manipulated birds have a different total number of techniques, which is reflected by the intercept. Time is just a control variable and don't want to interpret any output from this variable
+manippoi <- ulam( alist(
+        tech ~ dpois(lambda), #max 12 foraging techniques used across both populations (from data_FlexForaging > Foraging > How, and then counted the categories)
+        log(lambda) <- a[treatment] + b*obstime, #include total observation time because this varied per focal (with a target max time of 10 min)
+        a[treatment] ~dnorm(0,1) , #expect 1 technique as soon as start collecting data (time can never be zero)
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+precis(manippoi,depth=2)
+
+#contrast to see if treatment groups differ
+postpoi <- extract.samples(manippoi)
+diffpoi <- exp( postpoi$a[,1]) - exp( postpoi$a[,2])
+precis( diffpoi )
+#         mean   sd  5.5% 94.5%  histogram
+#diffpoi -0.86 0.64 -1.92  0.12 ▁▁▁▂▇▇▅▂▁▁
+
+#visualize
+plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="total techniques" ,
+    col=ifelse( manip$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
+    ylim=c(0,12) , cex=1+normalize(k) )
+time_seq <- seq(from=min(manip$obstime),to=max(manip$obstime),length=100)
+time_seq_unst<-seq(from=min(c2$SumFocalTime),to=max(c2$SumFocalTime),length=100)
+
+lambda <- link( manippoi , data=data.frame( obstime=time_seq , treatment=1 ) )
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=2 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(4,0.3))
+
+lambda <- link( manippoi , data=data.frame( obstime=time_seq , treatment=2 ) )
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
+
+points(c2[c2$FlexibilityManipulated=="No",]$NumForageTechs~c2[c2$FlexibilityManipulated=="No",]$SumFocalTime)
+points(c2[c2$FlexibilityManipulated=="Yes",]$NumForageTechs~c2[c2$FlexibilityManipulated=="Yes",]$SumFocalTime,col="red")
+
+
+#### the difference between the poisson and binomial models: 
+#binomial model indicates that manipulated birds use more techniques bc, of the techniques they know, they switch between them more frequently than control birds in a given time frame
+#poisson model indicates that there is no difference in how many techniques a bird potentially knows
+#assume observe a bird for 3 min and it shows techs a b and c. Assume a 2nd bird for 3 min, shows a and b. Why are fewer techs observed in the 2nd bird? Option 1 = it knows fewer techs, Option 2= it changes between techs at a lower rate. The binomial model captures the rate of switching among techs at a given time point, so as long as you look at the difference between the treatment groups away from the two ends of observation time (not close to zero and not once the techniques have asymptoted), the you will be able to see the difference between the groups, if any. 
+#With binomial, assume every bird can reach the full 10 maximum techniques, whereas the poisson tries to extrapolate the maximum number of techs each bird could have and it says that this number is not different between the groups. 
+```
+
+
+```{r p2manipunregistered, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### NUMBER OF FORAGING TECHNIQUES for flexibility manipulated vs control birds - did manipulated switch more?
+library(rethinking)
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+c1 <- data.frame(ft)
+
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+c1 <- c1[c1$Population=="AZ",]
+
+#exclude NAs from the variables in this model
+c2 <- subset(c1, is.na(c1$How) == FALSE)
+c2 <- c2[!c2$How=="eat",]
+
+#assign a unique ID to each focal
+library(lubridate)
+
+c2$TechSwitch<-NA
+for(i in 2:nrow(c2)){
+  ifelse(c2[i,]$FocalID==c2[i-1,]$FocalID & c2[i,]$How !=c2[i-1,]$How, c2$TechSwitch<-1,c2$TechSwitch<-0)
+}
+
+
+c3 <- c2 %>% group_by(BirdID,FocalID) %>% summarise(switchesperfocal=sum(TechSwitch),timeperfocal=mean(TotalTimeInView))
+c4 <- c3 %>% group_by(BirdID) %>% summarise(totalswitches=sum(switchesperfocal),totaltime=sum(timeperfocal))
+
+# link with general datasheet to identify which birds were manipulated
+
+c5 <- left_join
+
+# RUN the models
+dat_sw <- list(switches = c5$totalswitches,
+            totaltime = c5$totaltime/60, # convert sec so that we calculate the probability of observing a switch per minute
+            treatment = as.integer(as.factor(c5$FlexibilityManipulated)) #1=control, 2=manipulated
+              )
+
+# Run the model: binomial distribution bc it is a count of events occurring over a continuous period of time that is a bounded period of time (McElreath 2nd edition, Fig 10.6)
+sw <- ulam( alist(
+        switches ~ dbinom(totaltime,p), #max 10 foraging techniques used in the AZ population (from data_FlexForaging > Foraging > How, and then counted the categories - don't count tolerated theft)
+        logit(p) <- a[treatment], #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
+        a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=dat_sw , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis( sw , depth=2 )
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1] -1.54 0.26 -1.98 -1.13  1684     1
+#a[2] -0.92 0.27 -1.37 -0.50  1633     1
+#b     0.83 0.20  0.52  1.15  1333     1
+
+#VISUALIZE: the manipulated birds had consistently more techniques across all observation times and the rate of observing a given technique is higher for manipulated birds, therefore the difference between them and the control group gets larger as time increases
+#Richard's code for standardized time
+plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="total techniques" ,
+    col=ifelse( manip$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
+    ylim=c(0,10) , cex=1+normalize(k) )
+time_seq <- seq(from=min(manip$obstime),to=max(manip$obstime),length=100)
+time_seq_unst<-seq(from=min(c2$SumFocalTime),to=max(c2$SumFocalTime),length=100)
+
+lambda <- link( phimanip , data=data.frame( obstime=time_seq , treatment=1 ) )*10
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=2 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(4,0.3))
+
+lambda <- link( phimanip , data=data.frame( obstime=time_seq , treatment=2 ) )*10
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
+
+points(c2[c2$FlexibilityManipulated=="No",]$NumForageTechs~c2[c2$FlexibilityManipulated=="No",]$SumFocalTime)
+points(c2[c2$FlexibilityManipulated=="Yes",]$NumForageTechs~c2[c2$FlexibilityManipulated=="Yes",]$SumFocalTime,col="red")
+
+#contrast to see if treatment groups differ
+postphi <- extract.samples(phimanip)
+diff <- inv_logit( postphi$a[,1])*10 - inv_logit( postphi$a[,2])*10 #it shows a probability so multiply by 12 techniques
+precis( diff )
+#      mean   sd  5.5% 94.5%  histogram
+#diff -1.31 0.8 -2.62 -0.02 ▁▁▂▃▇▇▅▃▁▁▁
+#control group has 1.3 fewer foraging techniques than the manipulated group
+
+#look at the predicted number of techniques that manipulated indivduals are expected to show if they would be observed for the full 10 min
+manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*10
+precis(manipulated[,1])
+#                 mean   sd 5.5% 94.5% histogram
+#manipulated...1. 5.84 0.91 4.36  7.29 ▁▁▁▂▃▇▇▇▅▂▁▁
+#they would use an average of 5.8 techniques
+
+#look at the predicted number of techniques that control indivduals are expected to show if they would be observed for the full 10 min
+control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*10
+precis(control[,1])
+#             mean   sd 5.5% 94.5%   histogram
+#control...1. 4.33 0.75 3.15  5.58 ▁▁▂▅▇▇▃▁▁▁
+#they would use an average of 4.3 techniques
+
+#Probability of using a technique
+inv_logit( outputtphimanipp[1,1]) # 0.1759748 control
+inv_logit( outputtphimanipp[2,1]) # 0.2854975 manipulated
+#how much more likely are manipulated birds to use a technique?
+inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #1.62 times more likely
 
 
 # visualize
