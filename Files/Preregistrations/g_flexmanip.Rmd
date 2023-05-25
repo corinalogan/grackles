@@ -29,10 +29,10 @@ output:
   fig_caption: TRUE
 urlcolor: blue
 header-includes:
-  - \usepackage{longtable} #set longtable = TRUE in kable() to have a long table break over multiple pages https://bookdown.org/yihui/bookdown/tables.html
   - \usepackage{pdflscape}
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
+  - \usepackage{longtable} #set longtable = TRUE in kable() to have a long table break over multiple pages https://bookdown.org/yihui/bookdown/tables.html
 preamble: >
   \usepackage{amsmath} #NOTE: to make this yaml work, run install.packages("rticles")
 base_format: rticles::amsmath
@@ -94,7 +94,7 @@ If grackle flexibility is manipulable using serial reversals, this would provide
 knitr::include_graphics("g_flexmanipFig1.png")
 ```
 
-## [Video summary](https://youtu.be/bALXB2S4OpI)
+## [Video summary](https://youtu.be/bALXB2S4OpI): https://youtu.be/bALXB2S4OpI
 
 ## PREREGISTERED HYPOTHESES
 
@@ -878,7 +878,7 @@ condition <- MCMCglmm(TrialsToReverse ~ ExperimentalGroup, random = ~ID+Batch,
 	    nitt = 300000, thin = 500, burnin = 90000)
 
 #reverse number significantly negatively correlates with trials to reverse, as expected due to the manipulation? Yes
-summary(condition)
+output_condition <- summary(condition)
 #              post.mean l-95% CI u-95% CI eff.samp  pMCMC   
 #(Intercept)                     4.28760  4.09032  4.51160      420 <0.002 **
 #ExperimentalGroupManipulation  -0.07978 -0.31236  0.15703      420  0.457   
@@ -889,13 +889,13 @@ prior2 = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1,
 conditionwobatch <- MCMCglmm(TrialsToReverse ~ ExperimentalGroup, random = ~ID, 
 	    family = "poisson", data = d, verbose = F, prior = prior2, 
 	    nitt = 300000, thin = 500, burnin = 90000)
-summary(conditionwobatch) #results are very similar to and conclusions are not different from the "condition" model
+output_conditionwobatch <- summary(conditionwobatch) #results are very similar to and conclusions are not different from the "condition" model
 
 # for output table
 # FIRST: Extract 89 percentile compatibility interval from the model output and update the table's csv
 library(rethinking)
-PI(condition$Sol[,1],prob=0.89) #4.12 to 4.46 percentile intervals
-PI(condition$Sol[,2],prob=0.89) #-0.27 to 0.11 percentile intervals
+#PI(condition$Sol[,1],prob=0.89) #4.12 to 4.46 percentile intervals
+#PI(condition$Sol[,2],prob=0.89) #-0.27 to 0.11 percentile intervals
 ```
 
 ```{r tablep1, eval=T}
