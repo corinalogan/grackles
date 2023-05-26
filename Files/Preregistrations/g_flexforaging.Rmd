@@ -1030,7 +1030,9 @@ Prediction: If there is a negative correlation between flexibility and the numbe
 
 ## P2: Flexibility manipulation and foraging behavior 
 
+In this dataset, there are 8 manipulated birds and 10 control birds who have 1-8 focal follows per bird with a mean of 4.7 follows. 
 
+Using the **binomial model** to determine, of the known food types and foraging techniques, how many are used, we find that flexibility manipulated individuals take an average of 1.8 more food types and use an average of 1.3 more foraging techniques than control individuals because the compatibility interval did not cross zero (food types: mean=-1.82, sd=0.74, 89% compatibility interval=-3.03 - -0.64; techniques: mean=-1.31, sd=0.80, 89% compatibility interval=-2.62 - -0.02; Figure). Not all birds were followed for the same amount of time and our expectation is that the number of food types and foraging techniques increases with increasing observation time. Therefore, we use the model to predict the number of food types and foraging techniques used if all birds were observed for the maximum amount of time. The model predicts that manipulated birds have an average of 8.9 food types and 5.8 techniques, and control birds an average of 5.4 food types and 4.3 techniques. These differences of 3.5 (food types) and 1.5 (techniques) are higher than the differences we observe with our dataset (1.8 and 1.3, respectively) because most birds were not observed for the maximum period of time. The manipulated birds have a 1.9 (food types) and 1.6 (techniques) higher likelihood of using any of the 22 food types or 10 foraging techniques than the control birds, regardless of the amount of observation time.
 
 ```{r p2manipvsctrl, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ### NUMBER OF FORAGING TECHNIQUES for flexibility manipulated vs control birds
@@ -1041,16 +1043,118 @@ c1 <- data.frame(c1)
 #select only the AZ birds who were manipulated or control individuals in the flexibility experiment
 c1 <- c1[c1$Population=="AZ",]
 
-#food types: exclude NAs from the variables in this model
+### FOOD TYPES: exclude NAs from the variables in this model
 fo <- subset(c1, is.na(c1$NumFoodTypes) == FALSE)
 fo <- subset(fo, is.na(fo$SumFocalTime) == FALSE)
 fo <- subset(fo, is.na(fo$FlexibilityManipulated) == FALSE)
 #length(unique(fo$BirdID)) #18 individuals
+#fo$FlexibilityManipulated #manipulated=8, control=10
 #mean(fo$NumFollows) #4.7 follows
 #range(fo$NumFollows) #1-8 follows
 
 
-#techniques: exclude NAs from the variables in this model
+# SIMULATION
+n = 18
+t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
+time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
+m = rbinom(n=n,size=22, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.41)+(1/6000)*time),sd=0.2)) #22 food types eaten. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+sim_boxtype <- boxplot(m~t)
+sim_plottype <- plot(m~time)
+#plots look good - any relationship is possible, but all values are within the feasible range
+
+#run the simulated data through the model
+s_type <- list(m = m,
+            time = standardize(time),
+            t = t
+              )
+simtype <- ulam( alist(
+        m ~ dbinom(22,p), #max 22 food types in AZ (from data_FlexForaging > Foraging > How, and then counted the categories)
+        logit(p) <- a[t] + b*time, #include total observation time because this varied per focal (with a target max time of 10 min)
+        a[t] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc response variable is standardized
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=s_type , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+s_outputtype <- precis( simtype , depth=2 )
+
+#contrast
+postt <- extract.samples(simtype)
+diff <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diftype <- precis( diff )
+#shows a difference between the treatment groups when means differ by 0.01 or more when sd=0.2
+
+
+# RUN the models
+## BINOMIAL model - foraging techniques
+tr <- list(foods = fo$NumFoodTypes,
+            obstime = standardize(fo$SumFocalTime),
+            treatment = as.integer(as.factor(fo$FlexibilityManipulated)) #1=control, 2=manipulated
+              )
+tr_binom <- ulam( alist(
+        foods ~ dbinom(22,p), #max 22 food types in the AZ population (from data_FlexForaging > Foraging > What, and then Data > Column stats > Unique values)
+        logit(p) <- a[treatment] + b*obstime, #the intercept is the probability of observing any of the food types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
+        a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=tr , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+output_tr_binom <- precis( tr_binom , depth=2 )
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1] -2.32 0.22 -2.70 -1.96  1368     1
+#a[2] -1.58 0.21 -1.91 -1.25  1604     1
+#b     0.77 0.15  0.53  1.02  1407     1
+
+#contrast to see if treatment groups differ
+posttr <- extract.samples(tr_binom)
+difftr <- inv_logit( posttr$a[,1])*22 - inv_logit( posttr$a[,2])*22 #it shows a probability so multiply by 22 food types
+precis( difftr )
+#      mean   sd  5.5% 94.5%  histogram
+#difftr -1.82 0.74 -3.03 -0.64 ▁▁▁▁▂▅▇▅▂▁▁
+#control group has 1.8 fewer food types than the manipulated group
+
+#look at the predicted number of techniques that manipulated individuals are expected to show if they would be observed for the full 10 min
+manipulatedtype <- link(tr_binom,data=list(treatment=2,obstime=max(tr$obstime)))*22
+precis(manipulatedtype[,1])
+#                 mean   sd 5.5% 94.5% histogram
+#manipulatedtype...1.  8.9 1.49 6.54 11.34 ▁▁▂▅▇▇▃▂▁▁
+#they would eat an average of 8.9 food types
+
+#look at the predicted number of techniques that control individuals are expected to show if they would be observed for the full 10 min
+controltype <- link(tr_binom,data=list(treatment=1,obstime=max(tr$obstime)))*22
+precis(controltype[,1])
+#                 mean   sd 5.5% 94.5%   histogram
+#controltype...1. 5.38 1.03 3.85  7.13 ▁▁▁▂▅▇▇▇▅▂▂▁▁▁
+#they would use an average of 5.4 techniques
+
+#Probability of using a food type
+inv_logit( output_tr_binom[1,1]) # 0.08909216 control
+inv_logit( output_tr_binom[2,1]) # 0.1712906 manipulated
+#how much more likely are manipulated birds to use a food type?
+inv_logit( output_tr_binom[2,1]) / inv_logit( output_tr_binom[1,1]) #1.92 times more likely
+
+
+# POISSON model - foraging techniques - equally likely to switch among techs, but the manipulated birds have a different total number of techniques, which is reflected by the intercept. Time is just a control variable and don't want to interpret any output from this variable
+tr_poi <- ulam( alist(
+        foods ~ dpois(lambda),
+        log(lambda) <- a[treatment] + b*obstime, #include total observation time because this varied per focal (with a target max time of 10 min)
+        a[treatment] ~dnorm(0,1) , #expect 1 technique as soon as start collecting data (time can never be zero)
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=tr , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+outputtr_poi <- precis(tr_poi,depth=2)
+#     mean   sd 5.5% 94.5% n_eff Rhat4
+#a[1] 0.51 0.23 0.14  0.86  1232     1
+#a[2] 1.15 0.19 0.82  1.45  1154     1
+#b    0.70 0.15 0.45  0.95  1179     1
+
+#contrast to see if treatment groups differ
+posttrpoi <- extract.samples(tr_poi)
+difftrpoi <- exp( posttrpoi$a[,1]) - exp( posttrpoi$a[,2])
+contrasttrpoi <- precis( difftrpoi )
+#         mean   sd  5.5% 94.5%  histogram
+#difftrpoi -1.51 0.67 -2.57 -0.47 ▁▁▁▁▃▇▇▃▂▁▁
+#manipulated birds used more food types
+
+
+
+
+### FORAGING TECHNIQUES: exclude NAs from the variables in this model
 c2 <- subset(c1, is.na(c1$NumForageTechs) == FALSE)
 c2 <- subset(c2, is.na(c2$SumFocalTime) == FALSE)
 c2 <- subset(c2, is.na(c2$FlexibilityManipulated) == FALSE)
@@ -1165,9 +1269,48 @@ precis( diffpoi )
 
 
 #VISUALIZE
-#techs binomial plot: the manipulated birds had consistently more techniques across all observation times and the rate of observing a given technique is higher for manipulated birds, therefore the difference between them and the control group gets larger as time increases. Richard's code for standardized time
-op <- par(mfrow=c(2,1), mar=c(5.9,4.9,2,0.9))
-plot( c2$SumFocalTime , c2$NumForageTechs , xlab="" , ylab="Total foraging techniques used" ,
+op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
+#types binomial plot
+plot( fo$SumFocalTime , fo$NumFoodTypes , xlab="" , ylab="Total food types" ,
+    col=ifelse( tr$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
+    ylim=c(0,22) , cex=1+normalize(k) )
+time_seq <- seq(from=min(tr$obstime),to=max(tr$obstime),length=100)
+time_seq_unst<-seq(from=min(fo$SumFocalTime),to=max(fo$SumFocalTime),length=100)
+lambda <- link( tr_binom , data=data.frame( obstime=time_seq , treatment=1 ) )*10
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=2 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(4,0.3))
+lambda <- link( tr_binom , data=data.frame( obstime=time_seq , treatment=2 ) )*10
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
+points(fo[fo$FlexibilityManipulated=="No",]$NumFoodTypes~fo[fo$FlexibilityManipulated=="No",]$SumFocalTime,pch=1)
+points(fo[fo$FlexibilityManipulated=="Yes",]$NumFoodTypes~fo[fo$FlexibilityManipulated=="Yes",]$SumFocalTime,pch=2,col="black")
+legend(x="topleft", y=8, legend=c(pch1="Control", pch2="Manipulated"), pch=c(1,2), col=c("Black","Black"), box.lty=1, cex=1)
+mtext("A: Binomial",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
+#types poisson plot
+plot( fo$SumFocalTime , fo$NumFoodTypes , xlab="" , ylab="Total food types" ,
+    col=ifelse( tr$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
+    ylim=c(0,22) , cex=1+normalize(k) )
+time_seq <- seq(from=min(tr$obstime),to=max(tr$obstime),length=100)
+time_seq_unst<-seq(from=min(fo$SumFocalTime),to=max(fo$SumFocalTime),length=100)
+lambda <- link( tr_poi , data=data.frame( obstime=time_seq , treatment=1 ) )
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=2 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(4,0.3))
+lambda <- link( tr_poi , data=data.frame( obstime=time_seq , treatment=2 ) )
+lmu <- apply( lambda , 2 , mean )
+lci <- apply( lambda , 2 , PI )
+lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
+shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
+points(fo[fo$FlexibilityManipulated=="No",]$NumFoodTypes~fo[fo$FlexibilityManipulated=="No",]$SumFocalTime,pch=1)
+points(fo[fo$FlexibilityManipulated=="Yes",]$NumFoodTypes~fo[fo$FlexibilityManipulated=="Yes",]$SumFocalTime,pch=2,col="black")
+mtext("B: Poisson",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
+##techs binomial plot: the manipulated birds had consistently more techniques across all observation times and the rate of observing a given technique is higher for manipulated birds, therefore the difference between them and the control group gets larger as time increases
+plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="Total foraging techniques" ,
     col=ifelse( manip$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
     ylim=c(0,10) , cex=1+normalize(k) )
 time_seq <- seq(from=min(manip$obstime),to=max(manip$obstime),length=100)
@@ -1184,11 +1327,9 @@ lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
 shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
 points(c2[c2$FlexibilityManipulated=="No",]$NumForageTechs~c2[c2$FlexibilityManipulated=="No",]$SumFocalTime,pch=1)
 points(c2[c2$FlexibilityManipulated=="Yes",]$NumForageTechs~c2[c2$FlexibilityManipulated=="Yes",]$SumFocalTime,pch=2,col="black")
-legend(x="topleft", y=8, legend=c(pch1="Control", pch2="Manipulated"), pch=c(1,2), col=c("Black","Black"), box.lty=1, cex=1.5)
-mtext("A: Binomial",side=3,outer=FALSE,adj=0,font=1,cex=1.5,line=0.6)
-
+mtext("C: Binomial",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
 #techs poisson plot
-plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="Total foraging techniques used" ,
+plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="Total foraging techniques" ,
     col=ifelse( manip$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
     ylim=c(0,10) , cex=1+normalize(k) )
 time_seq <- seq(from=min(manip$obstime),to=max(manip$obstime),length=100)
@@ -1205,7 +1346,7 @@ lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
 shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
 points(c2[c2$FlexibilityManipulated=="No",]$NumForageTechs~c2[c2$FlexibilityManipulated=="No",]$SumFocalTime,pch=1)
 points(c2[c2$FlexibilityManipulated=="Yes",]$NumForageTechs~c2[c2$FlexibilityManipulated=="Yes",]$SumFocalTime,pch=2,col="black")
-mtext("B: Poisson",side=3,outer=FALSE,adj=0,font=1,cex=1.5,line=0.6)
+mtext("D: Poisson",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
 par(op)
 
 #### the difference between the poisson and binomial models: 
