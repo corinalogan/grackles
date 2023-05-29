@@ -1043,6 +1043,15 @@ c1 <- data.frame(c1)
 #select only the AZ birds who were manipulated or control individuals in the flexibility experiment
 c1 <- c1[c1$Population=="AZ",]
 
+# AZ population: How many different food types? 20 (from R code chunk p2manipunregistered)
+#length(unique(ft1$What)) #20
+#unique(ft1$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken
+
+# AZ population: How many different foraging techniques? 9 (from R code chunk p2manipunregistered)
+#length(unique(ft1$How)) # 11 - 1 (eat) - 1 (tolerated theft) = 9
+#unique(ft1$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig
+
+
 ### FOOD TYPES: exclude NAs from the variables in this model
 fo <- subset(c1, is.na(c1$NumFoodTypes) == FALSE)
 fo <- subset(fo, is.na(fo$SumFocalTime) == FALSE)
@@ -1057,7 +1066,7 @@ fo <- subset(fo, is.na(fo$FlexibilityManipulated) == FALSE)
 n = 18
 t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
 time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
-m = rbinom(n=n,size=22, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.41)+(1/6000)*time),sd=0.2)) #22 food types eaten. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+m = rbinom(n=n,size=20, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.41)+(1/6000)*time),sd=0.2)) #22 food types eaten. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
 sim_boxtype <- boxplot(m~t)
 sim_plottype <- plot(m~time)
 #plots look good - any relationship is possible, but all values are within the feasible range
@@ -1089,7 +1098,7 @@ tr <- list(foods = fo$NumFoodTypes,
             treatment = as.integer(as.factor(fo$FlexibilityManipulated)) #1=control, 2=manipulated
               )
 tr_binom <- ulam( alist(
-        foods ~ dbinom(22,p), #max 22 food types in the AZ population (from data_FlexForaging > Foraging > What, and then Data > Column stats > Unique values)
+        foods ~ dbinom(20,p), #max 20 food types in the AZ population
         logit(p) <- a[treatment] + b*obstime, #the intercept is the probability of observing any of the food types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
         a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
         b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
@@ -1097,37 +1106,37 @@ tr_binom <- ulam( alist(
 
 output_tr_binom <- precis( tr_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1] -2.32 0.22 -2.70 -1.96  1368     1
-#a[2] -1.58 0.21 -1.91 -1.25  1604     1
-#b     0.77 0.15  0.53  1.02  1407     1
+#a[1] -2.23 0.24 -2.60 -1.85  1480     1
+#a[2] -1.45 0.21 -1.80 -1.11  1618     1
+#b     0.79 0.16  0.54  1.04  1399     1
 
 #contrast to see if treatment groups differ
 posttr <- extract.samples(tr_binom)
 difftr <- inv_logit( posttr$a[,1])*22 - inv_logit( posttr$a[,2])*22 #it shows a probability so multiply by 22 food types
-precis( difftr )
+contrasttr <- precis( difftr )
 #      mean   sd  5.5% 94.5%  histogram
-#difftr -1.82 0.74 -3.03 -0.64 ▁▁▁▁▂▅▇▅▂▁▁
-#control group has 1.8 fewer food types than the manipulated group
+#difftr -2.02 0.82 -3.36 -0.76 ▁▁▁▂▅▇▇▅▂▁▁▁▁
+#control group has 2.02 fewer food types than the manipulated group
 
 #look at the predicted number of techniques that manipulated individuals are expected to show if they would be observed for the full 10 min
 manipulatedtype <- link(tr_binom,data=list(treatment=2,obstime=max(tr$obstime)))*22
-precis(manipulatedtype[,1])
+contrasttrm <- precis(manipulatedtype[,1])
 #                 mean   sd 5.5% 94.5% histogram
-#manipulatedtype...1.  8.9 1.49 6.54 11.34 ▁▁▂▅▇▇▃▂▁▁
-#they would eat an average of 8.9 food types
+#manipulatedtype...1. 9.71 1.52 7.26 12.18 ▁▁▂▅▇▇▃▂▁▁
+#they would eat an average of 9.7 food types
 
 #look at the predicted number of techniques that control individuals are expected to show if they would be observed for the full 10 min
 controltype <- link(tr_binom,data=list(treatment=1,obstime=max(tr$obstime)))*22
-precis(controltype[,1])
+contrasttrc <- precis(controltype[,1])
 #                 mean   sd 5.5% 94.5%   histogram
-#controltype...1. 5.38 1.03 3.85  7.13 ▁▁▁▂▅▇▇▇▅▂▂▁▁▁
-#they would use an average of 5.4 techniques
+#controltype...1. 5.93 1.12 4.23  7.75  ▁▁▃▇▇▃▁▁
+#they would use an average of 5.9 techniques
 
 #Probability of using a food type
-inv_logit( output_tr_binom[1,1]) # 0.08909216 control
-inv_logit( output_tr_binom[2,1]) # 0.1712906 manipulated
+inv_logit( output_tr_binom[1,1]) # 0.09748999 control
+inv_logit( output_tr_binom[2,1]) # 0.1893969 manipulated
 #how much more likely are manipulated birds to use a food type?
-inv_logit( output_tr_binom[2,1]) / inv_logit( output_tr_binom[1,1]) #1.92 times more likely
+inv_logit( output_tr_binom[2,1]) / inv_logit( output_tr_binom[1,1]) #manipulated birds are 1.94 times more likely
 
 
 # POISSON model - foraging techniques - equally likely to switch among techs, but the manipulated birds have a different total number of techniques, which is reflected by the intercept. Time is just a control variable and don't want to interpret any output from this variable
@@ -1139,9 +1148,9 @@ tr_poi <- ulam( alist(
     ) , data=tr , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 outputtr_poi <- precis(tr_poi,depth=2)
 #     mean   sd 5.5% 94.5% n_eff Rhat4
-#a[1] 0.51 0.23 0.14  0.86  1232     1
-#a[2] 1.15 0.19 0.82  1.45  1154     1
-#b    0.70 0.15 0.45  0.95  1179     1
+#a[1] 0.50 0.23 0.11  0.86  1062     1
+#a[2] 1.14 0.20 0.81  1.43  1066     1
+#b    0.71 0.15 0.48  0.96  1086     1
 
 #contrast to see if treatment groups differ
 posttrpoi <- extract.samples(tr_poi)
@@ -1172,7 +1181,7 @@ c2 <- subset(c2, is.na(c2$FlexibilityManipulated) == FALSE)
 n = 100
 t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
 time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
-m = rbinom(n=n,size=12, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.45)+(1/6000)*time),sd=0.2)) #12 techniques used. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+m = rbinom(n=n,size=9, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.45)+(1/6000)*time),sd=0.15)) #9 techniques used. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
 boxplot(m~t)
 plot(m~time)
 #plots look good - any relationship is possible, but all values are within the feasible range
@@ -1192,9 +1201,9 @@ s_output <- precis( simmanip , depth=2 )
 
 #contrast
 posts <- extract.samples(simmanip)
-diff <- inv_logit( posts$a[,1]) - inv_logit( posts$a[,2])
-precis( diff )
-#shows a difference between the treatment groups when means differ by 0.04 when sd=0.1
+diffs <- inv_logit( posts$a[,1]) - inv_logit( posts$a[,2])
+contrastsim_binom <- precis( diffs )
+#shows a difference between the treatment groups when means differ by 0.05 or more when sd=0.15
 
 
 # RUN the models
@@ -1206,7 +1215,7 @@ manip <- list(tech = c2$NumForageTechs,
 
 # Run the model: binomial distribution bc it is a count of events occurring over a continuous period of time that is a bounded period of time (McElreath 2nd edition, Fig 10.6)
 phimanip <- ulam( alist(
-        tech ~ dbinom(10,p), #max 10 foraging techniques used in the AZ population (from data_FlexForaging > Foraging > How, and then counted the categories - don't count tolerated theft)
+        tech ~ dbinom(9,p), #max 9 foraging techniques used in the AZ population
         logit(p) <- a[treatment] + b*obstime, #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
         a[treatment] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
         b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
@@ -1214,37 +1223,37 @@ phimanip <- ulam( alist(
 
 outputtphimanipp <- precis( phimanip , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1] -1.54 0.26 -1.98 -1.13  1684     1
-#a[2] -0.92 0.27 -1.37 -0.50  1633     1
-#b     0.83 0.20  0.52  1.15  1333     1
+#a[1] -1.41 0.26 -1.83 -1.00  1826     1
+#a[2] -0.75 0.28 -1.20 -0.32  1787     1
+#b     0.87 0.20  0.56  1.19  1928     1
 
 #contrast to see if treatment groups differ
 postphi <- extract.samples(phimanip)
-diff <- inv_logit( postphi$a[,1])*10 - inv_logit( postphi$a[,2])*10 #it shows a probability so multiply by 12 techniques
-precis( diff )
+diffpm <- inv_logit( postphi$a[,1])*10 - inv_logit( postphi$a[,2])*10 #it shows a probability so multiply by 12 techniques
+contrastbinomtech <- precis( diffpm )
 #      mean   sd  5.5% 94.5%  histogram
-#diff -1.31 0.8 -2.62 -0.02 ▁▁▂▃▇▇▅▃▁▁▁
+#diffpm -1.25 0.71 -2.36 -0.14 ▁▁▁▁▃▇▇▇▃▁▁▁
 #control group has 1.3 fewer foraging techniques than the manipulated group
 
 #look at the predicted number of techniques that manipulated individuals are expected to show if they would be observed for the full 10 min
 manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*10
-precis(manipulated[,1])
+contrastbinomm <- precis(manipulated[,1])
 #                 mean   sd 5.5% 94.5% histogram
-#manipulated...1. 5.84 0.91 4.36  7.29 ▁▁▁▂▃▇▇▇▅▂▁▁
-#they would use an average of 5.8 techniques
+#manipulated...1. 6.39 0.86 4.95   7.7 ▁▁▁▂▃▅▇▇▅▂▁▁
+#they would use an average of 6.4 techniques
 
 #look at the predicted number of techniques that control individuals are expected to show if they would be observed for the full 10 min
 control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*10
-precis(control[,1])
+contrastbinomc <- precis(control[,1])
 #             mean   sd 5.5% 94.5%   histogram
-#control...1. 4.33 0.75 3.15  5.58 ▁▁▂▅▇▇▃▁▁▁
-#they would use an average of 4.3 techniques
+#control...1. 4.83 0.78 3.56  6.04 ▁▁▁▃▅▇▇▃▁▁▁▁
+#they would use an average of 4.8 techniques
 
 #Probability of using a technique
-inv_logit( outputtphimanipp[1,1]) # 0.1759748 control
-inv_logit( outputtphimanipp[2,1]) # 0.2854975 manipulated
+inv_logit( outputtphimanipp[1,1]) # 0.1967045 control
+inv_logit( outputtphimanipp[2,1]) # 0.3216786 manipulated
 #how much more likely are manipulated birds to use a technique?
-inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #1.62 times more likely
+inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #manipulated birds 1.64 times more likely
 
 
 # POISSON model - foraging techniques - equally likely to switch among techs, but the manipulated birds have a different total number of techniques, which is reflected by the intercept. Time is just a control variable and don't want to interpret any output from this variable
@@ -1373,8 +1382,26 @@ library(dplyr)
 ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 ft <- data.frame(ft)
 
-#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+# FYI across AZ and CA populations...
+#How many different food types?
+#length(unique(ft$What)) #22
+#unique(ft$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken, peanut, mulch
+
+#How many different foraging techniques?
+#length(unique(ft$How)) # 13 - 1 (eat) - 1 (tolerated theft) = 11
+#unique(ft$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig, pick up, sweep
+
+
+# ONLY AZ: select only the AZ birds who were manipulated or control individuals in the flexibility experiment
 ft1 <- ft[ft$Population=="AZ",]
+
+# AZ population: How many different food types?
+#length(unique(ft1$What)) #20
+#unique(ft1$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken
+
+# AZ population: How many different foraging techniques?
+#length(unique(ft1$How)) # 11 - 1 (eat) - 1 (tolerated theft) = 9
+#unique(ft1$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig
 
 
 #FOOD TYPES: count the number of technique switches during each focal
@@ -1408,8 +1435,8 @@ dat_swfo <- list(foodswitches = fo4$totalfoodswitches,
             treatment = as.integer(as.factor(fo4$Treatment)) #1=control, 2=manipulated
               )
 swfo <- ulam( alist(
-        foodswitches ~ dbinom(totaltime,p), #max 10 foraging techniques used in the AZ population (from data_FlexForaging > Foraging > How, and then counted the categories - don't count tolerated theft)
-        logit(p) <- a[treatment], #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
+        foodswitches ~ dbinom(totaltime,p),
+        logit(p) <- a[treatment], #the intercept is the probability of observing any of the types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
         a[treatment] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
     ) , data=dat_swfo , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
@@ -1480,7 +1507,7 @@ dat_sw <- list(switches = ft5$totalswitches,
             treatment = as.integer(as.factor(ft5$Treatment)) #1=control, 2=manipulated
               )
 sw <- ulam( alist(
-        switches ~ dbinom(totaltime,p), #max 10 foraging techniques used in the AZ population (from data_FlexForaging > Foraging > How, and then counted the categories - don't count tolerated theft)
+        switches ~ dbinom(totaltime,p), 
         logit(p) <- a[treatment], #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
         a[treatment] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
     ) , data=dat_sw , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
@@ -1520,7 +1547,43 @@ contrast_sw <- precis( diffsw )
 #1.187837 2.211168 
 
 
-#VISUALIZE
+# EXTRA ANALYSIS: Do the control and manipulated birds differ in the amount of time they were in view? YES: manipulated were in view for more time
+timeperfocal<-ft %>% group_by(BirdID,TotalTimeInView) %>% summarise(mean(TotalTimeInView))
+timeperfocal <-left_join(timeperfocal,ca,by="BirdID")
+timeperfocal <- subset(timeperfocal, is.na(timeperfocal$Treatment) == FALSE)
+#boxplot(timeperfocal$TotalTimeInView~timeperfocal$Treatment) # doesn't look like a difference between groups
+#hist(timeperfocal$TotalTimeInView) #normally distributed
+#mean(900-timeperfocal$TotalTimeInView)/60 # an average of 1.9 min out of view per focal
+v <- list(  totaltime = timeperfocal$TotalTimeInView, 
+            treatment = as.integer(as.factor(timeperfocal$Treatment)) #1=control, 2=manipulated
+              )
+vm <- ulam( alist(
+        totaltime ~ dnorm(mu,sigma), 
+        mu <- a[treatment], 
+        a[treatment] ~ dnorm(800,100), #using the estimated average and sd from the histogram above
+        sigma ~ dexp(1)
+    ) , data=v , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+#contrast to see if treatment groups differ
+postvm <- extract.samples(vm)
+diffvm <- ( postvm$a[,1]) - ( postvm$a[,2])
+contrast_vm <- precis( diffvm )
+#         mean   sd  5.5% 94.5%  histogram
+#diffvm -56.21 30.12 -104.26 -9.07 ▁▁▂▃▇▇▅▂▁▁▁
+#manipulated birds have more time in view than control birds. Control birds had less time in view and had fewer switches so we need to figure out of their lower switching rate was due to having less time in view using a simulation
+
+# SIMULATION: Did the time out of view affect the switch rate that we are estimating and can this potentially explain the difference the switch rate between manipulated and control birds?
+
+#get the proportion of different food types eaten so can model the prabability of eating different food types
+fop <- as.factor(fo$What)
+propfoodtypes <- table(fop$What) 
+
+
+# The time out of view does not affect observed switch rate. Confirmed this using a simulation that shows that the estimation of the switching rate is not affected by excluding the time period in which the bird was out of view when using an average of 2.2 min out of view over a 15 min focal follow period (similar to the actual average 1.9 min out of view in our sample (see calculation above). While the target maximum was 10 min per focal, 15 min was allowed if the bird went out of view to give the observer time to re-find the bird if possible)
+
+
+
+# VISUALIZE
 #make new variables of probability of switching per minute
 fo4$probswitchfo <- (fo4$totalfoodswitches/fo4$totaltime)*60
 ft5$probswitch <- (ft5$totalswitches/ft5$totaltime)*60
