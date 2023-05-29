@@ -1583,6 +1583,107 @@ propfoodtypes <- table(fop$What)
 
 
 
+
+library(rethinking)
+library(tidyr)
+library(dplyr)
+
+observedtime_different<-NA
+missing_minutes<-NA
+mean_difference<-NA
+
+max_obstime<-15 # a given focal could last for a maximum of 15 minutes
+
+individuals<-12 # number of individuals for whom we will have both actual observations and observations with missing time - similar to the number of control individuals
+
+for(simulations in 1:100) { # repeat the simulation 100 times to see how often missing minutes leads to a difference in the estimated switching rate
+control_birds<-as.data.frame(matrix(rbern(individuals*max_obstime,prob=0.22),ncol=max_obstime,nrow=individuals)) # there is a 22% probability that a bird will eat anything at a given minute
+
+control_birds$totaleatingobs<-apply(control_birds,1,sum)
+
+foodeaten<-control_birds[,1:max_obstime]*sample(c(1:20),sum(control_birds[,1:max_obstime]),replace=T,prob=c(0.45,0.2,0.1,0.05,0.05,rep(0.01,15))) # 20 different food types; most common one occurs 45% of times, others 20%, 10%, 5%, 5%, and 15 food types 1% of times)
+
+foodeaten_l<-as.data.frame(pivot_longer(foodeaten,cols=c(1:max_obstime)))
+foodeaten_l$focalid<-rep(1:individuals,each=max_obstime)
+
+foodeaten_l_r<-foodeaten_l[foodeaten_l$value!=0,]
+foodeaten_l_r$TechSwitch<-0
+
+for(obsswitches in 2:nrow(foodeaten_l_r)){
+  ifelse(foodeaten_l_r[obsswitches,]$focalid==foodeaten_l_r[obsswitches-1,]$focalid & foodeaten_l_r[obsswitches,]$value != foodeaten_l_r[obsswitches-1,]$value,foodeaten_l_r[obsswitches,]$TechSwitch<-1,foodeaten_l_r[obsswitches,]$TechSwitch<-0)
+}
+
+actual_switches_sim<-data.frame(foodeaten_l_r %>% group_by(focalid) %>% summarise(actualsimswitchesperfocal=sum(TechSwitch)))
+
+control_birds$focalid<-c(1:individuals)
+control_birds<-left_join(control_birds,actual_switches_sim,by="focalid")
+
+missing_birds<-control_birds
+missing_birds$observedtime<-max_obstime
+foodeaten_missing<-foodeaten
+
+for(missingobs in 1:nrow(foodeaten_missing)){
+  missingminutes<-rbinom(1,max_obstime,prob=0.15) # there is a 15% chance that any minute will be missing, which means that on average 0.15 * 15 = 2.25 minutes will be missing from a 15 minute focal
+  if(missingminutes>0){
+    startminute<-round(runif(1,1,max_obstime-missingminutes),0)
+    foodeaten_missing[missingobs,startminute:(startminute+(missingminutes-1))]<-NA
+    missing_birds[missingobs,]$observedtime<-max_obstime-missingminutes
+  }
+}
+
+foodeaten_l_missing<-as.data.frame(pivot_longer(foodeaten_missing,cols=c(1:max_obstime)))
+foodeaten_l_missing$focalid<-rep(1:individuals,each=max_obstime)
+foodeaten_l_r_missing<-foodeaten_l_missing[foodeaten_l_missing$value!=0,]
+foodeaten_l_r_missing<-foodeaten_l_r_missing[is.na(foodeaten_l_r_missing)==F,]
+foodeaten_l_r_missing$TechSwitch<-0
+
+for(missingswitches in 2:nrow(foodeaten_l_r_missing)){
+    ifelse(foodeaten_l_r_missing[missingswitches,]$focalid==foodeaten_l_r_missing[missingswitches-1,]$focalid & foodeaten_l_r_missing[missingswitches,]$value != foodeaten_l_r_missing[missingswitches-1,]$value,foodeaten_l_r_missing[missingswitches,]$TechSwitch<-1,foodeaten_l_r_missing[missingswitches,]$TechSwitch<-0)
+}
+
+observed_switches_sim<-data.frame(foodeaten_l_r_missing %>% group_by(focalid) %>% summarise(observedsimswitchesperfocal=sum(TechSwitch)))
+
+missing_birds<-left_join(missing_birds,observed_switches_sim,by="focalid")
+missing_birds$actualtime<-max_obstime
+missing_birds<-missing_birds[is.na(missing_birds$actualsimswitchesperfocal)==F,]
+missing_birds<-missing_birds[is.na(missing_birds$observedsimswitchesperfocal)==F,]
+
+mean(missing_birds$actualsimswitchesperfocal/missing_birds$actualtime)
+mean(missing_birds$observedsimswitchesperfocal/missing_birds$observedtime)
+
+dat_list<-list(
+  time=c(missing_birds$actualtime,missing_birds$observedtime),
+  switch_sim=c(missing_birds$actualsimswitchesperfocal,missing_birds$observedsimswitchesperfocal),
+  missing=c(rep(1,nrow(missing_birds)),rep(2,nrow(missing_birds))) # category 1 is full observation time, category 2 is with reduced time due to birds being out of view
+)
+
+m_missing<-ulam(
+  alist(
+    switch_sim ~ dbinom(time,p),
+    logit(p)<-a[missing],
+    a[missing]~dnorm(-0.5,1)
+  ),data=dat_list,chains=4,cores=4,cmdstan=T,messages=FALSE,refresh=0)
+
+precis(m_missing,depth=2)
+post<-extract.samples(m_missing)
+contrast<-inv_logit(post$a[,2])-inv_logit(post$a[,1])
+
+observedtime_different[simulations]<-ifelse(as.numeric(HPDI(contrast)[1])*as.numeric(HPDI(contrast)[2])<0,0,1)
+missing_minutes[simulations]<-mean(missing_birds$actualtime-missing_birds$observedtime)
+mean_difference[simulations]<-precis(contrast)[1,1]
+print(simulations)
+}
+
+
+sum(observedtime_different)/100 # In what percentage of the simulations is there an observable difference (contrast does not overlap zero)
+hist(mean_difference,xlim=c(-0.06,0.06)) # The contrast is for how different observations of birds with missing time are compared to birds with a full observation. In more than half of cases, the estimated probability of switching is smaller when birds were out of view because we are missing the rare feeding events, but there are also instances where the estimated probability of switching is higher because all feeding events were observed so the number of switches is calculated over the reduced instead of the total time leading to a higher rate. 
+mean(mean_difference) # -0.00675478 - we would expect that on average a reduction in observation time of 2.25 minutes leads to a 0.6% lower estimated probability of switching
+
+mean(missing_birds$actualsimswitchesperfocal)/mean(missing_birds$actualtime) # 12% switching probability per minute - halfway between the 16% of manipulated and the 8% of control birds
+
+
+
+
 # VISUALIZE
 #make new variables of probability of switching per minute
 fo4$probswitchfo <- (fo4$totalfoodswitches/fo4$totaltime)*60
