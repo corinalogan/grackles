@@ -1578,50 +1578,49 @@ contrast_vm <- precis( diffvm )
 fop <- as.factor(fo$What)
 propfoodtypes <- table(fop$What) 
 
-
 # The time out of view does not affect observed switch rate. Confirmed this using a simulation that shows that the estimation of the switching rate is not affected by excluding the time period in which the bird was out of view when using an average of 2.2 min out of view over a 15 min focal follow period (similar to the actual average 1.9 min out of view in our sample (see calculation above). While the target maximum was 10 min per focal, 15 min was allowed if the bird went out of view to give the observer time to re-find the bird if possible)
-
-
-
-
 library(rethinking)
 library(tidyr)
 library(dplyr)
 
+#make lists for storing results
 observedtime_different<-NA
 missing_minutes<-NA
 mean_difference<-NA
 
 max_obstime<-15 # a given focal could last for a maximum of 15 minutes
-
-individuals<-12 # number of individuals for whom we will have both actual observations and observations with missing time - similar to the number of control individuals
+individuals<-12 # number of individuals for whom we have both actual observations and observations with missing time - similar to the number of control individuals
 
 for(simulations in 1:100) { # repeat the simulation 100 times to see how often missing minutes leads to a difference in the estimated switching rate
-control_birds<-as.data.frame(matrix(rbern(individuals*max_obstime,prob=0.22),ncol=max_obstime,nrow=individuals)) # there is a 22% probability that a bird will eat anything at a given minute
+control_birds<-as.data.frame(matrix(rbern(individuals*max_obstime,prob=0.22),ncol=max_obstime,nrow=individuals)) # there is a 22% probability that a bird will eat anything at a given minute, 0.22 * 15 min = avg 3.3 feeding events per focal, which should lead to the observed switching rate of 1.8 (0.12 switches per minute * 15 min focal was the avg switching rate across all birds). Wanted the observed feeding events to be at least the switching rate plus 1 because the number of swtiches is always at least 1 smaller than the number of feeding events. Checked after the simulation whether the resulting switching rate in the simulation is 0.12 and it is.
 
-control_birds$totaleatingobs<-apply(control_birds,1,sum)
+control_birds$totaleatingobs<-apply(control_birds,1,sum) #add a column
+foodeaten<-control_birds[,1:max_obstime]*sample(c(1:20),sum(control_birds[,1:max_obstime]),replace=T,prob=c(0.45,0.2,0.1,0.05,0.05,rep(0.01,15))) # 20 different food types; most common one occurs 45% of times, others 20%, 10%, 5%, 5%, and 15 food types 1% of times). Converts each eating event to one of the 20 food types
 
-foodeaten<-control_birds[,1:max_obstime]*sample(c(1:20),sum(control_birds[,1:max_obstime]),replace=T,prob=c(0.45,0.2,0.1,0.05,0.05,rep(0.01,15))) # 20 different food types; most common one occurs 45% of times, others 20%, 10%, 5%, 5%, and 15 food types 1% of times)
-
+#convert 1 row/focal to 1 row/min = 15 rows per focal
 foodeaten_l<-as.data.frame(pivot_longer(foodeaten,cols=c(1:max_obstime)))
 foodeaten_l$focalid<-rep(1:individuals,each=max_obstime)
 
+#remove minutes where a bird didn't eat anything
 foodeaten_l_r<-foodeaten_l[foodeaten_l$value!=0,]
 foodeaten_l_r$TechSwitch<-0
 
+#calculate whether switch occurred or not in any given minute
 for(obsswitches in 2:nrow(foodeaten_l_r)){
   ifelse(foodeaten_l_r[obsswitches,]$focalid==foodeaten_l_r[obsswitches-1,]$focalid & foodeaten_l_r[obsswitches,]$value != foodeaten_l_r[obsswitches-1,]$value,foodeaten_l_r[obsswitches,]$TechSwitch<-1,foodeaten_l_r[obsswitches,]$TechSwitch<-0)
 }
 
+#calculate the sum of switches per focal
 actual_switches_sim<-data.frame(foodeaten_l_r %>% group_by(focalid) %>% summarise(actualsimswitchesperfocal=sum(TechSwitch)))
 
+#add unique focal id to join data sheets
 control_birds$focalid<-c(1:individuals)
 control_birds<-left_join(control_birds,actual_switches_sim,by="focalid")
 
+#create data for individuals who were not observed the whole time
 missing_birds<-control_birds
 missing_birds$observedtime<-max_obstime
 foodeaten_missing<-foodeaten
-
 for(missingobs in 1:nrow(foodeaten_missing)){
   missingminutes<-rbinom(1,max_obstime,prob=0.15) # there is a 15% chance that any minute will be missing, which means that on average 0.15 * 15 = 2.25 minutes will be missing from a 15 minute focal
   if(missingminutes>0){
@@ -1631,32 +1630,34 @@ for(missingobs in 1:nrow(foodeaten_missing)){
   }
 }
 
+#repeat calculations of number of switches for birds with missing data
 foodeaten_l_missing<-as.data.frame(pivot_longer(foodeaten_missing,cols=c(1:max_obstime)))
 foodeaten_l_missing$focalid<-rep(1:individuals,each=max_obstime)
 foodeaten_l_r_missing<-foodeaten_l_missing[foodeaten_l_missing$value!=0,]
 foodeaten_l_r_missing<-foodeaten_l_r_missing[is.na(foodeaten_l_r_missing)==F,]
 foodeaten_l_r_missing$TechSwitch<-0
-
 for(missingswitches in 2:nrow(foodeaten_l_r_missing)){
     ifelse(foodeaten_l_r_missing[missingswitches,]$focalid==foodeaten_l_r_missing[missingswitches-1,]$focalid & foodeaten_l_r_missing[missingswitches,]$value != foodeaten_l_r_missing[missingswitches-1,]$value,foodeaten_l_r_missing[missingswitches,]$TechSwitch<-1,foodeaten_l_r_missing[missingswitches,]$TechSwitch<-0)
 }
 
 observed_switches_sim<-data.frame(foodeaten_l_r_missing %>% group_by(focalid) %>% summarise(observedsimswitchesperfocal=sum(TechSwitch)))
-
 missing_birds<-left_join(missing_birds,observed_switches_sim,by="focalid")
 missing_birds$actualtime<-max_obstime
 missing_birds<-missing_birds[is.na(missing_birds$actualsimswitchesperfocal)==F,]
 missing_birds<-missing_birds[is.na(missing_birds$observedsimswitchesperfocal)==F,]
 
+#calculate the rate of switching for birds with full and partial observation time
 mean(missing_birds$actualsimswitchesperfocal/missing_birds$actualtime)
 mean(missing_birds$observedsimswitchesperfocal/missing_birds$observedtime)
 
+#create data frame to calculate contrst
 dat_list<-list(
   time=c(missing_birds$actualtime,missing_birds$observedtime),
   switch_sim=c(missing_birds$actualsimswitchesperfocal,missing_birds$observedsimswitchesperfocal),
   missing=c(rep(1,nrow(missing_birds)),rep(2,nrow(missing_birds))) # category 1 is full observation time, category 2 is with reduced time due to birds being out of view
 )
 
+#run the model
 m_missing<-ulam(
   alist(
     switch_sim ~ dbinom(time,p),
@@ -1664,21 +1665,22 @@ m_missing<-ulam(
     a[missing]~dnorm(-0.5,1)
   ),data=dat_list,chains=4,cores=4,cmdstan=T,messages=FALSE,refresh=0)
 
+#calculate contrast to see if birds with missing time have a different switching rate than birds with full observation time
 precis(m_missing,depth=2)
 post<-extract.samples(m_missing)
 contrast<-inv_logit(post$a[,2])-inv_logit(post$a[,1])
 
+#extract simulation results
 observedtime_different[simulations]<-ifelse(as.numeric(HPDI(contrast)[1])*as.numeric(HPDI(contrast)[2])<0,0,1)
 missing_minutes[simulations]<-mean(missing_birds$actualtime-missing_birds$observedtime)
 mean_difference[simulations]<-precis(contrast)[1,1]
 print(simulations)
 }
 
-
+#summarizing results
 sum(observedtime_different)/100 # In what percentage of the simulations is there an observable difference (contrast does not overlap zero)
 hist(mean_difference,xlim=c(-0.06,0.06)) # The contrast is for how different observations of birds with missing time are compared to birds with a full observation. In more than half of cases, the estimated probability of switching is smaller when birds were out of view because we are missing the rare feeding events, but there are also instances where the estimated probability of switching is higher because all feeding events were observed so the number of switches is calculated over the reduced instead of the total time leading to a higher rate. 
 mean(mean_difference) # -0.00675478 - we would expect that on average a reduction in observation time of 2.25 minutes leads to a 0.6% lower estimated probability of switching
-
 mean(missing_birds$actualsimswitchesperfocal)/mean(missing_birds$actualtime) # 12% switching probability per minute - halfway between the 16% of manipulated and the 8% of control birds
 
 
