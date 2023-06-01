@@ -451,7 +451,7 @@ simulatedreversaldata_attractionscores_1<-read.csv(url("https://raw.githubuserco
 simulatedreversaldata_attractionscores_2<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_SimulatedReversalData_Grackles_PhiLambda_Attraction04_Aug2021.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 # In both simulations, sites were counted from 1-16; we now assign each site a unique value from 1-32
-simulatedreversaldata_attractionscores_2$site<-simulatedreversaldata_attractionscores_2$site+16
+simulatedreversaldata_attractionscores_2$Site<-simulatedreversaldata_attractionscores_2$Site+16
 
 # We combine the two data sets for the further analyses
 simulatedreversaldata_attractionscores<-bind_rows(simulatedreversaldata_attractionscores_1,simulatedreversaldata_attractionscores_2)
@@ -466,8 +466,8 @@ for (birds in 1:length(unique(simulatedreversaldata_attractionscores$Bird_ID))){
   simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial - maximuminitial
 }
 
-# We need to adjust the coding during the reversal learning so that "correct" now matches whether it is correct or not. 
-simulatedreversaldata_attractionscores$Choice<-as.integer(as.factor(simulatedreversaldata_attractionscores$Choice))
+# We need to adjust the coding during the reversal learning so that "correct" now matches whether it is correct or not. In the table, choice means which of the two options they chose. If they chose 0, that means they chose the lt gray, if they chose 1, that means they chose the dk gray. CorrectChoice indicates whether this is the rewarded colour or not. It is currently set up so that during the initial learning, option 1 in choice is being rewarded, whereas in the reversal learning, option 0 in choice is being rewarded. To match this better to the original data, we assume that option 1 is rewarded in the intial learning and option 2 is rewarded in the reversal learning (which matches coding as factors 1 and 2).
+simulatedreversaldata_attractionscores$Choice <- simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Choice==0,]$Choice<-2 
 
 # To use the model to estimate the phi and lambda parameters, we first need to change the column names to match these to the specifications in the model: change Bird_ID  to id; change Reversal to Choice, change CorrectChoice to Correct, change Site to Expid
 
@@ -1426,11 +1426,11 @@ precis(post3,depth=2)
 
 We model the average latency to approach a novel environment and compare these between sites. We simulate data and set the model as follows: 
 
-latency ~ gamma-Poisson($\lambda_i$, $\phi$) *[likelihood]*
+$latency$ ~ gamma-Poisson($L_i$, $P$) *[likelihood]*, 
 
-log($\lambda_i$) ~ $\alpha$[site]  *[the model]*
+log($L_i$) ~ $\alpha$[site]  *[the model]*, 
 
-latency is the average latency to approach a novel environment, $\lambda_i$ is the rate (probability of approaching the novel environment in each second) per bird (and we take the log of it to make sure it is always positive; birds with a higher rate have a smaller latency), $\phi$ is the dispersion of the rates across birds, and $\alpha$ is the intercept for the rate per site. 
+where $latency$ is the average latency to approach a novel environment, $L_i$ is the rate (probability of approaching the novel environment in each second) per bird (and we take the log of it to make sure it is always positive; birds with a higher rate have a smaller latency), $P$ is the dispersion of the rates across birds, and $\alpha$ is the intercept for the rate per site. 
 
 Expected values for the latency to approach a novel environment range from 0-2700 sec, which encompasses the time period during which they are exposed to the novel environment (sessions last up to 45 min). However, we do not provide an upper limit for the model because those birds that do not approach within 2700 sec would eventually have had to approach the novel environment to access their food (it is just that sessions did not run that long). After running simulations, we identify the following distribution and priors to be the most likely for our expected data:
 
@@ -1780,6 +1780,19 @@ The exploration data for the repeatability calculation were heteroscedastic and 
 
 ## RESULTS
 
+**Table 1.5.** Contrasts (indicated by "diff") between populations for the flexibility measure of reversal learning: phi and lambda.
+
+```{r resltsflextable, eval=T, warning=FALSE, results='asis', include=TRUE}
+library(kableExtra)
+sumtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=F, sep=",", stringsAsFactors=F)
+sumtable <- data.frame(sumtable)
+colnames(sumtable) <- c("Population","Batch","ID","Bird name","Sex","Learning speed","Reversal speed","MAB loci solved","MAB max loci available","Exploration latency","Persistence","Notes")
+
+knitr::kable(sumtable) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+```
+
+
 ### Flexibility
 
 There are no strong site differences for either component of reversal learning: $\phi$ or $\lambda$ (Figure 3). However, $\phi$ differs by only 0.0005 (Woodland=0.0306, Tempe=0.0301) and $\lambda$ by 0.26 (Woodland=4.78, Tempe=4.52), and the compatibility intervals for the estimated differences for both parameters cross zero (Table 2). With our sample size, we only have the power to reliably detect differences between the populations if they are larger than 0.01 for $\phi$ and 1.4 for $\lambda$ (based on our power analysis in Supplementary Material 2, summarized in Table SM1). Accordingly, we cannot exclude that the two populations are different, howeve we can estimate the range for how small the difference can be. Based on the estimated 89% compatibility intervals for phi and lambda in Table 2, the two populations are unlikely to differ by more than 0.01 for $\phi$ and 3 for $\lambda$ (Table 2). Plotting the values (Figure 3) suggests no differences in the variances because similar minimum and maximum values are observed in both populations.
@@ -2014,10 +2027,10 @@ te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 # visualize each bird at each site
 library(lattice)
 library(gridExtra)
-plot1 <- bwplot(indphisite~individualsatsite$Site, d, ylab="Phi", col="black", panel = function(...) {
+plot1 <- bwplot(indphisite~individualsatsite$Site, d, cex=1.2, ylab="$\phi$", col="black", panel = function(...) {
   panel.bwplot(..., pch = "|")
   panel.xyplot(..., jitter.x = TRUE)})
-plot2 <- bwplot(indlambdasite~individualsatsite$Site, d, ylab="Lambda", col="black", panel = function(...) {
+plot2 <- bwplot(indlambdasite~individualsatsite$Site, d, ylab="$\lambda$", col="black", panel = function(...) {
   panel.bwplot(..., pch = "|")
   panel.xyplot(..., jitter.x = TRUE)})
 grid.arrange(plot1,plot2, ncol=2)
@@ -2161,7 +2174,6 @@ levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
 # remove the bird who had no data for this experiment
 d <- d[!d$ExplorationLatency=="-",]
 
-
 # set up the data sheet for the model
 datexp <- list(latency = as.numeric(d$ExplorationLatency),
             site = as.factor(d$Population)
@@ -2170,10 +2182,10 @@ datexp <- list(latency = as.numeric(d$ExplorationLatency),
 # run the model
 m2 <- ulam(
   alist(
-    latency ~ dgampois(lambda, phi),
-    log(lambda) <- a[site],
+    latency ~ dgampois(L, P),
+    log(L) <- a[site],
     a[site] ~ dnorm(1,1),
-    phi ~ dexp(1)
+    P ~ dexp(1)
   ),data=datexp, log_lik=TRUE, messages=FALSE)
 
 #Compute pairwise contrasts
@@ -2573,7 +2585,7 @@ We then perform pairwise contrasts to determine at what point we can detect diff
 
 **Figure SM2.1.** How small of a site difference in phi and lambda can we detect? The probability that the model estimates that the difference shown on the x axis is zero, meaning that the model assumes that it is possible that these two estimates come from a population with the same phi or lambda. Each point is the mean phi or mean lambda from one site minus the mean phi or mean lambda from another site (calculated from 20 individuals per site) for all pairwise comparisons for all 32 sites (for a total of 496 pairwise comparisons). Left panels: error bars=89% compatibility intervals. Right panels: shaded areas=97% prediction intervals.
 
-![](xpopbehavhabitat_Figure_PowerCombinedSampleSizes.png)
+![](gxpopbehaviorhabitatq1_Figure_PowerCombinedSampleSizes.png)
 
 **Figure SM2.2.** How do detection differences vary according to sample size differences? The probability that the model estimates that the difference shown on the x axis is zero, meaning that the model assumes that it is possible that these two estimates come from a population with the same phi or lambda. The x-axis is the mean phi or mean lambda from one site minus the mean phi or mean lambda from another site for all pairwise comparisons for all 14 sites (for a total of 91 pairwise comparisons). Each shaded region is the 97% prediction interval for that particular sample size.
 
@@ -2888,6 +2900,13 @@ d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master
 ### remove -1 (did not participate in this trial) from the Correct column
 d0 <- d[!d$Correct==-1,]
 
+# exclude the birds who didn't complete the initial discrimination 
+d0 <- d[!d$ID=="Roseling",]
+
+# exclude the birds who didn't complete reversal 1? no because not using this data to predict performance on the MAB or anything, just want to see if there are differences with GTGR
+#d0 <- d[!d$ID=="Bladderwort",]
+#d0 <- d[!d$ID=="Cocoplum",]
+
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d0$Site <- as.factor(d0$Site)
 levels(d0$Site) <- c("BTGR","Woodland", "Tempe", "Woodland")
@@ -3098,16 +3117,17 @@ indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+105])+ifel
 individualsatsite$phi=indphisite
 individualsatsite$lambda=indlambdasite
 
-originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
-individualsatsite$name=originalid$unique.ID. #this is the final dataframe
+originalid_b=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
+colnames(originalid_b)<-c("unique.id.","name")
+individualsatsite<-left_join(individualsatsite,originalid_b,by="unique.id.")
 
 ## BTGR phis and lambdas in individualsatsite:
-#      Site unique.id.        phi   lambda
-#1     BTGR         44 0.03957788 6.038243
-#2     BTGR         45 0.02231290 3.183476
-#3     BTGR         46 0.03536739 4.675341
-#4     BTGR         47 0.02461878 5.535139
-#5     BTGR         48 0.02827357 3.094296 
+#       Site unique.id.        phi     lambda             name
+#1      BTGR         44 0.03957788  6.0382432          Verbena
+#2      BTGR         45 0.02231290  3.1834761      Bladderwort
+#3      BTGR         46 0.03536739  4.6753405           Pawpaw
+#4      BTGR         47 0.02461878  5.5351389         Cocoplum
+#5      BTGR         48 0.02827357  3.0942959         Roseling
 
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
