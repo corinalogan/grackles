@@ -1795,7 +1795,7 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 
 ### Flexibility
 
-There are no strong site differences for either component of reversal learning: $\phi$ or $\lambda$ (Figure 3). However, $\phi$ differs by only 0.0005 (Woodland=0.0306, Tempe=0.0301) and $\lambda$ by 0.26 (Woodland=4.78, Tempe=4.52), and the compatibility intervals for the estimated differences for both parameters cross zero (Table 2). With our sample size, we only have the power to reliably detect differences between the populations if they are larger than 0.01 for $\phi$ and 1.4 for $\lambda$ (based on our power analysis in Supplementary Material 2, summarized in Table SM1). Accordingly, we cannot exclude that the two populations are different, howeve we can estimate the range for how small the difference can be. Based on the estimated 89% compatibility intervals for phi and lambda in Table 2, the two populations are unlikely to differ by more than 0.01 for $\phi$ and 3 for $\lambda$ (Table 2). Plotting the values (Figure 3) suggests no differences in the variances because similar minimum and maximum values are observed in both populations.
+There are no strong site differences for either component of reversal learning: $\phi$ or $\lambda$ (Figure 3). However, $\phi$ differs by only 0.0005 (Woodland=0.0306, Tempe=0.0301) and $\lambda$ by 0.26 (Woodland=4.78, Tempe=4.52), and the compatibility intervals for the estimated differences for both parameters cross zero (Table 2). With our sample size, we only have the power to reliably detect differences between the populations if they are larger than 0.01 for $\phi$ and 1.4 for $\lambda$ (based on our power analysis in Supplementary Material 2, summarized in Table SM1). Accordingly, we cannot exclude that the two populations are different, however we can estimate the range for how small the difference can be. Based on the estimated 89% compatibility intervals for phi and lambda in Table 2, the two populations are unlikely to differ by more than 0.01 for $\phi$ and 3 for $\lambda$ (Table 2). Plotting the values (Figure 3) suggests no differences in the variances because similar minimum and maximum values are observed in both populations.
 
 **Table 2.** Contrasts (indicated by "diff") between populations for the flexibility measure of reversal learning: phi and lambda.
 
@@ -3055,7 +3055,6 @@ drawsdf<-data.frame(drawsdf)
 
 # Now, we extract the posterior of the model, and on this perform the comparison to see whether the model thinks the sites have different or the same phi / lambda. For this, we calculate all pairwise differences in the posterior estimates of the sites.
 # We extract the estimated phi and lambda values for each bird from the STAN model. v_ID.x.2 = offset from the mean in phi for individual x, v_ID.x.1 = same but for lambda. v_EXP.x.2 = offset from the mean in phi for individuals at site x, v_EXP.x.1 = same for lambda
-
 drawsdf$diffSiteLambda <- drawsdf$v_EXP.2.1. - drawsdf$v_EXP.1.1. #contrasting site 2 with site 1
 drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site 2 with site 1
 drawsdf$diffSiteLambda <- drawsdf$v_EXP.3.1. - drawsdf$v_EXP.1.1. #contrasting site 3 with site 1
@@ -3084,6 +3083,7 @@ lambdap <- precis(site1lambdap - site2lambdap)
 # mean   sd  5.5% 94.5%  histogram
 #site1lambdap...site2lambdap 0.23 0.97 -1.06  1.97 ▁▁▇▇▂▁▁▁▁▁
 #diff crosses zero so no site differences
+site1lambdap...site2lambdap 29.95 317.76 -0.81 67.77 ▁▇▁▁▁▁▁▁▁▁▁▁▁▁▁
 
 phip <- precis(site1phip - site2phip)
 # mean   sd  5.5% 94.5%   histogram
@@ -3095,6 +3095,7 @@ lambdaT <- precis(site1lambdap - site3lambdap)
 # mean   sd  5.5% 94.5%  histogram
 #site1lambdap...site3lambdap 0.43 1.01 -0.79  2.32 ▁▁▅▇▂▁▁▁▁▁
 #diff crosses zero so no site differences
+site1lambdap...site3lambdap 29.24 317.65 -1.51 66.58 ▂▇▁▁▁▁▁▁▁▁▁▁▁▁▁
 
 phiT <- precis(site1phip - site3phip)
 # mean   sd  5.5% 94.5%   histogram
@@ -3127,7 +3128,6 @@ individualsatsite<-left_join(individualsatsite,originalid_b,by="unique.id.")
 #2      BTGR         45 0.02231290  3.1834761      Bladderwort
 #3      BTGR         46 0.03536739  4.6753405           Pawpaw
 #4      BTGR         47 0.02461878  5.5351389         Cocoplum
-#5      BTGR         48 0.02827357  3.0942959         Roseling
 
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
@@ -3136,10 +3136,16 @@ wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
 #phi         0.03 0.01 0.02  0.05     ▃▂▇▇▁▃▂▁
 #lambda      5.84 5.96 1.79 12.00       ▇▂▁▁▁▁
 
+phi         0.04 0.02 0.02  0.07 ▂▃▅▇▂▃▂▁▁▁▁▁▁
+lambda      5.53 2.59 3.35 10.82  ▁▅▇▅▁▁▁▁▁▁▁▁
+
 te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 #            mean   sd  5.5% 94.5%  histogram
 #phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
 #lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
+
+phi         0.03 0.01  0.02  0.05  ▃▁▃▇▅▁▁▁▁
+lambda      5.49 6.97  1.49  9.19    ▇▂▁▁▁▁▁
 
 btgr <- precis(individualsatsite[individualsatsite$Site=="BTGR",])
 #            mean   sd  5.5% 94.5%  histogram
