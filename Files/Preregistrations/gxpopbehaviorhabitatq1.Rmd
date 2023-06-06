@@ -2268,58 +2268,85 @@ library(rethinking)
 library(rstan)
 library(Rcpp)
 
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
-
-colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","Flexibility Manipulated","Notes")
+ex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+colnames(ex) <- c("Population","Batch","ID","BirdName","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","FlexibilityManipulated","Notes")
 
 # remove BTGR
-d <- d[!d$Population=="BTGR",]
+ex <- ex[!ex$Population=="BTGR",]
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
-d$Population <- as.factor(d$Population)
-levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
+ex$Population <- as.factor(ex$Population)
+levels(ex$Population) <- c("Woodland", "Tempe", "Woodland")
 
 # remove the bird who had no data for this experiment
-d <- d[!d$ExplorationLatency=="-",]
+ex <- ex[!ex$ExplorationLatency=="-",]
 
 # set up the data sheet for the model
-datexp <- list(latency = as.numeric(d$ExplorationLatency),
-            site = as.factor(d$Population)
+datexp <- list(latency = as.numeric(ex$ExplorationLatency),
+            treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(ex$Population)
 )
 
 # run the model
 m2 <- ulam(
   alist(
     latency ~ dgampois(L, P),
-    log(L) <- a[site],
-    a[site] ~ dnorm(1,1),
-    P ~ dexp(1)
+    log(L) <- a[site] + b*treatment,
+    a[site] ~ dnorm(a_bar,sigma),
+    P ~ dexp(1),
+    a_bar ~ dnorm(0,1.5),
+    sigma ~ dexp(1),
+    b ~ dnorm(0,1)
   ),data=datexp, log_lik=TRUE, messages=FALSE)
+precis(m2,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]   7.54 0.14  7.34  7.78   399  1.00
+#a[2]   7.37 0.25  7.01  7.79   236  1.00
+#P      1.64 0.32  1.20  2.19   346  1.01
+#a_bar  2.12 1.71 -0.59  4.74   475  1.00
+#sigma  3.86 1.41  1.90  6.40   428  1.01
+#b     -0.42 0.36 -1.00  0.12   374  1.00
 
-#Compute pairwise contrasts
-#Comparing sites 1 and 2
-post1 <- extract.samples(m2) 
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postex <- extract.samples(m2) 
+post_diff_ex<-postex$a
 
-#Convert to the measured scale (the proportion of loci solved)
-post1$a[,1] <- exp(post1$a[,1])
-post1$a[,2] <- exp(post1$a[,2])
+#Convert to the measured scale (the number of seconds)
+post_diff_ex[,1] <- exp(post_diff_ex[,1])
+post_diff_ex[,2] <- exp(post_diff_ex[,2])
+post_diff_ex<-as.data.frame(post_diff_ex)
+colnames(post_diff_ex)<-c("a1","a2")
 
 #Run the contrast
-post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) Arizona (site 2) grackles have lower latencies and thus are more exploratory than Sacramento (site 1) grackles. The distribution does not cross 0, which means that there are differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
-#        mean   sd 5.5% 94.5%      histogram
-#           mean     sd    5.5%   94.5%    histogram
-#a[1]    1697.40 229.76 1368.91 2058.43    ▁▁▅▇▃▁▁▁▁
-#a[2]    1137.56 181.84  875.64 1448.64 ▁▂▇▇▇▅▃▂▁▁▁▁
-#phi        1.59   0.29    1.15    2.09     ▁▂▃▇▅▃▁▁
-#diff_12  559.84 285.99  103.84 1017.56  ▁▁▂▅▇▅▃▁▁▁▁
+post_diff_ex$diff_12 <- post_diff_ex[,1] - post_diff_ex[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_ex,depth=2) 
+#           mean     sd    5.5%   94.5%      histogram
+#a1      1899.99 269.63 1535.67 2381.05      ▁▂▇▇▅▂▁▁▁
+#a2      1640.59 427.03 1102.87 2421.47 ▁▃▇▇▇▃▂▁▁▁▁▁▁▁
+#diff_12  259.40 495.60 -575.89  974.61       ▁▁▁▃▇▅▁▁
+#no difference in exploration between the populations bc diff crosses zero
+
 
 # visualize each bird at each site
-library(lattice)
-library(gridExtra)
-plot1 <- bwplot(latency~site, datexp, ylab="Average latency to approach within 20 cm of a novel environment", col="black", cex="2", panel = function(...) {
-  panel.bwplot(..., pch = "|")
-  panel.xyplot(..., jitter.x = TRUE)})
+datexp$plotlocation<-as.integer(as.factor(datexp$site))+rnorm(length(datexp$site),0,0.05)
+datexp$treatment <- as.factor(datexp$treatment)
+
+op <- par(mfrow=c(1,1), mar=c(3,4.9,2,0.9))
+plot(datexp$latency~datexp$plotlocation,xaxt="n",xlab="",ylab="Avg. latency to approach within 20 cm of a novel environment (sec)",cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=c(1,4)[datexp$treatment])
+points(precis(post_diff_ex,depth=2)[1:2,1]~c(1,2),cex=2.5,col="blue",pch=2)
+lines(c(precis(post_diff_ex,depth=2)[1,3],precis(post_diff_ex,depth=2)[1,4])~c(1,1),col="blue")
+lines(c(precis(post_diff_ex,depth=2)[2,3],precis(post_diff_ex,depth=2)[2,4])~c(2,2),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
+par(op)
+
+
+# get the sample sizes
+wex <- ex[ex$Population=="Woodland",]
+length(wex$ID) #n=32 birds
+
+tempex <- ex[ex$Population=="Tempe",]
+length(tempex$ID) #n=19 birds (8 manipulated, 11 not manipulated)
 
 
 #UNREGISTERED ANALYSIS: from the boxplot, it looks like there is larger variance in persistence in the Woodland population. We conducted a test to see if the difference shows up statistically: Levene's Test for Homogeneity of Variance (center = median)
