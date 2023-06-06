@@ -2281,12 +2281,57 @@ levels(ex$Population) <- c("Woodland", "Tempe", "Woodland")
 # remove the bird who had no data for this experiment
 ex <- ex[!ex$ExplorationLatency=="-",]
 
+###
+### WE ALSO RAN a right censored model from cat adoption example video 9 at 1:17:00 https://youtu.be/Zi6N3GLUJmw (Rethinking 2023). But we present the data from the gamma poisson model because the results are the same and the gamma poisson lists output that is within the range of the test period rather than estimating beyond the test period which is what the right censored model does.
+#but the outcome variable is not a 1 or a 0 presence/absence. Does this work for continuous variables?
+datright <- list(latency = as.numeric(ex$ExplorationLatency),
+            treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(ex$Population)
+)
+m_right <- ulam( alist(
+    latency | latency<=2700 ~ exponential(L), #the bird approached (event happened)
+    latency | latency==2701 ~ custom(exponential_lccdf(!Y|L)), #the bird did not approach (event did not happen)
+    L <- 1.0/mu, #mu is average waiting time, L is the expected waiting time
+    log(mu) <- a[site] + b*treatment, #L gets a different rate for each site, log average time to approach novel environment
+    a[site] ~ dnorm(a_bar,sigma),
+    a_bar ~ dnorm(0,1.5),
+    sigma ~ dexp(1),
+    b ~ dnorm(0,1)
+  ),data=datright, log_lik=TRUE, messages=FALSE)
+precis(m_right,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]   8.13 0.24  7.77  8.52   367     1
+#a[2]   7.74 0.37  7.18  8.35   285     1
+#a_bar  1.97 1.69 -0.77  4.49   320     1
+#sigma  4.04 1.40  2.09  6.43   372     1
+#b     -0.57 0.49 -1.38  0.22   288     1
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postexright <- extract.samples(m_right) 
+post_diff_exright<-postexright$a
+
+#Convert to the measured scale (the number of seconds)
+post_diff_exright[,1] <- exp(post_diff_exright[,1])
+post_diff_exright[,2] <- exp(post_diff_exright[,2])
+post_diff_exright<-as.data.frame(post_diff_exright)
+colnames(post_diff_exright)<-c("a1","a2")
+
+#Run the contrast
+post_diff_exright$diff_12 <- post_diff_exright[,1] - post_diff_exright[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_exright,depth=2) 
+#           mean     sd    5.5%   94.5%      histogram
+#a1      3508.67  897.77  2363.03 5019.77 ▁▂▇▇▇▃▂▁▁▁▁▁▁▁
+#a2      2463.66  974.69  1318.31 4216.03      ▁▇▇▂▁▁▁▁▁
+#diff_12 1045.01 1334.96 -1059.31 3309.72   ▁▁▁▁▁▂▇▇▂▁▁▁
+#there is no difference between populations. The numbers go over 2700 because the model estimates at what latency the bird would have come down if they would have had more time
+###
+
+### THIS IS THE GAMMA POISSON MODEL presented in the text
 # set up the data sheet for the model
 datexp <- list(latency = as.numeric(ex$ExplorationLatency),
             treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
             site = as.factor(ex$Population)
 )
-
 # run the model
 m2 <- ulam(
   alist(
