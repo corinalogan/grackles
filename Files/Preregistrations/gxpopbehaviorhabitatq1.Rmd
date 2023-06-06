@@ -2217,9 +2217,10 @@ precis(post_diff,depth=2)
 # visualize each bird at each site
 datinn$proportion<-datinn$locisolved/datinn$maxloci
 datinn$plotlocation<-as.integer(as.factor(datinn$site))+rnorm(length(datinn$site),0,0.05)
+datinn$treatment <- as.factor(datinn$treatment)
 
 op <- par(mfrow=c(1,1), mar=c(3,4.9,2,0.9))
-plot(datinn$proportion~datinn$plotlocation,xaxt="n",xlab="",ylab="Proportion of loci solved on the multiaccess box",cex.lab=1.5,cex=1.5,cex.axis=1.5)
+plot(datinn$proportion~datinn$plotlocation,xaxt="n",xlab="",ylab="Proportion of loci solved on the multiaccess box",cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=c(1,4)[datinn$treatment])
 points(precis(post_diff,depth=2)[1:2,1]~c(1,2),cex=3,col="blue",pch=2)
 lines(c(precis(post_diff,depth=2)[1,3],precis(post_diff,depth=2)[1,4])~c(1,1),col="blue")
 lines(c(precis(post_diff,depth=2)[2,3],precis(post_diff,depth=2)[2,4])~c(2,2),col="blue")
@@ -2364,6 +2365,9 @@ dp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/maste
 
 colnames(dp) <- c("Experiment","Population","Date","ID","Session","Trial","Choice","Notes")
 
+# remove BTGR
+dp <- dp[!dp$Population=="BTGR",]
+
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 dp$Population <- as.factor(dp$Population)
 levels(dp$Population) <- c("Woodland", "Tempe", "Woodland")
@@ -2385,51 +2389,79 @@ participate$prop <- participate$sum/participate$total
 participate <- subset(participate,!(is.na(participate["sum"])))
 participate <- subset(participate,!(is.na(participate["total"])))
 
+#add a column that shows whether they were manipulated or not
+tre <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+colnames(tre) <- c("Population","Batch","ID","BirdName","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","FlexibilityManipulated","Notes")
+tre_id<-as.data.frame(tre %>% group_by(BirdName) %>% summarise(unique(FlexibilityManipulated)))
+colnames(tre_id)<-c("ID","Treatment")
+participate<-left_join(participate,tre_id,by="ID")
+
 #RUN THE MODEL
+## rebuild_cmdstan() #NOTE: run this if you get an error about a PCH or GCH file https://discourse.mc-stan.org/t/struggling-to-get-cmdstan-working-on-mac-os-big-sur/19774/4
 datper <- list( participated = as.integer(participate$sum),
                   totaltrials = as.integer(participate$total),
+                  treatment = as.integer(as.factor(participate$Treatment))-1, # -1 to make the control birds the baseline at 0
                   site = as.integer(participate$Population) )
 
-m1<-ulam(
-  alist(
-    participated ~ dbinom( totaltrials , p ) , 
-    logit(p) <- a[site], 
-    a[site] ~ dnorm (0,1.5)
-    ) , data=datper , chains=4 )
+mper<-ulam( alist(
+    participated ~ dbinom(totaltrials, p), #probability of participating in a trial 
+    logit(p) <- a[site] + b*treatment, 
+    a[site] ~ dnorm (a_bar,sigma), #each site gets its own intercept, partial pooling (a_bar and sigma rather than 0,1) means that the model learns about each site as it goes through them and applies that learning to the next site
+    a_bar ~ dnorm(0,1.5),
+    sigma ~ dexp(1),
+    b ~ dnorm(0,1)
+    ) , data=datper , chains=4, log_lik=TRUE, cmdstan=T )
+precis(mper,depth=2)
+#      mean   sd 5.5% 94.5% n_eff Rhat4
+#a[1]  1.28 0.04 1.21  1.35  1182  1.00
+#a[2]  1.14 0.05 1.07  1.22   790  1.00
+#a_bar 1.14 0.39 0.51  1.66   361  1.01
+#sigma 0.45 0.48 0.06  1.32   321  1.00
+#b     0.50 0.08 0.36  0.63   833  1.01
 
-#Compute pairwise contrasts to compare sites 1 and 2
-post1 <- extract.samples(m1) 
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postper <- extract.samples(mper) 
+post_diff_per<-postper$a
 
-#Convert to the measured scale (the proportion of loci solved)
-post1$a[,1] <- inv_logit(post1$a[,1])
-post1$a[,2] <- inv_logit(post1$a[,2])
+#Convert to the measured scale (the proportion of trials participated in)
+post_diff_per[,1] <- inv_logit(post_diff_per[,1])
+post_diff_per[,2] <- inv_logit(post_diff_per[,2])
+post_diff_per<-as.data.frame(post_diff_per)
+colnames(post_diff_per)<-c("a1","a2")
 
 #Run the contrast
-post1$diff_12 <- (post1$a[,1]) - (post1$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post1,depth=2) #look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution crosses 0, which means that there are no differences between the sites (because subtracting distribution 1 from distribution 2 should result in all negative or all positive values if the two distributions are consistently different from each other)
-
+post_diff_per$diff_12 <- post_diff_per[,1] - post_diff_per[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_per,depth=2)
 #       mean   sd  5.5% 94.5% histogram
-#a[1]    0.78 0.01  0.77  0.80    ▁▁▂▅▇▇▃▂▁▁
-#a[2]    0.79 0.01  0.78  0.80    ▁▁▁▃▇▇▇▂▁▁
-#diff_12 0.00 0.01 -0.02  0.01 ▁▁▁▂▅▇▇▇▃▂▁▁▁
+#a1      0.78 0.01 0.77  0.79   ▁▁▁▂▅▇▇▃▁▁▁
+#a2      0.76 0.01 0.74  0.77 ▁▁▁▂▃▇▇▇▃▂▁▁▁
+#diff_12 0.02 0.01 0.01  0.04     ▁▁▂▅▇▅▂▁▁
+#look at the last row: diff_12: this is the expected difference between the distributions of mu at sites 1 and 2. (p.156) The distribution does not cross 0, which means that there are differences between the sites (that is, subtracting distribution 1 from distribution 2 results in all negative or all positive values if the two distributions are consistently different from each other)
 
 
+### COPIED FROM INNOVATION for reference
 # visualize each bird at each site
-library(lattice)
-library(gridExtra)
-plotp <- bwplot(prop~Population, participate, ylab="Proportion of trials participated in", col="black", cex="2", panel = function(...) {
-  panel.bwplot(..., pch = "|")
-  panel.xyplot(..., jitter.x = TRUE)})
+datper$proportion<-datper$participated/datper$totaltrials
+datper$plotlocation<-as.integer(as.factor(datper$site))+rnorm(length(datper$site),0,0.05)
+datper$treatment <- as.factor(datper$treatment)
 
+op <- par(mfrow=c(1,1), mar=c(3,4.9,2,0.9))
+plot(datper$proportion~datper$plotlocation,xaxt="n",xlab="",ylab="Proportion of trials participated in",cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=c(1,4)[datper$treatment])
+points(precis(post_diff_per,depth=2)[1:2,1]~c(1,2),cex=2.5,col="blue",pch=2)
+lines(c(precis(post_diff_per,depth=2)[1,3],precis(post_diff_per,depth=2)[1,4])~c(1,1),col="blue")
+lines(c(precis(post_diff_per,depth=2)[2,3],precis(post_diff_per,depth=2)[2,4])~c(2,2),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
+par(op)
 
-# get the mean proportion of trials participated in per site
-sac <- participate[participate$Population=="Sacramento",]
-mean(sac$sum/sac$total) #0.72
-length(sac$sum) #n=25 birds
+# get the mean proportion of trials participated in per site - but use the estimates in the model output for this because they account for differences between treatment conditions
+wper <- participate[participate$Population=="Woodland",]
+mean(wper$sum/wper$total) #0.72
+length(wper$sum) #n=25 birds
 
-tem <- participate[participate$Population=="Tempe",]
-mean(tem$sum/tem$total) #0.80
-length(tem$sum) #n=20 birds
+temp <- participate[participate$Population=="Tempe",]
+mean(temp$sum/temp$total) #0.80
+length(temp$sum) #n=20 birds (8 manipulated, 12 not manipulated)
 ```
 
 ![](gxpopbehaviorhabitatq1_figpersist.png)
