@@ -1786,7 +1786,7 @@ The exploration data for the repeatability calculation were heteroscedastic and 
 library(kableExtra)
 sumtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=F, sep=",", stringsAsFactors=F)
 sumtable <- data.frame(sumtable)
-colnames(sumtable) <- c("Population","Batch","ID","Bird name","Sex","Learning speed","Reversal speed","MAB loci solved","MAB max loci available","Exploration latency","Persistence","Notes")
+colnames(sumtable) <- c("Population","Batch","ID","Bird name","Sex","Learning speed","Reversal speed","Phi","Lambda","MAB loci solved","MAB max loci available","Exploration latency","Persistence","Flexibility Manipulated","Notes")
 
 knitr::kable(sumtable) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
@@ -1817,15 +1817,24 @@ library(dplyr)
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehavhabitat_data_reversegtgr.csv"), header=T, sep=",", stringsAsFactors=F) 
 
 ## We need to perform some modifications on these data to set them up for the STAN model
-
 ### remove -1 (did not participate in this trial) from the Correct column
 d0 <- d[!d$Correct==-1,]
+d0 <- d[!d$Site=="BTGR",]
 
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d0$Site <- as.factor(d0$Site)
 levels(d0$Site) <- c("Woodland", "Tempe", "Woodland")
 
-### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
+#add a column that shows whether they were manipulated or not
+manip <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+colnames(manip) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","Flexibility Manipulated","Notes")
+
+manip_id<-as.data.frame(manip %>% group_by(`Bird name`) %>% summarise(unique(`Flexibility Manipulated`)))
+colnames(manip_id)<-c("ID","Treatment")
+d0<-left_join(d0,manip_id,by="ID")
+
+### Get rid of the zeros in the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
 d0$id <- sapply(1:nrow(d0), function (i) which(unique(d0$ID) == d0$ID[i]) )
 d0 <- d0[with(d0, order(d0$id)), ]
 d0$Choice <- NA
@@ -1850,13 +1859,17 @@ d0$Reversal <- as.integer(d0$Reversal)
 # We can now extract the relevant data for the STAN model. In the model, we want to estimate the phi and lambda for each individual that was tested based on their choices during the initial learning phase (R0) and the reversal learning phase (R1). Run a STAN model with all sites, estimating both means of phi and lambda for each site as well as each individual's phi and lambda
 
 ## Exclude columns that will not be analyzed
-d <- select(d0,Site,id,Reversal,Trial,Correct,Choice)
+d <- select(d0,Site,id,Reversal,Trial,Correct,Choice,Treatment)
+
+## Convert treatment to a factor
+d$Treatment<-as.factor(d$Treatment)
 
 ## We set up the data for the model
 dat <- as.list(d)
 dat$N <- nrow(d)
 dat$N_id <- length(unique(d$id))
 dat$N_exp <- length(unique(d$Site))
+dat$N_treat <- length(unique(d$Treatment))
 dat$Choice <- as.numeric(as.factor(d$Choice))
 
 ## This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose
@@ -1865,8 +1878,10 @@ data{
    int N;
    int N_id;
    int N_exp;
+   int N_treat;
    int id[N];
    int Site[N];
+   int Treatment[N];
    int Trial[N];
    int Choice[N];
    int Correct[N];
@@ -1885,14 +1900,22 @@ parameters{
   matrix[2,N_exp] z_EXP;
   vector<lower=0>[2] sigma_EXP;
   cholesky_factor_corr[2] Rho_EXP;
+
+  // Varying effects clustered on treatment
+  matrix[2,N_treat] z_TREAT;
+  vector<lower=0>[2] sigma_TREAT;
+  cholesky_factor_corr[2] Rho_TREAT;
+
 }
 
 transformed parameters{
 matrix[N_id,2] v_ID; // varying effects on individuals
 matrix[N_exp,2] v_EXP; // varying effects on site
+matrix[N_treat,2] v_TREAT; // varying effects on site
 
 v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
 v_EXP = ( diag_pre_multiply( sigma_EXP , Rho_EXP ) * z_EXP )';
+v_TREAT = ( diag_pre_multiply( sigma_TREAT , Rho_TREAT ) * z_TREAT )';
 }
 
 model{
@@ -1910,6 +1933,10 @@ to_vector(z_EXP) ~ normal(0,1);
 sigma_EXP ~ exponential(1);
 Rho_EXP ~ lkj_corr_cholesky(4);
 
+to_vector(z_TREAT) ~ normal(0,1);
+sigma_TREAT ~ exponential(1);
+Rho_TREAT ~ lkj_corr_cholesky(4);
+
 // initialize attraction scores
 for ( i in 1:N_id ) {
 A[i,1] = 0.1; A[i,2] = 0.1;
@@ -1923,12 +1950,12 @@ real L;
 real phi;
 
 // first, what is log-prob of observed choice
-L =  exp(log_L + v_ID[id[i],1]+ v_EXP[Site[i],1]);
+L =  exp(log_L + v_ID[id[i],1]+ v_EXP[Site[i],1] + v_TREAT[Treatment[i],1] );
 p = softmax(L*A[id[i],1:2]' );
 Choice[i] ~ categorical( p );
 
 // second, update attractions conditional on observed choice
-phi =  inv_logit(logit_phi + v_ID[id[i],2]+ v_EXP[Site[i],2]);
+phi =  inv_logit(logit_phi + v_ID[id[i],2]+ v_EXP[Site[i],2] + v_TREAT[Treatment[i],2] );
 pay[1:2] = rep_vector(0,2);
 pay[ Choice[i] ] = Correct[i];
 A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]);
@@ -1975,21 +2002,33 @@ drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site
 look <- precis(drawsdf) #there are no differences between sites in either phi or lambda
 
 # CONVERT the means for phi and lambda for each site to the actual scale to see what the actual difference is and compare with our power analysis
-site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.78
-site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52
-site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306
-site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.78. New: 3.80
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52. New: 4.41
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306. New: 0.008
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301. New: 0.01
 # Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
+#added treatment
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1. + mean(drawsdf$v_TREAT.1.1.)) #4.78. New: 3.80
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.52. New: 4.41
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0306. New: 0.008
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301. New: 0.01
+
+
 # convert the posterior as well
-site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #4.78
-site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #4.52
-site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) #0.0306
-site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) #0.0301
+site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) 
+site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) 
+site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) 
+site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) 
 
 # and run a contrast on this scale too to get the range
 lambdap <- precis(site1lambdap - site2lambdap)
+#                            mean   sd  5.5% 94.5%     histogram
+#NEW: site1lambdap...site2lambdap -0.6 1.73 -3.54  1.69 ▁▁▁▁▂▇▅▁▁▁▁▁▁
+
 phip <- precis(site1phip - site2phip)
+#                      mean   sd  5.5% 94.5% histogram
+#NEW: site1phip...site2phip    0 0.01 -0.01  0.01 ▁▁▁▇▃▁▁▁▁
 # the site differences are unlikely to be larger than 0.1 for phi and 1.4 for lambda
 
 
@@ -2011,6 +2050,52 @@ individualsatsite$lambda=indlambdasite
 originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
 individualsatsite$name=originalid$unique.ID. #this is the final dataframe
 
+#Phis and lambdas for each individual
+#       Site unique.id.         phi     lambda             name
+#1  Woodland          1 0.005025974  1.0127106        Chocolate
+#2  Woodland          2 0.021621891 14.5147555             Flan
+#3  Woodland          3 0.004740958  2.2717331        Tembleque
+#4  Woodland          4 0.055570206  1.4246260       Polvorones
+#5  Woodland          5 0.009930123  0.6579345          Alegria
+#6  Woodland          6 0.014564132 11.1533515             Piña
+#7  Woodland          7 0.009123372 17.2135277           Camote
+#8  Woodland          8 0.007690806  1.3931624           Helado
+#9  Woodland          9 0.006954332  1.9616663            Xango
+#10 Woodland         10 0.021657240  8.5457965          Buñuelo
+#11 Woodland         11 0.006694781 19.6841994   Dulce de Leche
+#12 Woodland         12 0.005436245 23.0697127     Zapote Negro
+#13 Woodland         13 0.004514605  1.0815169          Carlota
+#14 Woodland         14 0.007356373  5.8102590           Ak'xi'
+#15 Woodland         15 0.016371734  4.7047307              Kau
+#16 Woodland         16 0.003228967  9.8302789              Kel
+#17 Woodland         17 0.016428310  2.8589414         Galandra
+#18 Woodland         18 0.003499246 28.8712050           Cuervo
+#19 Woodland         19 0.006313674  1.5873905           Wachil
+#20 Woodland         20 0.064771491  0.7684805            Xunub
+#21 Woodland         21 0.017501973  5.1350576 Tzanatl preciosa
+#22 Woodland         22 0.007420369 12.3006275         Cocinera
+#23 Woodland         23 0.049399499  1.2704300            Cutuy
+#24    Tempe         24 0.029351115  0.9858425        Tomatillo
+#25    Tempe         25 0.011285440  2.0186226          Chalupa
+#26    Tempe         26 0.001784257  4.6336053          Avocada
+#27    Tempe         27 0.089872709  1.0376747           Diablo
+#28    Tempe         28 0.017406539  2.6117934            Adobo
+#29    Tempe         29 0.005165214 11.3492524            Queso
+#30    Tempe         30 0.008475526  3.9762807         Habanero
+#31    Tempe         31 0.007772918 10.5666930             Mole
+#32    Tempe         32 0.007341076  4.9404011             Tapa
+#33    Tempe         33 0.008944730  1.6154161           Memela
+#34    Tempe         34 0.034646730  0.7770836            Fideo
+#35    Tempe         35 0.008585882  9.0876639             Taco
+#36    Tempe         36 0.011817485  7.8872108          Burrito
+#37    Tempe         37 0.004244561 22.1329093          Marisco
+#38    Tempe         38 0.011734945 32.6093184       Chilaquile
+#39    Tempe         39 0.019836784  5.1663508             Yuca
+#40    Tempe         40 0.002626128 18.7746893            Pizza
+#41    Tempe         41 0.020792644  1.0400581          Mofongo
+#42    Tempe         42 0.044698119  0.6393615          Pollito
+#43    Tempe         43 0.011950185  2.7473288          Taquito
+
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
 wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
@@ -2018,19 +2103,26 @@ wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
 #phi         0.03 0.01 0.02  0.05     ▃▂▇▇▁▃▂▁
 #lambda      5.84 5.96 1.79 12.00       ▇▂▁▁▁▁
 
+#NEW = same as before
+#phi         0.02 0.02 0.00  0.05 ▂▇▁▂▁▁▁▁▁▁▁▁▁
+#lambda      7.70 8.12 0.82 22.36        ▇▂▂▁▁▁
+
 te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 #            mean   sd  5.5% 94.5%  histogram
 #phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
 #lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
 
+#NEW = same as before
+#phi         0.02 0.02  0.00  0.04  ▇▅▂▁▁▁▁▁▁
+#lambda      7.23 8.46  0.79 21.98    ▇▂▁▁▁▁▁
 
 # visualize each bird at each site
 library(lattice)
 library(gridExtra)
-plot1 <- bwplot(indphisite~individualsatsite$Site, d, cex=1.2, ylab="$\phi$", col="black", panel = function(...) {
+plot1 <- bwplot(indphisite~individualsatsite$Site, d, cex=1.2, ylab="phi", col="black", panel = function(...) {
   panel.bwplot(..., pch = "|")
   panel.xyplot(..., jitter.x = TRUE)})
-plot2 <- bwplot(indlambdasite~individualsatsite$Site, d, ylab="$\lambda$", col="black", panel = function(...) {
+plot2 <- bwplot(indlambdasite~individualsatsite$Site, d, ylab="lambda", col="black", panel = function(...) {
   panel.bwplot(..., pch = "|")
   panel.xyplot(..., jitter.x = TRUE)})
 grid.arrange(plot1,plot2, ncol=2)
@@ -2066,72 +2158,87 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 
 ```{r resltsinnov, eval=F, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+inn <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
+colnames(inn) <- c("Population","Batch","ID","BirdName","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","FlexibilityManipulated","Notes")
 
 # remove BTGR
-d <- d[!d$Population=="BTGR",]
+inn <- inn[!inn$Population=="BTGR",]
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
-d$Population <- as.factor(d$Population)
-levels(d$Population) <- c("Woodland", "Tempe", "Woodland")
+inn$Population <- as.factor(inn$Population)
+levels(inn$Population) <- c("Woodland", "Tempe", "Woodland")
 
 # remove the birds who had no data for this experiment
-d <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
+inn <- inn[!inn$MABsolved=="-" & !inn$MABsolved=="X",]
 
 # there were two birds (Kau and Galandra) where some of the doors accidentally fell shut during habituation, therefore we had to remove these doors from their test. This ended up with Kau and Galandra only having the opportunity to solve 2 or 3 doors during their test. To make their data comparable to the other birds, we added a column "MAB max loci available" to the data sheet and updated the model to accommodate a 2 column response variable. 
 #MABsolved 2/2 and 3/3? n=38 with them in, they are from Sac, which has n=24 with them in
 
 # set up data sheet for model
-dat <- list(locisolved = as.numeric(d$MABsolved),
-            maxloci = as.numeric(d$MABmax),
-            site = as.factor(d$Population)
+datinn <- list(locisolved = as.numeric(inn$MABsolved),
+            maxloci = as.numeric(inn$MABmax),
+            treatment = as.integer(as.factor(inn$FlexibilityManipulated))-1,
+            site = as.factor(inn$Population)
               )
 
 # run the model
 m1 <- ulam( alist(
   locisolved ~ dbinom(maxloci,p) , #p=probability of solving a locus
-  logit(p) <- a[site] , #site=random effect
-  a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
-) , data=dat , chains=4 , log_lik=TRUE )
+  logit(p) <- a[site] + b*treatment, #site=random effect, treatment is also a random effect to account for the possibility that the slope for the manipulated birds might differ
+  a[site] ~ dnorm(a_bar,sigma), #each site gets its own intercept, partial pooling (a_bar and sigma rather than 0,1) means that the model learns about each site as it goes through them and applies that learning to the next site
+  a_bar ~ dnorm(0,1.5),
+  sigma ~ dexp(1),
+  b ~ dnorm(0,1)
+) , data=datinn , chains=4 , log_lik=TRUE, cmdstan=T)
+precis(m1, depth=2)
 
-#Compute pairwise contrasts: site 1 = Sacramento, site 2 = Tempe
+#Compute pairwise contrasts: site 1 = Woodland, site 2 = Tempe
 post1 <- extract.samples(m1) 
+post_diff<-post1$a
 
 #Convert to the measured scale (the proportion of loci solved)
-post1$a[,1] <- inv_logit(post1$a[,1])
-post1$a[,2] <- inv_logit(post1$a[,2])
+post_diff[,1] <- inv_logit(post_diff[,1])
+post_diff[,2] <- inv_logit(post_diff[,2])
+post_diff<-as.data.frame(post_diff)
+colnames(post_diff)<-c("a1","a2")
 
 #Run the contrast
-post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post1,depth=2) #look at the last row: diff_12
-#        mean   sd  5.5% 94.5%     histogram
-#a[1]    0.76 0.04 0.69  0.83     ▁▁▁▅▇▂▁
-#a[2]    0.50 0.06 0.41  0.60  ▁▁▁▃▇▇▃▁▁▁
-#diff_12 0.26 0.07 0.14  0.37 ▁▁▁▁▃▇▇▅▂▁▁
+post_diff$diff_12 <- post_diff[,1] - post_diff[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff,depth=2)
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#         mean   sd  5.5% 94.5%       histogram
+#a1       0.78 0.04  0.71  0.83 ▁▁▁▁▂▃▇▇▇▇▃▁▁▁▁
+#a2       0.78 0.06  0.68  0.87       ▁▁▁▂▃▇▇▂▁
+#diff_12 -0.01 0.06 -0.11  0.09     ▁▁▁▃▇▅▂▁▁▁▁
+#no site differences in innovativeness bc diff crosses zero
 
 
 # visualize each bird at each site
-library(lattice)
-library(gridExtra)
-plot1 <- bwplot((locisolved/maxloci)~site, dat, ylab="Proportion of loci solved on the multi-access box", col="black", cex="2", panel = function(...) {
-  panel.bwplot(..., pch = "|")
-  panel.xyplot(..., jitter.x = TRUE)})
+datinn$proportion<-datinn$locisolved/datinn$maxloci
+datinn$plotlocation<-as.integer(as.factor(datinn$site))+rnorm(length(datinn$site),0,0.05)
 
+op <- par(mfrow=c(1,1), mar=c(3,4.9,2,0.9))
+plot(datinn$proportion~datinn$plotlocation,xaxt="n",xlab="",ylab="Proportion of loci solved on the multiaccess box",cex.lab=1.5,cex=1.5,cex.axis=1.5)
+points(precis(post_diff,depth=2)[1:2,1]~c(1,2),cex=3,col="blue",pch=2)
+lines(c(precis(post_diff,depth=2)[1,3],precis(post_diff,depth=2)[1,4])~c(1,1),col="blue")
+lines(c(precis(post_diff,depth=2)[2,3],precis(post_diff,depth=2)[2,4])~c(2,2),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
+par(op)
 
 # get the mean number of loci solved per site
-sac <- d[d$Population=="Sacramento",]
-sac$MABsolved <- as.numeric(sac$MABsolved)
-sac$MABmax <- as.numeric(sac$MABmax)
-mean(sac$MABsolved) #3.0
-length(sac$MABsolved) #21 birds
+woo <- inn[inn$Population=="Woodland",]
+woo$MABsolved <- as.numeric(woo$MABsolved)
+woo$MABmax <- as.numeric(woo$MABmax)
+mean(woo$MABsolved) #3.0
+length(woo$MABsolved) #23 birds
 
-tem <- d[d$Population=="Tempe",]
+tem <- inn[inn$Population=="Tempe",]
 tem$MABsolved <- as.numeric(tem$MABsolved)
 tem$MABmax <- as.numeric(tem$MABmax)
-mean(tem$MABsolved) #2.0
-length(tem$MABsolved) #15 birds
+mean(tem$MABsolved) #3.25
+length(tem$MABsolved) #12 birds
 ```
 
 ![](gxpopbehaviorhabitatq1_figinnovation.png)
@@ -2162,7 +2269,7 @@ library(Rcpp)
 
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
+colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","Flexibility Manipulated","Notes")
 
 # remove BTGR
 d <- d[!d$Population=="BTGR",]
@@ -3157,7 +3264,7 @@ btgr <- precis(individualsatsite[individualsatsite$Site=="BTGR",])
 library(rethinking)
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
 
-colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","MABsolved","MABmax","ExplorationLatency","Persistence","Notes")
+colnames(d) <- c("Population","Batch","ID","Bird name","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","Flexibility Manipulated","Notes")
 
 # combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d$Population <- as.factor(d$Population)
@@ -3171,16 +3278,21 @@ dm <- d[!d$MABsolved=="-" & !d$MABsolved=="X",]
 # set up data sheet for model
 dat <- list(locisolved = as.numeric(dm$MABsolved),
             maxloci = as.numeric(dm$MABmax),
-            site = as.factor(dm$Population)
+            treatment = as.integer(as.factor(dm$`Flexibility Manipulated`))-1,
+            site = as.integer(as.factor(dm$Population))
               )
 
 # run the model
 ## rebuild_cmdstan() #NOTE: run this if you get an error about a PCH file https://discourse.mc-stan.org/t/struggling-to-get-cmdstan-working-on-mac-os-big-sur/19774/4
 mb <- ulam( alist(
   locisolved ~ dbinom(maxloci,p) , #p=probability of solving a locus
-  logit(p) <- a[site] , #site=random effect
-  a[site] ~ dnorm(0,1) #each site gets its own intercept, set to sd to 1 to make a slightly narrower distribution around the mean 2 loci solved
-) , data=dat , chains=4 , log_lik=TRUE)
+  logit(p) <- a[site] + b*treatment, #site=random effect, treatment is also a random effect to account for the possibility that the slope for the manipulated birds might differ
+  a[site] ~ dnorm(a_bar,sigma), #each site gets its own intercept, partial pooling (a_bar and sigma rother than 0,1) means that the model learns about each site as it goes through them and applies that learning to the next site
+  a_bar ~ dnorm(0,1.5),
+  sigma ~ dexp(1),
+  b ~ dnorm(0,1)
+) , data=dat , chains=4 , log_lik=TRUE, cmdstan=T)
+precis(mb, depth=2)
 
 #Compute pairwise contrasts: site 1 = BTGR, site 2 = Woodland, site 3 = Tempe
 post1 <- extract.samples(mb) 
@@ -3190,10 +3302,12 @@ post1$a[,1] <- inv_logit(post1$a[,1])
 post1$a[,2] <- inv_logit(post1$a[,2])
 post1$a[,3] <- inv_logit(post1$a[,3])
 
+post_diff<-as.data.frame(matrix(NA,ncol=2,nrow=2000))
+colnames(post_diff)<-c("diff_12","diff_13")
 #Run the contrast
-post1$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-post1$diff_13 <- post1$a[,1] - post1$a[,3] #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
-precis(post1,depth=2)
+post_diff$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+post_diff$diff_13 <- post1$a[,1] - post1$a[,3] #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
+precis(post_diff,depth=2)
 #         mean   sd  5.5% 94.5%       histogram
 #a[1]     0.36 0.11  0.19  0.53  ▁▁▂▃▅▇▇▅▃▂▁▁▁▁
 #a[2]     0.76 0.04  0.69  0.83 ▁▁▁▁▁▂▃▅▇▇▇▅▂▁▁
