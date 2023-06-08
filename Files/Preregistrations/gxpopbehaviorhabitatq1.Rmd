@@ -9,16 +9,14 @@ author:
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^'
 date: "`r Sys.Date()`"
 output:
-  word_document:
-    toc: yes
-    toc_depth: '5'
-  md_document:
-    toc: yes
   pdf_document:
     keep_tex: yes
     latex_engine: xelatex
-  github_document:
+  md_document:
     toc: yes
+  word_document:
+    toc: yes
+    toc_depth: '5'
   html_document:
     toc: yes
     toc_depth: 5
@@ -26,7 +24,7 @@ output:
       collapsed: no
     code_folding: hide
 bibliography: MyLibrary.bib
-csl: "https://raw.githubusercontent.com/citation-style-language/styles/master/apa.csl"
+csl: Peer-Community-Journal-PCI.csl
 urlcolor: blue
 header-includes:
 - \usepackage[left]{lineno}
@@ -54,7 +52,7 @@ library(formatR)
 knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE) 
 #Make code chunks wrap text so it doesn't go off the page when knitting to PDF
 
-knitr::opts_chunk$set(echo=T, include=T, results='asis', warning=F, message=F) 
+knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 #set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
 ```
@@ -1782,7 +1780,7 @@ The exploration data for the repeatability calculation were heteroscedastic and 
 
 **Table 1.5.** Contrasts (indicated by "diff") between populations for the flexibility measure of reversal learning: phi and lambda.
 
-```{r resltsflextable, eval=T, warning=FALSE, results='asis', include=TRUE}
+```{r resltssummarytable, eval=T, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
 sumtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=F, sep=",", stringsAsFactors=F)
 sumtable <- data.frame(sumtable)
@@ -2071,51 +2069,7 @@ originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect th
 individualsatsite$name=originalid$unique.ID. #this is the final dataframe
 
 #Phis and lambdas for each individual
-#       Site unique.id.         phi     lambda             name
-#1  Woodland          1 0.005025974  1.0127106        Chocolate
-#2  Woodland          2 0.021621891 14.5147555             Flan
-#3  Woodland          3 0.004740958  2.2717331        Tembleque
-#4  Woodland          4 0.055570206  1.4246260       Polvorones
-#5  Woodland          5 0.009930123  0.6579345          Alegria
-#6  Woodland          6 0.014564132 11.1533515             Piña
-#7  Woodland          7 0.009123372 17.2135277           Camote
-#8  Woodland          8 0.007690806  1.3931624           Helado
-#9  Woodland          9 0.006954332  1.9616663            Xango
-#10 Woodland         10 0.021657240  8.5457965          Buñuelo
-#11 Woodland         11 0.006694781 19.6841994   Dulce de Leche
-#12 Woodland         12 0.005436245 23.0697127     Zapote Negro
-#13 Woodland         13 0.004514605  1.0815169          Carlota
-#14 Woodland         14 0.007356373  5.8102590           Ak'xi'
-#15 Woodland         15 0.016371734  4.7047307              Kau
-#16 Woodland         16 0.003228967  9.8302789              Kel
-#17 Woodland         17 0.016428310  2.8589414         Galandra
-#18 Woodland         18 0.003499246 28.8712050           Cuervo
-#19 Woodland         19 0.006313674  1.5873905           Wachil
-#20 Woodland         20 0.064771491  0.7684805            Xunub
-#21 Woodland         21 0.017501973  5.1350576 Tzanatl preciosa
-#22 Woodland         22 0.007420369 12.3006275         Cocinera
-#23 Woodland         23 0.049399499  1.2704300            Cutuy
-#24    Tempe         24 0.029351115  0.9858425        Tomatillo
-#25    Tempe         25 0.011285440  2.0186226          Chalupa
-#26    Tempe         26 0.001784257  4.6336053          Avocada
-#27    Tempe         27 0.089872709  1.0376747           Diablo
-#28    Tempe         28 0.017406539  2.6117934            Adobo
-#29    Tempe         29 0.005165214 11.3492524            Queso
-#30    Tempe         30 0.008475526  3.9762807         Habanero
-#31    Tempe         31 0.007772918 10.5666930             Mole
-#32    Tempe         32 0.007341076  4.9404011             Tapa
-#33    Tempe         33 0.008944730  1.6154161           Memela
-#34    Tempe         34 0.034646730  0.7770836            Fideo
-#35    Tempe         35 0.008585882  9.0876639             Taco
-#36    Tempe         36 0.011817485  7.8872108          Burrito
-#37    Tempe         37 0.004244561 22.1329093          Marisco
-#38    Tempe         38 0.011734945 32.6093184       Chilaquile
-#39    Tempe         39 0.019836784  5.1663508             Yuca
-#40    Tempe         40 0.002626128 18.7746893            Pizza
-#41    Tempe         41 0.020792644  1.0400581          Mofongo
-#42    Tempe         42 0.044698119  0.6393615          Pollito
-#43    Tempe         43 0.011950185  2.7473288          Taquito
-
+## insert here
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
 wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
@@ -2146,6 +2100,28 @@ plot2 <- bwplot(indlambdasite~individualsatsite$Site, d, ylab="lambda", col="bla
   panel.bwplot(..., pch = "|")
   panel.xyplot(..., jitter.x = TRUE)})
 grid.arrange(plot1,plot2, ncol=2)
+
+# COPIED FROM INNOVATION visualize each bird at each site
+datinn$proportion<-datinn$locisolved/datinn$maxloci
+datinn$plotlocation<-as.integer(as.factor(datinn$site))+rnorm(length(datinn$site),0,0.05)
+datinn$treatment <- as.factor(datinn$treatment)
+
+op <- par(mfrow=c(2,1), mar=c(3,4.9,2,0.9))
+plot(indphisite~individualsatsite$Site,xaxt="n",xlab="",ylab=expression(Phi),cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=c(1,4)[d$Treatment])
+points(precis(fit,depth=2)[1:2,1]~c(1,2),cex=3,col="blue",pch=2)
+lines(c(precis(fit,depth=2)[1,3],precis(fit,depth=2)[1,4])~c(1,1),col="blue")
+lines(c(precis(fit,depth=2)[2,3],precis(fit,depth=2)[2,4])~c(2,2),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
+
+plot(d$indlambdasite~individualsatsite$Site,xaxt="n",xlab="",ylab=expression(Lambda),cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=c(1,4)[d$Treatment])
+points(precis(fit,depth=2)[1:2,1]~c(1,2),cex=3,col="blue",pch=2)
+lines(c(precis(fit,depth=2)[1,3],precis(fit,depth=2)[1,4])~c(1,1),col="blue")
+lines(c(precis(fit,depth=2)[2,3],precis(fit,depth=2)[2,4])~c(2,2),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
+par(op)
+
 
 # Remove the stan command line file we created for this particular model from your computer
 fn<-"myowntrial"
@@ -2318,7 +2294,7 @@ m_right <- ulam( alist(
     sigma ~ dexp(1),
     b ~ dnorm(0,1)
   ),data=datright, log_lik=TRUE, messages=FALSE)
-precis(m_right,depth=2)
+#precis(m_right,depth=2)
 #       mean   sd  5.5% 94.5% n_eff Rhat4
 #a[1]   8.13 0.24  7.77  8.52   367     1
 #a[2]   7.74 0.37  7.18  8.35   285     1
@@ -2338,7 +2314,7 @@ colnames(post_diff_exright)<-c("a1","a2")
 
 #Run the contrast
 post_diff_exright$diff_12 <- post_diff_exright[,1] - post_diff_exright[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post_diff_exright,depth=2) 
+#precis(post_diff_exright,depth=2) 
 #           mean     sd    5.5%   94.5%      histogram
 #a1      3508.67  897.77  2363.03 5019.77 ▁▂▇▇▇▃▂▁▁▁▁▁▁▁
 #a2      2463.66  974.69  1318.31 4216.03      ▁▇▇▂▁▁▁▁▁
@@ -2363,7 +2339,7 @@ m2 <- ulam(
     sigma ~ dexp(1),
     b ~ dnorm(0,1)
   ),data=datexp, log_lik=TRUE, messages=FALSE)
-precis(m2,depth=2)
+#precis(m2,depth=2)
 #       mean   sd  5.5% 94.5% n_eff Rhat4
 #a[1]   7.54 0.14  7.34  7.78   399  1.00
 #a[2]   7.37 0.25  7.01  7.79   236  1.00
@@ -2384,7 +2360,7 @@ colnames(post_diff_ex)<-c("a1","a2")
 
 #Run the contrast
 post_diff_ex$diff_12 <- post_diff_ex[,1] - post_diff_ex[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-precis(post_diff_ex,depth=2) 
+#precis(post_diff_ex,depth=2) 
 #           mean     sd    5.5%   94.5%      histogram
 #a1      1899.99 269.63 1535.67 2381.05      ▁▂▇▇▅▂▁▁▁
 #a2      1640.59 427.03 1102.87 2421.47 ▁▃▇▇▇▃▂▁▁▁▁▁▁▁
