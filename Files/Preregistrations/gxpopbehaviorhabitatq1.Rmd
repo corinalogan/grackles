@@ -1881,7 +1881,7 @@ d0$Reversal <- as.integer(d0$Reversal)
 d <- select(d0,Site,id,Reversal,Trial,Correct,Choice,Treatment)
 
 ## Convert treatment to a factor
-d$Treatment<-as.factor(d$Treatment)
+d$Treatment<-as.integer(as.factor(d$Treatment)) #1=not manipulated, 2=manipulated
 
 ## We set up the data for the model
 dat <- as.list(d)
@@ -1981,7 +1981,6 @@ A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]
 }//i
 }
 "
-
 
 # RUN the model, but STAN was acting up so need to run it with cmdstan (these instructions were copied from g_flexmanip2post.Rmd starting at line 342)
 library(cmdstanr)
@@ -2187,7 +2186,8 @@ m1 <- ulam( alist(
   sigma ~ dexp(1),
   b ~ dnorm(0,1)
 ) , data=datinn , chains=4 , log_lik=TRUE, cmdstan=T)
-precis(m1, depth=2)
+m1output <- precis(m1, depth=2)
+stancode(m1)
 
 #Compute pairwise contrasts: site 1 = Woodland, site 2 = Tempe
 post1 <- extract.samples(m1) 
