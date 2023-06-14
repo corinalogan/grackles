@@ -3124,7 +3124,7 @@ d0 <- d[!d$Correct==-1,]
 # exclude the birds who didn't complete the initial discrimination 
 d0 <- d[!d$ID=="Roseling",]
 
-# exclude the birds who didn't complete reversal 1? no because not using this data to predict performance on the MAB or anything, just want to see if there are differences with GTGR
+# exclude the birds who didn't complete reversal 1? no because not using this data to predict performance on the MAB or anything, just want to see if there are differences with GTGR. Don't need to add treatment to the model because there was no difference between manipulated and non-manipulated grackles in the analyses in the Results section
 #d0 <- d[!d$ID=="Bladderwort",]
 #d0 <- d[!d$ID=="Cocoplum",]
 
@@ -3407,6 +3407,13 @@ mb <- ulam( alist(
   b ~ dnorm(0,1)
 ) , data=dat , chains=4 , log_lik=TRUE, cmdstan=T)
 precis(mb, depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]  -0.47 0.55 -1.35  0.41  1176     1
+#a[2]   1.20 0.24  0.82  1.58  1799     1
+#a[3]   1.27 0.43  0.63  1.99  1035     1
+#a_bar  0.55 0.65 -0.50  1.55   977     1
+#sigma  1.20 0.66  0.44  2.39   832     1
+#b      0.32 0.59 -0.60  1.27  1207     1
 
 #Compute pairwise contrasts: site 1 = BTGR, site 2 = Woodland, site 3 = Tempe
 post1 <- extract.samples(mb) 
@@ -3423,12 +3430,9 @@ post_diff$diff_12 <- post1$a[,1] - post1$a[,2] #subtract mu for site 2 from mu f
 post_diff$diff_13 <- post1$a[,1] - post1$a[,3] #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
 precis(post_diff,depth=2)
 #         mean   sd  5.5% 94.5%       histogram
-#a[1]     0.36 0.11  0.19  0.53  ▁▁▂▃▅▇▇▅▃▂▁▁▁▁
-#a[2]     0.76 0.04  0.69  0.83 ▁▁▁▁▁▂▃▅▇▇▇▅▂▁▁
-#a[3]     0.50 0.06  0.40  0.60        ▁▁▅▇▇▃▁▁
-#diff_12 -0.41 0.12 -0.59 -0.22        ▁▁▃▇▇▃▁▁
-#diff_13 -0.14 0.13 -0.34  0.07        ▁▂▅▇▅▂▁▁
-#there is no difference between innovativeness in BTGR and GTGR in Tempe, but BTGR is less innovative than GTGR in Woodland
+#diff_12 -0.37 0.13 -0.58 -0.15 ▁▁▃▇▇▅▂▁▁
+#diff_13 -0.38 0.15 -0.61 -0.14 ▁▂▅▇▇▅▂▁▁
+#BTGR is less innovative than GTGR
 
 
 # PERSISTENCE
@@ -3464,36 +3468,56 @@ participate$prop <- participate$sum/participate$total
 participate <- subset(participate,!(is.na(participate["sum"])))
 participate <- subset(participate,!(is.na(participate["total"])))
 
+#add a column that shows whether they were manipulated or not
+tre <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+colnames(tre) <- c("Population","Batch","ID","BirdName","Sex","LearnSpeed","ReverseSpeed","Phi","Lambda","MABsolved","MABmax","ExplorationLatency","Persistence","FlexibilityManipulated","Notes")
+tre_id<-as.data.frame(tre %>% group_by(BirdName) %>% summarise(unique(FlexibilityManipulated)))
+colnames(tre_id)<-c("ID","Treatment")
+participate<-left_join(participate,tre_id,by="ID")
+
+
 #RUN THE MODEL
 datper <- list( participated = as.integer(participate$sum),
                   totaltrials = as.integer(participate$total),
+                  treatment = as.integer(as.factor(participate$Treatment))-1, # -1 to make the control birds the baseline at 0
                   site = as.integer(participate$Population) )
 
-mpbtgr <-ulam(
-  alist(
-    participated ~ dbinom( totaltrials , p ) , 
-    logit(p) <- a[site], 
-    a[site] ~ dnorm (0,1.5)
-    ) , data=datper , chains=4 )
+mper<-ulam( alist(
+    participated ~ dbinom(totaltrials, p), #probability of participating in a trial 
+    logit(p) <- a[site] + b*treatment, 
+    a[site] ~ dnorm (a_bar,sigma), #each site gets its own intercept, partial pooling (a_bar and sigma rather than 0,1) means that the model learns about each site as it goes through them and applies that learning to the next site
+    a_bar ~ dnorm(0,1.5),
+    sigma ~ dexp(1),
+    b ~ dnorm(0,1)
+    ) , data=datper , chains=4, log_lik=TRUE, cmdstan=T )
+precis(mper,depth=2)
+#      mean   sd 5.5% 94.5% n_eff Rhat4
+#a[1]  0.82 0.09 0.67  0.98  1699  1.00
+#a[2]  1.28 0.04 1.21  1.36  1812  1.00
+#a[3]  1.13 0.05 1.06  1.21  1376  1.00
+#a_bar 1.04 0.30 0.59  1.43   404  1.01
+#sigma 0.45 0.33 0.15  1.05   664  1.00
+#b     0.51 0.09 0.37  0.65  1278  1.00
 
 #Compute pairwise contrasts to compare sites: 1=BTGR, 2=Woodland, 3=Tempe
-postp <- extract.samples(mpbtgr) 
+postp <- extract.samples(mper) 
 
-#Convert to the measured scale (the proportion of loci solved)
+#Convert to the measured scale (the proportion of trials participated in)
 postp$a[,1] <- inv_logit(postp$a[,1])
 postp$a[,2] <- inv_logit(postp$a[,2])
 postp$a[,3] <- inv_logit(postp$a[,3])
 
 #Run the contrast
-postp$diff_12 <- (postp$a[,1]) - (postp$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
-postp$diff_13 <- (postp$a[,1]) - (postp$a[,3]) #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
-precis(postp,depth=2) 
+post_diffp <- as.data.frame(matrix(NA,ncol=2,nrow=2000))
+colnames(post_diffp)<-c("diff_12","diff_13")
+
+post_diffp$diff_12 <- (postp$a[,1]) - (postp$a[,2]) #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+post_diffp$diff_13 <- (postp$a[,1]) - (postp$a[,3]) #subtract mu for site 3 from mu for site 1. col1=site 1, col3=site 3
+
+precis(post_diffp,depth=2) 
 #         mean   sd  5.5% 94.5%      histogram
-#a[1]     0.69 0.02  0.66  0.72 ▁▁▁▁▂▃▇▇▇▅▃▁▁▁
-#a[2]     0.78 0.01  0.77  0.79    ▁▁▁▂▅▇▇▃▁▁▁
-#a[3]     0.79 0.01  0.78  0.80    ▁▁▁▁▂▅▇▅▂▁▁
-#diff_12 -0.10 0.02 -0.13 -0.06       ▁▁▂▇▇▃▁▁
-#diff_13 -0.10 0.02 -0.13 -0.06      ▁▁▁▃▇▇▃▁▁
+#diff_12 -0.09 0.02 -0.12 -0.06       ▁▁▁▅▇▅▂▁
+#diff_13 -0.06 0.02 -0.10 -0.03 ▁▁▁▁▂▅▅▇▇▅▃▂▁▁
 # BTGR are less persistent than the two GTGR populations
 ```
 
