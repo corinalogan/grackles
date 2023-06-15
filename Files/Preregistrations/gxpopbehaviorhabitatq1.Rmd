@@ -33,6 +33,7 @@ header-includes:
 - \usepackage{pdflscape}
 - \newcommand{\blandscape}{\begin{landscape}}
 - \newcommand{\elandscape}{\end{landscape}}
+- \usepackage{longtable} #set longtable = TRUE in kable() to have a long table break over multiple pages https://bookdown.org/yihui/bookdown/tables.html
 ---
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitatq1.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data](https://doi.org/10.5063/F1QZ28FH)
@@ -1778,18 +1779,28 @@ The exploration data for the repeatability calculation were heteroscedastic and 
 
 ## RESULTS
 
-**Table 1.5.** Contrasts (indicated by "diff") between populations for the flexibility measure of reversal learning: phi and lambda.
+\blandscape
+
+**Table 1.5.** Summary data by bird for each of the variables measured. Population indicates where they were trapped (Sacramento is part of the Woodland population), bird is the bird’s name, sex indicates whether they are female (F) or male (M), learn speed is the number of trials to form the initial color preference, reversal speed is the number of trials to reverse the color preference, $\phi$ and $\lambda$ are the two flexibility components, MAB loci are the number of loci solved on the multiaccess box, MAB max is the maximum number of loci available to that bird, Exploration is the average number of seconds it took the bird to approach within 20 cm of the novel environment (note that 2701 s means the bird never approached), persistence is the proportion of reversal learning and multiaccess box trials the bird participated in, and flexibility manipulated indicates whether this was one of the 8 Tempe grackles who underwent the serial reversals to make them more flexible (Yes) or not (No). “X” indicates that this bird did not complete this experiment or that we cannot count the data for this experiment, and “-” indicates this bird was not given this experiment. 
 
 ```{r resltssummarytable, eval=T, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
-sumtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=F, sep=",", stringsAsFactors=F)
+library(dplyr)
+sumtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F)
 sumtable <- data.frame(sumtable)
-colnames(sumtable) <- c("Population","Batch","ID","Bird name","Sex","Learning speed","Reversal speed","Phi","Lambda","MAB loci solved","MAB max loci available","Exploration latency","Persistence","Flexibility Manipulated","Notes")
+colnames(sumtable) <- c("Population","Batch","ID","Bird","Sex","Learn","Reverse","Phi","Lambda","MABloci","MABmax","Exploration","Persistence","Flexibilitymanipulated","Notes")
+
+# Only include certain columns
+sumtable <- select(sumtable,Population,Bird,Sex,Learn,Reverse,Phi,Lambda,MABloci,MABmax,Exploration,Persistence,Flexibilitymanipulated)
+
+# Rename columns for final table
+colnames(sumtable) <- c("Population","Bird","Sex","Learn speed","Reverse speed",expression(phi),"Lambda","MAB loci","MAB max","Exploration","Persistence","Flexibility manipulated")
 
 knitr::kable(sumtable) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 6)
 ```
 
+\elandscape
 
 ### Flexibility
 
