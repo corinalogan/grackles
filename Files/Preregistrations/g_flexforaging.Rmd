@@ -798,6 +798,9 @@ fem <- list(types = standardize(f$FoodTypesPerSec),
             rank = standardize(f$DomRank)
               )
 
+#make the model output reproducible. To unset it, call: set.seed(NULL) https://r-coder.com/set-seed-r/
+set.seed(1)
+
 # Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
 fphi <- ulam(
     alist(
@@ -818,6 +821,7 @@ outputfphip <- precis( fphi , depth=2 ) #look at the bp mean and whether the int
 # bp interval crosses zero so not much relationship between phi and number of food types eaten per second
 
 # females, lambda
+set.seed(2)
 flam <- ulam(
     alist(
         types ~ dnorm(mu,sigma),
@@ -845,6 +849,7 @@ mal <- list(types = standardize(m$FoodTypesPerSec),
               )
 
 # Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+set.seed(3)
 mphi <- ulam(
     alist(
         types ~ dnorm(mu,sigma),
@@ -864,6 +869,7 @@ outputmphip <- precis( mphi , depth=2 ) #look at the bp mean and whether the int
 # bp interval crosses zero so not much relationship between phi and number of food types eaten per second
 
 # males, lambda
+set.seed(4)
 mlam <- ulam(
     alist(
         types ~ dnorm(mu,sigma),
@@ -927,6 +933,7 @@ femt <- list(techs = standardize(f2$ForageTechsPerSec),
               )
 
 # Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+set.seed(5)
 ftphi <- ulam(
     alist(
         techs ~ dnorm(mu,sigma),
@@ -946,6 +953,7 @@ outputftphip <- precis( ftphi , depth=2 ) #look at the bp mean and whether the i
 # bp interval for this output and those below are the same: it crosses zero so not much relationship between phi and number of foraging techniques used per second
 
 # females, lambda
+set.seed(6)
 ftlam <- ulam(
     alist(
         techs ~ dnorm(mu,sigma),
@@ -972,6 +980,7 @@ malt <- list(techs = standardize(m2$ForageTechsPerSec),
               )
 
 # Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
+set.seed(7)
 mtphi <- ulam(
     alist(
         techs ~ dnorm(mu,sigma),
@@ -990,6 +999,7 @@ outputmtphip <- precis( mtphi , depth=2 ) #look at the bp mean and whether the i
 #sigma  1.06 0.16  0.84  1.34  1148     1
 
 # males, lambda
+set.seed(8)
 mtlam <- ulam(
     alist(
         techs ~ dnorm(mu,sigma),
@@ -1097,6 +1107,7 @@ tr <- list(foods = fo$NumFoodTypes,
             obstime = standardize(fo$SumFocalTime),
             treatment = as.integer(as.factor(fo$FlexibilityManipulated)) #1=control, 2=manipulated
               )
+set.seed(9)
 tr_binom <- ulam( alist(
         foods ~ dbinom(20,p), #max 20 food types in the AZ population
         logit(p) <- a[treatment] + b*obstime, #the intercept is the probability of observing any of the food types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
@@ -1140,6 +1151,7 @@ inv_logit( output_tr_binom[2,1]) / inv_logit( output_tr_binom[1,1]) #manipulated
 
 
 # POISSON model - foraging techniques - equally likely to switch among techs, but the manipulated birds have a different total number of techniques, which is reflected by the intercept. Time is just a control variable and don't want to interpret any output from this variable
+set.seed(10)
 tr_poi <- ulam( alist(
         foods ~ dpois(lambda),
         log(lambda) <- a[treatment] + b*obstime, #include total observation time because this varied per focal (with a target max time of 10 min)
@@ -1191,6 +1203,7 @@ s_manip <- list(m = m,
             time = standardize(time),
             t = t
               )
+set.seed(11)
 simmanip <- ulam( alist(
         m ~ dbinom(12,p), #max 12 foraging techniques used across both populations (from data_FlexForaging > Foraging > How, and then counted the categories)
         logit(p) <- a[t] + b*time, #include total observation time because this varied per focal (with a target max time of 10 min)
@@ -1214,6 +1227,7 @@ manip <- list(tech = c2$NumForageTechs,
               )
 
 # Run the model: binomial distribution bc it is a count of events occurring over a continuous period of time that is a bounded period of time (McElreath 2nd edition, Fig 10.6)
+set.seed(12)
 phimanip <- ulam( alist(
         tech ~ dbinom(9,p), #max 9 foraging techniques used in the AZ population
         logit(p) <- a[treatment] + b*obstime, #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
@@ -1257,6 +1271,7 @@ inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #manipulat
 
 
 # POISSON model - foraging techniques - equally likely to switch among techs, but the manipulated birds have a different total number of techniques, which is reflected by the intercept. Time is just a control variable and don't want to interpret any output from this variable
+set.seed(13)
 manippoi <- ulam( alist(
         tech ~ dpois(lambda),
         log(lambda) <- a[treatment] + b*obstime, #include total observation time because this varied per focal (with a target max time of 10 min)
@@ -1818,13 +1833,15 @@ library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
 
 #GLMM with response variable = NumberFoodsEaten
-#ffales
+#females
+set.seed(15)
 f1 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
+set.seed(16)
 f2 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
@@ -1881,6 +1898,7 @@ cafes <- over(c, hr)
 cafe_data <- table(cafes$NAME_1)
 cafe_data <- merge(cafe_data, ff, by = "ID")
 
+set.seed(17)
 c1 <- MCMCglmm(NumberCafesInTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=cafe_data, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(c1)
 ```
@@ -2103,7 +2121,6 @@ g = merge(g, degree, by = "BirdID", all = T)
 ### TO DO: Add to data sheet Relatedness of strongest bonds - dyadic data? Have to wait for DNA data to be available (Sep 2023) 
 
 write.csv(g, "g_flexforaging_data_general.csv")
-
 ```
 
 
@@ -2151,12 +2168,14 @@ prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=lis
 
 #GLMM 1 with response variable = MaxBondStrength#
 #females
+set.seed(19)
 f1 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f1)
 #autocorr(f1$Sol) #Did fixed effects converge?
 #autocorr(f1$VCV) #Did random effects converge?
 
 #males
+set.seed(20)
 f2 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f2)
 #autocorr(f2$Sol) #Did fixed effects converge?
@@ -2185,12 +2204,14 @@ plotResiduals(Strength, simulationOutput$scaledResiduals) #plot the residuals ag
 
 #GLMM 2 with response variable = AvgBondStrength
 #female
+set.seed(21)
 f3 <- MCMCglmm(Strength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f3)
 #autocorr(f3$Sol) #Did fixed effects converge?
 #autocorr(f3$VCV) #Did random effects converge?
 
 #male
+set.seed(22)
 f4 <- MCMCglmm(Strength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f4)
 #autocorr(f4$Sol) #Did fixed effects converge?
@@ -2218,12 +2239,14 @@ plotResiduals(Degree, simulationOutput$scaledResiduals) #plot the residuals agai
 
 #GLMM 3 with response variable = Degree
 #female
+set.seed(23)
 f5 <- MCMCglmm(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f5)
 #autocorr(f5$Sol) #Did fixed effects converge?
 #autocorr(f5$VCV) #Did random effects converge?
 
 #male
+set.seed(24)
 f6 <- MCMCglmm(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f6)
 #autocorr(f6$Sol) #Did fixed effects converge?
@@ -2272,12 +2295,14 @@ plotResiduals(RelatednessForMaxBond, simulationOutput$scaledResiduals) #plot the
 
 #GLMM 5 with response variable = RelatednessForMaxBond
 #female
+set.seed(25)
 f9 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f9)
 #autocorr(f9$Sol) #Did fixed effects converge?
 #autocorr(f9$VCV) #Did random effects converge?
 
 #male
+set.seed(26)
 f10 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 summary(f4)
 #autocorr(f10$Sol) #Did fixed effects converge?
@@ -2431,6 +2456,7 @@ datm5 <- list(follows = m5$Probimmigrant,
               )
 
 # Run the model
+set.seed(27)
 m5phi <- ulam( alist(
         follows ~ dbinom(1,p),
         logit(p) <- a + b*phi , #microhabitat=random variable
@@ -2439,6 +2465,7 @@ m5phi <- ulam( alist(
 
 outputm5p <- precis( m5phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
 
+set.seed(28)
 m5lambda <- ulam( alist(
         follows ~ dbinom(1,p),
         logit(p) <- a + b*lambda , 
@@ -2453,7 +2480,7 @@ datf5 <- list(follows = f5$Probimmigrant,
             phi = standardize(f5$Phi),
             lambda = standardize(f5$Lambda)
               )
-
+set.seed(29)
 f5phi <- ulam( alist(
         follows ~ dbinom(1,p),
         logit(p) <- a + b*phi , #microhabitat=random variable
@@ -2462,6 +2489,7 @@ f5phi <- ulam( alist(
 
 outputm5p <- precis( f5phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
 
+set.seed(30)
 f5lambda <- ulam( alist(
         follows ~ dbinom(1,p),
         logit(p) <- a + b*lambda , 
