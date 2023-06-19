@@ -1461,7 +1461,7 @@ ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero
 }
 
 innovation_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
-#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresults.csv")
+#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresultsN20.csv")
 
 #shows a difference between the sites when means differ by 0.25 (which means that individuals on the edge have a 25% higher probability of solving a locus on the MAB, which means 1 locus more - 25% of 4 loci = 1) or more when sd=0.1, b=0.1, and there is a treatment difference of 1.0 based on a sample of 30 individuals
 ```
@@ -1601,6 +1601,55 @@ precis(post2,depth=2)
 post3 <- extract.samples(m2) 
 post3$diff_23 <- post3$a[,2] - post3$a[,3] 
 precis(post3,depth=2)
+
+
+
+### COPIED FROM INNOVATION! SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
+sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
+sim_sitedifferences<-c(0.1,0.15,0.2,0.25) #0.1=compared to core population the edge individuals have a 10% higher probability of solving a locus
+corepop_prop<-0.2 #probability of solving a locus for the core population
+innovation_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
+colnames(innovation_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
+counter<-1
+for(sitediff in 1:length(sim_sitedifferences)){
+  for(manipeffect in 1:length(sim_manipulationeffects)){
+    count_crosseszero<-0
+    for(repetition in 1:10){
+sim_n = 40 # /2 = n per site when running 2 sites
+sim_site = c(rep(1,sim_n/2),rep(2,sim_n/2)) #site is a categorical variable: sites 1 or 2
+sim_treat =  sample(0:1,size=sim_n,replace=T) #treatment is a categorical variable: manipulated or not
+m = rbinom(n=sim_n,size=4, prob=abs(rnorm(sim_n,mean=(ifelse(sim_site==1,corepop_prop,corepop_prop+sim_sitedifferences[sitediff]) + sim_manipulationeffects[manipeffect] * ifelse(sim_treat==1,1,0)),sd=0.1))) #4 loci possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+
+#run the simulated data through the model
+sim_dat <- list(m = m,
+            sim_treat = sim_treat,
+            sim_site = sim_site
+              )
+sim_mod <- ulam( alist(
+        m ~ dbinom(4,p),
+        logit(p) <- a[sim_site] + b*sim_treat, 
+        a[sim_site] ~ dnorm(0,1), #each site gets its own intercept
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=sim_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+sim_output <- precis( sim_mod , depth=2 )
+
+#contrast
+postt <- extract.samples(sim_mod)
+diffsim <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diff_site <- precis( diffsim )
+print(diff_site)
+ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero<-count_crosseszero+0)
+    }
+    innovation_simresults[counter,1]<-counter
+    innovation_simresults[counter,2]<-sim_sitedifferences[sitediff]
+    innovation_simresults[counter,3]<-sim_manipulationeffects[manipeffect]
+    innovation_simresults[counter,4]<-count_crosseszero
+    counter<-counter+1
+  }
+}
+
+innovation_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
+#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresultsN20.csv")
 ```
 
 
@@ -1706,6 +1755,60 @@ precis(post2,depth=2)
 post3 <- extract.samples(m1) 
 post3$diff_23 <- inv_logit(post3$a[,2]) - inv_logit(post3$a[,3])
 precis(post3,depth=2)
+
+
+### COPIED FROM INNOVATION! SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
+sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
+sim_sitedifferences<-c(0.1,0.15,0.2,0.25) #0.1=compared to core population the edge individuals have a 10% higher probability of solving a locus
+corepop_prop<-0.2 #probability of solving a locus for the core population
+innovation_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
+colnames(innovation_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
+counter<-1
+for(sitediff in 1:length(sim_sitedifferences)){
+  for(manipeffect in 1:length(sim_manipulationeffects)){
+    count_crosseszero<-0
+    for(repetition in 1:10){
+sim_n = 40 # /2 = n per site when running 2 sites
+sim_site = c(rep(1,sim_n/2),rep(2,sim_n/2)) #site is a categorical variable: sites 1 or 2
+sim_treat =  sample(0:1,size=sim_n,replace=T) #treatment is a categorical variable: manipulated or not
+m = rbinom(n=sim_n,size=4, prob=abs(rnorm(sim_n,mean=(ifelse(sim_site==1,corepop_prop,corepop_prop+sim_sitedifferences[sitediff]) + sim_manipulationeffects[manipeffect] * ifelse(sim_treat==1,1,0)),sd=0.1))) #4 loci possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+
+#run the simulated data through the model
+dat_list<-list(
+  time=c(missing_birds$actualtime,missing_birds$observedtime),
+  switch_sim=c(missing_birds$actualsimswitchesperfocal,missing_birds$observedsimswitchesperfocal),
+  missing=c(rep(1,nrow(missing_birds)),rep(2,nrow(missing_birds))) # category 1 is full observation time, category 2 is with reduced time due to birds being out of view
+)
+
+sim_dat <- list(m = m,
+            sim_treat = sim_treat,
+            sim_site = sim_site
+              )
+sim_mod <- ulam( alist(
+        m ~ dbinom(4,p),
+        logit(p) <- a[sim_site] + b*sim_treat, 
+        a[sim_site] ~ dnorm(0,1), #each site gets its own intercept
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=sim_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+sim_output <- precis( sim_mod , depth=2 )
+
+#contrast
+postt <- extract.samples(sim_mod)
+diffsim <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diff_site <- precis( diffsim )
+print(diff_site)
+ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero<-count_crosseszero+0)
+    }
+    innovation_simresults[counter,1]<-counter
+    innovation_simresults[counter,2]<-sim_sitedifferences[sitediff]
+    innovation_simresults[counter,3]<-sim_manipulationeffects[manipeffect]
+    innovation_simresults[counter,4]<-count_crosseszero
+    counter<-counter+1
+  }
+}
+
+innovation_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
+#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresultsN20.csv")
 ```
 
 
