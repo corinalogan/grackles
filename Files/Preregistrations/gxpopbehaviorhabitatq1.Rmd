@@ -2392,6 +2392,101 @@ file.remove(fn)
 
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
+
+
+
+### ANALYZE THE VARIANCE in loci solved between sites. When revising (R1), we found a way to make the Bayesian models work to compare the differences in variance between the sites
+fva <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+fva <- as.data.frame((fva))
+
+# exclude boat-tailed grackles from this analysis
+fva <- fva[!fva$Population=="BTGR",]
+
+### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+fva$Population <- as.factor(fva$Population)
+levels(fva$Population) <- c("Woodland", "Tempe", "Woodland")
+
+#remove NAs from the variables that will be in the model
+fvar <- subset(fva,!(is.na(fva["Phi"]))) 
+
+#sample size
+length(fvar$Phi) #38. This matches the data sheet
+
+# set up the data sheet for the model, then run the model
+flexvar <- list(phi = as.numeric(fvar$Phi),
+            lambda = as.numeric(fvar$Lambda),
+            treatment = as.integer(as.factor(fvar$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(fvar$Population),
+            individual = c(1:nrow(fvar) )
+)
+#Phi model
+mflexvar_p <- ulam( alist(
+  phi ~ dnorm(mu,sigma[site]) , 
+  log(mu) <- a[site] + b*treatment, 
+  a[site] ~ dnorm(a_bar,a_sigma), 
+  a_bar ~ dnorm(0,1.5),
+  a_sigma ~ dexp(1),
+  sigma[site]~dexp(1),
+  b ~ dnorm(0,1)
+) , data=flexvar , chains=4 , cores=4, log_lik=TRUE, cmdstan=T, messages=T)
+precis(mflexvar_p,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]     -3.20 0.23 -3.54 -2.87   850  1.01
+#a[2]     -3.27 0.16 -3.54 -3.04   594  1.01
+#a_bar    -2.88 0.70 -3.54 -1.40   237  1.01
+#a_sigma   0.62 0.71  0.05  2.10   252  1.01
+#sigma[1]  0.05 0.01  0.03  0.06  1160  1.00
+#sigma[2]  0.02 0.00  0.02  0.03   941  1.00
+#b         0.60 0.20  0.30  0.91   319  1.01
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postvar_p <- extract.samples(mflexvar_p) 
+post_diff_var_p<-postvar_p$sigma
+post_diff_var_p<-as.data.frame(post_diff_var_p)
+
+#Run the contrast
+post_diff_var_p$diff_12 <- post_diff_var_p[,1] - post_diff_var_p[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_var_p,depth=2) 
+#           mean     sd    5.5%   94.5%      histogram
+#V1      0.05 0.01 0.03  0.06    ▁▂▅▇▅▃▂▁▁▁▁▁
+#V2      0.02 0.00 0.02  0.03         ▁▃▇▂▁▁▁
+#diff_12 0.02 0.01 0.01  0.04 ▁▁▁▁▂▇▇▅▃▂▁▁▁▁▁
+#Woodland has a higher variance in phi than Tempe bc diff does not cross zero
+
+
+#Lambda model
+mflexvar_l <- ulam( alist(
+  lambda ~ dnorm(mu,sigma[site]) , 
+  log(mu) <- a[site] + b*treatment, 
+  a[site] ~ dnorm(a_bar,a_sigma), 
+  a_bar ~ dnorm(0,1.5),
+  a_sigma ~ dexp(1),
+  sigma[site]~dexp(1),
+  b ~ dnorm(0,1)
+) , data=flexvar , chains=4 , cores=4, log_lik=TRUE, cmdstan=T, messages=T)
+precis(mflexvar_l,depth=2)
+#          mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      1.60 0.11  1.43  1.76   639  1.00
+#a[2]      1.40 0.06  1.30  1.49  1052  1.00
+#a_bar     1.35 0.55  0.36  1.95   419  1.02
+#a_sigma   0.56 0.61  0.07  1.69   366  1.01
+#sigma[1]  2.24 0.39  1.71  2.95  1077  1.00
+#sigma[2]  0.82 0.15  0.62  1.09   830  1.01
+#b        -0.26 0.11 -0.44 -0.09  1176  1.00
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postvar_l <- extract.samples(mflexvar_l) 
+post_diff_var_l<-postvar_l$sigma
+post_diff_var_l<-as.data.frame(post_diff_var_l)
+
+#Run the contrast
+post_diff_var_l$diff_12 <- post_diff_var_l[,1] - post_diff_var_l[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_var_l,depth=2) 
+#        mean     sd    5.5%   94.5%      histogram
+#V1      2.24 0.39 1.71  2.95       ▁▅▇▂▁▁▁▁
+#V2      0.82 0.15 0.62  1.09 ▁▁▃▇▅▃▂▁▁▁▁▁▁▁
+#diff_12 1.42 0.42 0.83  2.17      ▁▁▂▇▃▁▁▁▁
+#Woodland has a higher lambda variance than Tempe bc diff does not cross zero
 ```
 
 ![](gxpopbehaviorhabitatFigflexcontrast.png)
@@ -2733,13 +2828,215 @@ tempex <- ex[ex$Population=="Tempe",]
 length(tempex$ID) #n=19 birds (8 manipulated, 11 not manipulated)
 
 
-#UNREGISTERED ANALYSIS: from the boxplot, it looks like there is larger variance in persistence in the Woodland population. We conducted a test to see if the difference shows up statistically: Levene's Test for Homogeneity of Variance (center = median)
+### VARIANCE
+#In the submitted version of the manuscript, we conducted an UNREGISTERED ANALYSIS: from the boxplot, it looks like there is larger variance in persistence in the Woodland population. We conducted a test to see if the difference shows up statistically: Levene's Test for Homogeneity of Variance (center = median)
 library(car)
 #leveneTest(latency~as.factor(site),data=datexp)
 #      Df F value Pr(>F)
 #group  1  1.9463 0.1693
 #      49   
 #p=0.17, which is larger than 0.05, indicating that there is no significant difference between the variances of the two groups
+
+
+
+### ANALYZE THE VARIANCE in loci solved between sites. When revising (R1), we found a way to make the Bayesian models work to compare the differences in variance between the sites
+
+# the GAMMA POISSON model doesn't seem to work properly for the Woodland data, perhaps because there are so many 2701s (birds who didn't come down) and so not as much variance in the data to analyze?
+datexpvar <- list(latency = as.numeric(ex$ExplorationLatency),
+            treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(ex$Population),
+            individual = c(1:nrow(ex) )
+)
+m2var <- ulam(
+  alist(
+    latency ~ dgampois(L, P),
+    log(L) <- a[site] + b*treatment + c[individual],
+    a[site] ~ dnorm(a_bar,a_sigma),
+    P ~ dexp(1),
+    a_bar ~ dnorm(0,1.5),
+    a_sigma ~ dexp(1),
+    c[individual]~dnorm(0,sigma[site]),
+    sigma[site]~dexp(1),
+    b ~ dnorm(0,1)
+  ),data=datexpvar, chains=4 , cores=4, cmdstan=T, log_lik=TRUE, messages=FALSE,iter=8000)
+
+precis(m2var,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      7.54 0.12  7.35  7.73  1713  1.00
+#a[2]      7.02 0.38  6.41  7.60   568  1.01
+#P         2.55 0.69  1.57  3.69   451  1.00
+#a_bar     2.29 1.75 -0.38  5.12  1318  1.00
+#a_sigma   3.60 1.43  1.56  6.07  1316  1.00
+#c[1]     -0.02 0.16 -0.29  0.22  1677  1.00
+#c[2]     -0.05 0.18 -0.35  0.17   391  1.02
+#c[3]     -0.04 0.18 -0.33  0.18   902  1.00
+#c[4]      0.04 0.18 -0.19  0.33  1004  1.01
+#c[5]      0.03 0.17 -0.19  0.31   861  1.01
+#c[6]      0.03 0.16 -0.17  0.29  1435  1.01
+#c[7]      0.03 0.17 -0.20  0.31  1051  1.01
+#c[8]      0.03 0.18 -0.21  0.32  1079  1.01
+#c[9]     -0.07 0.20 -0.43  0.17   212  1.03
+#c[10]     0.04 0.17 -0.17  0.31  1102  1.01
+#c[11]    -0.07 0.20 -0.44  0.17   266  1.03
+#c[12]     0.01 0.18 -0.23  0.29  2570  1.00
+#c[13]     0.03 0.16 -0.19  0.30  1516  1.00
+#c[14]     0.01 0.17 -0.23  0.27  3185  1.00
+#c[15]    -0.04 0.18 -0.36  0.19  1152  1.01
+#c[16]     0.04 0.18 -0.20  0.33  1498  1.00
+#c[17]     0.03 0.16 -0.20  0.32  1306  1.01
+#c[18]     0.04 0.17 -0.19  0.32   695  1.01
+#c[19]    -0.03 0.18 -0.31  0.22  2043  1.00
+#c[20]    -0.03 0.18 -0.32  0.21  1692  1.00
+#c[21]     0.03 0.19 -0.22  0.35  1295  1.01
+#c[22]     0.01 0.17 -0.24  0.27  1201  1.01
+#c[23]    -0.06 0.19 -0.41  0.19   242  1.03
+#c[24]     0.00 0.17 -0.25  0.27  3207  1.00
+#c[25]     0.03 0.18 -0.19  0.30  1250  1.01
+#c[26]    -0.01 0.17 -0.28  0.25  2777  1.00
+#c[27]     0.02 0.17 -0.20  0.30  2733  1.00
+#c[28]     0.04 0.16 -0.17  0.31  1141  1.01
+#c[29]     0.00 0.16 -0.24  0.23  3468  1.00
+#c[30]    -0.05 0.20 -0.39  0.20   551  1.02
+#c[31]     0.03 0.17 -0.19  0.30  1662  1.01
+#c[32]    -0.01 0.17 -0.29  0.25  2465  1.00
+#c[33]    -0.49 0.64 -1.53  0.53  1312  1.00
+#c[34]     0.48 0.64 -0.44  1.58   568  1.01
+#c[35]     0.39 0.62 -0.52  1.44  1028  1.00
+#c[36]     0.46 0.63 -0.43  1.54   754  1.00
+#c[37]     0.72 0.62 -0.21  1.83   681  1.01
+#c[38]     0.73 0.62 -0.21  1.76   579  1.01
+#c[39]    -1.43 0.92 -2.87  0.06   401  1.00
+#c[40]     0.72 0.64 -0.21  1.81   666  1.01
+#c[41]     0.72 0.62 -0.19  1.78   729  1.00
+#c[42]    -1.23 0.85 -2.56  0.07   506  1.00
+#c[43]    -0.36 0.68 -1.42  0.73  1239  1.00
+#c[44]     1.00 0.66  0.04  2.10   464  1.00
+#c[45]    -1.26 0.86 -2.61  0.09   386  1.00
+#c[46]    -0.22 0.61 -1.20  0.73  1211  1.00
+#c[47]     0.57 0.64 -0.37  1.68   773  1.00
+#c[48]     0.22 0.63 -0.74  1.25   981  1.00
+#c[49]    -1.06 0.77 -2.24  0.17   503  1.00
+#c[50]     0.73 0.60 -0.17  1.74   586  1.01
+#c[51]    -0.19 0.63 -1.15  0.84  1557  1.00
+#sigma[1]  0.15 0.10  0.04  0.35    47  1.14
+#sigma[2]  1.02 0.36  0.38  1.56   221  1.01
+#b        -0.40 0.52 -1.18  0.44   809  1.00
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postexvar <- extract.samples(m2var) 
+post_diff_exvar<-postexvar$sigma
+post_diff_exvar<-as.data.frame(post_diff_exvar)
+
+#Run the contrast
+post_diff_exvar$diff_12 <- post_diff_exvar[,1] - post_diff_exvar[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_exvar,depth=2) 
+#           mean     sd    5.5%   94.5%      histogram
+#V1       0.15 0.10  0.04  0.35 ▂▇▇▃▂▂▁▁▁▁▁▁▁
+#V2       1.02 0.36  0.38  1.56  ▁▂▂▃▇▇▅▃▁▁▁▁
+#diff_12 -0.87 0.38 -1.45 -0.20 ▁▁▁▂▃▅▇▅▃▂▁▁▁
+#Woodland has less variance in exploration than Tempe bc diff does not cross zero
+
+#Check to make sure the model worked. Yes. The predictions are consistently higher than the actual latencies
+mu_1e<- link( m2var, data=data.frame(latency=datexpvar$latency,individual=c(1:nrow(ex)),treatment=as.integer(as.factor(datexpvar$treatment)),site=as.integer(as.factor(datexpvar$site)) ) ) # predict the outcome for individuals
+mu_1_meane <- apply( mu_1e , 2 , mean )  # extract the relevant information for the factor of interest
+mu_1_cie <- apply( mu_1e , 2 , PI , prob=0.97 ) # extract the 97% compatibility interval
+plot(mu_1_meane~datexpvar$latency)
+
+plot(mu_1_meane[datexpvar$site=="Woodland"]~datexpvar$latency[datexpvar$site=="Woodland"]) # the model isn't working for Woodland
+plot(mu_1_meane[datexpvar$site=="Tempe"]~datexpvar$latency[datexpvar$site=="Tempe"]) # the model seems fine for Tempe
+
+
+# the RIGHT CENSORED model, which can deal with the high number of 2701s in Woodland
+datrightvar <- list(latency = as.numeric(ex$ExplorationLatency),
+            treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(ex$Population),
+            individual = c(1:nrow(ex) )
+)
+m_rightvar <- ulam( alist(
+    latency | latency<=2700 ~ exponential(L), #the bird approached (event happened)
+    latency | latency==2701 ~ custom(exponential_lccdf(!Y|L)), #the bird did not approach (event did not happen)
+    L <- 1.0/mu, #mu is average waiting time, L is the expected waiting time
+    log(mu) <- a[site] + b*treatment + c[individual], #L gets a different rate for each site, log average time to approach novel environment
+    a[site] ~ dnorm(a_bar,a_sigma),
+    a_bar ~ dnorm(0,1.5),
+    a_sigma ~ dexp(1),
+    c[individual]~dnorm(0,sigma[site]),
+    sigma[site]~dexp(1),
+    b ~ dnorm(0,1)
+  ),data=datrightvar, log_lik=TRUE, messages=FALSE, chains=4 , cores=4, cmdstan=T, iter=8000)
+precis(m_rightvar,depth=2)
+#          mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      8.17 0.26  7.79  8.59   237  1.02
+#a[2]      7.65 0.44  6.93  8.34  1279  1.01
+#a_bar     2.06 1.65 -0.50  4.73   395  1.01
+#a_sigma   3.91 1.40  2.14  6.38   297  1.02
+#c[1]     -0.10 0.46 -0.91  0.54  4200  1.00
+#c[2]     -0.17 0.50 -1.12  0.46   694  1.01
+#c[3]     -0.16 0.50 -1.08  0.48  1407  1.01
+#c[4]      0.17 0.50 -0.41  1.08   985  1.01
+#c[5]      0.17 0.51 -0.44  1.08  1041  1.01
+#c[6]      0.16 0.50 -0.45  1.07  1170  1.01
+#c[7]      0.18 0.50 -0.41  1.11  1227  1.01
+#c[8]      0.17 0.50 -0.43  1.08  1027  1.01
+#c[9]     -0.22 0.55 -1.30  0.42   578  1.01
+#c[10]     0.17 0.52 -0.45  1.08  1382  1.01
+#c[11]    -0.22 0.57 -1.31  0.43   700  1.01
+#c[12]    -0.07 0.44 -0.82  0.59 10770  1.00
+#c[13]     0.17 0.49 -0.43  1.07  1178  1.01
+#c[14]    -0.07 0.44 -0.81  0.58 12565  1.00
+#c[15]    -0.17 0.51 -1.11  0.48  1358  1.01
+#c[16]     0.17 0.51 -0.43  1.10  1295  1.01
+#c[17]     0.18 0.51 -0.44  1.10  1206  1.01
+#c[18]     0.17 0.51 -0.43  1.10  1018  1.01
+#c[19]    -0.13 0.49 -1.02  0.52  1835  1.01
+#c[20]    -0.12 0.48 -0.98  0.52  2305  1.01
+#c[21]     0.18 0.50 -0.42  1.11   771  1.01
+#c[22]    -0.06 0.44 -0.80  0.59 14720  1.00
+#c[23]    -0.20 0.53 -1.19  0.43   804  1.01
+#c[24]    -0.07 0.44 -0.83  0.59 11186  1.00
+#c[25]     0.17 0.50 -0.44  1.08  1333  1.01
+#c[26]    -0.09 0.46 -0.89  0.56  4122  1.00
+#c[27]    -0.06 0.43 -0.80  0.60 13686  1.00
+#c[28]     0.17 0.50 -0.43  1.09  1179  1.01
+#c[29]    -0.08 0.45 -0.87  0.57  6487  1.00
+#c[30]    -0.18 0.53 -1.18  0.46   962  1.01
+#c[31]     0.17 0.50 -0.44  1.09  1164  1.01
+#c[32]    -0.10 0.46 -0.91  0.54  5109  1.00
+#c[33]    -0.44 0.79 -1.71  0.74   452  1.02
+#c[34]     0.13 0.67 -0.87  1.24  1634  1.00
+#c[35]     0.05 0.70 -0.98  1.26   207  1.02
+#c[36]     0.11 0.71 -0.99  1.22   152  1.03
+#c[37]     0.70 0.91 -0.33  2.37  1605  1.00
+#c[38]     0.71 0.92 -0.32  2.40   784  1.01
+#c[39]    -0.78 1.01 -2.67  0.45  1338  1.01
+#c[40]     0.68 1.06 -0.56  2.79   123  1.04
+#c[41]     0.24 0.70 -0.67  1.50   465  1.01
+#c[42]    -0.78 1.01 -2.46  0.52   176  1.03
+#c[43]    -0.37 0.78 -1.63  0.79   216  1.02
+#c[44]     0.86 0.92 -0.20  2.57   972  1.00
+#c[45]    -0.79 1.00 -2.75  0.48   279  1.02
+#c[46]    -0.30 0.78 -1.62  0.88   264  1.01
+#c[47]     0.22 0.68 -0.79  1.36  1612  1.00
+#c[48]     0.11 0.80 -1.14  1.49    79  1.07
+#c[49]    -0.56 0.91 -2.27  0.52   760  1.01
+#c[50]     0.70 0.92 -0.34  2.41  1655  1.00
+#c[51]    -0.30 0.73 -1.50  0.83  1665  1.01
+#sigma[1]  0.41 0.34  0.02  1.03    52  1.10
+#sigma[2]  0.92 0.54  0.15  1.87   408  1.01
+#b        -0.52 0.58 -1.42  0.47   579  1.00
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postexrightvar <- extract.samples(m_rightvar) 
+post_diff_exrightvar<-postexrightvar$sigma
+post_diff_exrightvar<-as.data.frame(post_diff_exrightvar)
+
+#Run the contrast
+post_diff_exrightvar$diff_12 <- post_diff_exrightvar[,1] - post_diff_exrightvar[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_exrightvar,depth=2) 
+#         mean     sd    5.5%   94.5%      histogram
+#V1       0.38 0.33  0.02  0.98  ▇▅▃▂▁▁▁▁▁▁▁
+#V2       0.95 0.55  0.14  1.87     ▅▇▇▂▁▁▁▁
+#diff_12 -0.57 0.65 -1.70  0.42 ▁▁▁▁▂▅▇▇▃▁▁▁
 ```
 
 ![](gxpopbehaviorhabitatq1_figexploration.png)
