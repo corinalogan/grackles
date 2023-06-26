@@ -2500,6 +2500,85 @@ tem$MABsolved <- as.numeric(tem$MABsolved)
 tem$MABmax <- as.numeric(tem$MABmax)
 mean(tem$MABsolved) #3.25
 length(tem$MABsolved) #12 birds
+
+
+### ANALYZE THE VARIANCE in loci solved between sites
+datinnvar <- list(locisolved = as.numeric(inn$MABsolved),
+            maxloci = as.numeric(inn$MABmax),
+            treatment = as.integer(as.factor(inn$FlexibilityManipulated))-1,
+            site = as.factor(inn$Population),
+            individual = c(1:nrow(inn) )
+              )
+
+# run the model
+m1var <- ulam( alist(
+  locisolved ~ dbinom(maxloci,p) , 
+  logit(p) <- a[site] + b*treatment + c[individual],
+  a[site] ~ dnorm(a_bar,a_sigma),
+  a_bar ~ dnorm(0,1.5),
+  a_sigma ~ dexp(1),
+  c[individual]~dnorm(0,sigma[site]),
+  sigma[site]~dexp(1),
+  b ~ dnorm(0,1)
+) , data=datinnvar , chains=4 , log_lik=TRUE, cmdstan=T)
+m1outputvar <- precis(m1var, depth=2)
+#         mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      1.90 0.53  1.12  2.79   426  1.00
+#a[2]      1.93 0.71  0.95  3.07   590  1.01
+#a_bar     1.63 0.78  0.31  2.73   699  1.00
+#a_sigma   0.76 0.73  0.08  2.20   614  1.01
+#c[1]      1.17 1.44 -0.88  3.65  1403  1.00
+#c[2]      1.24 1.61 -0.86  3.97   758  1.01
+#c[3]     -0.32 1.17 -2.10  1.51  1169  1.00
+#c[4]     -2.24 1.16 -4.18 -0.48   548  1.00
+#c[5]      1.21 1.53 -0.87  3.77  1250  1.00
+#c[6]      1.12 1.42 -0.84  3.58  1215  1.01
+#c[7]      1.21 1.62 -0.93  3.93  1138  1.00
+#c[8]     -1.38 1.08 -3.15  0.25   703  1.00
+#c[9]      1.11 1.48 -0.93  3.67  1285  1.01
+#c[10]     1.20 1.55 -0.93  3.98  1113  1.00
+#c[11]     0.96 1.68 -1.47  3.82  1167  1.00
+#c[12]     1.10 1.52 -1.03  3.74  1135  1.00
+#c[13]    -0.32 1.10 -2.07  1.41  1016  1.00
+#c[14]    -0.38 1.11 -2.06  1.43  1158  1.00
+#c[15]     1.15 1.51 -0.88  3.67  1325  1.00
+#c[16]     1.21 1.56 -0.91  4.08  1090  1.00
+#c[17]    -2.20 1.18 -4.16 -0.46   474  1.00
+#c[18]     1.20 1.56 -0.97  3.89  1055  1.00
+#c[19]    -0.39 1.15 -2.21  1.45   969  1.00
+#c[20]    -3.30 1.53 -5.99 -1.21   494  1.01
+#c[21]    -2.21 1.25 -4.29 -0.25   390  1.01
+#c[22]     1.19 1.56 -0.92  3.74   829  1.00
+#c[23]    -0.39 1.14 -2.22  1.44  1107  1.00
+#c[24]     1.32 1.84 -0.83  4.36   522  1.01
+#c[25]    -1.34 1.16 -3.26  0.34   453  1.01
+#c[26]    -2.20 1.29 -4.34 -0.16   288  1.02
+#c[27]     1.20 1.76 -1.05  4.20   480  1.01
+#c[28]     1.23 1.63 -0.85  4.17   611  1.01
+#c[29]     1.04 1.67 -1.19  3.93   889  1.01
+#c[30]    -2.44 1.42 -4.73 -0.21   289  1.01
+#c[31]     1.10 1.79 -1.23  4.37   331  1.02
+#c[32]     1.22 1.98 -1.14  4.47   693  1.00
+#c[33]     1.20 1.83 -1.07  4.29   545  1.01
+#c[34]    -0.62 1.28 -2.66  1.41   949  1.00
+#c[35]     1.33 1.81 -0.83  4.75   376  1.02
+#sigma[1]  1.90 0.62  1.02  2.98   244  1.02
+#sigma[2]  1.97 0.95  0.60  3.56   164  1.03
+#b         0.30 0.82 -1.00  1.52  1113  1.00
+
+#Compute pairwise contrasts: site 1 = Woodland, site 2 = Tempe
+post1var <- extract.samples(m1var) 
+post_diffvarinn<-post1var$sigma
+post_diffvarinn<-as.data.frame(post_diffvarinn)
+
+#Run the contrast
+post_diffvarinn$diff_12 <- post_diffvarinn[,1] - post_diffvarinn[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diffvarinn,depth=2)
+#       mean   sd  5.5% 94.5% histogram
+#V1       1.90 0.62  1.02  2.98 ▁▁▅▇▅▂▁▁▁▁▁
+#V2       1.97 0.95  0.60  3.56    ▂▇▅▁▁▁▁▁
+#diff_12 -0.07 1.08 -1.89  1.50  ▁▁▁▁▂▇▇▂▁▁
+#no difference in variance between the two sites in innovativeness
 ```
 
 ![](gxpopbehaviorhabitatq1_figinnovation.png)
@@ -2888,7 +2967,7 @@ precis(post_diff_pervar,depth=2)
 mu_1<- link( mpervar, data=data.frame(totaltrials=participate$total,individual=c(1:nrow(participate)),treatment=as.integer(as.factor(participate$Treatment)),site=as.integer(as.factor(participate$Population)) ) ) # predict the outcome for individuals born between 1964 (1964-1979 = -15) and 1993 (1993-1979 = 14)
 mu_1_mean <- apply( mu_1 , 2 , mean )  # extract the relevant information for the factor of interest, bCO (second column) 
 mu_1_ci <- apply( mu_1 , 2 , PI , prob=0.97 ) # extract the 97% compatibility interval
-plot(mu_1_mean~datper$proportion)
+#plot(mu_1_mean~datper$proportion)
 ```
 
 ![](gxpopbehaviorhabitatq1_figpersist.png)
