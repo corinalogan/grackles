@@ -1289,17 +1289,17 @@ locisolved is the number of loci solved on the multiaccess box, 4 is the total n
 
 $\alpha$ ~ Normal(0,1) *[$\alpha$ prior]*
 
-We use a normal distribution for $\alpha$ because it is a sum (see Figure 10.6 in @statrethinkingbook) and a logit link to ensure the values are between 0 and 1. We set the mean to 0 on a logit scale, which means an individual solves 2 loci on average on the actual scale at a probability of 0.5.
+We use a normal distribution for $\alpha$ because it is a sum (see Figure 10.6 in @mcelreath2020statistical) and a logit link to ensure the values are between 0 and 1. We set the mean to 0 on a logit scale, which means an individual solves 2 loci on average on the actual scale at a probability of 0.5.
 
 ```{r innovation, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
 library(rstan)
 
-### SIMULATION
+### SIMULATION (PREREGISTERED)
 #Figuring out probability, p
 s1mean <- 2 #site 1: solves on average 2 loci 
 s2mean <- 1.6 #site 2: solves on average 1.6 loci
-s3mean <- 3.6 #site 3: solves on average 1.6 loci
+s3mean <- 3.6 #site 3: solves on average 3.6 loci
 
 s1mean <- log((s1mean/4)/(1-(s1mean/4))) #convert to the logit scale: log(p/1-p) p=4/probability to solve a given locus (4 because max 4 loci, so 2 loci solved / 4 total loci = 0.5 probability)
 s2mean <- log((s2mean/4)/(1-(s2mean/4))) 
@@ -1414,6 +1414,56 @@ precis(post2,depth=2)
 post3 <- extract.samples(m1) 
 post3$diff_23 <- post3$a[,2] - post3$a[,3] 
 precis(post3,depth=2)
+
+
+### SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
+sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
+sim_sitedifferences<-c(0.1,0.15,0.2,0.25) #0.1=compared to core population the edge individuals have a 10% higher probability of solving a locus
+corepop_prop<-0.2 #probability of solving a locus for the core population
+innovation_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
+colnames(innovation_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
+counter<-1
+for(sitediff in 1:length(sim_sitedifferences)){
+  for(manipeffect in 1:length(sim_manipulationeffects)){
+    count_crosseszero<-0
+    for(repetition in 1:10){
+sim_n = 40 # /2 = n per site when running 2 sites
+sim_site = c(rep(1,sim_n/2),rep(2,sim_n/2)) #site is a categorical variable: sites 1 or 2
+sim_treat =  sample(0:1,size=sim_n,replace=T) #treatment is a categorical variable: manipulated or not
+m = rbinom(n=sim_n,size=4, prob=abs(rnorm(sim_n,mean=(ifelse(sim_site==1,corepop_prop,corepop_prop+sim_sitedifferences[sitediff]) + sim_manipulationeffects[manipeffect] * ifelse(sim_treat==1,1,0)),sd=0.1))) #4 loci possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+
+#run the simulated data through the model
+sim_dat <- list(m = m,
+            sim_treat = sim_treat,
+            sim_site = sim_site
+              )
+sim_mod <- ulam( alist(
+        m ~ dbinom(4,p),
+        logit(p) <- a[sim_site] + b*sim_treat, 
+        a[sim_site] ~ dnorm(0,1), #each site gets its own intercept
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=sim_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+sim_output <- precis( sim_mod , depth=2 )
+
+#contrast
+postt <- extract.samples(sim_mod)
+diffsim <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diff_site <- precis( diffsim )
+print(diff_site)
+ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero<-count_crosseszero+0)
+    }
+    innovation_simresults[counter,1]<-counter
+    innovation_simresults[counter,2]<-sim_sitedifferences[sitediff]
+    innovation_simresults[counter,3]<-sim_manipulationeffects[manipeffect]
+    innovation_simresults[counter,4]<-count_crosseszero
+    counter<-counter+1
+  }
+}
+
+innovation_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
+#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresultsN20.csv")
+
+#shows a difference between the sites when means differ by 0.25 (which means that individuals on the edge have a 25% higher probability of solving a locus on the MAB, which means 1 locus more - 25% of 4 loci = 1) or more when sd=0.1, b=0.1, and there is a treatment difference of 1.0 based on a sample of 30 individuals
 ```
 
 **Note** that two grackles, Kau and Galandra, were accidentally able to pull 2 and 1, respectively, locus doors open during habituation to the multi-access box. Because habituation was not observed by an experimenter, the birds had the possibility to learn how these doors worked. Therefore, these doors were locked open and non-functional throughout their entire experiment. We accommodated for this in the model by replacing the 4 (as in 4 possible loci were available to solve) with a column of data that listed the maximum possible loci available to each bird.
@@ -1437,7 +1487,7 @@ $\phi$ ~ 1/(Exponential(1)) *[$\phi$ prior]*
 
 $\alpha$ ~ Normal(1350,500) *[$\alpha$ prior]*
 
-We use a gamma-Poisson distribution for latency because it constrains the values to be positive. For $\phi$, we used an exponential distribution because it is standard for this parameter. We used a normal distribution for $\alpha$ because it is a sum with a large mean (see Figure 10.6 in @statrethinkingbook). We estimate that the grackles might approach the novel environment at any time in the session, therefore we hold the $\alpha$ mean of 1350 sec in mind as we conduct the modeling. We set the $\alpha$ standard deviation to 500 because this puts the range of seconds for the distribution in the possible range.
+We use a gamma-Poisson distribution for latency because it constrains the values to be positive. For $\phi$, we used an exponential distribution because it is standard for this parameter. We used a normal distribution for $\alpha$ because it is a sum with a large mean (see Figure 10.6 in @mcelreath2020statistical). We estimate that the grackles might approach the novel environment at any time in the session, therefore we hold the $\alpha$ mean of 1350 sec in mind as we conduct the modeling. We set the $\alpha$ standard deviation to 500 because this puts the range of seconds for the distribution in the possible range.
 
 ```{r exploration, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
@@ -1551,6 +1601,55 @@ precis(post2,depth=2)
 post3 <- extract.samples(m2) 
 post3$diff_23 <- post3$a[,2] - post3$a[,3] 
 precis(post3,depth=2)
+
+
+
+### COPIED FROM INNOVATION! SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
+sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
+sim_sitedifferences<-c(0.1,0.15,0.2,0.25) #0.1=compared to core population the edge individuals have a 10% higher probability of solving a locus
+corepop_prop<-0.2 #probability of solving a locus for the core population
+innovation_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
+colnames(innovation_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
+counter<-1
+for(sitediff in 1:length(sim_sitedifferences)){
+  for(manipeffect in 1:length(sim_manipulationeffects)){
+    count_crosseszero<-0
+    for(repetition in 1:10){
+sim_n = 40 # /2 = n per site when running 2 sites
+sim_site = c(rep(1,sim_n/2),rep(2,sim_n/2)) #site is a categorical variable: sites 1 or 2
+sim_treat =  sample(0:1,size=sim_n,replace=T) #treatment is a categorical variable: manipulated or not
+m = rbinom(n=sim_n,size=4, prob=abs(rnorm(sim_n,mean=(ifelse(sim_site==1,corepop_prop,corepop_prop+sim_sitedifferences[sitediff]) + sim_manipulationeffects[manipeffect] * ifelse(sim_treat==1,1,0)),sd=0.1))) #4 loci possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+
+#run the simulated data through the model
+sim_dat <- list(m = m,
+            sim_treat = sim_treat,
+            sim_site = sim_site
+              )
+sim_mod <- ulam( alist(
+        m ~ dbinom(4,p),
+        logit(p) <- a[sim_site] + b*sim_treat, 
+        a[sim_site] ~ dnorm(0,1), #each site gets its own intercept
+        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=sim_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+sim_output <- precis( sim_mod , depth=2 )
+
+#contrast
+postt <- extract.samples(sim_mod)
+diffsim <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diff_site <- precis( diffsim )
+print(diff_site)
+ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero<-count_crosseszero+0)
+    }
+    innovation_simresults[counter,1]<-counter
+    innovation_simresults[counter,2]<-sim_sitedifferences[sitediff]
+    innovation_simresults[counter,3]<-sim_manipulationeffects[manipeffect]
+    innovation_simresults[counter,4]<-count_crosseszero
+    counter<-counter+1
+  }
+}
+
+innovation_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
+#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresultsN20.csv")
 ```
 
 
@@ -1568,7 +1667,7 @@ participated indicates whether the bird participated or not in a given trial, to
 
 $\alpha$ ~ Normal(0,0.5) *[$\alpha$ prior]*
 
-We use a normal distribution for $\alpha$ because it is a sum [see Figure 10.6 in @statrethinkingbook]. We set the mean to 0 (on a logit scale, which is a probability of 0.5 that a bird will participate in every other trial on average on the actual scale).
+We use a normal distribution for $\alpha$ because it is a sum [see Figure 10.6 in @mcelreath2020statistical]. We set the mean to 0 (on a logit scale, which is a probability of 0.5 that a bird will participate in every other trial on average on the actual scale).
 
 ```{r modelpersistence, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
@@ -1656,6 +1755,146 @@ precis(post2,depth=2)
 post3 <- extract.samples(m1) 
 post3$diff_23 <- inv_logit(post3$a[,2]) - inv_logit(post3$a[,3])
 precis(post3,depth=2)
+
+
+
+### SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
+#make simulated data to plug into the model
+testdata <- matrix(nrow=n_sim,ncol=5)
+testdata <- as.data.frame(testdata)
+colnames(testdata) <- c("individual","site","participated","optout","totaltrials")
+testdata$individual <- c(1:n_sim) #unique identifier for each individual
+testdata$site <- c(rep(1,n_sim/2),rep(2,n_sim/2)) #assign 2 sites
+testdata$totaltrials <- c(round(rnorm(n_sim,mean=275,sd=27),0)) #mean number of total trials=275 at each site with some variation (sd=15) among individuals, but not across sites. This is the total number of trials that the number of trials participated in is divided by to get the proportion of trials participated in
+
+##Simulate the number of trials participated in for each site. Run a loop to multiply the proportion participated in by the total trials to convert it to the number of trials participated in per individual 
+for (i in 1:(n_sim/2)) {
+  probability<-rnorm(1,mean=abs(rnorm(n_sim,mean=0.75,sd=0.1)),sd=abs(rnorm(n_sim,mean=0.18,sd=0.1)))
+  ifelse(probability>1,probability<-1,probability<-probability)
+  testdata[i,]$participated<-round(testdata[i,]$totaltrials*probability,0)
+}
+
+for (j in ((n_sim/2)+1):(2*n_sim)/2) {
+  probability<-rnorm(1,mean=abs(rnorm(n_sim,mean=0.75,sd=0.1)),sd=abs(rnorm(n_sim,mean=0.18,sd=0.1)))
+  ifelse(probability>1,probability<-1,probability<-probability)
+  testdata[j,]$participated<-round(testdata[j,]$totaltrials*probability,0)
+}
+
+testdata$optout <- testdata$totaltrials-testdata$participated #Populate the optout column: Calculate the trials not participated in: subtract participated in from the total
+
+#Populate the simulated data sheet
+simp_manipulationeffects<-c(0,0.25,0.5) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
+simp_sitedifferences<-c(0,0.05,0.1,0.2) #0.1=compared to core population the edge individuals have a 10% higher probability of participating in a trial
+corepop_prop<-0.65 #probability of participating in a trial for the core population
+
+persist_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
+colnames(persist_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
+counterp<-1
+for(sitediffp in 1:length(simp_sitedifferences)){
+  for(manipeffectp in 1:length(simp_manipulationeffects)){
+    count_crosseszerop<-0
+    for(repetitionp in 1:10){
+n_sim = 40 # /2 = n per site when running 2 sites
+simp_site = c(rep(1,n_sim/2),rep(2,n_sim/2)) #site is a categorical variable: sites 1 or 2
+simp_treat =  sample(0:1,size=n_sim,replace=T) #treatment is a categorical variable: manipulated or not
+totaltrials = round(rnorm(n_sim,mean=275,sd=27),0)
+probabilities=abs(rnorm(n_sim,mean=(ifelse(simp_site==1,corepop_prop,corepop_prop+simp_sitedifferences[sitediffp]) + simp_manipulationeffects[manipeffectp] * ifelse(simp_treat==1,1,0)),sd=0.1))
+probabilities[probabilities>1]<-1 #to prevent NAs from occurring
+participated = rbinom(n=n_sim,size=totaltrials, prob=probabilities) #size is the total number of trials possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+
+#RUN THE MODEL
+simp_dat <- list( participated = as.integer(participated),
+                  totaltrials = as.integer(totaltrials),
+                  simp_site = simp_site,
+                  simp_treat = simp_treat
+                  )
+
+simp_mod <-ulam(alist(
+    participated ~ dbinom( totaltrials , p ) , 
+    logit(p) <- a[simp_site] + b*simp_treat, 
+    a[simp_site] ~ dnorm(0,1), #each site gets its own intercept
+    b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=simp_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE ))
+
+#contrast
+postt <- extract.samples(simp_mod)
+diffsimp <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diff_sitep <- precis( diffsimp )
+print(diff_sitep)
+ifelse(diff_sitep[1,4]>0,count_crosseszerop<-count_crosseszerop+1,count_crosseszerop<-count_crosseszerop+0)
+    }
+    persist_simresults[counterp,1]<-counterp
+    persist_simresults[counterp,2]<-simp_sitedifferences[sitediffp]
+    persist_simresults[counterp,3]<-simp_manipulationeffects[manipeffectp]
+    persist_simresults[counterp,4]<-count_crosseszerop
+    counterp<-counterp+1
+  }
+}
+
+persist_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
+#write.csv(persist_simresults, file="gxpopbehaviorhabitatq1_tablepersist_simresultsN15.csv")
+
+
+### Run the model on the actual data to determine what the probability is that this is a true result. N=1000 repetitions (contrasts)
+actual_manipulationeffects <- 0.08 #this is the manipulation effect we found
+actual_sitedifferences <- c(0,0.02) #0=no site dif, 0.02 is the site difference we found
+actual_corepop_prop <- 0.76 #this is the mean in the model output for Tempe
+
+#changes to make: update the numbers in totaltrials to the actual numbers?
+persist_actualresults<-as.data.frame(matrix(ncol=4,nrow=12))
+colnames(persist_actualresults)<-c("id","sitediff","manipeffect","num_crosseszero")
+counterp<-1
+for(sitediffp in 1:length(actual_sitedifferences)){
+  for(manipeffectp in 1:length(actual_manipulationeffects)){
+    count_crosseszerop<-0
+    for(repetitionp in 1:1000){
+actual_n_site1 <- 25 #Woodland sample size
+actual_n_site2 <- 20 #Tempe sample size
+actual_site = c(rep(1,actual_n_site1),rep(2,actual_n_site2)) #using the actual sample sizes
+actual_treat = c(rep(0,actual_n_site1),rep(0,12),rep(1,8)) #Tempe: 12 non-manip birds and 8 manip, Woodland: all non-manip
+totaltrials = round(rnorm((actual_n_site1+actual_n_site2),mean=275,sd=27),0)
+probabilities=abs(rnorm((actual_n_site1+actual_n_site2),mean=(ifelse(actual_site==1,actual_corepop_prop,actual_corepop_prop+actual_sitedifferences[sitediffp]) + actual_manipulationeffects[manipeffectp] * ifelse(actual_treat==1,1,0)),sd=ifelse(actual_site==1,0.1,0.1)))
+probabilities[probabilities>1]<-1 #to prevent NAs from occurring
+participated = rbinom(n=(actual_n_site1+actual_n_site2),size=totaltrials, prob=probabilities) #size is the total number of trials possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+
+#RUN THE MODEL
+actualp_dat <- list( participated = as.integer(participated),
+                  totaltrials = as.integer(totaltrials),
+                  actual_site = actual_site,
+                  actual_treat = actual_treat
+                  )
+
+actualp_mod <-ulam(alist(
+    participated ~ dbinom( totaltrials , p ) , 
+    logit(p) <- a[actual_site] + b*actual_treat, 
+    a[actual_site] ~ dnorm(0,1), #each site gets its own intercept
+    b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+    ) , data=actualp_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE ))
+
+#contrast
+postt <- extract.samples(actualp_mod)
+diffactualp <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diff_sitep_actual <- precis( diffactualp )
+print(diff_sitep_actual)
+ifelse(diff_sitep_actual[1,4]>0,count_crosseszerop<-count_crosseszerop+1,count_crosseszerop<-count_crosseszerop+0)
+    }
+    persist_actualresults[counterp,1]<-counterp
+    persist_actualresults[counterp,2]<-actual_sitedifferences[sitediffp]
+    persist_actualresults[counterp,3]<-actual_manipulationeffects[manipeffectp]
+    persist_actualresults[counterp,4]<-count_crosseszerop
+    counterp<-counterp+1
+  }
+}
+
+persist_actualresults
+#   id sitediff manipeffect num_crosseszero
+#1   1     0.00        0.08             662
+#2   2     0.02        0.08             414
+
+# Now run the calculation to determine what the probability is that this is a true result (p.49 Rethinking 2020 vampires)
+Pr_positive_true <- 0.59 #1000 - num_crosses zero in persist_actualresults = 1000-414 = 586
+Pr_positive_false <- 0.34 #1000 - num_crosses zero in persist_actualresults = 1000-662 = 338
+Pr_positive <- Pr_positive_false / (Pr_positive_true + Pr_positive_false) #0.3655914, so there is a 63% probability that this is a true result
 ```
 
 
@@ -2153,6 +2392,101 @@ file.remove(fn)
 
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
+
+
+
+### ANALYZE THE VARIANCE in loci solved between sites. When revising (R1), we found a way to make the Bayesian models work to compare the differences in variance between the sites
+fva <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F) 
+fva <- as.data.frame((fva))
+
+# exclude boat-tailed grackles from this analysis
+fva <- fva[!fva$Population=="BTGR",]
+
+### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
+fva$Population <- as.factor(fva$Population)
+levels(fva$Population) <- c("Woodland", "Tempe", "Woodland")
+
+#remove NAs from the variables that will be in the model
+fvar <- subset(fva,!(is.na(fva["Phi"]))) 
+
+#sample size
+length(fvar$Phi) #38. This matches the data sheet
+
+# set up the data sheet for the model, then run the model
+flexvar <- list(phi = as.numeric(fvar$Phi),
+            lambda = as.numeric(fvar$Lambda),
+            treatment = as.integer(as.factor(fvar$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(fvar$Population),
+            individual = c(1:nrow(fvar) )
+)
+#Phi model
+mflexvar_p <- ulam( alist(
+  phi ~ dnorm(mu,sigma[site]) , 
+  log(mu) <- a[site] + b*treatment, 
+  a[site] ~ dnorm(a_bar,a_sigma), 
+  a_bar ~ dnorm(0,1.5),
+  a_sigma ~ dexp(1),
+  sigma[site]~dexp(1),
+  b ~ dnorm(0,1)
+) , data=flexvar , chains=4 , cores=4, log_lik=TRUE, cmdstan=T, messages=T)
+precis(mflexvar_p,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]     -3.20 0.23 -3.54 -2.87   850  1.01
+#a[2]     -3.27 0.16 -3.54 -3.04   594  1.01
+#a_bar    -2.88 0.70 -3.54 -1.40   237  1.01
+#a_sigma   0.62 0.71  0.05  2.10   252  1.01
+#sigma[1]  0.05 0.01  0.03  0.06  1160  1.00
+#sigma[2]  0.02 0.00  0.02  0.03   941  1.00
+#b         0.60 0.20  0.30  0.91   319  1.01
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postvar_p <- extract.samples(mflexvar_p) 
+post_diff_var_p<-postvar_p$sigma
+post_diff_var_p<-as.data.frame(post_diff_var_p)
+
+#Run the contrast
+post_diff_var_p$diff_12 <- post_diff_var_p[,1] - post_diff_var_p[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_var_p,depth=2) 
+#           mean     sd    5.5%   94.5%      histogram
+#V1      0.05 0.01 0.03  0.06    ▁▂▅▇▅▃▂▁▁▁▁▁
+#V2      0.02 0.00 0.02  0.03         ▁▃▇▂▁▁▁
+#diff_12 0.02 0.01 0.01  0.04 ▁▁▁▁▂▇▇▅▃▂▁▁▁▁▁
+#Woodland has a higher variance in phi than Tempe bc diff does not cross zero
+
+
+#Lambda model
+mflexvar_l <- ulam( alist(
+  lambda ~ dnorm(mu,sigma[site]) , 
+  log(mu) <- a[site] + b*treatment, 
+  a[site] ~ dnorm(a_bar,a_sigma), 
+  a_bar ~ dnorm(0,1.5),
+  a_sigma ~ dexp(1),
+  sigma[site]~dexp(1),
+  b ~ dnorm(0,1)
+) , data=flexvar , chains=4 , cores=4, log_lik=TRUE, cmdstan=T, messages=T)
+precis(mflexvar_l,depth=2)
+#          mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      1.60 0.11  1.43  1.76   639  1.00
+#a[2]      1.40 0.06  1.30  1.49  1052  1.00
+#a_bar     1.35 0.55  0.36  1.95   419  1.02
+#a_sigma   0.56 0.61  0.07  1.69   366  1.01
+#sigma[1]  2.24 0.39  1.71  2.95  1077  1.00
+#sigma[2]  0.82 0.15  0.62  1.09   830  1.01
+#b        -0.26 0.11 -0.44 -0.09  1176  1.00
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postvar_l <- extract.samples(mflexvar_l) 
+post_diff_var_l<-postvar_l$sigma
+post_diff_var_l<-as.data.frame(post_diff_var_l)
+
+#Run the contrast
+post_diff_var_l$diff_12 <- post_diff_var_l[,1] - post_diff_var_l[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_var_l,depth=2) 
+#        mean     sd    5.5%   94.5%      histogram
+#V1      2.24 0.39 1.71  2.95       ▁▅▇▂▁▁▁▁
+#V2      0.82 0.15 0.62  1.09 ▁▁▃▇▅▃▂▁▁▁▁▁▁▁
+#diff_12 1.42 0.42 0.83  2.17      ▁▁▂▇▃▁▁▁▁
+#Woodland has a higher lambda variance than Tempe bc diff does not cross zero
 ```
 
 ![](gxpopbehaviorhabitatFigflexcontrast.png)
@@ -2261,6 +2595,85 @@ tem$MABsolved <- as.numeric(tem$MABsolved)
 tem$MABmax <- as.numeric(tem$MABmax)
 mean(tem$MABsolved) #3.25
 length(tem$MABsolved) #12 birds
+
+
+### ANALYZE THE VARIANCE in loci solved between sites
+datinnvar <- list(locisolved = as.numeric(inn$MABsolved),
+            maxloci = as.numeric(inn$MABmax),
+            treatment = as.integer(as.factor(inn$FlexibilityManipulated))-1,
+            site = as.factor(inn$Population),
+            individual = c(1:nrow(inn) )
+              )
+
+# run the model
+m1var <- ulam( alist(
+  locisolved ~ dbinom(maxloci,p) , 
+  logit(p) <- a[site] + b*treatment + c[individual],
+  a[site] ~ dnorm(a_bar,a_sigma),
+  a_bar ~ dnorm(0,1.5),
+  a_sigma ~ dexp(1),
+  c[individual]~dnorm(0,sigma[site]),
+  sigma[site]~dexp(1),
+  b ~ dnorm(0,1)
+) , data=datinnvar , chains=4 , log_lik=TRUE, cmdstan=T)
+m1outputvar <- precis(m1var, depth=2)
+#         mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      1.90 0.53  1.12  2.79   426  1.00
+#a[2]      1.93 0.71  0.95  3.07   590  1.01
+#a_bar     1.63 0.78  0.31  2.73   699  1.00
+#a_sigma   0.76 0.73  0.08  2.20   614  1.01
+#c[1]      1.17 1.44 -0.88  3.65  1403  1.00
+#c[2]      1.24 1.61 -0.86  3.97   758  1.01
+#c[3]     -0.32 1.17 -2.10  1.51  1169  1.00
+#c[4]     -2.24 1.16 -4.18 -0.48   548  1.00
+#c[5]      1.21 1.53 -0.87  3.77  1250  1.00
+#c[6]      1.12 1.42 -0.84  3.58  1215  1.01
+#c[7]      1.21 1.62 -0.93  3.93  1138  1.00
+#c[8]     -1.38 1.08 -3.15  0.25   703  1.00
+#c[9]      1.11 1.48 -0.93  3.67  1285  1.01
+#c[10]     1.20 1.55 -0.93  3.98  1113  1.00
+#c[11]     0.96 1.68 -1.47  3.82  1167  1.00
+#c[12]     1.10 1.52 -1.03  3.74  1135  1.00
+#c[13]    -0.32 1.10 -2.07  1.41  1016  1.00
+#c[14]    -0.38 1.11 -2.06  1.43  1158  1.00
+#c[15]     1.15 1.51 -0.88  3.67  1325  1.00
+#c[16]     1.21 1.56 -0.91  4.08  1090  1.00
+#c[17]    -2.20 1.18 -4.16 -0.46   474  1.00
+#c[18]     1.20 1.56 -0.97  3.89  1055  1.00
+#c[19]    -0.39 1.15 -2.21  1.45   969  1.00
+#c[20]    -3.30 1.53 -5.99 -1.21   494  1.01
+#c[21]    -2.21 1.25 -4.29 -0.25   390  1.01
+#c[22]     1.19 1.56 -0.92  3.74   829  1.00
+#c[23]    -0.39 1.14 -2.22  1.44  1107  1.00
+#c[24]     1.32 1.84 -0.83  4.36   522  1.01
+#c[25]    -1.34 1.16 -3.26  0.34   453  1.01
+#c[26]    -2.20 1.29 -4.34 -0.16   288  1.02
+#c[27]     1.20 1.76 -1.05  4.20   480  1.01
+#c[28]     1.23 1.63 -0.85  4.17   611  1.01
+#c[29]     1.04 1.67 -1.19  3.93   889  1.01
+#c[30]    -2.44 1.42 -4.73 -0.21   289  1.01
+#c[31]     1.10 1.79 -1.23  4.37   331  1.02
+#c[32]     1.22 1.98 -1.14  4.47   693  1.00
+#c[33]     1.20 1.83 -1.07  4.29   545  1.01
+#c[34]    -0.62 1.28 -2.66  1.41   949  1.00
+#c[35]     1.33 1.81 -0.83  4.75   376  1.02
+#sigma[1]  1.90 0.62  1.02  2.98   244  1.02
+#sigma[2]  1.97 0.95  0.60  3.56   164  1.03
+#b         0.30 0.82 -1.00  1.52  1113  1.00
+
+#Compute pairwise contrasts: site 1 = Woodland, site 2 = Tempe
+post1var <- extract.samples(m1var) 
+post_diffvarinn<-post1var$sigma
+post_diffvarinn<-as.data.frame(post_diffvarinn)
+
+#Run the contrast
+post_diffvarinn$diff_12 <- post_diffvarinn[,1] - post_diffvarinn[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diffvarinn,depth=2)
+#       mean   sd  5.5% 94.5% histogram
+#V1       1.90 0.62  1.02  2.98 ▁▁▅▇▅▂▁▁▁▁▁
+#V2       1.97 0.95  0.60  3.56    ▂▇▅▁▁▁▁▁
+#diff_12 -0.07 1.08 -1.89  1.50  ▁▁▁▁▂▇▇▂▁▁
+#no difference in variance between the two sites in innovativeness
 ```
 
 ![](gxpopbehaviorhabitatq1_figinnovation.png)
@@ -2415,13 +2828,215 @@ tempex <- ex[ex$Population=="Tempe",]
 length(tempex$ID) #n=19 birds (8 manipulated, 11 not manipulated)
 
 
-#UNREGISTERED ANALYSIS: from the boxplot, it looks like there is larger variance in persistence in the Woodland population. We conducted a test to see if the difference shows up statistically: Levene's Test for Homogeneity of Variance (center = median)
+### VARIANCE
+#In the submitted version of the manuscript, we conducted an UNREGISTERED ANALYSIS: from the boxplot, it looks like there is larger variance in persistence in the Woodland population. We conducted a test to see if the difference shows up statistically: Levene's Test for Homogeneity of Variance (center = median)
 library(car)
 #leveneTest(latency~as.factor(site),data=datexp)
 #      Df F value Pr(>F)
 #group  1  1.9463 0.1693
 #      49   
 #p=0.17, which is larger than 0.05, indicating that there is no significant difference between the variances of the two groups
+
+
+
+### ANALYZE THE VARIANCE in loci solved between sites. When revising (R1), we found a way to make the Bayesian models work to compare the differences in variance between the sites
+
+# the GAMMA POISSON model doesn't seem to work properly for the Woodland data, perhaps because there are so many 2701s (birds who didn't come down) and so not as much variance in the data to analyze?
+datexpvar <- list(latency = as.numeric(ex$ExplorationLatency),
+            treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(ex$Population),
+            individual = c(1:nrow(ex) )
+)
+m2var <- ulam(
+  alist(
+    latency ~ dgampois(L, P),
+    log(L) <- a[site] + b*treatment + c[individual],
+    a[site] ~ dnorm(a_bar,a_sigma),
+    P ~ dexp(1),
+    a_bar ~ dnorm(0,1.5),
+    a_sigma ~ dexp(1),
+    c[individual]~dnorm(0,sigma[site]),
+    sigma[site]~dexp(1),
+    b ~ dnorm(0,1)
+  ),data=datexpvar, chains=4 , cores=4, cmdstan=T, log_lik=TRUE, messages=FALSE,iter=8000)
+
+precis(m2var,depth=2)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      7.54 0.12  7.35  7.73  1713  1.00
+#a[2]      7.02 0.38  6.41  7.60   568  1.01
+#P         2.55 0.69  1.57  3.69   451  1.00
+#a_bar     2.29 1.75 -0.38  5.12  1318  1.00
+#a_sigma   3.60 1.43  1.56  6.07  1316  1.00
+#c[1]     -0.02 0.16 -0.29  0.22  1677  1.00
+#c[2]     -0.05 0.18 -0.35  0.17   391  1.02
+#c[3]     -0.04 0.18 -0.33  0.18   902  1.00
+#c[4]      0.04 0.18 -0.19  0.33  1004  1.01
+#c[5]      0.03 0.17 -0.19  0.31   861  1.01
+#c[6]      0.03 0.16 -0.17  0.29  1435  1.01
+#c[7]      0.03 0.17 -0.20  0.31  1051  1.01
+#c[8]      0.03 0.18 -0.21  0.32  1079  1.01
+#c[9]     -0.07 0.20 -0.43  0.17   212  1.03
+#c[10]     0.04 0.17 -0.17  0.31  1102  1.01
+#c[11]    -0.07 0.20 -0.44  0.17   266  1.03
+#c[12]     0.01 0.18 -0.23  0.29  2570  1.00
+#c[13]     0.03 0.16 -0.19  0.30  1516  1.00
+#c[14]     0.01 0.17 -0.23  0.27  3185  1.00
+#c[15]    -0.04 0.18 -0.36  0.19  1152  1.01
+#c[16]     0.04 0.18 -0.20  0.33  1498  1.00
+#c[17]     0.03 0.16 -0.20  0.32  1306  1.01
+#c[18]     0.04 0.17 -0.19  0.32   695  1.01
+#c[19]    -0.03 0.18 -0.31  0.22  2043  1.00
+#c[20]    -0.03 0.18 -0.32  0.21  1692  1.00
+#c[21]     0.03 0.19 -0.22  0.35  1295  1.01
+#c[22]     0.01 0.17 -0.24  0.27  1201  1.01
+#c[23]    -0.06 0.19 -0.41  0.19   242  1.03
+#c[24]     0.00 0.17 -0.25  0.27  3207  1.00
+#c[25]     0.03 0.18 -0.19  0.30  1250  1.01
+#c[26]    -0.01 0.17 -0.28  0.25  2777  1.00
+#c[27]     0.02 0.17 -0.20  0.30  2733  1.00
+#c[28]     0.04 0.16 -0.17  0.31  1141  1.01
+#c[29]     0.00 0.16 -0.24  0.23  3468  1.00
+#c[30]    -0.05 0.20 -0.39  0.20   551  1.02
+#c[31]     0.03 0.17 -0.19  0.30  1662  1.01
+#c[32]    -0.01 0.17 -0.29  0.25  2465  1.00
+#c[33]    -0.49 0.64 -1.53  0.53  1312  1.00
+#c[34]     0.48 0.64 -0.44  1.58   568  1.01
+#c[35]     0.39 0.62 -0.52  1.44  1028  1.00
+#c[36]     0.46 0.63 -0.43  1.54   754  1.00
+#c[37]     0.72 0.62 -0.21  1.83   681  1.01
+#c[38]     0.73 0.62 -0.21  1.76   579  1.01
+#c[39]    -1.43 0.92 -2.87  0.06   401  1.00
+#c[40]     0.72 0.64 -0.21  1.81   666  1.01
+#c[41]     0.72 0.62 -0.19  1.78   729  1.00
+#c[42]    -1.23 0.85 -2.56  0.07   506  1.00
+#c[43]    -0.36 0.68 -1.42  0.73  1239  1.00
+#c[44]     1.00 0.66  0.04  2.10   464  1.00
+#c[45]    -1.26 0.86 -2.61  0.09   386  1.00
+#c[46]    -0.22 0.61 -1.20  0.73  1211  1.00
+#c[47]     0.57 0.64 -0.37  1.68   773  1.00
+#c[48]     0.22 0.63 -0.74  1.25   981  1.00
+#c[49]    -1.06 0.77 -2.24  0.17   503  1.00
+#c[50]     0.73 0.60 -0.17  1.74   586  1.01
+#c[51]    -0.19 0.63 -1.15  0.84  1557  1.00
+#sigma[1]  0.15 0.10  0.04  0.35    47  1.14
+#sigma[2]  1.02 0.36  0.38  1.56   221  1.01
+#b        -0.40 0.52 -1.18  0.44   809  1.00
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postexvar <- extract.samples(m2var) 
+post_diff_exvar<-postexvar$sigma
+post_diff_exvar<-as.data.frame(post_diff_exvar)
+
+#Run the contrast
+post_diff_exvar$diff_12 <- post_diff_exvar[,1] - post_diff_exvar[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_exvar,depth=2) 
+#           mean     sd    5.5%   94.5%      histogram
+#V1       0.15 0.10  0.04  0.35 ▂▇▇▃▂▂▁▁▁▁▁▁▁
+#V2       1.02 0.36  0.38  1.56  ▁▂▂▃▇▇▅▃▁▁▁▁
+#diff_12 -0.87 0.38 -1.45 -0.20 ▁▁▁▂▃▅▇▅▃▂▁▁▁
+#Woodland has less variance in exploration than Tempe bc diff does not cross zero
+
+#Check to make sure the model worked. Yes. The predictions are consistently higher than the actual latencies
+mu_1e<- link( m2var, data=data.frame(latency=datexpvar$latency,individual=c(1:nrow(ex)),treatment=as.integer(as.factor(datexpvar$treatment)),site=as.integer(as.factor(datexpvar$site)) ) ) # predict the outcome for individuals
+mu_1_meane <- apply( mu_1e , 2 , mean )  # extract the relevant information for the factor of interest
+mu_1_cie <- apply( mu_1e , 2 , PI , prob=0.97 ) # extract the 97% compatibility interval
+plot(mu_1_meane~datexpvar$latency)
+
+plot(mu_1_meane[datexpvar$site=="Woodland"]~datexpvar$latency[datexpvar$site=="Woodland"]) # the model isn't working for Woodland
+plot(mu_1_meane[datexpvar$site=="Tempe"]~datexpvar$latency[datexpvar$site=="Tempe"]) # the model seems fine for Tempe
+
+
+# the RIGHT CENSORED model, which can deal with the high number of 2701s in Woodland
+datrightvar <- list(latency = as.numeric(ex$ExplorationLatency),
+            treatment = as.integer(as.factor(ex$FlexibilityManipulated))-1, # -1 to make the control birds the baseline at 0
+            site = as.factor(ex$Population),
+            individual = c(1:nrow(ex) )
+)
+m_rightvar <- ulam( alist(
+    latency | latency<=2700 ~ exponential(L), #the bird approached (event happened)
+    latency | latency==2701 ~ custom(exponential_lccdf(!Y|L)), #the bird did not approach (event did not happen)
+    L <- 1.0/mu, #mu is average waiting time, L is the expected waiting time
+    log(mu) <- a[site] + b*treatment + c[individual], #L gets a different rate for each site, log average time to approach novel environment
+    a[site] ~ dnorm(a_bar,a_sigma),
+    a_bar ~ dnorm(0,1.5),
+    a_sigma ~ dexp(1),
+    c[individual]~dnorm(0,sigma[site]),
+    sigma[site]~dexp(1),
+    b ~ dnorm(0,1)
+  ),data=datrightvar, log_lik=TRUE, messages=FALSE, chains=4 , cores=4, cmdstan=T, iter=8000)
+precis(m_rightvar,depth=2)
+#          mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]      8.17 0.26  7.79  8.59   237  1.02
+#a[2]      7.65 0.44  6.93  8.34  1279  1.01
+#a_bar     2.06 1.65 -0.50  4.73   395  1.01
+#a_sigma   3.91 1.40  2.14  6.38   297  1.02
+#c[1]     -0.10 0.46 -0.91  0.54  4200  1.00
+#c[2]     -0.17 0.50 -1.12  0.46   694  1.01
+#c[3]     -0.16 0.50 -1.08  0.48  1407  1.01
+#c[4]      0.17 0.50 -0.41  1.08   985  1.01
+#c[5]      0.17 0.51 -0.44  1.08  1041  1.01
+#c[6]      0.16 0.50 -0.45  1.07  1170  1.01
+#c[7]      0.18 0.50 -0.41  1.11  1227  1.01
+#c[8]      0.17 0.50 -0.43  1.08  1027  1.01
+#c[9]     -0.22 0.55 -1.30  0.42   578  1.01
+#c[10]     0.17 0.52 -0.45  1.08  1382  1.01
+#c[11]    -0.22 0.57 -1.31  0.43   700  1.01
+#c[12]    -0.07 0.44 -0.82  0.59 10770  1.00
+#c[13]     0.17 0.49 -0.43  1.07  1178  1.01
+#c[14]    -0.07 0.44 -0.81  0.58 12565  1.00
+#c[15]    -0.17 0.51 -1.11  0.48  1358  1.01
+#c[16]     0.17 0.51 -0.43  1.10  1295  1.01
+#c[17]     0.18 0.51 -0.44  1.10  1206  1.01
+#c[18]     0.17 0.51 -0.43  1.10  1018  1.01
+#c[19]    -0.13 0.49 -1.02  0.52  1835  1.01
+#c[20]    -0.12 0.48 -0.98  0.52  2305  1.01
+#c[21]     0.18 0.50 -0.42  1.11   771  1.01
+#c[22]    -0.06 0.44 -0.80  0.59 14720  1.00
+#c[23]    -0.20 0.53 -1.19  0.43   804  1.01
+#c[24]    -0.07 0.44 -0.83  0.59 11186  1.00
+#c[25]     0.17 0.50 -0.44  1.08  1333  1.01
+#c[26]    -0.09 0.46 -0.89  0.56  4122  1.00
+#c[27]    -0.06 0.43 -0.80  0.60 13686  1.00
+#c[28]     0.17 0.50 -0.43  1.09  1179  1.01
+#c[29]    -0.08 0.45 -0.87  0.57  6487  1.00
+#c[30]    -0.18 0.53 -1.18  0.46   962  1.01
+#c[31]     0.17 0.50 -0.44  1.09  1164  1.01
+#c[32]    -0.10 0.46 -0.91  0.54  5109  1.00
+#c[33]    -0.44 0.79 -1.71  0.74   452  1.02
+#c[34]     0.13 0.67 -0.87  1.24  1634  1.00
+#c[35]     0.05 0.70 -0.98  1.26   207  1.02
+#c[36]     0.11 0.71 -0.99  1.22   152  1.03
+#c[37]     0.70 0.91 -0.33  2.37  1605  1.00
+#c[38]     0.71 0.92 -0.32  2.40   784  1.01
+#c[39]    -0.78 1.01 -2.67  0.45  1338  1.01
+#c[40]     0.68 1.06 -0.56  2.79   123  1.04
+#c[41]     0.24 0.70 -0.67  1.50   465  1.01
+#c[42]    -0.78 1.01 -2.46  0.52   176  1.03
+#c[43]    -0.37 0.78 -1.63  0.79   216  1.02
+#c[44]     0.86 0.92 -0.20  2.57   972  1.00
+#c[45]    -0.79 1.00 -2.75  0.48   279  1.02
+#c[46]    -0.30 0.78 -1.62  0.88   264  1.01
+#c[47]     0.22 0.68 -0.79  1.36  1612  1.00
+#c[48]     0.11 0.80 -1.14  1.49    79  1.07
+#c[49]    -0.56 0.91 -2.27  0.52   760  1.01
+#c[50]     0.70 0.92 -0.34  2.41  1655  1.00
+#c[51]    -0.30 0.73 -1.50  0.83  1665  1.01
+#sigma[1]  0.41 0.34  0.02  1.03    52  1.10
+#sigma[2]  0.92 0.54  0.15  1.87   408  1.01
+#b        -0.52 0.58 -1.42  0.47   579  1.00
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postexrightvar <- extract.samples(m_rightvar) 
+post_diff_exrightvar<-postexrightvar$sigma
+post_diff_exrightvar<-as.data.frame(post_diff_exrightvar)
+
+#Run the contrast
+post_diff_exrightvar$diff_12 <- post_diff_exrightvar[,1] - post_diff_exrightvar[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_exrightvar,depth=2) 
+#         mean     sd    5.5%   94.5%      histogram
+#V1       0.38 0.33  0.02  0.98  ▇▅▃▂▁▁▁▁▁▁▁
+#V2       0.95 0.55  0.14  1.87     ▅▇▇▂▁▁▁▁
+#diff_12 -0.57 0.65 -1.70  0.42 ▁▁▁▁▂▅▇▇▃▁▁▁
 ```
 
 ![](gxpopbehaviorhabitatq1_figexploration.png)
@@ -2512,6 +3127,9 @@ precis(mper,depth=2)
 #sigma 0.45 0.48 0.06  1.32   321  1.00
 #b     0.50 0.08 0.36  0.63   833  1.01
 
+#What was the effect of the manipulation (to match what we estimated as the manip effect in the power analysis tables)
+#inv_logit(1.14+0.5)-inv_logit(1.14) #0.0798553 manipulated birds are 8% more likely to persist
+
 #Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
 postper <- extract.samples(mper) 
 post_diff_per<-postper$a
@@ -2554,6 +3172,99 @@ length(wper$sum) #n=25 birds
 temp <- participate[participate$Population=="Tempe",]
 mean(temp$sum/temp$total) #0.80
 length(temp$sum) #n=20 birds (8 manipulated, 12 not manipulated)
+
+
+
+### ANALYZE THE VARIANCE in persistence between sites. Divergence in Rethinking p207
+datpervar <- list( participated = as.integer(participate$sum),
+                  totaltrials = as.integer(participate$total),
+                  treatment = as.integer(as.factor(participate$Treatment))-1, # -1 to make the control birds the baseline at 0
+                  site = as.integer(participate$Population),
+                  individual = c(1:nrow(participate) ) )
+mpervar <- ulam( alist(
+    participated ~ dbinom(totaltrials,p),
+    logit(p) <- a[site] + b*treatment + c[individual],
+    a[site] ~dnorm(a_bar,a_sigma),
+    b~dnorm(0,1),
+    c[individual]~dnorm(0,sigma[site]),
+    sigma[site]~dexp(1),
+    a_bar ~ dnorm(0,1.5),
+    a_sigma ~ dexp(1)
+    ) , data=datpervar , chains=4, cores=4, log_lik=TRUE, cmdstan=T )
+
+precis(mpervar,depth=2)
+#      mean   sd 5.5% 94.5% n_eff Rhat4
+#a[1]      1.47 0.31  0.96  1.96    89  1.04
+#a[2]      1.51 0.36  0.94  2.09   158  1.05
+#b         0.72 0.55 -0.18  1.57   154  1.03
+#c[1]     -0.09 0.36 -0.66  0.51   120  1.03
+#c[2]     -1.52 0.35 -2.06 -0.97    99  1.03
+#c[3]      2.98 0.75  1.85  4.20   572  1.01
+#c[4]      0.61 0.41 -0.04  1.27   159  1.02
+#c[5]     -2.16 0.41 -2.83 -1.52   139  1.02
+#c[6]     -2.05 0.43 -2.75 -1.37   268  1.02
+#c[7]      0.72 0.42  0.07  1.37   217  1.02
+#c[8]      0.26 0.40 -0.38  0.90   154  1.02
+#c[9]      1.87 0.47  1.15  2.64   234  1.01
+#c[10]     2.36 0.65  1.39  3.42   605  1.01
+#c[11]     3.38 0.94  2.08  5.08   789  1.00
+#c[12]     0.58 0.39 -0.03  1.18   145  1.02
+#c[13]    -0.23 0.35 -0.82  0.32   136  1.03
+#c[14]     0.66 0.41  0.02  1.32   165  1.02
+#c[15]    -0.35 0.35 -0.94  0.21   112  1.03
+#c[16]     1.81 0.52  1.04  2.66   378  1.01
+#c[17]    -0.91 0.36 -1.50 -0.33   134  1.03
+#c[18]    -1.53 0.48 -2.32 -0.76   258  1.02
+#c[19]    -0.41 0.57 -1.32  0.49   387  1.01
+#c[20]    -1.18 0.36 -1.74 -0.60   117  1.03
+#c[21]    -1.08 0.37 -1.67 -0.51   159  1.03
+#c[22]    -2.07 0.46 -2.78 -1.36   206  1.02
+#c[23]    -2.26 0.52 -3.11 -1.46   339  1.01
+#c[24]    -0.17 0.35 -0.73  0.37   110  1.03
+#c[25]     0.69 0.40  0.05  1.35   198  1.02
+#c[26]     3.04 0.97  1.70  4.69   556  1.00
+#c[27]    -0.56 0.39 -1.16  0.04   179  1.05
+#c[28]    -0.11 0.54 -0.98  0.78   262  1.01
+#c[29]    -1.27 0.51 -2.06 -0.45   209  1.01
+#c[30]     2.51 0.94  1.14  4.12   545  1.01
+#c[31]    -0.71 0.51 -1.52  0.13   245  1.01
+#c[32]    -0.82 0.39 -1.41 -0.21   176  1.05
+#c[33]    -0.65 0.51 -1.46  0.16   228  1.01
+#c[34]     0.50 0.46 -0.19  1.22   223  1.03
+#c[35]    -1.27 0.39 -1.89 -0.67   174  1.04
+#c[36]    -1.59 0.39 -2.22 -0.97   175  1.05
+#c[37]     0.79 0.60 -0.14  1.77   293  1.01
+#c[38]    -0.37 0.41 -1.03  0.25   192  1.04
+#c[39]    -1.93 0.50 -2.69 -1.11   208  1.01
+#c[40]     0.43 0.42 -0.25  1.07   210  1.03
+#c[41]     0.61 0.45 -0.11  1.30   233  1.03
+#c[42]    -0.11 0.40 -0.75  0.49   182  1.04
+#c[43]     1.18 0.43  0.49  1.89   212  1.04
+#c[44]    -0.90 0.39 -1.52 -0.30   179  1.05
+#c[45]     2.03 0.56  1.20  2.93   359  1.02
+#sigma[1]  1.66 0.28  1.27  2.15   876  1.00
+#sigma[2]  1.45 0.30  1.05  1.98   665  1.00
+#a_bar     1.35 0.56  0.46  2.07   490  1.01
+#a_sigma   0.58 0.63  0.06  1.62   412  1.01
+
+#Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
+postpervar <- extract.samples(mpervar) 
+post_diff_pervar<-postpervar$sigma
+post_diff_pervar<-as.data.frame(post_diff_pervar)
+#Run the contrast
+post_diff_pervar$diff_12 <- post_diff_pervar[,1] - post_diff_pervar[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
+precis(post_diff_pervar,depth=2)
+#       mean   sd  5.5% 94.5% histogram
+#V1      1.66 0.28  1.27  2.15 ▁▁▃▇▇▃▂▁▁▁▁▁
+#V2      1.45 0.30  1.05  1.98 ▁▅▇▇▃▂▁▁▁▁▁▁
+#diff_12 0.21 0.40 -0.44  0.83    ▁▁▁▃▇▃▁▁▁
+#no difference in variance between the two sites in persistence
+
+#Check to make sure the model worked. Yes. The predictions are consistently about 10% higher than the actual proportions
+mu_1<- link( mpervar, data=data.frame(totaltrials=participate$total,individual=c(1:nrow(participate)),treatment=as.integer(as.factor(participate$Treatment)),site=as.integer(as.factor(participate$Population)) ) ) # predict the outcome for individuals born between 1964 (1964-1979 = -15) and 1993 (1993-1979 = 14)
+mu_1_mean <- apply( mu_1 , 2 , mean )  # extract the relevant information for the factor of interest, bCO (second column) 
+mu_1_ci <- apply( mu_1 , 2 , PI , prob=0.97 ) # extract the 97% compatibility interval
+#plot(mu_1_mean~datper$proportion)
 ```
 
 ![](gxpopbehaviorhabitatq1_figpersist.png)
@@ -2797,7 +3508,7 @@ kable_styling(full_width = T, position = "left")
 
 ### Hypothesis-specific mathematical model
 
-Following procedures in @statrethinkingbook, we construct a **hypothesis-appropriate mathematical model** for each of the response variables that examines differences in the response variable between sites (each site represents a grackle population). These models take the form of:
+Following procedures in @mcelreath2020statistical, we construct a **hypothesis-appropriate mathematical model** for each of the response variables that examines differences in the response variable between sites (each site represents a grackle population). These models take the form of:
 
 y ~ $\alpha$[site]
 
@@ -2805,7 +3516,7 @@ y is the response variable (flexibility, innovation, exploration, or persistence
 
 We formulate these models in a Bayesian framework. We determine the priors for each model by performing prior predictive simulations based on ranges of values from the literature to check that the models are covering the likely range of results.
 
-We then perform pairwise contrasts to determine at what point we can detect differences between sites by manipulating sample size, and $\alpha$ means and standard deviations. Before running the simulations, we decided that a model would detect an effect if 89% of the difference between two sites is on the same side of zero (following @statrethinkingbook). We are using a Bayesian approach, therefore comparisons are based on samples from the posterior distribution. We draw 10,000 samples from the posterior distribution, where each sample has an estimated mean for each population. For the first contrast, within each sample, we subtract the estimated mean of the edge population from the estimated mean of the core population. For the second contrast, we subtract the estimated mean of the edge population from the estimated mean of the middle population. For the third contrast, we subtract the estimated mean of the middle population from the estimated mean of the core population. We now have samples of differences between all of the pairs of sites, which we can use to assess whether any site is systematically larger or smaller than the others. We determine whether this is the case by estimating what percentage of each sample of differences is either larger or smaller than zero. For the first contrast, if 89% of the differences are larger than zero, then the core population has a larger mean. If 89% of the differences are smaller than zero, then the edge population has a larger mean.
+We then perform pairwise contrasts to determine at what point we can detect differences between sites by manipulating sample size, and $\alpha$ means and standard deviations. Before running the simulations, we decided that a model would detect an effect if 89% of the difference between two sites is on the same side of zero (following @mcelreath2020statistical). We are using a Bayesian approach, therefore comparisons are based on samples from the posterior distribution. We draw 10,000 samples from the posterior distribution, where each sample has an estimated mean for each population. For the first contrast, within each sample, we subtract the estimated mean of the edge population from the estimated mean of the core population. For the second contrast, we subtract the estimated mean of the edge population from the estimated mean of the middle population. For the third contrast, we subtract the estimated mean of the middle population from the estimated mean of the core population. We now have samples of differences between all of the pairs of sites, which we can use to assess whether any site is systematically larger or smaller than the others. We determine whether this is the case by estimating what percentage of each sample of differences is either larger or smaller than zero. For the first contrast, if 89% of the differences are larger than zero, then the core population has a larger mean. If 89% of the differences are smaller than zero, then the edge population has a larger mean.
 
 
 ### Flexibility analysis
@@ -2823,6 +3534,7 @@ We then perform pairwise contrasts to determine at what point we can detect diff
 ```{r flexresults, eval=FALSE, warning=FALSE, results='asis', include=TRUE}
 library(rethinking)
 library(dplyr)
+# NOTE: see R code chunk sim_power_philambda for the code for this simulation
 
 # We first reanalyze the Santa Barbara data to obtain values for phi and lambda upon which to base our expectations of what the mean and variance might be at a site.
 # We load the Santa Barbara data from github
@@ -2931,7 +3643,6 @@ A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]
 # We run this model for the Santa Barbara data
 m_SB <- stan( model_code =  reinforcement_model_nonzeroattraction, data=dat ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
-
 # We extract the estimated phi and lambda values for each bird from the STAN model
 s <- extract.samples(m_SB)
 santabarbara_lambda <- sapply(1 : dat$N_id, function(x) exp( mean(s$log_L) + mean(s$v_ID[ ,x, 1])))
@@ -2949,16 +3660,18 @@ range(santabarbara_phi)
 
 After building the model (see Methods), we then run the **mathematical model** and perform pairwise contrasts and determine that we are able to detect differences between sites with a sample size of 15 at each site if the average number of loci solved differs by 1.2 loci or more and the standard deviation is generally a maximum of 0.9 at each site (Table SM2). For a sample size of 20 at each site, we are able to detect site differences if the average number of loci solved differs by 0.7 of a locus or more and the standard deviation is generally a maximum of 1 at each site (Table SM2). Note: the Arizona sample size is 11 for the multiaccess log and 17 on a similar multiaccess box.
 
-**Table SM2.** Simulation outputs from **varying sample size (n), and $\alpha$ means and standard deviations**. We calculate pairwise contrasts between the estimated means from the posterior distribution: if for a large sample the difference is both positive and negative and crosses zero (yes), then we are not able to detect differences between the two sites. If the differences between the means are all on one side of zero for 89% of the posterior samples (no), then we are able to detect differences between the two sites. We chose the 89% interval based on [@statrethinkingbook]. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites. The numbers 1-3 in the column titles refer to sites 1-3 as do S1-3 (the simulations were run on a total of three sites because we originally planned to collect data at two to three sites), mu=average, sd=standard deviation. Loci solved is the innovativeness measure, latency is the exploration measure, and trials participated in is the persistence measure. Note that the full table can be viewed at https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat_table_simoutputs.csv
+**Table SM2.1** Simulation outputs from **varying sample size (n), and $\alpha$ means and standard deviations**. We calculate pairwise contrasts between the estimated means from the posterior distribution: if for a large sample the difference is both positive and negative and crosses zero (yes), then we are not able to detect differences between the two sites. If the differences between the means are all on one side of zero for 89% of the posterior samples (no), then we are able to detect differences between the two sites. We chose the 89% interval based on [@mcelreath2020statistical]. Note that for latency, there is no mu_sd, but rather one phi that is the same for all sites. The numbers 1-3 in the column titles refer to sites 1-3 as do S1-3 (the simulations were run on a total of three sites because we originally planned to collect data at two to three sites), mu=average, sd=standard deviation. Loci solved is the innovativeness measure, latency is the exploration measure, and trials participated in is the persistence measure. Note that the full table can be viewed at https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/gxpopbehaviorhabitat_table_simoutputs.csv
 
-```{r tableparam, eval=TRUE, warning=FALSE, results='asis', include=TRUE}
-d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_table_simoutputs.csv"), header=F, sep=",", stringsAsFactors=F) 
 
-colnames(d) <- c("Response variable","n","mu site 1","mu site 2","mu site 3","mu_sd site 1","mu_sd site 2","mu_sd site 3","Difference crosses zero? Sites 1 vs 2","Difference crosses zero? Sites 1 vs 3","Difference crosses zero? Sites 2 vs 3","Notes")
-
+```{r tableparam, eval=T, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
-knitr::kable(d) %>%
-kable_styling(full_width = T, position = "left", font_size = 8)
+library(dplyr)
+inntablesm <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1_tableinnovation_simresults.csv"), header=T, sep=",", stringsAsFactors=F)
+inntablesm <- data.frame(inntablesm)
+colnames(inntablesm) <- c("Sample size","Settings combination","Site difference","Manipulation effect","X/10 crosses zero")
+
+knitr::kable(inntablesm) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 8)
 ```
 
 Because the mean and the variance are linked in the binomial distribution, and because the variance simulations in the flexibility analysis showed that we are not able to robustly detect differences in variance between sites, we plot the variance in the number of loci solved between sites to determine whether the edge population has a wider or narrower spread than the other two populations.
@@ -3135,9 +3848,11 @@ d0 <- d[!d$Correct==-1,]
 # exclude the birds who didn't complete the initial discrimination 
 d0 <- d[!d$ID=="Roseling",]
 
-# exclude the birds who didn't complete reversal 1? no because not using this data to predict performance on the MAB or anything, just want to see if there are differences with GTGR. Don't need to add treatment to the model because there was no difference between manipulated and non-manipulated grackles in the analyses in the Results section
-#d0 <- d[!d$ID=="Bladderwort",]
-#d0 <- d[!d$ID=="Cocoplum",]
+# exclude the birds who didn't complete reversal 1? Yes bc comparing manipulated vs non-manipulated GTGR so have to have passed R1
+d0 <- d[!d$ID=="Bladderwort",]
+d0 <- d[!d$ID=="Cocoplum",]
+
+#SAMPLE SIZE = 2
 
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d0$Site <- as.factor(d0$Site)
