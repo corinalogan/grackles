@@ -554,13 +554,17 @@ rpt.plot$data.type = as.factor(rpt.plot$data.type)
 levels(rpt.plot$data.type)[levels(rpt.plot$data.type)=="rpt"] <- "permuted data"
 levels(rpt.plot$data.type)[levels(rpt.plot$data.type)=="choice"] <- "actual data"
 
+png(file = "Figure 3", width = 1100, height = 900, units = "px")
 ggplot(rpt.plot, aes(x = estimate, fill = data.type))+
   geom_histogram(position = "identity", alpha = 0.5) +
   geom_vline(xintercept=0.13, color = "red", size=1) +
   theme_bw()+
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 16))
-
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 14)) +
+  scale_fill_discrete(name = "Data type")
+dev.off()
 
 ### 10 Nov 2022 - Poisson model was overdispersed and heteroscedastic - per recommendation from the literature and reviewer, we added observation-level random effects. However, model would not converge with the preregistered uninformative priors so we are not pursuing this alternative analysis: ###
 
@@ -638,30 +642,32 @@ maxrev = aggregate(as.numeric(ReverseNumber) ~ ID, data = d, FUN = "max")
 colnames(maxrev)[2] = "MaxRev"
 d = merge(d, maxrev, by = "ID",all = T)
 
-
-p<-ggplot(d, aes(x=reorder(ID,MaxRev),y=TrialsToReverse,shape=ReverseNumber,color = ID))+
+png(file = "Figure 2", width = 1300, height = 900, units = "px")
+ggplot(d, aes(x=reorder(ID,MaxRev),y=TrialsToReverse,shape=ReverseNumber,color = ID))+
   geom_point(size = 4, stroke = 2, position = position_dodge(width = 0.35)) +
   scale_shape_manual(values = c(0:6,8,15,17,19))+
   theme_bw() +
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 16)) +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 14)) +
   labs(x = "Bird", y = "Trials to pass reversal", shape = "Reversal number") +
   scale_colour_discrete(guide = "none")
-p
+dev.off()
 
-results = as.data.frame(results)
-f<-ggplot(results, aes(x=results)) + 
-  theme_bw() +
-  geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
-  geom_vline(xintercept = 0.13, color = "red") +
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 16)) +
-  labs(x = "Repeatability", y = "Frequency")
+# results = as.data.frame(results)
+# f<-ggplot(results, aes(x=results)) + 
+#   theme_bw() +
+#   geom_histogram(color="black", fill="light grey",binwidth = 0.01) +
+#   geom_vline(xintercept = 0.13, color = "red") +
+#   theme(axis.text = element_text(size = 10),
+#         axis.title = element_text(size = 16)) +
+#   labs(x = "Repeatability", y = "Frequency")
 
-library(ggpubr)
-fig2 = ggarrange(p,f,
-                 labels = c("A","B"),
-                 ncol = 1, nrow = 2)
+# library(ggpubr)
+# fig2 = ggarrange(p,f,
+#                  labels = c("A","B"),
+#                  ncol = 1, nrow = 2)
 
 
 # WE DID NOT end up using the code below because the above gave us what we needed
@@ -837,17 +843,22 @@ rev.all3 = rev %>%
                        "LatencyMABwooden"="MAB wood",
                        "Reversal" = "Reversal learning")) #%>% 
 
-# FIGURE 3 - performance across all tests
+# FIGURE 4 - performance across all tests
+png(file = "Figure 4",width = 1300, height = 900, units = "px")
 ggplot(rev.all3, aes(x = reorder(ID, median, mean), y = median, colour = ID, shape = Test)) +
-  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1, 
+  geom_pointrange(aes(ymin=lcl, ymax=ucl), size = 1.5, 
                   position = position_dodge(width = 0.5)) +
   scale_shape_manual(values = c(15,17,8,19))+
   labs(x = "Bird", y = "Latency to switch (scaled and centered seconds)") +
   theme_bw() +
-  theme(axis.text = element_text(size = 10),
-        axis.title = element_text(size = 16)) +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18),
+        legend.title=element_text(size=15),
+        legend.text=element_text(size=14)) +
   scale_fill_discrete(guide = "none") +
   scale_colour_discrete(guide = "none")
+dev.off()
+  
 
 
 
