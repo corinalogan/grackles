@@ -1609,35 +1609,42 @@ precis(post3,depth=2)
 
 ### COPIED FROM INNOVATION! SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
 #make simulated data to plug into the model
+nsim = 40 # /2 = n per site when running 2 sites
+P <- 1000 #this gives us a distribution that we expect (long right tail)
+L <-
 am1<-4.6 #site 1 alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7
 am2<-6.3 #site 2 alpha mean: 6.2=log of 500 sec, 550s=6.3, 600s=6.4
-am3<-7.3 #site 3 alpha mean: 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
+
+site1means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=6.3,sd=0.1),sd=0.1),0)) #change the number for mean to make the sites similar or different
+site2means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=4.6,sd=0.1),sd=0.1),0)) 
 
 sites<-matrix(nrow=nsim,ncol=2)
+sites<-as.data.frame(sites)
 colnames(sites)<-c("latency","site")
 
+#simulate the latencies per individual per site
 for (i in 1:nsim/2){
   lambda <- exp(am1) #the linear model for site 1
-  latency <- rgampois(1,lambda,phi) #this is the latency per individual
+  latency <- rgampois(1,L,P) #this is the latency per individual
   sites[i,1]<-latency
   sites[i,2]<-1 #site 1
 }
 
-for (j in (nsim/2):(2*nsim/3)/2){
+for (j in (nsim/2+1):(2*nsim)/2){
   lambda <- exp(am2)
-  latency <- rgampois(1,lambda,phi)
-  sites[i,1]<-latency
-  sites[i,2]<-2 #site 2
+  latency <- rgampois(1,L,P)
+  sites[j,1]<-latency
+  sites[j,2]<-2 #site 2
 }
-}
 
-sites[sites[,1]>2700,1]<-2701 #make all non-participatory birds have a 2701
+#make all non-participatory birds have a 2701
+sites[sites[,1]>2700,1]<-2701 
 
-
+#populate the simulated data sheet
 sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
 sim_sitedifferences<-c(0,0.1,1,2) #0.1=compared to core population the edge individuals have a 10% higher latency. alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7; 6.2=log of 500 sec, 550s=6.3, 600s=6.4; 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
 corepop_prop<-0.2 #probability of solving a locus for the core population
-P <- 1000 #this gives us a distribution that we expect (long right tail)
+
 
 exploration_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
 colnames(exploration_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
@@ -2271,11 +2278,10 @@ A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]
 # RUN the model, but STAN was acting up so need to run it with cmdstan (these instructions were copied from g_flexmanip2post.Rmd starting at line 342)
 library(cmdstanr)
 
-# ---> run this code as one chunk
+# ---> run this code as one chunk (otherwise it won't write the file) and copy/paste it into the console
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path() #need to delete these files if tweaking the model and you can do that by finding the folder name by running cmdstanlocation, then go to Finder > Go > Go to folder, type in the file path, and delete: myowntrial.stan and myowntrial (the executable document)
 setwd(cmdstanlocation)
-
 # access the output file created by the model running the reinforcement model
 write(reinforcement_model_id_site_nonzeroattraction,file="myowntrial.stan")
 file <- file.path(cmdstan_path(), "myowntrial.stan")
@@ -2307,45 +2313,45 @@ drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site
 look <- precis(drawsdf) #there are no differences between sites in either phi or lambda
 
 # CONVERT the means for phi and lambda for each site to the actual scale to see what the actual difference is and compare with our power analysis. NOTE: these are for the model that does not include treatment
-site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.22
-site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #3.85
-site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.07787294
-site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.07544084
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.80
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.51
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.03132856
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0301077
+# Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
 # THIS is for the model that includes treatment. Site 1=Woodland, Site 2=Tempe, v_TREAT.1.1. = lambda for control, v_TREAT.2.1.= lambda for manipulated, v_TREAT.1.2.=phi for control, v_TREAT.2.2.=phi for manipulated. We are only comparing NON-manipulated birds for the contrast
 #site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.) + mean(drawsdf$v_TREAT.1.1.)) #4.81
 #site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.) + mean(drawsdf$v_TREAT.1.1.)) #4.39
 #site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.) + mean(drawsdf$v_TREAT.1.2.)) #0.0306
 #site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.) + mean(drawsdf$v_TREAT.1.2.)) #0.0296
-# Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
 # convert the posterior as well
-site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.) + (drawsdf$v_TREAT.1.1.)) 
-site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.) + (drawsdf$v_TREAT.1.1.)) 
-site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.) + (drawsdf$v_TREAT.1.2.)) 
-site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.) + (drawsdf$v_TREAT.1.2.)) 
+site1lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.1.1.)) #removed  + (drawsdf$v_TREAT.1.1.)
+site2lambdap <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #removed  + (drawsdf$v_TREAT.1.1.)
+site1phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.1.2.)) #removed  + (drawsdf$v_TREAT.1.2.) 
+site2phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) #removed + (drawsdf$v_TREAT.1.2.)
 
 # check the difference between the manipulated and control birds by calculating the lambda and phi for manipulated  birds at site 2 (Tempe)
-site2lambdap_manip <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.) + (drawsdf$v_TREAT.2.1.)) 
-site2phip_manip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.) + (drawsdf$v_TREAT.2.2.)) 
+#site2lambdap_manip <- exp( (drawsdf$log_L) + (drawsdf$v_EXP.2.1.)) #removed  + (drawsdf$v_TREAT.2.1.) 
+#site2phip_manip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.2.2.)) #removed + (drawsdf$v_TREAT.2.2.)
 
 # and run a contrast on this scale too to get the range
 lambdap <- precis(site1lambdap - site2lambdap)
 #                            mean   sd  5.5% 94.5%     histogram
-#site1lambdap...site2lambdap 0.41 0.74 -0.67  1.67 ▁▁▁▁▁▅▇▅▂▁▁▁▁▁
+#site1lambdap...site2lambdap 0.29 0.68 -0.75  1.48 ▁▁▁▁▂▅▇▅▂▁▁▁▁
 
 phip <- precis(site1phip - site2phip)
 #                     mean   sd  5.5% 94.5% histogram
-#site1phip...site2phip    0 0.01 -0.01  0.01 ▁▁▁▁▁▁▂▇▇▃▂▁▁▁
-# the site differences are unlikely to be larger than 0.1 for phi and 1.67 for lambda
+#site1phip...site2phip    0 0.01 -0.01  0.01 ▁▁▁▁▁▃▇▇▅▂▁▁▁▁
+# the site differences are unlikely to be larger than 0.1 for phi and 1.48 for lambda
 
 
 # contrasts for the manipulated vs the control birds ONLY in AZ because there were control and manipulated birds there
-lambdap_manip <- precis(site2lambdap_manip - site2lambdap)
+#lambdap_manip <- precis(site2lambdap_manip - site2lambdap)
 #                                 mean   sd  5.5% 94.5%     histogram
 #site2lambdap_manip...site2lambdap 0.52 0.99 -0.78  2.32 ▁▁▅▇▃▁▁▁▁
 
-phip_manip <- precis(site2phip_manip - site2phip)
+#phip_manip <- precis(site2phip_manip - site2phip)
 #                             mean   sd  5.5% 94.5% histogram
 #site2phip_manip...site2phip    0 0.01 -0.02  0.02 ▁▁▂▇▇▂▁▁▁▁
 # no differences in phi or lambda between the manipulated and control birds in AZ. This is different from flexmanip bc in flexmanip we only looked at phis and lambdas in the last reversal. However, here we are looking at the average phi and lambda for the manipulated birds across all reversals (and they have lots of ups and downs before they finally pass criterion quickly). Technically, they weren't manipulated until their last reversal.
@@ -2355,26 +2361,27 @@ phip_manip <- precis(site2phip_manip - site2phip)
 # to calculate the values for each individual, we need to take the overall mean across all inds from both sites, the offset for the site that this individual belongs to, and these first two values give us the average value for individuals in that site. Then add the offset for individuals at the site to get each individual's value
 indlambdasite=NA
 indphisite=NA
-individualsatsite = data.frame( d %>% group_by(Site,Treatment) %>% summarise(unique(id))) #assign each individual to its associated site
+individualsatsite = data.frame( d %>% group_by(Site) %>% summarise(unique(id))) #assign each individual to its associated site
+#individualsatsite = data.frame( d %>% group_by(Site,Treatment) %>% summarise(unique(id))) #assign each individual to its associated site
 
+#to get the numbers X in mean(drawsdf[(,i+X)]), run names(drawsdf) and look for where v_ID.1.2 for Phi starts and v_ID.1.1. for lambda
 for (i in 1:dat$N_id){
-  indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+148]) + 
-                             ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.))+
-                             ifelse(individualsatsite[i,]$Treatment=="No",mean(drawsdf$v_TREAT.1.1.),mean(drawsdf$v_TREAT.2.1.))
+  indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+98]) + 
+                             ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.))
+                           #+ifelse(individualsatsite[i,]$Treatment=="No",mean(drawsdf$v_TREAT.1.1.),mean(drawsdf$v_TREAT.2.1.))
   )
   
-  indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+105])+
-                                ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.1.2.),mean(drawsdf$v_EXP.2.2.))+
-                                ifelse(individualsatsite[i,]$Treatment=="No",mean(drawsdf$v_TREAT.1.2.),mean(drawsdf$v_TREAT.2.2.))
+  indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+137])+
+                                ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.1.2.),mean(drawsdf$v_EXP.2.2.))
+                              #+ifelse(individualsatsite[i,]$Treatment=="No",mean(drawsdf$v_TREAT.1.2.),mean(drawsdf$v_TREAT.2.2.))
                                 )
 }
 
-
 # make a dataframe with the values in the actual scale associated with the bird's names and sites
-individualsatsite$phi=indphisite
-individualsatsite$lambda=indlambdasite
+individualsatsite$phi = indphisite
+individualsatsite$lambda = indlambdasite
 
-originalid=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
+originalid = data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
 individualsatsite$name=originalid$unique.ID. #this is the final dataframe
 
 #Phis and lambdas for each individual
@@ -2384,13 +2391,13 @@ individualsatsite$name=originalid$unique.ID. #this is the final dataframe
 # Do we get the same average as above (from the model prediction where the model uses actual data from individuals to learn from site 1 and then applies this learning to site 2, which results in each individual having an offset and this being added to the site average) if we average across individuals using the actual individual data (at the site)?  PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
 wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
 #           mean   sd 5.5% 94.5%    histogram
-#phi         0.03 0.01 0.02  0.05 ▅▃▅▇▂▅▃▁▁▁▁▂
-#lambda      6.16 6.98 1.85 11.58      ▇▃▁▁▁▁▁
+#phi         0.04 0.04 0.01  0.08    ▅▇▃▁▁▁▁▁▁
+#lambda      5.11 1.66 2.84  7.80 ▅▂▂▅▂▇▁▂▃▂▂▂
 
 te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 #            mean   sd  5.5% 94.5%  histogram
-#phi         0.03 0.01  0.02  0.05   ▂▅▂▇▅▁▁▂
-#lambda      5.85 4.21  1.39 12.45 ▂▇▂▂▂▁▁▁▁▁
+#phi         0.04 0.02  0.01  0.07   ▂▅▇▂▁▅▁▁▁▁▁
+#lambda      4.69 1.40  2.98  5.94 ▂▂▂▃▂▃▇▁▁▁▁▁▁
 
 # visualize each bird at each site
 individualsatsite$Site <- as.integer(as.factor(individualsatsite$Site)) #this makes a scatter plot allowable
@@ -2398,14 +2405,26 @@ individualsatsite$plotlocation<-as.integer(as.factor(individualsatsite$Site))+rn
 
 library(lattice)
 library(gridExtra)
-plot1 <- xyplot(indphisite~individualsatsite$Site, d, cex=1.2, ylab=expression(Phi), col="black", pch=c(1,4)[d$Treatment]), panel = function(...) {
-  #panel.xyplot(..., pch = "|")
-  panel.xyplot(..., jitter.x = TRUE)})
-plot2 <- xyplot(indlambdasite~individualsatsite$Site, d, ylab=expression(Lambda), col="black", panel = function(...) {
-  #panel.xyplot(..., pch = "|")
-  panel.xyplot(..., jitter.x = TRUE)})
-grid.arrange(plot1,plot2, ncol=2)
+op <- par(mfrow=c(2,1), mar=c(3,4.9,2,0.9))
+plot(indphisite~individualsatsite$plotlocation,xaxt="n",xlab="",ylab=expression(phi),cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=1)
+points(mean(site1phip)~c(1.1),cex=3,col="blue",pch=2)
+lines(c(HPDI(site1phip)[1],HPDI(site1phip)[2])~c(1.1,1.1),col="blue")
+points(mean(site2phip)~c(1.9),cex=3,col="blue",pch=2)
+lines(c(HPDI(site2phip)[1],HPDI(site2phip)[2])~c(1.9,1.9),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
 
+plot(indlambdasite~individualsatsite$plotlocation,xaxt="n",xlab="",ylab=expression(lambda),cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=1)
+points(mean(site1lambdap)~c(1.1),cex=3,col="blue",pch=2)
+lines(c(HPDI(site1lambdap)[1],HPDI(site1lambdap)[2])~c(1.1,1.1),col="blue")
+points(mean(site2lambdap)~c(1.9),cex=3,col="blue",pch=2)
+lines(c(HPDI(site2lambdap)[1],HPDI(site2lambdap)[2])~c(1.9,1.9),col="blue")
+mtext("Woodland",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=0.9)
+mtext("Tempe",side=1,outer=FALSE,adj=0,font=1,cex=1.5,line=1,at=1.9)
+par(op)
+
+
+#with treatment
 op <- par(mfrow=c(2,1), mar=c(3,4.9,2,0.9))
 plot(indphisite~individualsatsite$plotlocation,xaxt="n",xlab="",ylab=expression(phi),cex.lab=1.5,cex=1.5,cex.axis=1.5, pch=c(1,4)[individualsatsite$Treatment])
 points(mean(site1phip)~c(1.1),cex=3,col="blue",pch=2)
@@ -2449,7 +2468,7 @@ levels(fva$Population) <- c("Woodland", "Tempe", "Woodland")
 fvar <- subset(fva,!(is.na(fva["Phi"]))) 
 
 #sample size
-length(fvar$Phi) #38. This matches the data sheet
+length(fvar$Phi) #39. This matches the data sheet
 
 # set up the data sheet for the model, then run the model
 flexvar <- list(phi = as.numeric(fvar$Phi),
@@ -2461,7 +2480,7 @@ flexvar <- list(phi = as.numeric(fvar$Phi),
 #Phi model
 mflexvar_p <- ulam( alist(
   phi ~ dnorm(mu,sigma[site]) , 
-  log(mu) <- a[site] + b*treatment, 
+  log(mu) <- a[site] , #removed + b*treatment 
   a[site] ~ dnorm(a_bar,a_sigma), 
   a_bar ~ dnorm(0,1.5),
   a_sigma ~ dexp(1),
@@ -2470,13 +2489,13 @@ mflexvar_p <- ulam( alist(
 ) , data=flexvar , chains=4 , cores=4, log_lik=TRUE, cmdstan=T, messages=T)
 precis(mflexvar_p,depth=2)
 #       mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1]     -3.20 0.23 -3.54 -2.87   850  1.01
-#a[2]     -3.27 0.16 -3.54 -3.04   594  1.01
-#a_bar    -2.88 0.70 -3.54 -1.40   237  1.01
-#a_sigma   0.62 0.71  0.05  2.10   252  1.01
-#sigma[1]  0.05 0.01  0.03  0.06  1160  1.00
-#sigma[2]  0.02 0.00  0.02  0.03   941  1.00
-#b         0.60 0.20  0.30  0.91   319  1.01
+#a[1]     -3.25 0.22 -3.62 -2.94   764  1.00
+#a[2]     -3.33 0.16 -3.59 -3.10   997  1.01
+#a_bar    -2.87 0.78 -3.64 -1.30   458  1.00
+#a_sigma   0.74 0.79  0.08  2.32   422  1.00
+#sigma[1]  0.04 0.01  0.03  0.05  1036  1.00
+#sigma[2]  0.03 0.00  0.02  0.03  1083  1.00
+#b        -0.06 1.00 -1.67  1.58  1238  1.00
 
 #Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
 postvar_p <- extract.samples(mflexvar_p) 
@@ -2487,16 +2506,17 @@ post_diff_var_p<-as.data.frame(post_diff_var_p)
 post_diff_var_p$diff_12 <- post_diff_var_p[,1] - post_diff_var_p[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post_diff_var_p,depth=2) 
 #           mean     sd    5.5%   94.5%      histogram
-#V1      0.05 0.01 0.03  0.06    ▁▂▅▇▅▃▂▁▁▁▁▁
-#V2      0.02 0.00 0.02  0.03         ▁▃▇▂▁▁▁
-#diff_12 0.02 0.01 0.01  0.04 ▁▁▁▁▂▇▇▅▃▂▁▁▁▁▁
+#V1      0.04 0.01 0.03  0.05 ▁▃▇▇▃▂▁▁▁▁▁
+#V2      0.03 0.00 0.02  0.03    ▁▇▇▂▁▁▁▁
+#diff_12 0.02 0.01 0.00  0.03   ▁▁▁▃▇▃▁▁▁
+HPDI(post_diff_var_p$diff_12) #0.0009158 0.0281026 run this instead of using the precis output because the number is so close to zero and need the exact number
 #Woodland has a higher variance in phi than Tempe bc diff does not cross zero
 
 
 #Lambda model
 mflexvar_l <- ulam( alist(
   lambda ~ dnorm(mu,sigma[site]) , 
-  log(mu) <- a[site] + b*treatment, 
+  log(mu) <- a[site] , #removed + b*treatment 
   a[site] ~ dnorm(a_bar,a_sigma), 
   a_bar ~ dnorm(0,1.5),
   a_sigma ~ dexp(1),
@@ -2512,6 +2532,14 @@ precis(mflexvar_l,depth=2)
 #sigma[1]  2.24 0.39  1.71  2.95  1077  1.00
 #sigma[2]  0.82 0.15  0.62  1.09   830  1.01
 #b        -0.26 0.11 -0.44 -0.09  1176  1.00
+#NEW
+#a[1]      1.61 0.07  1.49  1.72   924  1.00
+#a[2]      1.55 0.07  1.43  1.65  1005  1.01
+#a_bar     1.49 0.40  0.84  1.89   252  1.01
+#a_sigma   0.38 0.48  0.02  1.31   216  1.01
+#sigma[1]  1.70 0.29  1.32  2.21  1003  1.00
+#sigma[2]  1.44 0.24  1.11  1.88   805  1.01
+#b        -0.06 0.99 -1.59  1.57   987  1.01
 
 #Compute pairwise contrasts to compare sites 1 (Woodland) and 2 (Tempe)
 postvar_l <- extract.samples(mflexvar_l) 
@@ -2522,10 +2550,10 @@ post_diff_var_l<-as.data.frame(post_diff_var_l)
 post_diff_var_l$diff_12 <- post_diff_var_l[,1] - post_diff_var_l[,2] #subtract mu for site 2 from mu for site 1. col1=site 1, col2=site 2
 precis(post_diff_var_l,depth=2) 
 #        mean     sd    5.5%   94.5%      histogram
-#V1      2.24 0.39 1.71  2.95       ▁▅▇▂▁▁▁▁
-#V2      0.82 0.15 0.62  1.09 ▁▁▃▇▅▃▂▁▁▁▁▁▁▁
-#diff_12 1.42 0.42 0.83  2.17      ▁▁▂▇▃▁▁▁▁
-#Woodland has a higher lambda variance than Tempe bc diff does not cross zero
+#V1      1.70 0.29  1.32  2.21 ▁▂▇▇▃▂▁▁▁▁▁▁
+#V2      1.44 0.24  1.11  1.88    ▁▂▇▅▃▁▁▁▁
+#diff_12 0.26 0.39 -0.37  0.88     ▁▁▂▇▂▁▁▁
+#no site differences in lambda variance bc diff crosses zero
 ```
 
 ![](gxpopbehaviorhabitatFigflexcontrast.png)
