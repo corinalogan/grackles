@@ -3912,18 +3912,23 @@ d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master
 ### remove -1 (did not participate in this trial) from the Correct column
 d0 <- d[!d$Correct==-1,]
 
-# exclude the birds who didn't complete the initial discrimination 
-d0 <- d[!d$ID=="Roseling",]
+#exclude GTGR who didn't complete reversal 1
+d0 <- d0[!d0$ID=="Chocolate" & !d0$ID=="Xango" & !d0$ID=="Wachil" & !d0$ID=="Talingo" & !d0$ID=="Quiscalus" & !d0$ID=="Churro" & !d0$ID=="Sopapilla" & !d0$ID=="Tres Leches" & !d0$ID=="Merengue" & !d0$ID=="Carlota" & !d0$ID=="Changa" & !d0$ID=="Urraca" & !d0$ID=="Bacmut bacni",]
 
-# exclude the birds who didn't complete reversal 1? Yes bc comparing manipulated vs non-manipulated GTGR so have to have passed R1
-d0 <- d[!d$ID=="Bladderwort",]
-d0 <- d[!d$ID=="Cocoplum",]
+# exclude the BTGR who didn't complete the initial discrimination 
+d0 <- d0[!d0$ID=="Roseling",]
 
-#SAMPLE SIZE = 2
+# exclude the BTGR who didn't complete reversal 1? Yes bc comparing manipulated vs non-manipulated GTGR so have to have passed R1
+d0 <- d0[!d0$ID=="Bladderwort" & !d0$ID=="Cocoplum",]
+
+#unique(d0$ID) #SAMPLE SIZE 41 total (39 GTGR + 2 BTGR)
 
 ### combine Sites Woodland and Sacramento because they are the edge site for comparison with the AZ site
 d0$Site <- as.factor(d0$Site)
 levels(d0$Site) <- c("BTGR","Woodland", "Tempe", "Woodland")
+
+#ONLY use data from first reversals to make the manipulated birds comparable without adding treatment to the model
+d0 <- d0[d0$Reversal<2,]
 
 ### Get rid of the zeros on the Correct column by turning 0 (incorrect choice) to 2 and keeping 1 at 1 (correct choice)
 d0$id <- sapply(1:nrow(d0), function (i) which(unique(d0$ID) == d0$ID[i]) )
@@ -4039,15 +4044,17 @@ A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]
 
 # RUN the model, but STAN was acting up so need to run it with cmdstan (these instructions were copied from g_flexmanip2post.Rmd starting at line 342)
 library(cmdstanr)
+
+# ---> run this code as one chunk (otherwise it won't write the file) and copy/paste it into the console
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
 setwd(cmdstanlocation)
-
 # access the output file created by the model running the reinforcement model
 write(reinforcement_model_id_site_nonzeroattraction,file="myowntrial.stan")
 file <- file.path(cmdstan_path(), "myowntrial.stan")
 mod <- cmdstan_model(file)
 options(mc.cores=4)
+# <--- 
 
 d$Reversal<-as.numeric(as.factor(d$Reversal))
 
@@ -4073,15 +4080,15 @@ drawsdf$diffSiteLambda <- drawsdf$v_EXP.2.1. - drawsdf$v_EXP.1.1. #contrasting s
 drawsdf$diffSitePhi <- drawsdf$v_EXP.2.2. - drawsdf$v_EXP.1.2. #contrasting site 2 with site 1
 drawsdf$diffSiteLambda <- drawsdf$v_EXP.3.1. - drawsdf$v_EXP.1.1. #contrasting site 3 with site 1
 drawsdf$diffSitePhi <- drawsdf$v_EXP.3.2. - drawsdf$v_EXP.1.2. #contrasting site 3 with site 1
-look <- precis(drawsdf) #there are no differences between sites in either phi or lambda
+lookbtgr <- precis(drawsdf) #there are no differences between sites in either phi or lambda
 
 # CONVERT the means for phi and lambda for each site to the actual scale to see what the actual difference is and compare with our power analysis
-site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.97 BTGR
-site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.80 Woodland
-site3lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.3.1.)) #4.60 Tempe
-site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0296 BTGR
-site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0307 Woodland
-site3phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.3.2.)) #0.0298 Tempe
+site1lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.1.1.)) #4.97 BTGR NEW 4.739379
+site2lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.2.1.)) #4.80 Woodland NEW 4.764555
+site3lambda <- exp( mean(drawsdf$log_L) + mean(drawsdf$v_EXP.3.1.)) #4.60 Tempe NEW 4.516111
+site1phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.1.2.)) #0.0296 BTGR NEW 0.04332011
+site2phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.2.2.)) #0.0307 Woodland NEW 0.03153036
+site3phi <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf$v_EXP.3.2.)) #0.0298 Tempe NEW 0.0306998
 # Table SM1 says that we would need a difference of 3+ for lambda and 0.01+ for phi to detect a difference between the sites. So there are no strong site differences 
 
 # convert the posterior as well
@@ -4096,24 +4103,30 @@ site3phip <- inv_logit( (drawsdf$logit_phi) + (drawsdf$v_EXP.3.2.))
 lambdap <- precis(site1lambdap - site2lambdap)
 # mean   sd  5.5% 94.5%  histogram
 #site1lambdap...site2lambdap 0.23 0.97 -1.06  1.97 ▁▁▇▇▂▁▁▁▁▁
+#NEW
+#site1lambdap...site2lambdap 0.07 1.11 -1.52     2 ▁▁▁▂▇▇▂▁▁▁▁▁▁▁
 #diff crosses zero so no site differences
-site1lambdap...site2lambdap 29.95 317.76 -0.81 67.77 ▁▇▁▁▁▁▁▁▁▁▁▁▁▁▁
 
 phip <- precis(site1phip - site2phip)
 # mean   sd  5.5% 94.5%   histogram
 #site1phip...site2phip    0 0.01 -0.01  0.01 ▁▁▂▇▇▁▁▁▁▁▁
+#NEW
+#site1phip...site2phip 0.02 0.02 -0.01  0.06   ▂▇▁▁▁▁▁
 #diff crosses zero so no site differences
 
 # BTGR vs Tempe
 lambdaT <- precis(site1lambdap - site3lambdap)
 # mean   sd  5.5% 94.5%  histogram
 #site1lambdap...site3lambdap 0.43 1.01 -0.79  2.32 ▁▁▅▇▂▁▁▁▁▁
+#NEW
+#site1lambdap...site3lambdap 0.32 1.15 -1.2  2.39 ▁▁▁▅▇▂▁▁▁▁▁▁▁▁
 #diff crosses zero so no site differences
-site1lambdap...site3lambdap 29.24 317.65 -1.51 66.58 ▂▇▁▁▁▁▁▁▁▁▁▁▁▁▁
 
 phiT <- precis(site1phip - site3phip)
 # mean   sd  5.5% 94.5%   histogram
 #site1phip...site3phip    0 0.01 -0.01  0.01 ▁▁▁▇▇▁▁▁▁▁▁
+#NEW
+#site1phip...site3phip 0.02 0.02 -0.01  0.06   ▂▇▁▁▁▁▁
 #diff crosses zero so no site differences
 
 
@@ -4122,6 +4135,7 @@ indlambdasite=NA
 indphisite=NA
 individualsatsite = data.frame( d %>% group_by(Site) %>% summarise(unique(id))) #assign each individual to its associated site
 
+#to get the numbers X in mean(drawsdf[(,i+X)]), run names(drawsdf) and look for where v_ID.1.1. for lambda starts and v_ID.1.2 for phi starts
 for (i in 1:dat$N_id){
 indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+148]) + ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.)))
 
@@ -4132,9 +4146,12 @@ indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+105])+ifel
 individualsatsite$phi=indphisite
 individualsatsite$lambda=indlambdasite
 
-originalid_b=data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
+originalid_b = data.frame(d0 %>% group_by(id) %>% summarise(unique(ID))) #connect the unique ID (name) with the id used in the model
 colnames(originalid_b)<-c("unique.id.","name")
 individualsatsite<-left_join(individualsatsite,originalid_b,by="unique.id.")
+
+#Phis and lambdas for each individual
+#write.csv(individualsatsite,file="individualphilambdaBTGR.csv")
 
 ## BTGR phis and lambdas in individualsatsite:
 #       Site unique.id.        phi     lambda             name
@@ -4142,7 +4159,9 @@ individualsatsite<-left_join(individualsatsite,originalid_b,by="unique.id.")
 #2      BTGR         45 0.02231290  3.1834761      Bladderwort
 #3      BTGR         46 0.03536739  4.6753405           Pawpaw
 #4      BTGR         47 0.02461878  5.5351389         Cocoplum
-
+#NEW - need the name
+#1      BTGR         40 0.03951737  3.271042
+#2      BTGR         41 0.01847618  4.295592
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
 wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
@@ -4150,21 +4169,23 @@ wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
 #phi         0.03 0.01 0.02  0.05     ▃▂▇▇▁▃▂▁
 #lambda      5.84 5.96 1.79 12.00       ▇▂▁▁▁▁
 
-phi         0.04 0.02 0.02  0.07 ▂▃▅▇▂▃▂▁▁▁▁▁▁
-lambda      5.53 2.59 3.35 10.82  ▁▅▇▅▁▁▁▁▁▁▁▁
+#phi         0.04 0.02 0.02  0.07 ▂▃▅▇▂▃▂▁▁▁▁▁▁
+#lambda      5.53 2.59 3.35 10.82  ▁▅▇▅▁▁▁▁▁▁▁▁
 
 te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 #            mean   sd  5.5% 94.5%  histogram
 #phi         0.03 0.01  0.02  0.04  ▂▅▂▇▇▁▁▁▁
 #lambda      5.51 3.93  1.43 11.40  ▂▇▁▂▃▁▁▁▁
 
-phi         0.03 0.01  0.02  0.05  ▃▁▃▇▅▁▁▁▁
-lambda      5.49 6.97  1.49  9.19    ▇▂▁▁▁▁▁
+#phi         0.03 0.01  0.02  0.05  ▃▁▃▇▅▁▁▁▁
+#lambda      5.49 6.97  1.49  9.19    ▇▂▁▁▁▁▁
 
 btgr <- precis(individualsatsite[individualsatsite$Site=="BTGR",])
 #            mean   sd  5.5% 94.5%  histogram
 #phi         0.03 0.01  0.02  0.04  ▇▇▁▇▁▁▇▁▇
 #lambda      4.51 1.34  3.11  5.93    ▇▁▁▃▁▃▃
+
+
 
 
 ##### Innovativeness and persistence
