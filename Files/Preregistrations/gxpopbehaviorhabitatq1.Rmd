@@ -1549,7 +1549,6 @@ for (i in ((n/3)+(n/3)+1):n){
   sites[i,1]<-latency
   sites[i,2]<-3 #site 3
 }
-
 sites[sites[,1]>2700,1]<-2701 #make all non-participatory birds have a 2701
 
 #In case I want to check what the data look like
@@ -1607,44 +1606,38 @@ precis(post3,depth=2)
 
 
 
-### COPIED FROM INNOVATION! SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
+### SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
 #make simulated data to plug into the model
 nsim = 40 # /2 = n per site when running 2 sites
+site1means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=6.5,sd=0.1),sd=1),0)) #change the number for mean to make the sites similar or different
+site2means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=5.5,sd=0.1),sd=1),0)) 
 P <- 1000 #this gives us a distribution that we expect (long right tail)
-L <-
-am1<-4.6 #site 1 alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7
-am2<-6.3 #site 2 alpha mean: 6.2=log of 500 sec, 550s=6.3, 600s=6.4
-
-site1means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=6.3,sd=0.1),sd=0.1),0)) #change the number for mean to make the sites similar or different
-site2means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=4.6,sd=0.1),sd=0.1),0)) 
-
-sites<-matrix(nrow=nsim,ncol=2)
-sites<-as.data.frame(sites)
-colnames(sites)<-c("latency","site")
+#L <- rnorm(n=nsim,mean=site2means,sd=0.1)
 
 #simulate the latencies per individual per site
-for (i in 1:nsim/2){
-  lambda <- exp(am1) #the linear model for site 1
-  latency <- rgampois(1,L,P) #this is the latency per individual
-  sites[i,1]<-latency
-  sites[i,2]<-1 #site 1
+testdat<-matrix(nrow=nsim,ncol=2)
+testdat<-as.data.frame(testdat)
+colnames(testdat)<-c("latency","site")
+for (i in 1:(nsim/2)){
+  L <- exp(site1means) #the linear model for site 1
+  latency <- rgampois(1,L,P) #x=is the number of random observations to sample, mean of the gamma distribution=L of the gamma distribution, scale=P
+  testdat[i,1]<-latency
+  testdat[i,2]<-1 #site 1
 }
 
-for (j in (nsim/2+1):(2*nsim)/2){
-  lambda <- exp(am2)
+for (j in ((nsim/2)+1):((2*nsim)/2)){
+  L <- exp(site2means)
   latency <- rgampois(1,L,P)
-  sites[j,1]<-latency
-  sites[j,2]<-2 #site 2
+  testdat[j,1]<-latency
+  testdat[j,2]<-2 #site 2
 }
-
 #make all non-participatory birds have a 2701
-sites[sites[,1]>2700,1]<-2701 
+testdat[testdat[,1]>2700,1]<-2701 
+
 
 #populate the simulated data sheet
 sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
-sim_sitedifferences<-c(0,0.1,1,2) #0.1=compared to core population the edge individuals have a 10% higher latency. alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7; 6.2=log of 500 sec, 550s=6.3, 600s=6.4; 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
-corepop_prop<-0.2 #probability of solving a locus for the core population
-
+sim_sitedifferences<-c(0,8,10,20) #0.1=compared to core population the edge individuals have a 10% higher latency. alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7; log(450) sec = 6.1 mean, log(500) sec = 6.2 mean, 550s=6.3, 600s=6.4; 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
 
 exploration_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
 colnames(exploration_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
@@ -1654,18 +1647,15 @@ for(sitediff in 1:length(sim_sitedifferences)){
     count_crosseszero<-0
     for(repetition in 1:10){
 nsim = 40 # /2 = n per site when running 2 sites
-sim_site = c(rep(1,sim_n/2),rep(2,sim_n/2)) #site is a categorical variable: sites 1 or 2
-sim_treat =  sample(0:1,size=sim_n,replace=T) #treatment is a categorical variable: manipulated or not
-m = rbinom(n=sim_n,size=4, prob=abs(rnorm(sim_n,mean=(ifelse(sim_site==1,corepop_prop,corepop_prop+sim_sitedifferences[sitediff]) + sim_manipulationeffects[manipeffect] * ifelse(sim_treat==1,1,0)),sd=0.1))) #4 loci possible. Now change the mean: a=the ifelse term giving each sim_site a different intercept (a[1]=0.4), a[2]=0.5, b=0.1. If you are a manipulated bird, the probability of solving more loci increases by 0.1
+sim_treat =  sample(0:1,size=nsim,replace=T) #treatment is a categorical variable: manipulated or not
 
 #run the simulated data through the model
-simedat <- list(latency = as.integer(sites[,1]),
-            site = as.integer(sites[,2]),
-            treatment =
+simedat <- list(latency = as.integer(testdat[,1]),
+            site = as.integer(testdat[,2]),
+            treatment = sim_treat
 )
-
-simem <- ulam(
-latency ~ dgampois(L, P),
+simem <- ulam(alist(
+    latency ~ dgampois(L, P), #L is the integer values to compute probabilities of, P is the mu (mean of the gamma distribution)
     log(L) <- a[site] + b*treatment,
     a[site] ~ dnorm(a_bar,sigma),
     P ~ dexp(1),
@@ -1674,22 +1664,8 @@ latency ~ dgampois(L, P),
     b ~ dnorm(0,1)
 ),data=simedat, chains=4, cores=4, cmdstan=T, log_lik=TRUE, messages=FALSE)
 
-
-#INNOVATION
-sim_dat <- list(m = m,
-            sim_treat = sim_treat,
-            sim_site = sim_site
-              )
-sim_mod <- ulam( alist(
-        m ~ dbinom(4,p),
-        logit(p) <- a[sim_site] + b*sim_treat, 
-        a[sim_site] ~ dnorm(0,1), #each site gets its own intercept
-        b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
-    ) , data=sim_dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-sim_output <- precis( sim_mod , depth=2 )
-
 #contrast
-postt <- extract.samples(sim_mod)
+postt <- extract.samples(simem)
 diffsim <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
 diff_site <- precis( diffsim )
 print(diff_site)
@@ -1703,8 +1679,8 @@ ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero
   }
 }
 
-innovation_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
-#write.csv(innovation_simresults, file="gxpopbehaviorhabitatq1_tableinnovation_simresultsN20.csv")
+exploration_simresults #this is the table we show in the article. ID is just a place holder, Site differences = the simulated difference between the alpha means, manipeffect = the simulated difference between the manipulated and non manipulated birds, num_crosseszero = the number of the 10 repetitions with this setting in which the contrast between sites crosses zero (if it did cross zero, then we did not detect site differences)
+#write.csv(exploration_simresults, file="gxpopbehaviorhabitatq1_tableexploration_simresultsN20.csv")
 ```
 
 
