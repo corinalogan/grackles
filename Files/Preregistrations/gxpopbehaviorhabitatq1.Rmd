@@ -1607,37 +1607,11 @@ precis(post3,depth=2)
 
 
 ### SIMULATION (UPDATED June 2023 to include the new terms in the model: b*Treatment)
-#make simulated data to plug into the model
-nsim = 40 # /2 = n per site when running 2 sites
-site1means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=6.5,sd=0.1),sd=1),0)) #change the number for mean to make the sites similar or different
-site2means <- c(round(rnorm(nsim,mean=rnorm(nsim,mean=5.5,sd=0.1),sd=1),0)) 
-P <- 1000 #this gives us a distribution that we expect (long right tail)
-#L <- rnorm(n=nsim,mean=site2means,sd=0.1)
-
-#simulate the latencies per individual per site
-testdat<-matrix(nrow=nsim,ncol=2)
-testdat<-as.data.frame(testdat)
-colnames(testdat)<-c("latency","site")
-for (i in 1:(nsim/2)){
-  L <- exp(site1means) #the linear model for site 1
-  latency <- rgampois(1,L,P) #x=is the number of random observations to sample, mean of the gamma distribution=L of the gamma distribution, scale=P
-  testdat[i,1]<-latency
-  testdat[i,2]<-1 #site 1
-}
-
-for (j in ((nsim/2)+1):((2*nsim)/2)){
-  L <- exp(site2means)
-  latency <- rgampois(1,L,P)
-  testdat[j,1]<-latency
-  testdat[j,2]<-2 #site 2
-}
-#make all non-participatory birds have a 2701
-testdat[testdat[,1]>2700,1]<-2701 
-
-
 #populate the simulated data sheet
 sim_manipulationeffects<-c(0,0.1,0.25) #0=no difference between manipulated vs non manipulated birds, 0.1=manipulated birds have a 10% higher probability of solving  locus, etc.
-sim_sitedifferences<-c(0,8,10,20) #0.1=compared to core population the edge individuals have a 10% higher latency. alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7; log(450) sec = 6.1 mean, log(500) sec = 6.2 mean, 550s=6.3, 600s=6.4; 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
+sim_sitedifferences<-c(0,0.5,0.75,1) #0.1=compared to core population the edge individuals have a 10% higher latency. alpha mean: 4.6=log of 100 sec (seconds to approach an object), 110s=4.7; log(450) sec = 6.1 mean, log(500) sec = 6.2 mean, 550s=6.3, 600s=6.4; 7.1=log 1200 sec, 1339s=7.2, 1480s=7.3, 1636s=7.4
+site1mean <- 7.5 #because the actual means we found were 1600 and 1900 sec, and log(1600)=7.4
+P <- 1000 #this gives us a distribution that we expect (long right tail)
 
 exploration_simresults<-as.data.frame(matrix(ncol=4,nrow=12))
 colnames(exploration_simresults)<-c("id","sitediff","manipeffect","num_crosseszero")
@@ -1646,13 +1620,19 @@ for(sitediff in 1:length(sim_sitedifferences)){
   for(manipeffect in 1:length(sim_manipulationeffects)){
     count_crosseszero<-0
     for(repetition in 1:10){
-nsim = 40 # /2 = n per site when running 2 sites
-sim_treat =  sample(0:1,size=nsim,replace=T) #treatment is a categorical variable: manipulated or not
+n_site1 <- 20 #Woodland sample size
+n_site2 <- 20 #Tempe sample size
+site = c(rep(1,n_site1),rep(2,n_site2)) #using the actual sample sizes
+treat = c(rep(0,n_site1),rep(0,n_site2/2),rep(1,n_site2/2)) #Tempe: 12 non-manip birds and 8 manip, Woodland: all non-manip
+
+L <- exp(ifelse(site ==1,site1mean,site1mean+sim_sitedifferences[sitediff])+ifelse(treat==1,sim_manipulationeffects[manipeffect],0) ) #the linear model for site 1
+latency <- rgampois(n_site1+n_site2,L,P) #x=is the number of random observations to sample, mean of the gamma distribution=L of the gamma distribution, scale=P
+latency[latency>2700]<-2701 
 
 #run the simulated data through the model
-simedat <- list(latency = as.integer(testdat[,1]),
-            site = as.integer(testdat[,2]),
-            treatment = sim_treat
+simedat <- list(latency = latency,
+            site = site,
+            treatment = treat
 )
 simem <- ulam(alist(
     latency ~ dgampois(L, P), #L is the integer values to compute probabilities of, P is the mu (mean of the gamma distribution)
@@ -1664,9 +1644,18 @@ simem <- ulam(alist(
     b ~ dnorm(0,1)
 ),data=simedat, chains=4, cores=4, cmdstan=T, log_lik=TRUE, messages=FALSE)
 
+#precis(simem, depth=2)
+#      mean   sd  5.5% 94.5% n_eff Rhat4
+#a[1]  7.57 0.16  7.32  7.83  1386  1.00
+#a[2]  7.71 0.22  7.36  8.07   696  1.00
+#P     2.03 0.44  1.40  2.78  1389  1.00
+#a_bar 2.10 1.89 -0.73  5.26   262  1.02
+#sigma 3.91 1.50  1.74  6.43   318  1.01
+#b     0.15 0.31 -0.33  0.63  1177  1.00
+
 #contrast
 postt <- extract.samples(simem)
-diffsim <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+diffsim <- exp( postt$a[,1]) - exp( postt$a[,2])
 diff_site <- precis( diffsim )
 print(diff_site)
 ifelse(diff_site[1,4]>0,count_crosseszero<-count_crosseszero+1,count_crosseszero<-count_crosseszero+0)
