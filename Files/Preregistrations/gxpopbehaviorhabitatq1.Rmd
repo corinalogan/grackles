@@ -2364,7 +2364,7 @@ indphisite=NA
 individualsatsite = data.frame( d %>% group_by(Site) %>% summarise(unique(id))) #assign each individual to its associated site
 #individualsatsite = data.frame( d %>% group_by(Site,Treatment) %>% summarise(unique(id))) #assign each individual to its associated site
 
-#to get the numbers X in mean(drawsdf[(,i+X)]), run names(drawsdf) and look for where v_ID.1.2 for Phi starts and v_ID.1.1. for lambda
+#to get the numbers X in mean(drawsdf[(,i+X)]), run names(drawsdf) and look for where v_ID.1.1. (lambda) starts and v_ID.1.2 (phi) starts. ID=bird ID, the number in the first column is the bird number and the number in the second column is lambda (1) or phi (2). The ifelse statements are separated by site, v_EXP where the first number=the site factor level (v_EXP.1=BTGR, v_EXP.2=Woodland, v_EXP.3=Tempe) and the second number is lambda (1; v_EXP.2.1=Woodland lambda) or phi (2; v_EXP.3.2=Tempe phi)
 for (i in 1:dat$N_id){
   indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+98]) + 
                              ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.))
@@ -4135,11 +4135,11 @@ indlambdasite=NA
 indphisite=NA
 individualsatsite = data.frame( d %>% group_by(Site) %>% summarise(unique(id))) #assign each individual to its associated site
 
-#to get the numbers X in mean(drawsdf[(,i+X)]), run names(drawsdf) and look for where v_ID.1.1. for lambda starts and v_ID.1.2 for phi starts
+#to get the numbers X in mean(drawsdf[(,i+X)]), run names(drawsdf) and look for where v_ID.1.1. (lambda) starts and v_ID.1.2 (phi) starts. ID=bird ID, the number in the first column is the bird number and the number in the second column is lambda (1) or phi (2). The ifelse statements are separated by site, v_EXP where the first number=the site factor level (v_EXP.1=BTGR, v_EXP.2=Woodland, v_EXP.3=Tempe) and the second number is lambda (1; v_EXP.2.1=Woodland lambda) or phi (2; v_EXP.3.2=Tempe phi)
 for (i in 1:dat$N_id){
-indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+148]) + ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.1.),mean(drawsdf$v_EXP.2.1.)))
+indlambdasite[i] <- exp( mean(drawsdf$log_L) + mean(drawsdf[,i+104]) + ifelse(individualsatsite[i,]$Site=="BTGR",mean(drawsdf$v_EXP.1.1.),ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.2.1.),mean(drawsdf$v_EXP.3.1.))))
 
-indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+105])+ifelse(individualsatsite[i,]$Site=="Sacramento",mean(drawsdf$v_EXP.1.2.),mean(drawsdf$v_EXP.2.2.)))
+indphisite[i] <- inv_logit( mean(drawsdf$logit_phi) + mean(drawsdf[,i+145])+ifelse(individualsatsite[i,]$Site=="BTGR",mean(drawsdf$v_EXP.1.2.),ifelse(individualsatsite[i,]$Site=="Woodland",mean(drawsdf$v_EXP.2.2.),mean(drawsdf$v_EXP.3.2.))))
 }
 
 # make a dataframe with the values in the actual scale associated with the bird's names and sites
@@ -4151,17 +4151,12 @@ colnames(originalid_b)<-c("unique.id.","name")
 individualsatsite<-left_join(individualsatsite,originalid_b,by="unique.id.")
 
 #Phis and lambdas for each individual
-#write.csv(individualsatsite,file="individualphilambdaBTGR.csv")
+#write.csv(individualsatsite,file="individualphilambdaBTGR_REAL2.csv")
 
 ## BTGR phis and lambdas in individualsatsite:
 #       Site unique.id.        phi     lambda             name
-#1      BTGR         44 0.03957788  6.0382432          Verbena
-#2      BTGR         45 0.02231290  3.1834761      Bladderwort
-#3      BTGR         46 0.03536739  4.6753405           Pawpaw
-#4      BTGR         47 0.02461878  5.5351389         Cocoplum
-#NEW - need the name
-#1      BTGR         40 0.03951737  3.271042
-#2      BTGR         41 0.01847618  4.295592
+#1      BTGR         40 0.108061309 4.347011          Verbena
+#2      BTGR         41 0.068175954 5.989312           Pawpaw
 
 # PER SITE: get the means, SDs, and intervals for the converted scale for phi and lamda
 wo <- precis(individualsatsite[individualsatsite$Site=="Woodland",])
@@ -4182,8 +4177,8 @@ te <- precis(individualsatsite[individualsatsite$Site=="Tempe",])
 
 btgr <- precis(individualsatsite[individualsatsite$Site=="BTGR",])
 #            mean   sd  5.5% 94.5%  histogram
-#phi         0.03 0.01  0.02  0.04  ▇▇▁▇▁▁▇▁▇
-#lambda      4.51 1.34  3.11  5.93    ▇▁▁▃▁▃▃
+#phi         0.09 0.03  0.07  0.11  ▇▁▁▁▁▁▁▁▇
+#lambda      5.17 1.16  4.44  5.90  ▇▁▁▁▁▁▁▁▇
 
 
 
