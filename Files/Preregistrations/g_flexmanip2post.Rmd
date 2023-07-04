@@ -26,7 +26,7 @@ output:
   md_document: 
     toc: true
 bibliography: MyLibrary.bib
-csl: https://raw.githubusercontent.com/citation-style-language/styles/master/apa.csl
+csl: Peer-Community-Journal-PCI.csl
 urlcolor: blue
 header-includes:
   - \usepackage[left]{lineno}
@@ -62,7 +62,7 @@ Aurélie Coulon (2019) Can context changes improve behavioral flexibility? Towar
 
 **Preregistration:** [html](http://corinalogan.com/Preregistrations/g_flexmanip.html), [pdf](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanipPassedPreStudyPeerReview26Mar2019.pdf), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_flexmanip.Rmd)
 
-**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 3 Jan 2022): [html](http://corinalogan.com/Preregistrations/g_flexmanip2.html), preprint here
+**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 3 Jan 2022, revised and resubmitted Aug 2023): preprint [pdf] at EcoEvoRxiv
 
 
 ## ABSTRACT
@@ -95,7 +95,7 @@ Prediction 4: We predicted that birds that are more flexible, presumably those w
 
 ## METHODS
  
-##### The Bayesian reinforcement learning model
+### The Bayesian reinforcement learning model
  
 We used the version of the Bayesian model that was developed by @blaisdell2021more and modified by @logan2020xpop (see their Analysis Plan > "Flexibility analysis" for model specifications and validation). This model uses data from every trial of reversal learning (rather than only using the total number of trials to pass criterion) and represents behavioral flexibility using two parameters: the learning rate of attraction to either option ($\phi$) and the rate of deviating from learned attractions ($\lambda$). The model repeatedly estimates the series of choices each bird made, based on two equations
 
@@ -109,9 +109,9 @@ Equation 2 expresses the probability P that an individual j chooses option i in 
  
 We implemented the Bayesian reinforcement learning model in the statistical language Stan [@stan2019stan], calling the model and analyzing its output in R [current version `r getRversion()`; @rcoreteam]. The values for $\phi$ and $\lambda$ for each individual are estimated as the mean from 2000 samples from the posterior. 
  
-##### 1) Using simulations to check models estimating the role of the potential parameters underlying performance in the reversal experiment
+#### 1) Using simulations to check models estimating the role of the potential parameters underlying performance in the reversal experiment
  
-We ran the Bayesian model on simulated data to first understand whether we could recover the $\phi$ and $\lambda$ values assigned to each individual from the choices individuals made based on their phis and lambdas in the initial and first reversal learning phases; and second to see whether inter-individual variation in $\phi$ or in $\lambda$ contributed more to variation in their performance. The settings for the simulations were based on the previous analysis of data from grackles in a different population (Santa Barbara, @blaisdell2021more). We re-analyzed data we had simulated for power analyses to estimate sample sizes for population comparisons [@logan2020xpop]. In brief, we simulated 20 individuals each from 32 different populations (640 individuals). The $\phi$ and $\lambda$ values for each individual were drawn from a distribution representing that population, with different mean $\phi$ (8 different means) and mean $\lambda$ (4 different values) for each population (32 populations as the combination of each $\phi$ and lambda). Based on their $\phi$ and $\lambda$ value, each individual was simulated to pass first through the initial association learning phase and, after they reached criterion, a reversal learning phase. Each choice each individual made was simulated consecutively, updating their internal attraction to the two options based on their $\phi$ values and setting their next choice based on their $\lambda$ weighing of their attractions. We first attempted to recover $\phi$ and $\lambda$ for different subsets of the data (initial association learning and reversal learning separately or combined). Next, we determined how the $\phi$ and $\lambda$ values that were assigned to the individuals influenced their performance in the reversal learning trial, building a regression model to determine which of the two parameters had a more direct influence on the number of trials individuals needed to reach criterion: \
+We ran the Bayesian model on simulated data to first understand whether we could recover the $\phi$ and $\lambda$ values assigned to each individual from the choices individuals made based on their phis and lambdas in the initial and first reversal learning phases; and second to see whether inter-individual variation in $\phi$ or in $\lambda$ contributed more to variation in their performance. The settings for the simulations were based on the previous analysis of data from grackles in a different population (Santa Barbara, @blaisdell2021more). We re-analyzed data we had simulated for power analyses to estimate sample sizes for population comparisons [@logan2020xpop]. In brief, we simulated 20 individuals each from 32 different populations (640 individuals). The $\phi$ and $\lambda$ values for each individual were drawn from a distribution representing that population, with different mean $\phi$ (8 different means) and mean $\lambda$ (4 different values) for each population (32 populations as the combination of each $\phi$ and $\lambda$). Based on their $\phi$ and $\lambda$ value, each individual was simulated to pass first through the initial association learning phase and, after they reached criterion, a reversal learning phase. Each choice each individual made was simulated consecutively, updating their internal attraction to the two options based on their $\phi$ values and setting their next choice based on their $\lambda$ weighing of their attractions. We first attempted to recover $\phi$ and $\lambda$ for different subsets of the data (initial association learning and reversal learning separately or combined). Next, we determined how the $\phi$ and $\lambda$ values that were assigned to the individuals influenced their performance in the reversal learning trial, building a regression model to determine which of the two parameters had a more direct influence on the number of trials individuals needed to reach criterion: \
 number of trials to reverse ~ normal(mu, sigma) \
 mu <- a + b * $\phi$ + c * $\lambda$ \
 The model was also estimated in stan, using functions from the package ‘rethinking’ [@rethinking2020] to build the model.
@@ -3086,9 +3086,9 @@ run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( mo
 
 ## RESULTS
 
-#### 1) Using simulations to check the validity of the Bayesian reinforcement learning models to estimate performance in the reversal learning task \
+### 1) Using simulations to check the validity of the Bayesian reinforcement learning models to estimate performance in the reversal learning task \
  
-We first ran the Bayesian reinforcement learning model on simulated data to better understand how the two parameters, $/phi$ and $/lambda$, might lead to differences in performance, and whether we could detect meaningful differences between control and manipulated birds. When we used only the choices simulated individuals made during their first reversal, the estimated $\phi$ and $\lambda$ values did not match those the individuals had been assigned. We realized that $\phi$ and $\lambda$ values were consistently shifted in a correlated way. When estimating these values from only a single reversal, there was equifinality: multiple combinations of the two parameters $\phi$ and $\lambda$ could potentially explain the performance of birds during this reversal, and the estimation adjusted both parameters towards the mean. However, when we combined data from across two reversal or from the initial discrimination learning and the first reversal, the model accurately recovered the $\phi$ and $\lambda$ values that the simulated individuals had been assigned (Figure 1). 
+We first ran the Bayesian reinforcement learning model on simulated data to better understand how the two parameters, $\phi$ and $\lambda$, might lead to differences in performance, and whether we could detect meaningful differences between control and manipulated birds. When we used only the choices simulated individuals made during their first reversal, the estimated $\phi$ and $\lambda$ values did not match those the individuals had been assigned. We realized that $\phi$ and $\lambda$ values were consistently shifted in a correlated way. When estimating these values from only a single reversal, there was equifinality: multiple combinations of the two parameters $\phi$ and $\lambda$ could potentially explain the performance of birds during this reversal, and the estimation adjusted both parameters towards the mean. However, when we combined data from across two reversal or from the initial discrimination learning and the first reversal, the model accurately recovered the $\phi$ and $\lambda$ values that the simulated individuals had been assigned (Figure 1). 
  
 ![](g_flexmanip_post2_simulation.png)
 
@@ -3101,11 +3101,11 @@ In terms of the influence of the two parameters $\phi$ and $\lambda$ on the numb
 **Figure 2.** In the simulations, the $\phi$ values assigned to individuals (green) had a clearer influence on the number of trials these individuals needed to reverse than their $\lambda$ values (red). $\phi$ and $\lambda$ values were standardized for direct comparison. In general, individuals needed fewer trials to reverse if they had larger $\phi$ and $\lambda$ values. However, relatively small $\lambda$ values could be found across the range of reversal performances, whereas there was a more clear distinction with $\phi$ values. 
 
 
-#### 2) Observed effects of the manipulation on reversal performance, $\phi$, and $\lambda$  \
+### 2) Observed effects of the manipulation on reversal performance, $\phi$, and $\lambda$  \
  
 The findings from the simulated data indicated that $\lambda$ and $\phi$ can only be estimated accurately when calculated across at least one switch, and we therefore estimated these values for the observed birds based on their performance in the initial discrimination plus first reversal, and for the manipulated birds additionally on their performance in the final two reversals. For the manipulated birds, the estimated $\phi$ more than doubled from 0.03 (for reference, control grackles=0.03) in their initial discrimination and first reversal to 0.07 in their last two reversals (model estimate of expected average change 89% compatibility interval: +0.02 to +0.05; Table 1: Model 17), while their $\lambda$ went slightly down from 4.2 (for reference, control grackles=4.3) to 3.2 (model estimate of average change 89% compatibility interval: -1.63 to -0.56; Table 1: Model 18). The values we observed after the manipulation in the last reversal for the number of trials to reverse, as well as the $\phi$ and $\lambda$ values estimated from the last reversal, all fall within the range of variation we observed among the control birds in their first and only reversal (Figure 3). This means that the manipulation did not push birds to new levels, but changed them within the boundaries of their natural environment. Some birds in the control group already had similar flexibility measures to the manipulated birds after going through serial reversal learning, presumably because some birds have had experiences in their natural environments that made them more flexible. Accordingly, birds in the manipulated group were not initially all better performers than all of the birds in the control group. 
  
-For $\phi$, the increase during the manipulation fits with the observations in the simulations: larger $\phi$ values were associated with fewer trials to reverse. However, while in the simulations individuals needed fewer trials to reverse when we increased $\lambda$ (less deviation from the learned association), the birds in the manipulation showed a decreased $\lambda$ in their last reversal when they needed fewer trials to reverse. This suggests that $\lambda$ is a constraint, rather than having a direct linear influence on the number of trials to reverse: birds with low $\lambda$ still can reach the criterion in a small number of trials as long as they have a sufficiently high value of $\phi$ (see Figure 2). In line with this, across both manipulated and control birds, $\phi$ was more consistently associated with the number of trials individuals needed to reverse, and $\phi$ changed more than $\lambda$ across reversals for the manipulated birds (Figure 3). The birds might have changed their learning rate $\phi$ because they repeatedly experienced an associative learning task, while the change in $/lambda$ might reflect that birds adapt to the serial reversal where the rewarded option changes every time they reach criterion so that their learned attractions are not completely reliable and it is beneficial to deviate from time to time.
+For $\phi$, the increase during the manipulation fits with the observations in the simulations: larger $\phi$ values were associated with fewer trials to reverse. However, while in the simulations individuals needed fewer trials to reverse when we increased $\lambda$ (less deviation from the learned association), the birds in the manipulation showed a decreased $\lambda$ in their last reversal when they needed fewer trials to reverse. This suggests that $\lambda$ is a constraint, rather than having a direct linear influence on the number of trials to reverse: birds with low $\lambda$ still can reach the criterion in a small number of trials as long as they have a sufficiently high value of $\phi$ (see Figure 2). In line with this, across both manipulated and control birds, $\phi$ was more consistently associated with the number of trials individuals needed to reverse, and $\phi$ changed more than $\lambda$ across reversals for the manipulated birds (Figure 3). The birds might have changed their learning rate $\phi$ because they repeatedly experienced an associative learning task, while the change in $\lambda$ might reflect that birds adapt to the serial reversal where the rewarded option changes every time they reach criterion so that their learned attractions are not completely reliable and it is beneficial to deviate from time to time.
  
 For the $\phi$ values, we also observed a correlation between the $\phi$ estimated from an individual's performance in the first reversal and how much their $\phi$ changed toward the value for their performance in the last reversal (-0.4;Table 1: Model 17), while there is no such obvious relationship for $\lambda$ (-0.15; Table 1: Model 18). For both $\phi$ and $\lambda$, unlike for the number of trials to reverse, we did not see that the individuals who had the largest values during the first reversal also always had the largest values during the last reversal. The manipulation changed both $\phi$ and $\lambda$, such that, across all birds, there was a negative correlation between $\phi$ and $\lambda$ (mean estimate -0.39, 89% compatibility interval: -0.72 to -0.06). 
  
@@ -3152,7 +3152,7 @@ kable_styling(full_width = TRUE, position = "left",  bootstrap_options = "conden
 \elandscape
 \newpage
 
-#### 3) Association between $\phi$ and $\lambda$ with performance on the multi-access boxes \
+### 3) Association between $\phi$ and $\lambda$ with performance on the multi-access boxes \
  
 We first modified the analyses from the preregistered analyses in the original article that assessed potential linear links between reversal learning and performance on the multi-access boxes by replacing the number of trials it took individuals to reverse with $\phi$ (learning rate of attraction to either option) and $\lambda$ (rate of deviating from learned attractions) estimated from the reversal performances. 
 These modified analyses did not find matches with any of the three previously detected correlations between reversal learning and performance on the two multi-access boxes (latency to attempt a locus on the plastic multi-access box, number of loci solved on the plastic and wooden multi-access boxes) (Table 2,3). We detected a different correlation: the latency to attempt a new locus on the wooden multi-access box was positively correlated with $\phi$ in the last reversal (Table 2: Model 28). This correlation appears to arise not because of a linear increase of the latency with increasing $\phi$ values, but because there were several individuals who had both a long latency and a large $\phi$. However, there were also some individuals who had a long latency with a low $\phi$ (see below for additional analyses). This indicates that individuals who were faster to update their associations in reversal learning (higher $\phi$, therefore needed fewer trials in their last reversal) took more time to attempt a new locus. Even though $\phi$ was closely associated with the number of trials a bird needed to reach the reversal criterion, we presumably could not recover the previous correlations because of our small sample sizes. In addition, we estimated $\phi$ and $\lambda$ across at least one reversal (initial discrimination plus first reversal, or last two reversals for manipulated birds), whereas the previous analyses using the number of trials to reverse were based on a single reversal (first or last reversal).
@@ -3215,7 +3215,7 @@ The analyses linking $\phi$ and $\lambda$ to the performance on the multi-access
  
 Overall, these post-hoc analyses indicate the potential benefits of applying a more mechanistic model to the serial reversal learning paradigm. Inferring the potential underlying cognitive processes can allow us to make clearer predictions about how the experiments link to behavioral flexibility. In particular, we could expect that the previously observed differences in whether reversal learning performance links with performance in other traits like innovation or inhibition [e.g. positively in grey squirrels: @chow2016practice, negatively in Indian mynas: @griffin2013tracking, depending on the other trait in great-tailed grackles: @logan2016behavioral and this article] could be linked to differences in whether the learning rate or the deviation plays a larger role in the reversal performance in a given species and in particular for the other trait. The mechanistic model can also help with setting criteria to better design the serial reversal experiments because the changes in attraction can be used to reflect whether individuals have formed a sufficient association to reverse the rewarded option [@logan2022manyindividuals]. We believe that considering such mechanistic models more generally can offer an opportunity for the field of comparative cognition to better fulfill its potential.
  
-### G. AUTHOR CONTRIBUTIONS
+## AUTHOR CONTRIBUTIONS
  
 **Lukas:** Hypothesis development, simulation development, data interpretation, write up, revising/editing.
  
@@ -3233,16 +3233,16 @@ Overall, these post-hoc analyses indicate the potential benefits of applying a m
  
 **Logan:** Hypothesis development, protocol development, data collection, data analysis and interpretation, write up, revising/editing, materials/funding.
  
-### H. FUNDING
+## FUNDING
  
 This research is funded by the Department of Human Behavior, Ecology and Culture at the Max Planck Institute for Evolutionary Anthropology.
  
-### I. CONFLICT OF INTEREST DISCLOSURE
+## CONFLICT OF INTEREST DISCLOSURE
  
 We, the authors, declare that we have no financial conflicts of interest with the content of this article. CJ Logan is a Recommender and, until 2022, was on the Managing Board at PCI Ecology. D Lukas is a Recommender at PCI Ecology.
  
-### J. ACKNOWLEDGEMENTS
+## ACKNOWLEDGEMENTS
  
 We thank our PCI Ecology recommender, Aurelie Coulon, and reviewers, Maxime Dahirel and Andrea Griffin, for their feedback on this preregistration; Julia Cissewski for tirelessly solving problems involving financial transactions and contracts; Sophie Kaube for logistical support; and Richard McElreath for project support.
  
-### K. REFERENCES
+## REFERENCES
