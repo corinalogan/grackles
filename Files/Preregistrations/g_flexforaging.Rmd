@@ -772,7 +772,7 @@ ft2 <- as.data.frame(ft1 %>% group_by(BirdID) %>% summarise(SumFoodEvents=n()))
 ft3 <- left_join(b1,ft2,by="BirdID") #1st entry=data sheet (b1) to which I want to add the info from the second entry (ft2)
 ft3[is.na(ft3$SumFoodEvents)==TRUE,]$SumFoodEvents <- 0  #add zeros to birds who had focals but were never observed eating
 ft3[ft3$SumFocalTime==0,]$SumFoodEvents <- NA 
-#write.csv(ft3,file="g_flexforaging_data_general.csv")
+#write.csv(ft3,file="g_flexforaging_data_general.csv") #uploaded this to github so now can just use the SumFoodEvents column in the general data sheet
 
 
 ### NUMBER OF FORAGING TECHNIQUES and flexibility measures (phi, lambda, switch latency) across both populations
@@ -810,43 +810,47 @@ range(m$NumFollows) #1-8 follows for females
 n = 100
 ph = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
 la =  rnorm(n,mean=0,sd=1) #lambda can range from 0 to 9, but standardize by making mean=0 and SD=2
-r = rnorm(n,mean=0,sd=0.3) #rank can range from -1 to 1, but standardize it
-time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
-model = rbinom(n=n,size=22, prob=inv_logit(rnorm(n,mean=(0.25*ph + 0.5*la + 1*r + (1/6000)*time),sd=0.2))) #22 food types eaten. Now change the mean: a=4 which makes the phis and lambdas positive which is what we need, betas are the 1s before p, l, and r;  b=1/6000. If you have been observed for the full 600s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
-sim_plottype <- plot(model~ph)
-sim_plottype <- plot(model~la)
+r = rnorm(n,mean=0,sd=1) #rank can range from -1 to 1, but standardize it
+fevent = rnorm(n,mean=0,sd=1) #number of food events per bird can range from 0 and up, but standardize it
+mod = rbinom(n=n,size=22, prob=inv_logit(rnorm(n,mean=(0.25*ph + 0.5*la + 1*r + 1*fevent),sd=0.2))) #22 food types eaten.
+plot(mod~ph)
+plot(mod~la)
 #plots look good - any relationship is possible, but all values are within the feasible range
 
+#Simulation with observation time in
+#time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
+#model = rbinom(n=n,size=22, prob=inv_logit(rnorm(n,mean=(0.25*ph + 0.5*la + 1*r + (1/6000)*time),sd=0.2))) #22 food types eaten. Now change the mean: a=4 which makes the phis and lambdas positive which is what we need, betas are the 1s before p, l, and r;  b=1/6000. If you have been observed for the full 600s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+
 #run the simulated data through the model
-s_type <- list(model = model,
+s_type <- list(mod = mod,
                phi = ph,
                lambda = la,
                r = r,
-               time = standardize(time)
+               fevent = fevent
               )
 simtype <- ulam( alist(
-        model ~ dbinom(22,p), #max 22 food types across AZ & CA (from data_FlexForaging > Foraging > How, and then counted the categories)
-        logit(p) <- a + bt*time + bp*phi + bl*lambda + br*r, #include total observation time because this varied per focal (with a target max time of 10 min)
+        mod ~ dbinom(22,p), #max 22 food types across AZ & CA (from data_FlexForaging > Foraging > How, and then counted the categories)
+        logit(p) <- a + bp*phi + bl*lambda + br*r + bf*fevent, #include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), 
-        bt ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         bp ~ dnorm(0,1),
         bl ~ dnorm(0,1),
-        br ~ dnorm(0,1)
+        br ~ dnorm(0,1),
+        bf ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
     ) , data=s_type , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 s_outputtype <- precis( simtype , depth=2 )
 #   mean   sd  5.5% 94.5% n_eff Rhat4
-#a  0.09 0.04  0.03  0.16  2259     1
-#bt 0.06 0.04 -0.01  0.13  2681     1
-#bp 0.23 0.06  0.15  0.33  2348     1
-#bl 0.53 0.05  0.45  0.61  3323     1
-#br 0.87 0.16  0.62  1.13  2111     1
+#a  0.06 0.05 -0.02  0.14  2546     1
+#bp 0.25 0.06  0.17  0.34  2238     1
+#bl 0.50 0.06  0.40  0.59  2539     1
+#br 1.00 0.06  0.90  1.10  2112     1
+#bf 1.06 0.06  0.97  1.15  2292     1
 #check bp and bl to see if it crosses zero. neff and rhat look good
 
 
 # RUN the models
 ## BINOMIAL model FEMALE - food types
 fe <- list(foods = f$NumFoodTypes,
-            obstime = standardize(f$SumFocalTime),
+            events = standardize(f$SumFoodEvents),
             phi = standardize(as.numeric(f$Phi)),
             lambda = standardize(as.numeric(f$Lambda)),
             rank = standardize(f$DomRank)
@@ -854,64 +858,64 @@ fe <- list(foods = f$NumFoodTypes,
 set.seed(9)
 fe_binom <- ulam( alist(
         foods ~ dbinom(22,p), #max 22 food types
-        logit(p) <- a + bo*obstime + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + bp*phi + bl*lambda + br*rank + be*events, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         bp ~ dnorm(0,1),
         bl ~ dnorm(0,1),
-        br ~ dnorm(0,1)
+        br ~ dnorm(0,1),
+        be ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
     ) , data=fe , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 output_fe_binom <- precis( fe_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -2.79 0.33 -3.35 -2.30  1085  1.00
-#bo  0.70 0.43  0.04  1.42  1108  1.00
-#bp -0.30 0.53 -1.17  0.51  1022  1.01
-#bl -0.25 0.36 -0.84  0.30  1292  1.00
-#br  0.29 0.28 -0.15  0.76  1313  1.00
+#a  -2.69 0.31 -3.18 -2.22  1297     1
+#bp -0.61 0.47 -1.41  0.05  1066     1
+#bl -0.46 0.35 -1.03  0.10  1240     1
+#br  0.27 0.32 -0.21  0.79  1402     1
+#be  0.26 0.27 -0.19  0.69  1129     1
 #look at bp and bl to see if a relationship with foods: food types and phi/lambda are not strongly related in females
 
 ## BINOMIAL model FEMALE - food types & MAB switch latency
 fm <- f[!f$MABavgLatencySwitch=="-",]
 
 fef <- list(foodlat = fm$NumFoodTypes,
-            obstime = standardize(fm$SumFocalTime),
+            event = standardize(fm$SumFoodEvents),
             latency = standardize(as.numeric(fm$MABavgLatencySwitch)),
             rank = standardize(fm$DomRank)
               )
 set.seed(14)
 fe_binomfoodlat <- ulam( alist(
         foodlat ~ dbinom(11,p), #max 22 techniques
-        logit(p) <- a + bo*obstime + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + blat*latency + br*rank + be*event, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         blat ~ dnorm(0,1),
         br ~ dnorm(0,1)
     ) , data=fef , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 output_fe_binomfoodlat <- precis( fe_binomfoodlat , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a    -2.20 0.38 -2.83 -1.63  1474  1.00
-#bo    0.57 0.46 -0.15  1.31  1201  1.01
-#blat  0.66 0.39  0.07  1.30  1551  1.00
-#br    0.30 0.31 -0.18  0.80  1571  1.00
+#a    -2.26 0.41 -2.96 -1.66  1337     1
+#be    0.56 0.38 -0.05  1.16  1550     1
+#blat  0.89 0.39  0.31  1.55  1155     1
+#br    0.26 0.30 -0.21  0.75  1618     1
 #look at blat to see if a relationship with foods: those females with more food types have slower latencies to switch on the MAB (less flexible)
 
 
 
 ## BINOMIAL model FEMALE - techniques
 fet <- list(tech = f$NumForageTechs,
-            obstime = standardize(f$SumFocalTime),
+            event = standardize(f$SumFoodEvents),
             phi = standardize(as.numeric(f$Phi)),
             lambda = standardize(as.numeric(f$Lambda)),
             rank = standardize(f$DomRank)
               )
 set.seed(10)
 fe_binomtech <- ulam( alist(
-        tech ~ dbinom(11,p), #max 22 techniques
-        logit(p) <- a + bo*obstime + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        tech ~ dbinom(11,p), #max 11 techniques
+        logit(p) <- a + be*event + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         bp ~ dnorm(0,1),
         bl ~ dnorm(0,1),
         br ~ dnorm(0,1)
@@ -919,6 +923,15 @@ fe_binomtech <- ulam( alist(
 
 output_fe_binomtech <- precis( fe_binomtech , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
+#a  -1.95 0.32 -2.47 -1.46  1579     1
+#be -0.06 0.29 -0.55  0.38  1757     1
+#bp -0.97 0.47 -1.77 -0.29  1469     1
+#bl -1.09 0.39 -1.72 -0.47  1334     1
+#br  0.19 0.29 -0.26  0.66  1474     1
+#look at bp and bl to see if a relationship with techs: more techniques and lower phi (less flexible) and lower lambda (more flexible)
+
+
+#with observation time instead of food events
 #a  -2.02 0.34 -2.58 -1.51  1301     1
 #bo  0.37 0.44 -0.33  1.09  1103     1
 #bp -0.80 0.53 -1.70  0.01  1060     1
@@ -931,33 +944,33 @@ output_fe_binomtech <- precis( fe_binomtech , depth=2 )
 fm <- f[!f$MABavgLatencySwitch=="-",]
 
 fel <- list(techlat = fm$NumForageTechs,
-            obstime = standardize(fm$SumFocalTime),
+            event = standardize(fm$SumFoodEvents),
             latency = standardize(as.numeric(fm$MABavgLatencySwitch)),
             rank = standardize(fm$DomRank)
               )
 set.seed(10)
 fe_binomtechlat <- ulam( alist(
         techlat ~ dbinom(11,p), #max 22 techniques
-        logit(p) <- a + bo*obstime + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + be*event + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         blat ~ dnorm(0,1),
         br ~ dnorm(0,1)
     ) , data=fel , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 output_fe_binomtechlat <- precis( fe_binomtechlat , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a    -2.18 0.41 -2.88 -1.55  1335     1
-#bo    0.51 0.48 -0.24  1.29  1166     1
-#blat  1.14 0.41  0.52  1.80  1156     1
-#br    0.34 0.27 -0.07  0.78  1556     1
+#a    -2.18 0.41 -2.85 -1.55  1347  1.00
+#be    0.26 0.42 -0.43  0.90  1690  1.00
+#blat  1.35 0.38  0.77  1.98  1546  1.01
+#br    0.35 0.28 -0.08  0.80  1612  1.00
 #look at blat to see if a relationship with techs: those females with more techniques have slower latencies to switch on the MAB (less flexible)
 
 
 
 ## BINOMIAL model MALE - food types
 ma <- list(foods = m$NumFoodTypes,
-            obstime = standardize(m$SumFocalTime),
+            event = standardize(m$SumFoodEvents),
             phi = standardize(as.numeric(m$Phi)),
             lambda = standardize(as.numeric(m$Lambda)),
             rank = standardize(m$DomRank)
@@ -965,9 +978,9 @@ ma <- list(foods = m$NumFoodTypes,
 set.seed(11)
 ma_binom <- ulam( alist(
         foods ~ dbinom(22,p), #max 22 food types
-        logit(p) <- a + bo*obstime + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + be*event + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         bp ~ dnorm(0,1),
         bl ~ dnorm(0,1),
         br ~ dnorm(0,1)
@@ -975,6 +988,14 @@ ma_binom <- ulam( alist(
 
 output_ma_binom <- precis( ma_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
+#a  -2.02 0.14 -2.25 -1.80  1516     1
+#be  0.73 0.14  0.51  0.96  1359     1
+#bp  0.00 0.16 -0.25  0.25  1532     1
+#bl  0.28 0.16  0.04  0.53  1565     1
+#br  0.10 0.17 -0.15  0.38  1858     1
+#look at bp and bl to see if a relationship with foods: food types and lambda are positively related in males (more food types used by the less flexible males bc higher lambda=less flexible), but no strong relationship with phi
+
+#with observation time instead of events
 #a  -2.04 0.14 -2.28 -1.81  1412     1
 #bo  0.78 0.17  0.51  1.05  1123     1
 #bp  0.41 0.14  0.18  0.64  1280     1
@@ -988,22 +1009,29 @@ mm <- subset(m, is.na(m$MABavgLatencySwitch) == FALSE)
 mm <- m[!m$MABavgLatencySwitch=="-" & !m$BirdID=="Diablo",] #Diablo had NA for MAB latency and for some reason this was the only way to exclude that NA and make the model run
 
 maf <- list(foodlat = mm$NumFoodTypes,
-            obstime = standardize(mm$SumFocalTime),
+            event = standardize(mm$SumFoodEvents),
             latency = standardize(as.numeric(mm$MABavgLatencySwitch)),
             rank = standardize(mm$DomRank)
               )
 set.seed(14)
 ma_binomfoodlat <- ulam( alist(
         foodlat ~ dbinom(11,p), #max 22 techniques
-        logit(p) <- a + bo*obstime + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + be*event + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         blat ~ dnorm(0,1),
         br ~ dnorm(0,1)
     ) , data=maf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 output_ma_binomfoodlat <- precis( ma_binomfoodlat , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
+#a    -1.15 0.18 -1.44 -0.87  1903     1
+#be    1.29 0.23  0.93  1.68  1906     1
+#blat -0.13 0.20 -0.46  0.18  1969     1
+#br    0.26 0.22 -0.08  0.62  2003     1
+#look at blat to see if a relationship with foods: no strong relationship with switch latencies in males
+
+#with observation time instead of events
 #a    -1.16 0.16 -1.42 -0.90  1784     1
 #bo    0.72 0.17  0.45  1.00  1701     1
 #blat -0.47 0.19 -0.78 -0.17  1433     1
@@ -1013,7 +1041,7 @@ output_ma_binomfoodlat <- precis( ma_binomfoodlat , depth=2 )
 
 ## BINOMIAL model MALE - techniques
 mat <- list(techs = m$NumForageTechs,
-            obstime = standardize(m$SumFocalTime),
+            event = standardize(m$SumFoodEvents),
             phi = standardize(as.numeric(m$Phi)),
             lambda = standardize(as.numeric(m$Lambda)),
             rank = standardize(m$DomRank)
@@ -1021,9 +1049,9 @@ mat <- list(techs = m$NumForageTechs,
 set.seed(12)
 ma_binomtech <- ulam( alist(
         techs ~ dbinom(11,p), #max 11 techniques
-        logit(p) <- a + bo*obstime + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + be*event + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         bp ~ dnorm(0,1),
         bl ~ dnorm(0,1),
         br ~ dnorm(0,1)
@@ -1031,11 +1059,11 @@ ma_binomtech <- ulam( alist(
 
 output_ma_binomtech <- precis( ma_binomtech , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -1.31 0.15 -1.56 -1.06  2052  1.01
-#bo  0.51 0.17  0.25  0.79  1467  1.00
-#bp  0.19 0.17 -0.06  0.47  1770  1.00
-#bl  0.21 0.18 -0.10  0.49  1549  1.00
-#br  0.15 0.18 -0.13  0.46  1389  1.00
+#a  -1.35 0.16 -1.61 -1.10  2116     1
+#be  0.81 0.18  0.52  1.09  1423     1
+#bp -0.16 0.19 -0.47  0.12  1743     1
+#bl  0.23 0.17 -0.05  0.51  1550     1
+#br  0.09 0.20 -0.23  0.41  1751     1
 #look at bp and bl to see if a relationship with foods: food types and phi/lambda are not strongly related in males
 
 
@@ -1044,16 +1072,16 @@ mm <- subset(m, is.na(m$MABavgLatencySwitch) == FALSE)
 mm <- m[!m$MABavgLatencySwitch=="-" & !m$BirdID=="Diablo",] #Diablo had NA for MAB latency and for some reason this was the only way to exclude that NA and make the model run
 
 matl <- list(teclat = mm$NumForageTechs,
-            obstime = standardize(mm$SumFocalTime),
+            event = standardize(mm$SumFoodEvents),
             latency = standardize(as.numeric(mm$MABavgLatencySwitch)),
             rank = standardize(mm$DomRank)
               )
 set.seed(14)
 ma_binomteclat <- ulam( alist(
         teclat ~ dbinom(11,p), #max 22 techniques
-        logit(p) <- a + bo*obstime + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a + be*event + blat*latency + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bo ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
+        be ~ dnorm(0,1), #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
         blat ~ dnorm(0,1),
         br ~ dnorm(0,1)
     ) , data=matl , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
@@ -1103,6 +1131,30 @@ par(op)
 ```
 
 **Figure.** Scatterplots for females (top row) and males (bottom row) showing the relationship between the number of different food types eaten per second and phi (left column) or lambda (right column). Larger diameter circles indicate a larger phi or lambda.
+
+```{r p1alt2calories, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(rethinking)
+library(dplyr)
+
+# LOAD the General data sheet
+b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+b1 <- data.frame(b1)
+
+# CALCULATE number of food events per bird - we will use this instead of observation time in the model because there are many birds who had focal follows, but did not have food events and these zeros mean something different to the model (0 food types from 0 observations is not relevant for our model). If we control for number of food events per bird, this allows us to figure out whether, of the food events a bird had, how many different types did they use?
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- data.frame(ft)
+
+#include only eat in the How column so that each What that we count is one food event
+ft1 <- ft[ft$How=="eat",]
+ft2 <- as.data.frame(ft1 %>% group_by(BirdID) %>% summarise(SumFoodEvents=n()))
+#n() counts the number of rows for each bird. I already filtered the data sheet by Eat so all I have to do is this
+
+#This doesn't include any zeros so we need to figure out who those are by joining with general.csv
+ft3 <- left_join(b1,ft2,by="BirdID") #1st entry=data sheet (b1) to which I want to add the info from the second entry (ft2)
+ft3[is.na(ft3$SumFoodEvents)==TRUE,]$SumFoodEvents <- 0  #add zeros to birds who had focals but were never observed eating
+ft3[ft3$SumFocalTime==0,]$SumFoodEvents <- NA 
+#write.csv(ft3,file="g_flexforaging_data_general.csv") #uploaded this to github so now can just use the SumFoodEvents column in the general data sheet
+```
 
 We will quantify the number of different food types and foraging techniques during focal follows according to the [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing). If a grackle forages during a focal follow we record WHAT it eats, as well as HOW the bird is searching for food. Foraging techniques include: Flipping over objects (flip), digging in ground with bill or feet (dig), sweeping head back and forth [i.e., actually sweeping the bill across the substrate; (sw)], extracting from a substrate (ex), lowers body posture to be parallel to ground to stalk/catch prey from air, from ground, from tree, etc (sc), using gaping bill to search through substrate (ga), lifting or nudging objects with bill (ln). 
 
