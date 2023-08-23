@@ -1136,24 +1136,82 @@ par(op)
 library(rethinking)
 library(dplyr)
 
-# LOAD the General data sheet
+# Load focal follow data
+fc <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+fc <- data.frame(fc)
+
+# Include only eat in the How column so that each What is a food item
+fc1 <- fc[fc$How=="eat",]
+
+# Load calorie data. Note that calories were calculated based on the broader food type category in the What column so it was standardized
+cal <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_FlexForaging_data_calories.csv"), header=T, sep=",", stringsAsFactors=F)
+cal <- data.frame(cal)
+cal2 <- subset(cal, select=-c(Item,Source,Notes))
+colnames(cal2) = c("What","CaloriesPer100g")
+
+# Assign each food type its caloric value in the focal follow data sheet
+fc2 <- left_join(fc,cal2,by="What") #1st entry=data sheet (fc) to which I want to add the info from the second entry (cal)
+#write.csv(fc2,file="g_flexforaging_data_foraging.csv") #uploaded this to github so now can just use the CaloriesPer100g column in the foraging data sheet
+
+# Add to the data sheet: phi and lambda values per bird
+# Load the General data sheet
 b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 b1 <- data.frame(b1)
+#select only the phi and lambda columns
+b2 <- subset(b1, select=c(BirdID,Phi,Lambda))
 
-# CALCULATE number of food events per bird - we will use this instead of observation time in the model because there are many birds who had focal follows, but did not have food events and these zeros mean something different to the model (0 food types from 0 observations is not relevant for our model). If we control for number of food events per bird, this allows us to figure out whether, of the food events a bird had, how many different types did they use?
-ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
-ft <- data.frame(ft)
+# Assign each food type its caloric value in the focal follow data sheet
+fc3 <- left_join(fc2,b2,by="BirdID")
+#write.csv(fc3,file="g_flexforaging_data_foraging.csv") 
 
-#include only eat in the How column so that each What that we count is one food event
-ft1 <- ft[ft$How=="eat",]
-ft2 <- as.data.frame(ft1 %>% group_by(BirdID) %>% summarise(SumFoodEvents=n()))
-#n() counts the number of rows for each bird. I already filtered the data sheet by Eat so all I have to do is this
 
-#This doesn't include any zeros so we need to figure out who those are by joining with general.csv
-ft3 <- left_join(b1,ft2,by="BirdID") #1st entry=data sheet (b1) to which I want to add the info from the second entry (ft2)
-ft3[is.na(ft3$SumFoodEvents)==TRUE,]$SumFoodEvents <- 0  #add zeros to birds who had focals but were never observed eating
-ft3[ft3$SumFocalTime==0,]$SumFoodEvents <- NA 
-#write.csv(ft3,file="g_flexforaging_data_general.csv") #uploaded this to github so now can just use the SumFoodEvents column in the general data sheet
+# ONLY FEMALES
+
+
+
+# SIMULATE
+N_ind <- 20
+
+dat <- list(
+    foods = standardize(rnorm(40,mean=6.5,sd=2)), #estimate 20 total individuals (*2 conditions) with a mean of 6.5 foods/individual (halfway between the max 13 possible food types)
+    before = c(rep(1,N_ind),rep(2,N_ind)), #1 refers to before and 2 to after
+    ind = rep(1:N_ind,2) #go through all individuals twice because there are observations from before and after for each
+)
+
+
+# RUN the model: calories of the food types taken per bird by phi and lambda to see if the more flexible birds took more valuable food (higher calories)
+# Remove the NAs
+fc3 <- subset(fc3, is.na(fc3$CaloriesPer100g) == FALSE)
+fc3 <- subset(fc3, is.na(fc3$Phi) == FALSE)
+fc3 <- subset(fc3, is.na(fc3$Lambda) == FALSE)
+
+# calculate avg calories per bird
+fc4 <- as.data.frame(fc3 %>% group_by(BirdID) %>% summarize(mean(CaloriesPer100g)))
+#link w phis and lambdas
+
+
+#unique(fc3$BirdID) #n=25 grackles, n=254 food events
+
+# Set up the data sheet
+datc <- list(
+    avgcalories = fc3$CaloriesPer100g,
+    phi = fc3$Phi,
+    lambda = fc3$Lambda,
+    id = fc3$BirdID,
+    event = fc3$events )
+
+mod_cal <- ulam( alist(
+        avgcalories ~ normal( mu , sigma ),
+        mu <- a + bp*phi + bl*lambda,
+        a ~ normal(6.5,2), #224=mean number of calories, 145=sd for calories
+        bp ~ normal(0.5,50), #0.5=mean slope, 6=sd which is like the max difference between before and after
+        bl ~ normal(0.5,50),
+        sigma ~ exponential(1)
+    ) , data=datc , chains=4 , cores=4 , log_lik=TRUE , cmdstan = TRUE)
+
+precis(mod_cal,depth=2)
+#
+#
 ```
 
 We will quantify the number of different food types and foraging techniques during focal follows according to the [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing). If a grackle forages during a focal follow we record WHAT it eats, as well as HOW the bird is searching for food. Foraging techniques include: Flipping over objects (flip), digging in ground with bill or feet (dig), sweeping head back and forth [i.e., actually sweeping the bill across the substrate; (sw)], extracting from a substrate (ex), lowers body posture to be parallel to ground to stalk/catch prey from air, from ground, from tree, etc (sc), using gaping bill to search through substrate (ga), lifting or nudging objects with bill (ln). 
