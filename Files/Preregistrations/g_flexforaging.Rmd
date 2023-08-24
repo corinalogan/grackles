@@ -1164,51 +1164,75 @@ b2 <- subset(b1, select=c(BirdID,Phi,Lambda))
 fc3 <- left_join(fc2,b2,by="BirdID")
 #write.csv(fc3,file="g_flexforaging_data_foraging.csv") 
 
+# calculate AVERAGE calories per bird and plug into the General data sheet
+fc4 <- as.data.frame(fc3 %>% group_by(BirdID) %>% summarize(mean(CaloriesPer100g)))
+fc5 <- left_join(fc4,b1,by="BirdID")
+#entered the data for this column to the general data sheet by hand because something was odd about the write.csv version, then I uploaded it to github
 
-# ONLY FEMALES
+# REload the General data sheet with the new column for avg calories
+b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+b1 <- data.frame(b1)
 
+# only females
+b2 <- b1[b1$Sex=="F",]
 
+#select only the columns in the model
+b3 <- subset(b2, select=c(BirdID,Phi,Lambda,AvgCaloriesPer100g))
+
+# Remove the NAs
+b3 <- subset(b3, is.na(b3$AvgCaloriesPer100g) == FALSE)
+b3 <- subset(b3, is.na(b3$Phi) == FALSE)
+b3 <- subset(b3, is.na(b3$Lambda) == FALSE)
+
+#unique(b3$BirdID) #n=6 females
 
 # SIMULATE
 N_ind <- 20
 
-dat <- list(
-    foods = standardize(rnorm(40,mean=6.5,sd=2)), #estimate 20 total individuals (*2 conditions) with a mean of 6.5 foods/individual (halfway between the max 13 possible food types)
-    before = c(rep(1,N_ind),rep(2,N_ind)), #1 refers to before and 2 to after
-    ind = rep(1:N_ind,2) #go through all individuals twice because there are observations from before and after for each
-)
+sat <- list(
+    cals = rnorm(N_ind,mean=228,sd=181), #mean cal=228, sd cal=181
+    ph = rnorm(N_ind,mean=0,sd=1), #standardized
+    la = rnorm(N_ind,mean=0,sd=1) #standardized  )
+
+sim_cal <- ulam( alist(
+        cals ~ normal( mu , sigma ),
+        mu <- a + bp*ph + bl*la,
+        a ~ normal(0,0.5), 
+        bp ~ normal(0.03,0.02), #0.03=mean phi, 0.02=sd phi
+        bl ~ normal(5,2.3), #5=mean lambda, 2.3=sd lambda
+        sigma ~ exponential(1)
+    ) , data=sat , chains=4 , cores=4 , log_lik=TRUE , cmdstan = TRUE)
+
+precis(sim_cal,depth=2)
+#       mean   sd  5.5%  94.5% n_eff Rhat4
+#a      0.09 0.47 -0.64   0.84  2208     1
+#bp     0.03 0.02  0.00   0.06  2286     1
+#bl     5.29 2.30  1.65   8.89  2508     1
+#sigma 98.34 5.26 90.12 106.97  2302     1
+#n_eff and rhat look good, positive relationship between avg calories and phi and lambda. Ran it 3x & same results
+
+plot(sat$cals~sat$ph)
+plot(sat$cals~sat$la)
+#plots looks like any relationship is feasible and they are within the boundaries
 
 
 # RUN the model: calories of the food types taken per bird by phi and lambda to see if the more flexible birds took more valuable food (higher calories)
-# Remove the NAs
-fc3 <- subset(fc3, is.na(fc3$CaloriesPer100g) == FALSE)
-fc3 <- subset(fc3, is.na(fc3$Phi) == FALSE)
-fc3 <- subset(fc3, is.na(fc3$Lambda) == FALSE)
-
-# calculate avg calories per bird
-fc4 <- as.data.frame(fc3 %>% group_by(BirdID) %>% summarize(mean(CaloriesPer100g)))
-#link w phis and lambdas
-
-
-#unique(fc3$BirdID) #n=25 grackles, n=254 food events
 
 # Set up the data sheet
 datc <- list(
-    avgcalories = fc3$CaloriesPer100g,
-    phi = fc3$Phi,
-    lambda = fc3$Lambda,
-    id = fc3$BirdID,
-    event = fc3$events )
+    avgcal = b3$CaloriesPer100g,
+    phi = b3$Phi,
+    lambda = b3$Lambda )
 
 mod_cal <- ulam( alist(
-        avgcalories ~ normal( mu , sigma ),
+        avgcal ~ normal( mu , sigma ),
         mu <- a + bp*phi + bl*lambda,
-        a ~ normal(6.5,2), #224=mean number of calories, 145=sd for calories
-        bp ~ normal(0.5,50), #0.5=mean slope, 6=sd which is like the max difference between before and after
-        bl ~ normal(0.5,50),
+        a ~ normal(0,0.5), 
+        bp ~ normal(0.03,0.02), #0.03=mean phi, 0.02=sd phi
+        bl ~ normal(5,2.3), #5=mean lambda, 2.3=sd lambda
         sigma ~ exponential(1)
-    ) , data=datc , chains=4 , cores=4 , log_lik=TRUE , cmdstan = TRUE)
-
+    ) , data=datc , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE), log_lik=TRUE)
+#ERROR: No chains finished successfully. Unable to retrieve the fit. 
 precis(mod_cal,depth=2)
 #
 #
