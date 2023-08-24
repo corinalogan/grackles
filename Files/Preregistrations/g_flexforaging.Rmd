@@ -1173,8 +1173,8 @@ fc5 <- left_join(fc4,b1,by="BirdID")
 b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 b1 <- data.frame(b1)
 
-# only females
-b2 <- b1[b1$Sex=="F",]
+# only males had a negative relationship between food types and flexibility. We only look at reversal learning here. The females did show a negative relationship with latency to switch on the MAB, but their sample size is only 6 and none of the chains finished so the sample size is too small (the other 3 females with focals dropped out of this analysis bc they ate 0 food items)
+b2 <- b1[b1$Sex=="M",]
 
 #select only the columns in the model
 b3 <- subset(b2, select=c(BirdID,Phi,Lambda,AvgCaloriesPer100g))
@@ -1184,32 +1184,36 @@ b3 <- subset(b3, is.na(b3$AvgCaloriesPer100g) == FALSE)
 b3 <- subset(b3, is.na(b3$Phi) == FALSE)
 b3 <- subset(b3, is.na(b3$Lambda) == FALSE)
 
-#unique(b3$BirdID) #n=6 females
+# summary stats
+unique(b3$BirdID) #n=19 males
+mean(b3$AvgCaloriesPer100g) #254
+sd(b3$AvgCaloriesPer100g) #97
 
 # SIMULATE
 N_ind <- 20
 
 sat <- list(
-    cals = rnorm(N_ind,mean=228,sd=181), #mean cal=228, sd cal=181
+    cals = rnorm(N_ind,mean=254,sd=97),
     ph = rnorm(N_ind,mean=0,sd=1), #standardized
-    la = rnorm(N_ind,mean=0,sd=1) #standardized  )
+    la = rnorm(N_ind,mean=0,sd=1) #standardized  
+    )
 
 sim_cal <- ulam( alist(
         cals ~ normal( mu , sigma ),
         mu <- a + bp*ph + bl*la,
         a ~ normal(0,0.5), 
-        bp ~ normal(0.03,0.02), #0.03=mean phi, 0.02=sd phi
-        bl ~ normal(5,2.3), #5=mean lambda, 2.3=sd lambda
+        bp ~ normal(0,0.5), #standardized
+        bl ~ normal(0,0.5), #standardized
         sigma ~ exponential(1)
     ) , data=sat , chains=4 , cores=4 , log_lik=TRUE , cmdstan = TRUE)
 
 precis(sim_cal,depth=2)
 #       mean   sd  5.5%  94.5% n_eff Rhat4
-#a      0.09 0.47 -0.64   0.84  2208     1
-#bp     0.03 0.02  0.00   0.06  2286     1
-#bl     5.29 2.30  1.65   8.89  2508     1
-#sigma 98.34 5.26 90.12 106.97  2302     1
-#n_eff and rhat look good, positive relationship between avg calories and phi and lambda. Ran it 3x & same results
+#a       0.11 0.52  -0.72   0.92  2667     1
+#bp      0.06 0.50  -0.77   0.87  2288     1
+#bl      0.04 0.50  -0.79   0.84  2544     1
+#sigma 124.45 6.29 114.57 134.48  3024     1
+#n_eff and rhat look good, no strong relationship between avg calories and phi and lambda. Ran it 3x & same results
 
 plot(sat$cals~sat$ph)
 plot(sat$cals~sat$la)
@@ -1217,25 +1221,66 @@ plot(sat$cals~sat$la)
 
 
 # RUN the model: calories of the food types taken per bird by phi and lambda to see if the more flexible birds took more valuable food (higher calories)
-
-# Set up the data sheet
+# MALES with lambda
 datc <- list(
-    avgcal = b3$CaloriesPer100g,
-    phi = b3$Phi,
-    lambda = b3$Lambda )
+    avgcal = b3$AvgCaloriesPer100g,
+    phi = standardize(b3$Phi),
+    lambda = standardize(b3$Lambda) )
 
 mod_cal <- ulam( alist(
         avgcal ~ normal( mu , sigma ),
         mu <- a + bp*phi + bl*lambda,
         a ~ normal(0,0.5), 
-        bp ~ normal(0.03,0.02), #0.03=mean phi, 0.02=sd phi
-        bl ~ normal(5,2.3), #5=mean lambda, 2.3=sd lambda
+        bp ~ normal(0,0.5), 
+        bl ~ normal(0,0.5), 
         sigma ~ exponential(1)
     ) , data=datc , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE), log_lik=TRUE)
-#ERROR: No chains finished successfully. Unable to retrieve the fit. 
+
 precis(mod_cal,depth=2)
-#
-#
+#       mean   sd  5.5%  94.5% n_eff Rhat4
+#a       0.11 0.52 -0.74   0.93  2168     1
+#bp     -0.02 0.49 -0.81   0.77  2207     1
+#bl      0.01 0.49 -0.75   0.79  2398     1
+#sigma 106.33 5.46 98.05 115.39  2267     1
+#no relationship between avg calories (food type value) and phi or lambda
+
+
+# FEMALES with latency
+bf <- b1[b1$Sex=="F",]
+
+#select only the columns in the model
+bf2 <- subset(bf, select=c(BirdID,MABavgLatencySwitch,AvgCaloriesPer100g))
+
+# Remove the NAs
+bf2 <- subset(bf2, is.na(bf2$AvgCaloriesPer100g) == FALSE)
+bf2 <- subset(bf2, is.na(bf2$MABavgLatencySwitch) == FALSE)
+bf2 <- bf2[!bf2$MABavgLatencySwitch=="-",]
+
+# summary stats
+unique(bf2$BirdID) #n=6 females
+mean(bf2$AvgCaloriesPer100g) #228
+sd(bf2$AvgCaloriesPer100g) #181
+
+# RUN the model
+datf <- list(
+    avgcal = bf2$AvgCaloriesPer100g,
+    latency = standardize(as.numeric(bf2$MABavgLatencySwitch))
+    )
+
+mod_calf <- ulam( alist(
+        avgcal ~ normal( mu , sigma ),
+        mu <- a + blat*latency,
+        a ~ normal(0,0.5), 
+        blat ~ normal(0,0.5), 
+        sigma ~ exponential(1)
+    ) , data=datf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE), log_lik=TRUE)
+
+precis(mod_calf,depth=2)
+#       mean   sd  5.5%  94.5% n_eff Rhat4
+#a      0.04 0.48 -0.74  0.78  1866     1
+#blat  -0.03 0.50 -0.84  0.80  2035     1
+#sigma 69.81 4.86 62.42 78.06  1756     1
+#no relationship between avg calories (food type value) and latency
 ```
 
 We will quantify the number of different food types and foraging techniques during focal follows according to the [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing). If a grackle forages during a focal follow we record WHAT it eats, as well as HOW the bird is searching for food. Foraging techniques include: Flipping over objects (flip), digging in ground with bill or feet (dig), sweeping head back and forth [i.e., actually sweeping the bill across the substrate; (sw)], extracting from a substrate (ex), lowers body posture to be parallel to ground to stalk/catch prey from air, from ground, from tree, etc (sc), using gaping bill to search through substrate (ga), lifting or nudging objects with bill (ln). 
