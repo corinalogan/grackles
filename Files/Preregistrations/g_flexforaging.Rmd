@@ -63,6 +63,59 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE)
 knitr::opts_chunk$set(echo=T, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 #set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
+
+### make a bibtex file that has only the references cited in this rmd 
+#load the Rmd file
+Rmd <- readChar("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1.Rmd",nchars=1e7)
+
+#find all in text citations that start with @, but are preceded by a space
+pattern <- "\\ @(.*?)\\ "
+m <- regmatches(Rmd,gregexpr(pattern,Rmd))[[1]]
+m
+
+res<- gsub("\\ ","",m) #delete spaces
+res<- gsub("\\]","",res) #delete ]
+res<- gsub("\\;","",res) #delete ;
+res<- gsub("\\,","",res) #delete ,
+res<- gsub("\\.","",res) # delete .
+
+#find all in text citations that start with @, but are preceded by a "["
+pattern2 <- "\\[@(.*?)\\ "
+m2 <- regmatches(Rmd,gregexpr(pattern2,Rmd))[[1]]
+m2
+
+res2<- gsub("\\[","",m2)
+res2<- gsub("\\]","",res2)
+res2<- gsub("\\]","",res2)
+res2<- gsub("\\;","",res2)
+res2<- gsub("\\,","",res2)
+res2<- gsub("\\.","",res2)
+res2<- gsub("\\ ","",res2)
+
+#combine both patterns
+allbibtexkeys<-c(res,res2)
+
+#write to a new file and then clean it up manually
+write(allbibtexkeys,file="gxpopbehaviorhabitatq1_bibtexkeys.txt")
+
+#load the cleaned txt file
+allbibtexkeys<-read.csv("gxpopbehaviorhabitatq1_bibtexkeys.txt")
+
+#use bib2df to convert the bibliography file into a dataframe
+install.packages("bib2df")
+library(bib2df)
+
+#load the bib from GitHub
+df <- bib2df("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/MyLibrary.bib")
+
+#remove the @ to match the entry in the bib file
+allbibtexkeys2<- gsub("\\@","",allbibtexkeys[,1])
+
+#filter the full bib to only keep the entries that are cited here
+df_filtered<-df[df$BIBTEXKEY %in% allbibtexkeys2,]
+
+#use bib2df to convert the data frame into the bibliography file that only contains the citations in this Rmd
+df2bib(df_filtered, file = "xpopq1refs.bib", append = FALSE)
 ```
 
 &nbsp;
