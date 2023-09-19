@@ -2369,30 +2369,48 @@ summary(f2)
 #Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
 rpt.dist <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_P3repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
 rpt.dist <- data.frame(rpt.dist)
-
+rpt.dist$BirdID = as.factor(rpt.dist$BirdID)
+rpt.dist$Sex = as.factor(rpt.dist$Sex)
+rpt.dist$Season = as.factor(rpt.dist$Season)
 #check which distribution to use
-hist(rpt.dist$DistHumanFood)
-
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(DistHumanFood) ~ Sex + (1|BirdID), data=rpt.dist), n=500)
+hist(log(rpt.dist$DistHumanFood)
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), data=rpt.dist), n=500)
 
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
-#p.nb= 0.19, p.pois = 0.14 
+#p.g=0.7, p.p=0.1
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05.
-#p.nb < 0.01 (10% are zeros), p.pois = 0.88  
+#p.g=1, p.p=1  
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05.
-#p.nb = 0.02, p.pois = 0.49
-plot(simulationOutput)
+#p.g=0.01, p.p<0.001
+plot(simulationOutput) 
+# log-transformed distance with a gaussian distribution is best. Though there is some evidence for heteroscedasticity.
 
+library(rptR)
+d1 <- rpt(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), grname = "BirdID", data = rpt.dist, datatype = "Gaussian", nboot = 1000, npermut = 300)
+d1 # R = 0.28, CI = 0.16-0.39, p = 0.003
 
-d1 <- rpt(dist ~ Sex + (1 | ID), grname = "ID", data = rpt.dist, datatype = "poisson", nboot = 1000, npermut = 300)
-summary(d1)
+prior = list(R=list(R1=list(V=1,nu=0.002)), G=list(G1=list(V=1,nu=0.002))) #weak priors
+mc1 = MCMCglmm(log(DistHumanFood) ~ FollowNumber + Sex + Season, random = ~BirdID, family = "gaussian", data = rpt.dist,
+               verbose=F, prior=prior, nitt=500000, thin=500, burnin=3000)
+plot(mc1) #all chains look good
+autocorr(mc1$Sol) #Did fixed effects converge? (<0.1)? 
+autocorr(mc1$VCV)
+repeata <- mc1$VCV[,"BirdID"]/(mc1$VCV[,"BirdID"]+mc1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # Repeatability: 0.27
+var(repeata) # 0.004
+posterior.mode(repeata) # 0.26
+HPDinterval(repeata, 0.95) # 0.14 - 0.39
+
+## YES - distance is repeatable of each individual to a human food location across focal follows
+
 #If repeatable, take average distance across focal follows to model relationship with flexibility
 tmp = aggregate(dist ~ ID, FUN = "mean", data = ff)
 colnames(tmp) = c("avg_dist","ID")
 ff = merge(ff, tmp, by = "ID", all = T)
+
 d2 <- MCMCglmm(avg_dist ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(d2)
+d2
 
 # Number of outdoor cafes within the home range of each individual, measured by calculating home range size and then summing the number of cafes.
 distance <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
