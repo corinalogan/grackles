@@ -2405,9 +2405,15 @@ HPDinterval(repeata, 0.95) # 0.14 - 0.39
 ## YES - distance is repeatable of each individual to a human food location across focal follows
 
 #If repeatable, take average distance across focal follows to model relationship with flexibility
-tmp = aggregate(dist ~ ID, FUN = "mean", data = ff)
-colnames(tmp) = c("avg_dist","ID")
-ff = merge(ff, tmp, by = "ID", all = T)
+tmp = aggregate(DistHumanFood ~ BirdID, FUN = "mean", data = rpt.dist)
+general = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+general = merge(tmp, general, by = "BirdID",all = T)
+general = general[!is.na(general$Sex),]
+write.csv(general, "g_flexforaging_data_general.csv")
+
+
+
+# P3 Distance to human food locations and flexibility
 
 d2 <- MCMCglmm(avg_dist ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
 d2
