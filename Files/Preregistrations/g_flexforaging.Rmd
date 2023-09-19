@@ -2367,9 +2367,25 @@ summary(f2)
 
 
 #Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
-distance <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
-distance <- data.frame(distance)
-d1 <- rpt(dist ~ Sex + (1 | ID), grname = "ID", data = ff, datatype = "poisson", nboot = 1000, npermut = 300)
+rpt.dist <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_P3repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
+rpt.dist <- data.frame(rpt.dist)
+
+#check which distribution to use
+hist(rpt.dist$DistHumanFood)
+
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(DistHumanFood) ~ Sex + (1|BirdID), data=rpt.dist), n=500)
+
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
+#p.nb= 0.19, p.pois = 0.14 
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05.
+#p.nb < 0.01 (10% are zeros), p.pois = 0.88  
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05.
+#p.nb = 0.02, p.pois = 0.49
+plot(simulationOutput)
+
+
+d1 <- rpt(dist ~ Sex + (1 | ID), grname = "ID", data = rpt.dist, datatype = "poisson", nboot = 1000, npermut = 300)
 summary(d1)
 #If repeatable, take average distance across focal follows to model relationship with flexibility
 tmp = aggregate(dist ~ ID, FUN = "mean", data = ff)
