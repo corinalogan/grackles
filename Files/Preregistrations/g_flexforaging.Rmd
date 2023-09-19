@@ -46,10 +46,6 @@ header-includes:
 preamble: >
   \usepackage{amsmath} #NOTE: to make this yaml work, run install.packages("rticles")
 base_format: rticles::amsmath
-#SUBMITTING TO PCJ: use the google doc template (not the .tex file bc would have to attach all dependent files) and trim the bib to only those articles cited (see r code chunk "setup"). Follow the template and instructions
-##If not sure that the formatting is perfect, then a odt or word file is easier to handle for PCJ. With xpopbehaviorhabitatq1 (google doc to .odt and they worked only from the odt bc they had to make so many changes), most changes PCJ had to do were subsections and sub-subsections formatting, spaces after normal text, removing empty lines, format of legend of figures and legends of tables, format of tables, and avoiding big empty spaces along the article by playing with the dimensions of figures and tables. The rest was ok. 
-##PCJ says "The google doc is ok to use if there is not much corrections to do on our side after we receive it. In other words, if we received a very well formatted google doc, it's perfect. If we have to work extensively on it, it's a waste of time compared to a latex, word or odt because there is no automatic formatting in google doc."
-##.bib file: For proper formatting of species names in the refs, wrap with {\emph{(Columbia livia)}} so it will be properly capitalized and in italics (https://stackoverflow.com/questions/62176912/references-in-rmarkdown-use-title-capitalization-as-is-in-the-bib-file)
 ---
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data]()
@@ -67,59 +63,6 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE)
 knitr::opts_chunk$set(echo=T, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 #set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
-
-### make a bibtex file that has only the references cited in this rmd 
-#load the Rmd file
-Rmd <- readChar("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging.Rmd",nchars=1e7)
-
-#find all in text citations that start with @, but are preceded by a space
-pattern <- "\\ @(.*?)\\ "
-m <- regmatches(Rmd,gregexpr(pattern,Rmd))[[1]]
-m
-
-res<- gsub("\\ ","",m) #delete spaces
-res<- gsub("\\]","",res) #delete ]
-res<- gsub("\\;","",res) #delete ;
-res<- gsub("\\,","",res) #delete ,
-res<- gsub("\\.","",res) # delete .
-
-#find all in text citations that start with @, but are preceded by a "["
-pattern2 <- "\\[@(.*?)\\ "
-m2 <- regmatches(Rmd,gregexpr(pattern2,Rmd))[[1]]
-m2
-
-res2<- gsub("\\[","",m2)
-res2<- gsub("\\]","",res2)
-res2<- gsub("\\]","",res2)
-res2<- gsub("\\;","",res2)
-res2<- gsub("\\,","",res2)
-res2<- gsub("\\.","",res2)
-res2<- gsub("\\ ","",res2)
-
-#combine both patterns
-allbibtexkeys<-c(res,res2)
-
-#write to a new file and then clean it up manually
-write(allbibtexkeys,file="g_flexforaging_bibtexkeys.txt")
-
-#load the cleaned txt file
-allbibtexkeys<-read.csv("gxpopbehaviorhabitatq1_bibtexkeys.txt")
-
-#use bib2df to convert the bibliography file into a dataframe
-install.packages("bib2df")
-library(bib2df)
-
-#load the bib from GitHub
-df <- bib2df("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/MyLibrary.bib")
-
-#remove the @ to match the entry in the bib file
-allbibtexkeys2<- gsub("\\@","",allbibtexkeys[,1])
-
-#filter the full bib to only keep the entries that are cited here
-df_filtered<-df[df$BIBTEXKEY %in% allbibtexkeys2,]
-
-#use bib2df to convert the data frame into the bibliography file that only contains the citations in this Rmd
-df2bib(df_filtered, file = "g_flexforaging_refs.bib", append = FALSE)
 ```
 
 &nbsp;
@@ -2424,6 +2367,8 @@ summary(f2)
 
 
 #Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
+distance <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+distance <- data.frame(distance)
 d1 <- rpt(dist ~ Sex + (1 | ID), grname = "ID", data = ff, datatype = "poisson", nboot = 1000, npermut = 300)
 summary(d1)
 #If repeatable, take average distance across focal follows to model relationship with flexibility
