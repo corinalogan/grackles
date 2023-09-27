@@ -46,6 +46,10 @@ header-includes:
 preamble: >
   \usepackage{amsmath} #NOTE: to make this yaml work, run install.packages("rticles")
 base_format: rticles::amsmath
+#SUBMITTING TO PCJ: use the google doc template (not the .tex file bc would have to attach all dependent files) and trim the bib to only those articles cited (see r code chunk "setup"). Follow the template and instructions
+##If not sure that the formatting is perfect, then a odt or word file is easier to handle for PCJ. With xpopbehaviorhabitatq1 (google doc to .odt and they worked only from the odt bc they had to make so many changes), most changes PCJ had to do were subsections and sub-subsections formatting, spaces after normal text, removing empty lines, format of legend of figures and legends of tables, format of tables, and avoiding big empty spaces along the article by playing with the dimensions of figures and tables. The rest was ok. 
+##PCJ says "The google doc is ok to use if there is not much corrections to do on our side after we receive it. In other words, if we received a very well formatted google doc, it's perfect. If we have to work extensively on it, it's a waste of time compared to a latex, word or odt because there is no automatic formatting in google doc."
+##.bib file: For proper formatting of species names in the refs, wrap with {\emph{(Columbia livia)}} so it will be properly capitalized and in italics (https://stackoverflow.com/questions/62176912/references-in-rmarkdown-use-title-capitalization-as-is-in-the-bib-file)
 ---
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforaging.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data]()
@@ -64,6 +68,62 @@ knitr::opts_chunk$set(echo=T, include=T, results='asis', warning=F, message=F)
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 #set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
 ```
+
+```{r cleanbib, include=FALSE, eval=F}
+### make a bibtex file that has only the references cited in this rmd 
+#load the Rmd file
+Rmd <- readChar("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging.Rmd",nchars=1e7)
+
+#find all in text citations that start with @, but are preceded by a space
+pattern <- "\\ @(.*?)\\ "
+m <- regmatches(Rmd,gregexpr(pattern,Rmd))[[1]]
+m
+
+res<- gsub("\\ ","",m) #delete spaces
+res<- gsub("\\]","",res) #delete ]
+res<- gsub("\\;","",res) #delete ;
+res<- gsub("\\,","",res) #delete ,
+res<- gsub("\\.","",res) # delete .
+
+#find all in text citations that start with @, but are preceded by a "["
+pattern2 <- "\\[@(.*?)\\ "
+m2 <- regmatches(Rmd,gregexpr(pattern2,Rmd))[[1]]
+m2
+
+res2<- gsub("\\[","",m2)
+res2<- gsub("\\]","",res2)
+res2<- gsub("\\]","",res2)
+res2<- gsub("\\;","",res2)
+res2<- gsub("\\,","",res2)
+res2<- gsub("\\.","",res2)
+res2<- gsub("\\ ","",res2)
+
+#combine both patterns
+allbibtexkeys<-c(res,res2)
+
+#write to a new file and then clean it up manually
+write(allbibtexkeys,file="g_flexforaging_bibtexkeys.txt")
+
+#load the cleaned txt file
+allbibtexkeys<-read.csv("gxpopbehaviorhabitatq1_bibtexkeys.txt")
+
+#use bib2df to convert the bibliography file into a dataframe
+install.packages("bib2df")
+library(bib2df)
+
+#load the bib from GitHub
+df <- bib2df("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/MyLibrary.bib")
+
+#remove the @ to match the entry in the bib file
+allbibtexkeys2<- gsub("\\@","",allbibtexkeys[,1])
+
+#filter the full bib to only keep the entries that are cited here
+df_filtered<-df[df$BIBTEXKEY %in% allbibtexkeys2,]
+
+#use bib2df to convert the data frame into the bibliography file that only contains the citations in this Rmd
+df2bib(df_filtered, file = "g_flexforaging_refs.bib", append = FALSE)
+```
+
 
 &nbsp;
 
@@ -2367,26 +2427,32 @@ summary(f2)
 
 
 #Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
+library(DHARMa)
 rpt.dist <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_P3repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
 rpt.dist <- data.frame(rpt.dist)
 rpt.dist$BirdID = as.factor(rpt.dist$BirdID)
 rpt.dist$Sex = as.factor(rpt.dist$Sex)
 rpt.dist$Season = as.factor(rpt.dist$Season)
 #check which distribution to use
-hist(log(rpt.dist$DistHumanFood)
+hist(log(rpt.dist$DistHumanFood))
 simulationOutput <- simulateResiduals(fittedModel = lmer(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), data=rpt.dist), n=500)
 
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. 
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. = Yes
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
 #p.g=0.7, p.p=0.1
+#27 Sep Corina: dispersion = 0.96321, p-value = 0.672
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05.
-#p.g=1, p.p=1  
+#p.g=1, p.p=1
+#27 Sep Corina: ratioObsSim = NaN, p-value = 1
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05.
 #p.g=0.01, p.p<0.001
+#27 Sep Corina: D = 0.086158, p-value = 0.0072
 plot(simulationOutput) 
-# log-transformed distance with a gaussian distribution is best. Though there is some evidence for heteroscedasticity.
+# log-transformed distance with a gaussian distribution is best. Though there is some evidence for heteroscedasticity. KS test p=0.0072 deviation significant
 
+#run the model to test for repeatability
 library(rptR)
+library(MCMCglmm)
 d1 <- rpt(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), grname = "BirdID", data = rpt.dist, datatype = "Gaussian", nboot = 1000, npermut = 300)
 d1 # R = 0.28, CI = 0.16-0.39, p = 0.003
 
@@ -2394,8 +2460,8 @@ prior = list(R=list(R1=list(V=1,nu=0.002)), G=list(G1=list(V=1,nu=0.002))) #weak
 mc1 = MCMCglmm(log(DistHumanFood) ~ FollowNumber + Sex + Season, random = ~BirdID, family = "gaussian", data = rpt.dist,
                verbose=F, prior=prior, nitt=500000, thin=500, burnin=3000)
 plot(mc1) #all chains look good
-autocorr(mc1$Sol) #Did fixed effects converge? (<0.1)? 
-autocorr(mc1$VCV)
+autocorr(mc1$Sol) #Did fixed effects converge? (<0.1)? Yes
+autocorr(mc1$VCV) #Did random effects converge? (<0.1)? Yes
 repeata <- mc1$VCV[,"BirdID"]/(mc1$VCV[,"BirdID"]+mc1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) # Repeatability: 0.27
 var(repeata) # 0.004
@@ -2404,12 +2470,12 @@ HPDinterval(repeata, 0.95) # 0.14 - 0.39
 
 ## YES - distance is repeatable of each individual to a human food location across focal follows
 
-#If repeatable, take average distance across focal follows to model relationship with flexibility
+#If repeatable, take average distance across focal follows per bird to model relationship with flexibility
 tmp = aggregate(DistHumanFood ~ BirdID, FUN = "mean", data = rpt.dist)
 general = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 general = merge(tmp, general, by = "BirdID",all = T)
 general = general[!is.na(general$Sex),]
-write.csv(general, "g_flexforaging_data_general.csv")
+#write.csv(general, "g_flexforaging_data_general.csv")
 
 
 
