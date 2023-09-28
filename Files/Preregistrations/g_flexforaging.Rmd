@@ -2104,6 +2104,7 @@ library(dplyr)
 b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 b1 <- data.frame(b1)
 
+
 ### PROPORTION HUMAN FOOD
 #exclude NAs from the variables in this model
 fo <- subset(b1, is.na(b1$PropHumanFood) == FALSE) #note that this also eliminates the NAs for foraging techniques for the same birds bc NAs were always in both variables for the same birds
@@ -2217,6 +2218,8 @@ head(fe) #n=9 females
 head(ma) #n=26 males
 
 
+
+### Correlation between proportion HUMAN FOODS taken and foraging TECHNIQUES
 ## FEMALE - prop human food and foraging TECHNIQUES
 fet <- list(foods = f$PropHumanFood,
             tech = standardize(as.numeric(f$NumForageTechs))
@@ -2264,8 +2267,65 @@ head(mat) #n=26 males
 
 
 
+### DISTANCE to outdoor human food sources
+#If distance per bird is repeatable, then use the avg distance per bird as the dependent variable
 
-### Number human food sources PER HOME RANGE
+# REPEATABILITY of DISTANCE: Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
+library(DHARMa)
+rpt.dist <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_P3repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
+rpt.dist <- data.frame(rpt.dist)
+rpt.dist$BirdID = as.factor(rpt.dist$BirdID)
+rpt.dist$Sex = as.factor(rpt.dist$Sex)
+rpt.dist$Season = as.factor(rpt.dist$Season)
+#check which distribution to use
+hist(log(rpt.dist$DistHumanFood))
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), data=rpt.dist), n=500)
+
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. = Yes
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
+#p.g=0.7, p.p=0.1
+#27 Sep Corina: dispersion = 0.96321, p-value = 0.672
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05.
+#p.g=1, p.p=1
+#27 Sep Corina: ratioObsSim = NaN, p-value = 1
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05.
+#p.g=0.01, p.p<0.001
+#27 Sep Corina: D = 0.086158, p-value = 0.0072
+plot(simulationOutput) 
+# log-transformed distance with a gaussian distribution is best. Though there is some evidence for heteroscedasticity. KS test p=0.0072 deviation significant
+
+#run the model to test for repeatability
+library(rptR)
+library(MCMCglmm)
+d1 <- rpt(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), grname = "BirdID", data = rpt.dist, datatype = "Gaussian", nboot = 1000, npermut = 300)
+d1 # R = 0.28, CI = 0.16-0.39, p = 0.003
+
+prior = list(R=list(R1=list(V=1,nu=0.002)), G=list(G1=list(V=1,nu=0.002))) #weak priors
+mc1 = MCMCglmm(log(DistHumanFood) ~ FollowNumber + Sex + Season, random = ~BirdID, family = "gaussian", data = rpt.dist,
+               verbose=F, prior=prior, nitt=500000, thin=500, burnin=3000)
+plot(mc1) #all chains look good
+autocorr(mc1$Sol) #Did fixed effects converge? (<0.1)? Yes
+autocorr(mc1$VCV) #Did random effects converge? (<0.1)? Yes
+repeata <- mc1$VCV[,"BirdID"]/(mc1$VCV[,"BirdID"]+mc1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # Repeatability: 0.27
+var(repeata) # 0.004
+posterior.mode(repeata) # 0.26
+HPDinterval(repeata, 0.95) # 0.14 - 0.39
+
+## YES - distance is repeatable of each individual to a human food location across focal follows
+
+#If repeatable, take average distance across focal follows per bird to model relationship with flexibility
+tmp = aggregate(DistHumanFood ~ BirdID, FUN = "mean", data = rpt.dist)
+general = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+general = merge(tmp, general, by = "BirdID",all = T)
+general = general[!is.na(general$Sex),]
+#write.csv(general, "g_flexforaging_data_general.csv")
+
+
+
+
+
+### Number of outdoor human food sources PER HOME RANGE
 # LOAD the foraging data sheet
 f1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 f1 <- data.frame(f1)
@@ -2426,56 +2486,6 @@ summary(f2)
 #autocorr(f2$VCV) #Did random effects converge?
 
 
-#Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
-library(DHARMa)
-rpt.dist <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_P3repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
-rpt.dist <- data.frame(rpt.dist)
-rpt.dist$BirdID = as.factor(rpt.dist$BirdID)
-rpt.dist$Sex = as.factor(rpt.dist$Sex)
-rpt.dist$Season = as.factor(rpt.dist$Season)
-#check which distribution to use
-hist(log(rpt.dist$DistHumanFood))
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), data=rpt.dist), n=500)
-
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor. = Yes
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation.
-#p.g=0.7, p.p=0.1
-#27 Sep Corina: dispersion = 0.96321, p-value = 0.672
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05.
-#p.g=1, p.p=1
-#27 Sep Corina: ratioObsSim = NaN, p-value = 1
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05.
-#p.g=0.01, p.p<0.001
-#27 Sep Corina: D = 0.086158, p-value = 0.0072
-plot(simulationOutput) 
-# log-transformed distance with a gaussian distribution is best. Though there is some evidence for heteroscedasticity. KS test p=0.0072 deviation significant
-
-#run the model to test for repeatability
-library(rptR)
-library(MCMCglmm)
-d1 <- rpt(log(DistHumanFood) ~ FollowNumber + Sex + Season + (1|BirdID), grname = "BirdID", data = rpt.dist, datatype = "Gaussian", nboot = 1000, npermut = 300)
-d1 # R = 0.28, CI = 0.16-0.39, p = 0.003
-
-prior = list(R=list(R1=list(V=1,nu=0.002)), G=list(G1=list(V=1,nu=0.002))) #weak priors
-mc1 = MCMCglmm(log(DistHumanFood) ~ FollowNumber + Sex + Season, random = ~BirdID, family = "gaussian", data = rpt.dist,
-               verbose=F, prior=prior, nitt=500000, thin=500, burnin=3000)
-plot(mc1) #all chains look good
-autocorr(mc1$Sol) #Did fixed effects converge? (<0.1)? Yes
-autocorr(mc1$VCV) #Did random effects converge? (<0.1)? Yes
-repeata <- mc1$VCV[,"BirdID"]/(mc1$VCV[,"BirdID"]+mc1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) # Repeatability: 0.27
-var(repeata) # 0.004
-posterior.mode(repeata) # 0.26
-HPDinterval(repeata, 0.95) # 0.14 - 0.39
-
-## YES - distance is repeatable of each individual to a human food location across focal follows
-
-#If repeatable, take average distance across focal follows per bird to model relationship with flexibility
-tmp = aggregate(DistHumanFood ~ BirdID, FUN = "mean", data = rpt.dist)
-general = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-general = merge(tmp, general, by = "BirdID",all = T)
-general = general[!is.na(general$Sex),]
-#write.csv(general, "g_flexforaging_data_general.csv")
 
 
 
