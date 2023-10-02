@@ -1693,6 +1693,68 @@ par(op)
 #With binomial, assume every bird can reach the full 10 maximum techniques, whereas the poisson tries to extrapolate the maximum number of techs each bird could have and it says that this number is not different between the groups. 
 ```
 
+```{r p2manipvsctrlsupp1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+library(dplyr)
+library(tidyr)
+### NUMBER OF FOOD TYPES for flexibility manipulated vs control birds using Richard McElreath's vocalization Poisson model that accounts for undersampling (didn't observe all of the food types an individual eats) and for the baseline levels of each food type in the population (https://github.com/rmcelreath/cg_vocal_repertoires/blob/main/model_ulam_covariates.r)
+
+#Lambda = fixed rate at which each behavior is exhibited
+#P = probability that a given individual has the behavior (food type) in its repertoire. If a bird does not show as having taken a given food type, then this could be either because the behavior is not part of its repertoire or we haven't observed the bird for long enough to see the behavior given that the rate at which it is exhibited in the population is low. If a bird does show a given food type, it means it is definitely part of its repertoire and we can now calculate the rate at which it is exhibited. This allows for uncertainty around each food type.
+
+#Load the foraging data
+f1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+f1 <- data.frame(f1)
+
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+c1 <- f1[f1$Population=="AZ",]
+
+#Count per bird the number of times it took a food type for all food types
+f <- c1 %>% group_by(BirdID,What) %>% summarise (Count=n())
+f2 <- pivot_wider(f,names_from=What,values_from=Count)
+
+# AZ population: How many different food types? 20 (from R code chunk p2manipunregistered)
+#length(unique(ft1$What)) #20
+#unique(ft1$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken
+
+# AZ population: How many different foraging techniques? 9 (from R code chunk p2manipunregistered)
+#length(unique(ft1$How)) # 11 - 1 (eat) - 1 (tolerated theft) = 9
+#unique(ft1$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig
+
+# link with general datasheet to identify which birds were manipulated and their sum focal time
+g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+g <- g[g$Population=="AZ",]
+ca<- g %>% group_by(BirdID) %>% summarise (Treatment=unique(FlexibilityManipulated), obstime=unique(SumFocalTime))
+
+ty <- left_join(f2,ca,by="BirdID")
+ty <- subset(ty, is.na(ty$Treatment) == FALSE)
+ty <- as.data.frame(ty)
+#nrow(ty) #NOTE: n=13 (6=manipulated, 7=control) birds because some dropped out due to not having any foraging events in their focals or not having any focals
+
+#replace NAs with zeros
+ty[is.na(ty)] <- 0
+
+
+### Richard's model: the probability for each bird for each food type that this food type is in their repertoire
+dat_list <- list(
+    Y = YY,    # behavior counts
+    ID = ID,   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = dat$d, # duration of recording
+    M = max(MM)
+)
+
+# models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID,group[ID]]*sigma
+
+
+```
+
 **UNREGISTERED ANALYSES:** The results from the binomial suggest that the difference between manipulated and control individuals could be due to differences in the probability that birds will switch among foraging techniques. We predict that manipulated birds have a higher probability of switching techniques per second or per minute because switching is a measure of flexibility, which was manipulated in the aviaries for these individuals. The food type data set consisted of 13 individuals (6=manipulated, 7=control), and the foraging technique data set consisted of 12 individuals (n=5 manipulated, n=7 control) who had data that involved eating at least one food type or using at least one foraging technique. For each focal follow, we calculate the number of switches between food types or techniques that occur and the total amount of time that the bird was observed. We sum both measures across focal follows to have one data point per bird. This model takes the form of:
 
 $switches_{i}$ ~ Binomial($totaltime_{i}$, $p$) *[likelihood]*,
