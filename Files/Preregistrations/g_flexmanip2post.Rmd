@@ -170,7 +170,7 @@ mu <- a + b * $\phi$ + c * $\lambda$ \
 The model was also estimated in stan, using functions from the package ‘rethinking’ [@rethinking2020] to build the model.
 
 
-```{r question2_possibilityinferringphiandlambda, eval=F}
+```{r question1_possibilityinferringphiandlambdasimulations, eval=F}
 
 ################################################################################################
 # Load previously simulated data from xpop
@@ -609,13 +609,21 @@ precis(model_simulatedvsestimated_onlyone_both,depth=2)
 
 
 
-plot(firstsimulated_phi~simulatedphis,xlim=c(0,0.07),ylim=c(0,0.07),bty="n",cex=3,pch=18,col="#0072B2",ann=F)
-points(initialandreversal_phi~simulatedphis,col="#E69F00",pch=16,cex=2)
+################################################################################
+#### Plot for Figure 1
+plot(firstsimulated_phi~simulatedphis,xlim=c(0,0.07),ylim=c(0,0.07),bty="n",cex=3,pch=18,col="#007477",ann=F)
+points(initialandreversal_phi~simulatedphis,col="#00DADF",pch=16,cex=2)
 abline(a=0,b=1,lty=2)
-legend(x="topleft", legend=c(pch16="Initial plus Reversal",pch18="Single Reversal"), pch=c(16,18), col=c("#E69F00","#0072B2"), box.lty=0, cex=1.2,pt.cex=1.4)
+legend(x="topleft", legend=c(pch16="Initial plus Reversal",pch18="Single Reversal"), pch=c(16,18), col=c("#00DADF","#007477"), box.lty=0, cex=1.2,pt.cex=1.4)
 mtext("simulated phi",side=1,at=0.04,line=3,cex=1.5)
 mtext("estimated phi",side=2,at=0.04,line=2.5,cex=1.5)
 mtext("1:1 line",side=1,at=0.065,line=-18)
+
+
+
+
+
+
 
 plot(firstsimulated_lambda~simulatedlambdas,xlim=c(0,10),ylim=c(0,10))
 points(initialandreversal_lambda~simulatedlambdas,col="red")
@@ -624,7 +632,7 @@ abline(a=0,b=1)
 
 
 
-```{r question1_phiversuslambda, eval=F}
+```{r question2_phiversuslambdasimulateddata, eval=F}
 
 ################################################################################################
 # Load previously simulated data from xpop
@@ -645,17 +653,21 @@ simulatedreversaldata_attractionscores_2$Bird_ID<-simulatedreversaldata_attracti
 library(dplyr)
 simulatedreversaldata_attractionscores<-bind_rows(simulatedreversaldata_attractionscores_1,simulatedreversaldata_attractionscores_2)
 
+# In the simulation, trials were counted continuously. We change it so that the count of trials starts at 1 again when birds switch to the reversal
+for (birds in 1:length(unique(simulatedreversaldata_attractionscores$Bird_ID))){
+  currentbird<-unique(simulatedreversaldata_attractionscores$Bird_ID)[birds]
+  maximuminitial<-max(simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "initial",]$Trial)
+  simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Bird_ID==currentbird & simulatedreversaldata_attractionscores$Reversal == "reversal",]$Trial - maximuminitial
+}
+
 ################################################################################################
 
 
-
-# Did the manipulation work? 
 # Are phi or lambda more important to reach criterion in 50 or fewer trials?
 
-# We might want to compare first 20 trials to last 20 trials, both for the simulated data, and for
-# the observed data look at the first and last 20 trials for each the first and the last reversal
-
 colnames(simulatedreversaldata_attractionscores)<-c("counter","id","Session","Trial","Reversal","Choice","Correct","Phi_mean","Lambda_mean","Site","Phi_sd","Lambda_sd","ThisBirdsPhi","ThisBirdsLambda","Attraction1","Attraction2")
+
+
 
 
 summarysimulateddata<-matrix(nrow=length(unique(simulatedreversaldata_attractionscores$id)),ncol=5)
@@ -735,6 +747,10 @@ summarysimulateddata_forplotting$TrialsReversal<-as.factor(summarysimulateddata_
 
 library(ggplot2)
 
+
+################################################################################
+##### Plot for Figure 2
+
 ggplot(summarysimulateddata_forplotting, aes(x=TrialsReversal, y=Value, fill=Predictor)) + 
   geom_boxplot()+xlab("Trials simulated individuals needed in reversal")+scale_y_continuous(name = "Standardised phi/lambda of simulated individuals") + theme_classic()+scale_x_discrete(name="Trials simulated individuals needed in reversal",breaks=1:8, labels=c("31-50","51-70","71-90","91-110","111-130","131-150","151-180","181-220"))+theme(axis.text.x = element_text(size = 14, colour ="black",
                                               hjust = 0.5,
@@ -775,6 +791,9 @@ probability_choose_rewarded<-exp(trial20_attraction_rewarded*lambda)/( exp(trial
 probability_choose_rewarded
 
 
+################################################################################
+### Plot for Figure 3
+
 phis_85percent<-c(0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10)
 lambda_85percent<-c(9.5,6.6,5.2,4.4,3.8,3.4,3.1,2.9,2.7)
 
@@ -800,8 +819,14 @@ ggplot(d) +
    theme(axis.title.y = element_text(size = 16, colour ="black", face = "bold",
                                               hjust = 0.5,
                                               angle = 90)) + theme(legend.title = element_text(size = 13))+
-  annotate("text", x=0.04, y=3, label= "Unlikely to reach criterion in 40 trials",size=5)+
-  annotate("text", x=0.07, y=7, label= "Likely to reach criterion in 40 trials",size=5)
+  ylim(2,10)+
+  annotate("text", x=0.035, y=2.5, label= "Unlikely to reach criterion in 40 trials",size=5)+
+  annotate("text", x=0.07, y=7, label= "Likely to reach criterion in 40 trials",size=5)+
+  geom_point(aes(x=0.03, y=4.3), colour="#E69F00",size=4)+
+  geom_point(aes(x=0.07, y=3.2), colour="#56B4E9",size=4)+
+  annotate("text", x=0.03, y=3.8, label= "Grackles first",size=5,colour="#E69F00")+
+  annotate("text", x=0.07, y=2.7, label= "Grackles manipulated",size=5,colour="#56B4E9")
+
 
 
 
@@ -860,7 +885,7 @@ Great-tailed grackles were caught in the wild in Tempe, Arizona, USA for individ
 We fit the Bayesian reinforcement learning model to the data of both the control and the manipulated birds. For the manipulated birds, we calculated $\phi$ and $\lambda$ separately for their performance in the beginning (initial association and first reversal) and at the end of the manipulation (final two reversals). Next, as with the simulated data, we fit a series of regression models to determine how $\phi$ and $\lambda$ link to the number of trials birds needed during their reversals. 
 
 
-```{r posthoc grackle phi and lambda, eval=F}
+```{r question3_estimatephiandlambdagrackles, eval=F}
 
 ### Code below copied from Blaisdell et al. 2021
 
@@ -939,6 +964,9 @@ birdnames<-unique(dflex_beginning$id)
 # Convert bird names into numeric ids
 dflex_beginning$id <- as.numeric(as.factor(dflex_beginning$id))
 
+# select only necessary columns
+library(dplyr)
+dflex_beginning<-dflex_beginning %>% select(id,Trial,Choice,Correct)
 
 datinitialandfirstreversal <- as.list(dflex_beginning)
 datinitialandfirstreversal$N <- nrow(dflex_beginning)
@@ -986,7 +1014,7 @@ Rho_ID ~ lkj_corr_cholesky(4);
 // initialize attraction scores
 
 for ( i in 1:N_id ) {
-A[i,1] = 0.1; A[i,2] = 0.1';
+A[i,1] = 0.1; A[i,2] = 0.1;
 }
 
 // loop over Choices
@@ -1008,19 +1036,57 @@ Choice[i] ~ categorical( p );
 phi =  inv_logit(logit_phi + v_ID[id[i],2]);
 pay[1:2] = rep_vector(0,2);
 pay[ Choice[i] ] = Correct[i];
-A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]);
 
 }//i
 }
 "
 
-m_initialandreversal <- stan( model_code =  reinforcement_model_nonzeroattraction, data=datinitialandfirstreversal ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
-sinitialandreversal <- extract.samples(m_initialandreversal)
-initialandreversal_lambda <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp( mean(sinitialandreversal$log_L) + mean(sinitialandreversal$v_ID[ ,x, 1])))
-initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit( mean(sinitialandreversal$logit_phi) + mean(sinitialandreversal$v_ID[ ,x, 2])))
 
-plot(initialandreversal_phi~initialandreversal_lambda)
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+datinitialandfirstreversal$Reversal<-as.numeric(as.factor(datinitialandfirstreversal$Reversal))
+
+# access the output file created by the model running the reinforcement model / reinforcement_model_nonzeroattraction
+write(reinforcement_model_nonzeroattraction,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+# RUN the model
+fit <- mod$sample(
+  data = datinitialandfirstreversal,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+
+
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+drawsarray<-fit$draws()
+drawsdataframe<-as_draws_df(drawsarray)
+drawsdataframe<-data.frame(drawsdataframe)
+initialandreversal_lambda <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[,x+3]))) 
+initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[,x+33]))) 
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+posteriorsamples_initialandreversal_phi<-sapply(1 : datinitialandfirstreversal$N_id, function(x) inv_logit((drawsdataframe$logit_phi) +(drawsdataframe[,x+72]))) 
+
+write.csv(posteriorsamples_initialandreversal_phi,file="g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedPhiBeginning_PosteriorSamples.csv")
+
+posteriorsamples_initialandreversal_phi <- sapply(1 : datinitialandfirstreversal$N_id, function(x) exp((drawsdataframe$log_L) +(drawsdataframe[,x+51]))) 
+
+write.csv(posteriorsamples_initialandreversal_lambda,file="g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedLambdaBeginning_PosteriorSamples.csv")
 
 
 # Next, for comparison, want data ONLY from last two reversal trials to determine phi and lambda at the end. This is for the manipulated birds only because the control group only went through a single reversal.
@@ -1072,6 +1138,8 @@ for (i in 1:length(unique(dflex_last_manipulated$id))) {
 }
 dflex_last_manipulated <- reduceddata
 
+dflex_last_manipulated<-dflex_last_manipulated %>% select(id,Trial,Choice,Correct)
+
 datlasterversalsskewed <- as.list(dflex_last_manipulated)
 datlasterversalsskewed$N <- nrow(dflex_last_manipulated)
 datlasterversalsskewed$N_id <- length(unique(dflex_last_manipulated$id))
@@ -1118,7 +1186,7 @@ Rho_ID ~ lkj_corr_cholesky(4);
 // initialize attraction scores
 
 for ( i in 1:N_id ) {
-A[i,1] = 0.7; A[i,2] = 0.1';
+A[i,1] = 0.7; A[i,2] = 0.1;
 }
 
 // loop over Choices
@@ -1140,17 +1208,57 @@ Choice[i] ~ categorical( p );
 phi =  inv_logit(logit_phi + v_ID[id[i],2]);
 pay[1:2] = rep_vector(0,2);
 pay[ Choice[i] ] = Correct[i];
-A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]])';
+A[ id[i] , Choice[i] ] = ( (1-phi)*(A[ id[i] , Choice[i] ]) + phi*pay[Choice[i]]);
 
 }//i
 }
 "
 
-m_lastreversals_skewed <- stan( model_code =  reinforcement_model_nonzeroattraction_skewedpriorattraction, data=datlasterversalsskewed ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
 
-slastreversals_skewed <- extract.samples(m_lastreversals_skewed)
-lastreversals_lambda_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) exp( mean(slastreversals_skewed$log_L) + mean(slastreversals_skewed$v_ID[ ,x, 1])))
-lastreversals_phi_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) inv_logit( mean(slastreversals_skewed$logit_phi) + mean(slastreversals_skewed$v_ID[ ,x, 2])))
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+datlasterversalsskewed$Reversal<-as.numeric(as.factor(datlasterversalsskewed$Reversal))
+
+# access the output file created by the model running the reinforcement model / reinforcement_model_nonzeroattraction
+write(reinforcement_model_nonzeroattraction_skewedpriorattraction,file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+# RUN the model
+fit <- mod$sample(
+  data = datlasterversalsskewed,
+  seed = 123,
+  chains = 4,
+  parallel_chains = 4,
+  refresh = 500
+)
+
+
+# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+drawsarray<-fit$draws()
+drawsdataframe<-as_draws_df(drawsarray)
+drawsdataframe<-data.frame(drawsdataframe)
+lastreversals_lambda_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[,x+25]))) 
+lastreversals_phi_skewed <- sapply(1 : datlasterversalsskewed$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[,x+33]))) 
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+posteriorsamples_lastreversal_phi<-sapply(1 : datlasterversalsskewed$N_id, function(x) inv_logit((drawsdataframe$logit_phi) +(drawsdataframe[,x+33]))) 
+
+write.csv(posteriorsamples_lastreversal_phi,file="g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedPhiEnd_PosteriorSamples.csv")
+
+posteriorsamples_lastreversal_lambda <- sapply(1 : datlasterversalsskewed$N_id, function(x) exp((drawsdataframe$log_L) +(drawsdataframe[,x+25]))) 
+
+write.csv(posteriorsamples_lastreversal_lambda,file="g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedLambdaEnd_PosteriorSamples.csv")
+
 
 
 # We can now combine the information on the estimated phis and lambdas for the initial performance of all birds and the last performance of the manipulated birds into a single table
@@ -1180,9 +1288,22 @@ write.csv(eachbirdslearningparameters,file="g_flexmanip_ArizonaBirds_EstimatedPh
 
 
 
-```{r posthoc_improvement, eval=F}
+```{r question3_influencephiandlambdagrackles, eval=F}
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
+
+
+
+posteriorsamples_initialandreversal_phi<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedPhiBeginning_PosteriorSamples.csv"), header=F, sep=",", stringsAsFactors=F)
+
+posteriorsamples_initialandreversal_lambda<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedLambdaBeginning_PosteriorSamples.csv"), header=F, sep=",", stringsAsFactors=F)
+
+posteriorsamples_lastreversal_lambda<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedLambdaEnd_PosteriorSamples.csv"), header=F, sep=",", stringsAsFactors=F)
+
+posteriorsamples_lastreversal_phi<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedPhiEnd_PosteriorSamples.csv"), header=F, sep=",", stringsAsFactors=F)
+
+
+
 
 d3 <- data.frame(d3)
 colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
@@ -1205,6 +1326,34 @@ library(dplyr)
 combinedreversaldata<-left_join(d3_match,eachbirdslearningparameters,by="Bird")
 
 
+
+
+# First, we can check whether the decision to estimate phi and lambda from the combined choices across the initial learning and the first reversal is justified because the performance of the individuals across the two learning phases is correlated
+combinedreversaldata<-combinedreversaldata[is.na(combinedreversaldata$TrialsFirstReversal)==F,]
+
+dat_initialfirst<- list(
+  TrialsFirstReversal = combinedreversaldata$TrialsFirstReversal,
+  TrialsInitialLearning = combinedreversaldata$`Trials to learn`
+)
+
+initialfirsttrials <- ulam(
+    alist(
+        TrialsFirstReversal ~ normal( mu , sigma ),
+        mu <- a + b*TrialsInitialLearning,
+        a ~ normal(30,40),
+        b ~ normal(0,2),
+        sigma ~ exponential(1)
+    ) , data=dat_initialfirst , chains=4 , cores=4,iter=10000, cmdstan=T )
+
+precis(initialfirsttrials,depth=2)
+
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a     27.75 7.20 16.15 39.19  7727     1
+#b      1.11 0.17  0.84  1.37  7645     1
+#sigma 15.45 1.77 12.87 18.47  8952     1
+
+
+
 # Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
 combinedreversaldata <- combinedreversaldata[with(combinedreversaldata, order(combinedreversaldata$Bird)), ]
 
@@ -1224,9 +1373,8 @@ improvementdata$performanceimprovement<-improvementdata$TrialsFirstReversal -imp
 singlereversaldata<-combinedreversaldata[is.na(combinedreversaldata$manipulatedphi)==T,]
 singlereversaldata<-singlereversaldata[is.na(singlereversaldata$TrialsFirstReversal)==F,]
 
-# We now want to know whether the number of trials a bird needed in either the initial or the last reversal is influenced more by phi or more by lambda. The results indicate that phi is more related to the number of trials - lambda is more related to when birds make "mistakes", whether at the beginning (high lambda) or throughout (low lambda). So the manipulation makes birds less fixated on small differences (smaller lambda) because they now quickly vote one option up or down (larger phi)
+# We now want to know whether the number of trials a bird needed in the initial reversal is influenced more by phi or more by lambda. The results indicate that phi is more related to the number of trials - lambda is more related to when birds make "mistakes", whether at the beginning (high lambda) or throughout (low lambda). So the manipulation makes birds less fixated on small differences (smaller lambda) because they now quickly vote one option up or down (larger phi)
 
-combinedreversaldata<-combinedreversaldata[is.na(combinedreversaldata$TrialsFirstReversal)==F,]
 
 dat_firstreversaltrials_philambda<- list(
   Trials = combinedreversaldata$TrialsFirstReversal,
@@ -1251,6 +1399,51 @@ precis(trialsfirst.phiandlambda,depth=2)
 # b     -20.69 3.43 -26.17 -15.13 21353     1
 # c      -0.22 3.45  -5.66   5.26 20768     1
 # sigma  14.53 1.74  12.01  17.54 18300     1
+
+
+
+# Repeat with the samples from the posterior of the estimated phis and lambdas
+
+# need to remove the two birds who did not complete the first reversal
+
+posteriorsamples_initialandreversal_phi<-posteriorsamples_initialandreversal_phi[,c(1:7,9,11:21)]
+
+posteriorsamples_initialandreversal_lambda<-posteriorsamples_initialandreversal_lambda[,c(1:7,9,11:21)]
+
+for(i in 1:4000){  
+
+dat_firstreversaltrials_philambda<- list(
+  Trials = combinedreversaldata$TrialsFirstReversal,
+  phi = standardize(posteriorsamples_initialandreversal_phi[i,]),
+  lambda = standardize(posteriorsamples_initialandreversal_lambda[i,])
+)
+
+trialsfirst.phiandlambda <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a + b*phi+c*lambda,
+        a ~ normal(70,40),
+        b ~ normal(0,30),
+        c ~ normal(0,30),
+        sigma ~ exponential(1)
+    ) , data=dat_firstreversaltrials_philambda , chains=4 , cores=4,iter=10000, cmdstan=T ,messages=F, refresh=0)
+
+ifelse(i == 1,combinedposterior_trialsfirstphiandlambda<-as.data.frame(extract.samples(trialsfirst.phiandlambda)), combinedposterior_trialsfirstphiandlambda<-rbind(combinedposterior_trialsfirstphiandlambda,as.data.frame(extract.samples(trialsfirst.phiandlambda))))
+
+}
+
+
+precis(combinedposterior_trialsfirstphiandlambda)
+
+#        mean   sd   5.5%  94.5%  histogram
+#a      75.76 3.44  70.28  81.23   ▁▁▁▅▇▂▁▁
+#b     -20.80 4.24 -27.53 -14.01 ▁▁▁▂▇▅▁▁▁▁
+#c      -3.91 5.18 -12.23   4.26 ▁▁▁▂▇▇▃▁▁▁
+#sigma  14.88 1.97  11.98  18.24 ▁▁▅▇▃▁▁▁▁▁
+
+
+
+
 
 
 manipulatedbirds<-combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==F,]
@@ -1280,6 +1473,51 @@ precis(trialslast.phiandlambda,depth=2)
 #sigma  7.28 1.38   5.40  9.73 10575     1
 
 
+
+# Repeat with the samples from the posterior of the estimated phis and lambdas
+
+# need to remove the two birds who did not complete the first reversal
+  
+manipulatedbirds_posteriorsamples_initialandreversal_phi<- posteriorsamples_initialandreversal_phi[, colnames(posteriorsamples_initialandreversal_phi) %in% manipulatedbirds$Bird]
+
+manipulatedbirds_posteriorsamples_initialandreversal_lambda<- posteriorsamples_initialandreversal_lambda[, colnames(posteriorsamples_initialandreversal_lambda) %in% manipulatedbirds$Bird]
+
+for(i in 1:4000){  
+
+dat_lastreversaltrials_philambda<- list(
+  Trials = manipulatedbirds$TrialsLastReversal,
+  phi = standardize(manipulatedbirds_posteriorsamples_initialandreversal_phi[i,]),
+  lambda = standardize(manipulatedbirds_posteriorsamples_initialandreversal_lambda[i,])
+)
+
+trialslast.phiandlambda <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a + b*phi+c*lambda,
+        a ~ normal(70,40),
+        b ~ normal(0,30),
+        c ~ normal(0,30),
+        sigma ~ exponential(1)
+    ) , data=dat_lastreversaltrials_philambda , chains=4 , cores=4,iter=10000, cmdstan=T ,messages=F, refresh=0)
+
+ifelse(i == 1,combinedposterior_trialslastphiandlambda<-as.data.frame(extract.samples(trialslast.phiandlambda)), combinedposterior_trialslastphiandlambda<-rbind(combinedposterior_trialslastphiandlambda,as.data.frame(extract.samples(trialslast.phiandlambda))))
+
+}
+
+
+precis(combinedposterior_trialslastphiandlambda)
+
+#        mean   sd   5.5% 94.5%    histogram
+#a      40.43 1.69  37.78 43.10 ▁▁▁▁▁▅▇▂▁▁▁▁
+#b     -10.11 3.01 -14.93 -5.60  ▁▁▁▁▇▇▁▁▁▁▁
+#c      -2.86 3.46  -8.30  2.46    ▁▁▁▃▇▃▁▁▁
+#sigma   4.63 1.24   2.96  6.83 ▁▁▇▇▅▂▁▁▁▁▁▁
+
+
+
+
+
+
 # For comparison with the grackles, check relationship in the range observed in the experiments
 summarysimulateddata_ll<-summarysimulateddata[summarysimulateddata$ThisBirdsLambda>2,]
 summarysimulateddata_ll<-summarysimulateddata_ll[summarysimulateddata_ll$ThisBirdsPhi>0.01,]
@@ -1295,6 +1533,10 @@ mtext("phi of individual", side=1,line=3,font=3,cex=1.5)
 mtext("Number of trials", side=2,line=2.5,font=3,cex=1.5)
 
 
+
+
+
+### Assess role of phi and lambda on number of trials across both first and last reversal
 dat_trialsphiandlambda<- list(
   Trials = c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal,singlereversaldata$TrialsFirstReversal),
   bird = c(as.numeric(as.factor(improvementdata$Bird)),as.numeric(as.factor(improvementdata$Bird)),9:19),
@@ -1321,14 +1563,99 @@ precis(trials.phiandlambda,depth=2)
 # sigma  13.88 1.53  11.66  16.51 19522     1
 
 
-# Given that phi and lambda are negatively correlated, bird with intermediate values might do best on other tasks
+for(i in 1:4000){  
+
+dat_trials_philambda<- list(
+  Trials = c(combinedreversaldata$TrialsFirstReversal,manipulatedbirds$TrialsLastReversal),
+  phi =  standardize( c(posteriorsamples_initialandreversal_phi[i,],manipulatedbirds_posteriorsamples_initialandreversal_phi[i,])),
+  lambda = standardize( c(posteriorsamples_initialandreversal_lambda[i,],manipulatedbirds_posteriorsamples_initialandreversal_lambda[i,]))
+)
+
+trials.phiandlambda <- ulam(
+    alist(
+        Trials ~ normal( mu , sigma ),
+        mu <- a + b*phi+c*lambda,
+        a ~ normal(70,40),
+        b ~ normal(0,30),
+        c ~ normal(0,30),
+        sigma ~ exponential(1)
+    ) , data=dat_trials_philambda , chains=4 , cores=4,iter=10000, cmdstan=T ,messages=F, refresh=0)
+
+ifelse(i == 1,combinedposterior_trialsphiandlambda<-as.data.frame(extract.samples(trials.phiandlambda)), combinedposterior_trialsphiandlambda<-rbind(combinedposterior_trialsphiandlambda,as.data.frame(extract.samples(trials.phiandlambda))))
+
+}
 
 
+precis(combinedposterior_trialsphiandlambda)
+
+
+
+
+
+
+
+
+
+#################
+# Lambda association with correct trials in first 10 choices after switch
+
+dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
+
+# PREPARE reversal learning data
+#exclude yellow tube trials for control birds because we are only interested in reversal data
+dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
+#include only those trials where the bird made a choice (0 or 1)
+dflex <- subset(dflex, dflex$CorrectChoice != -1) 
+#reverse number. 0=initial discrimination
+dflex$Reversal <- as.integer(dflex$Reversal)
+#exclude reversal=0 because this was the initial discrimination and not a reversal
+dflex <- subset(dflex, dflex$Reversal != 0) 
+dflex$Correct <- as.integer(dflex$CorrectChoice)
+dflex$Trial <- as.integer(dflex$Trial)
+#exclude NAs from the CorrectChoice column
+dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
+
+
+firstreversal<-dflex[dflex$Reversal==1,]
+
+# Want data ONLY from last two reversals to determine phi and lambda at the beginning. This is for all birds, including those that did not experience the reversal manipulation experiment
+reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
+reduceddata <- data.frame(reduceddata)
+for (i in 1:length(unique(dflex$ID))) {
+  thisbird <- unique(dflex$ID)[i]
+  thisbirddata <- dflex[dflex$ID==thisbird,]
+  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c(max(thisbirddata$Reversal)-1,max(thisbirddata$Reversal)),]
+  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
+}
+lastreversal <- reduceddata
+lastreversal<-lastreversal[lastreversal$Reversal>1,]
+
+firstreversal_20trials<-firstreversal[firstreversal$Trial<21,]
+lastreversal_20trials<-lastreversal[lastreversal$Trial<21,]
+
+first20correct<-firstreversal_20trials %>% group_by(ID) %>% summarize(mean(Correct))
+last20correct<-lastreversal_20trials %>% group_by(ID) %>% summarize(mean(Correct))
+
+first20correct<-as.data.frame(first20correct)
+last20correct<-as.data.frame(last20correct)
+
+colnames(first20correct)<-c("Bird","Percentage20Correct")
+colnames(last20correct)<-c("Bird","Percentage20Correct")
+
+eachbirdslearningparameters<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
+
+library(dplyr)
+first20correct<-left_join(first20correct,eachbirdslearningparameters,by="Bird")
+last20correct<-left_join(last20correct,eachbirdslearningparameters,by="Bird")
+
+median(first20correct$Percentage20Correct) # 25%
+
+median(last20correct$Percentage20Correct) # 35%
 
 
 ##########################################################################################
 ##########################################################################################
-# For plotting
+# For plotting Figure 4
 ##########################################################################################
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -1612,7 +1939,7 @@ lambdaplot<-dat_for_plotting_lambda %>%
 plot_grid(trialsplot,
           phiplot,
           lambdaplot,
-          labels = c('a) Number of trials to to pass criterion','b) Phi: learning rate of attraction to either option','c) Lambda: rate of deviating from learned attractions'),
+          labels = c('a) Number of trials to reach criterion','b) Phi: rate of updating associations','c) Lambda: sensitivity to learned associations'),
           label_x = 0.05,
           label_size	= 20,
           hjust = -0.05,
@@ -1624,57 +1951,7 @@ plot_grid(trialsplot,
 
 
 
-
-
-
-
-
-
-```{r posthoc_improvement, eval=F}
-
-#################
-# Is there a linear improvement?
-
-performanceimprovement <- matrix(ncol=10,nrow=length(unique(dflex$ID)))
-performanceimprovement<-as.data.frame(performanceimprovement)
-colnames(performanceimprovement)<-c("Bird","initialassociation", "reversal1","reversal2","reversal3","reversal4","reversal5","reversal6","reversal7","reversal8")
-
-for (i in 1:length(unique(dflex$ID))) {
-  thisbird <- unique(dflex$ID)[i]
-  thisbirddata <- dflex[dflex$ID==thisbird,]
- for (k in 1:length(unique(thisbirddata$Reversal))){ 
-  thisbirdcurrentreversal <- thisbirddata[thisbirddata$Reversal %in% unique(thisbirddata$Reversal)[k],]
-performanceimprovement[i,1]<-thisbird
-performanceimprovement[i,k+1]<-max(thisbirdcurrentreversal$Trial)
-	}
-}
-
-colourstoplot<-c("red","blue","red","black","yellow","red","red","black","blue","red","red","red","red","yellow","red","blue",rep("red",6))
-plot( NULL , xlim=c(1,9) , ylim=c(0,200) , xlab="Reversal" ,
-    ylab="Trials" , xaxt="n" , yaxt="n" )
-for (j in 1:nrow(performanceimprovement)) {lines( c(1:9) , performanceimprovement[j,2:10] , lwd=2 , col=colourstoplot[j] )}
-
-manipulatedperformanceimprovement<-performanceimprovement[is.na(performanceimprovement$reversal2)==F,]
-manipulatedperformanceimprovement<-mutate(manipulatedperformanceimprovement,maximumreversal=pmax(reversal1,reversal2,reversal3,reversal4,reversal5,reversal6,reversal7,reversal8,na.rm=T))
-
-smallimprovementdata<-select(improvementdata,Bird,lastphi,lastlambda,beginningphi,beginninglambda)
-largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,by="Bird")
-
-# first	last	max
-# 40	  30	  90
-# 60	  23	  110
-# 60	  40	  90
-# 70	  50	  110
-# 80	  40	  80
-# 80	  40	  170
-# 90	  50	  90
-# 100	  50	  100
-```
-
-
-
-
-```{r posthoc_changes, eval=F}
+```{r question4_improvementmanipulatedgrackles, eval=F}
 # What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
 
 # Questions:
@@ -1689,9 +1966,10 @@ largecombined<-left_join(manipulatedperformanceimprovement,smallimprovementdata,
 # 2c) Can we estimate all changes simultaneously?  mallchanges, maybe run with just phi and just lambda because of their correlation in last
 
 library(rethinking)
+library(cmdstanr)
 
 # if you have cmdstan installed, use the following:
-# set_ulam_cmdstan(TRUE)
+set_ulam_cmdstan(TRUE)
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
@@ -1722,12 +2000,6 @@ combinedreversaldata <- combinedreversaldata[with(combinedreversaldata, order(co
 
 # Store the bird names in case we want to link their data from here back to other datasets
 birdnames<-unique(combinedreversaldata$Bird)
-
-plot(TrialsFirstReversal~beginningphi,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,0.15),ylim=c(0,160))
-points(TrialsLastReversal~lastphi,data=combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==FALSE,],col="red")
-
-plot(TrialsFirstReversal~beginninglambda,data=combinedreversaldata[is.na(combinedreversaldata$lastlambda)==FALSE,],xlim=c(0,10),ylim=c(0,160))
-points(TrialsLastReversal~lastlambda,data=combinedreversaldata[is.na(combinedreversaldata$manipulatedlambda)==FALSE,],col="red")
 
 
 # Filter the dataset to only include those birds that experienced the reversal manipulation
@@ -1845,80 +2117,126 @@ precis(mchangetrialnoncentered,depth=4)
 
 # Phi increases for the manipulated birds by +0.02 - +0.05, whereas lambda decreases by-1.63 - -0.56. For phi, we observe the same correlation between the initial value and the change (-0.4; 50% HPDI all negative), there is no such obvious relationship for lambda (-0.15; 50% HPDI spans zero).
 
-dat_change_phi <- list(
-      phi = c(improvementdata$beginningphi,improvementdata$manipulatedphi), 
-      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
-           )
-# Model 17
-mchangephi <- ulam(
+
+# How much the phi of individuals changes depends on where their phi was at the beginning
+dat_phi_improvement<-list(
+  phichange = improvementdata$phiimprovement,
+  phifirst = (improvementdata$beginningphi)
+)
+
+mchangephi_improvement <- ulam(
     alist(
-        phi ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(5,2),
-        b ~ normal(-1,0.5),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_change_phi , chains=4 , cores=4,iter=10000 )
+        phichange ~ normal( mu , sigma ),
+        mu <- a+b*phifirst,
+        a ~ normal(0,1),
+        b ~ normal(0,1),
+        sigma ~ exponential(1)
+    ) , data=dat_phi_improvement , chains=4 , cores=4,iter=10000,cmdstan=T )
 
-precis(mchangephi,depth=4)
+precis(mchangephi_improvement)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a      0.06 0.01  0.05  0.08  4373     1
+#b     -0.84 0.21 -1.14 -0.52  4489     1
+#sigma  0.01 0.01  0.01  0.02  4314     1
 
-#                mean   sd  5.5% 94.5% n_eff Rhat4
-# b_bird[1]      0.03 0.01  0.02  0.05   338  1.01
-# b_bird[2]      0.03 0.01  0.01  0.05   282  1.00
-# b_bird[3]      0.03 0.01  0.02  0.05   338  1.01
-# b_bird[4]      0.03 0.02  0.00  0.05   296  1.00
-# b_bird[5]      0.04 0.01  0.02  0.06   423  1.01
-# b_bird[6]      0.03 0.01  0.01  0.05   230  1.01
-# b_bird[7]      0.04 0.01  0.02  0.05   373  1.01
-# b_bird[8]      0.03 0.01  0.01  0.05   213  1.00
-# a_bird[1]     -0.01 0.02 -0.04  0.02  1455  1.00
-# a_bird[2]      0.01 0.02 -0.01  0.05   501  1.00
-# a_bird[3]      0.00 0.02 -0.03  0.03   589  1.00
-# a_bird[4]      0.02 0.03 -0.02  0.08   225  1.00
-# a_bird[5]      0.00 0.02 -0.04  0.03  1122  1.00
-# a_bird[6]      0.00 0.02 -0.03  0.03  1249  1.00
-# a_bird[7]      0.00 0.02 -0.03  0.03  1117  1.00
-# a_bird[8]      0.01 0.02 -0.02  0.04   153  1.01
-# a              0.00 0.02 -0.02  0.03   620  1.00
-# b              0.03 0.01  0.02  0.05   207  1.01
-# sigma_bird[1]  0.02 0.01  0.00  0.04   726  1.00
-# sigma_bird[2]  0.01 0.01  0.00  0.02   516  1.00
-# sigma          0.02 0.01  0.01  0.03   184  1.01
-# Rho[1,1]       1.00 0.00  1.00  1.00   NaN   NaN
-# Rho[1,2]      -0.29 0.46 -0.93  0.52  1492  1.00
-# Rho[2,1]      -0.29 0.46 -0.93  0.52  1492  1.00
-# Rho[2,2]       1.00 0.00  1.00  1.00   NaN   NaN
-
-post <- extract.samples(mchangephi)
-dens( post$Rho[,1,2] , xlim=c(-1,1) ) # posterior
-R <- rlkjcorr( 1e4 , K=2 , eta=2 )    # prior
-dens( R[,1,2] , add=TRUE , lty=2 )
-
-HPDI( post$Rho[,1,2],0.5)
 
 
 
 # The phis of the individuals from their first reversal are not correlated with the phis from their last reversal (estimate of a crosses zero)
 dat_phi_correlated<-list(
-  phifirst = improvementdata$beginningph,
+  phifirst = improvementdata$beginningphi,
   philast = standardize(improvementdata$manipulatedphi)
 )
 
 mchangephi_correlated <- ulam(
     alist(
         phifirst ~ normal( mu , sigma ),
-        mu <- a*philast,
+        mu <- a+b*philast,
         a ~ normal(0,1),
+        b ~ normal(0,1),
         sigma ~ exponential(1)
     ) , data=dat_phi_correlated , chains=4 , cores=4,iter=10000,cmdstan=T )
 
 precis(mchangephi_correlated)
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a     0.01 0.02 -0.03  0.04  7519     1
-#sigma 0.06 0.02  0.03  0.09  6230     1  
+#a     0.04 0.01  0.02  0.06  9227     1
+#b     0.01 0.01 -0.01  0.03  9315     1
+#sigma 0.03 0.01  0.02  0.05  5552     1 
+
+
+
+# How much the lambda of individuals changes depends on where their lambda was at the beginning
+dat_lambda_improvement<-list(
+  lambdachange = improvementdata$lambdaimprovement,
+  lambdafirst = (improvementdata$beginninglambda)
+)
+
+mchangelambda_improvement <- ulam(
+    alist(
+        lambdachange ~ normal( mu , sigma ),
+        mu <- a+b*lambdafirst,
+        a ~ normal(0,1),
+        b ~ normal(0,1),
+        sigma ~ exponential(1)
+    ) , data=dat_lambda_improvement , chains=4 , cores=4,iter=10000,cmdstan=T )
+
+precis(mchangelambda_improvement)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a      0.68 0.86 -0.71  2.02  5084     1
+#b     -0.44 0.21 -0.76 -0.10  5076     1
+#sigma  1.03 0.32  0.65  1.59  6778     1
+
+
+
+
+# The lambdas of the individuals from their first reversal are not correlated with the lambdas from their last reversal (estimate of a crosses zero)
+dat_lambda_correlated<-list(
+  lambdafirst = improvementdata$beginninglambda,
+  lambdalast = standardize(improvementdata$manipulatedlambda)
+)
+
+mchangelambda_correlated <- ulam(
+    alist(
+        lambdafirst ~ normal( mu , sigma ),
+        mu <- a+b*lambdalast,
+        a ~ normal(0,1),
+        b ~ normal(0,1),
+        sigma ~ exponential(1)
+    ) , data=dat_lambda_correlated , chains=4 , cores=4,iter=10000,cmdstan=T )
+
+precis(mchangelambda_correlated)
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a     3.21 0.76  1.79  4.17  5566     1
+#b     0.17 0.52 -0.67  0.97  9571     1
+#sigma 1.64 0.67  0.88  2.92  5321     1
+
+
+
+# The phis and lambdas of the individuals from their last reversal are negatively correlated 
+dat_lambdaphi_correlated<-list(
+  philast = improvementdata$manipulatedphi,
+  lambdalast = improvementdata$manipulatedlambda
+)
+
+mchangelambdaphi_correlated <- ulam(
+    alist(
+        philast ~ normal( mu , sigma ),
+        mu <- a+b*lambdalast,
+        a ~ normal(0,1),
+        b ~ normal(0,1),
+        sigma ~ exponential(1)
+    ) , data=dat_lambdaphi_correlated , chains=4 , cores=4,iter=10000,cmdstan=T )
+
+precis(mchangelambdaphi_correlated)
+
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a      0.10 0.01  0.08  0.11  4367     1
+#b     -0.01 0.00 -0.01  0.00  4378     1
+#sigma  0.01 0.00  0.00  0.01  4150     1
+
+
+
+
 
 
 
