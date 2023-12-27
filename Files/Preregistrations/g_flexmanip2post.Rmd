@@ -2057,65 +2057,146 @@ mchangetrialspool <- ulam(alist(
   b_bar~dnorm(30,20),
   sigma ~ dexp(1),
   sigma_bar ~ dexp(1)
-  ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE)
+  ), data = dat_change_trials, chains=4, log_lik = TRUE, messages = FALSE, cmdstan=T)
 precis(mchangetrialspool,depth=2)
 
 # The relevant estimate here is for b_bar, showing that birds on average improve by between 25-36 trials
 
-#              mean   sd   5.5%  94.5% n_eff Rhat4
-# a[1]       91.62 5.80  82.51 100.10    33  1.14
-# a[2]       57.85 4.98  49.48  65.18   739  1.01
-# a[3]       85.83 5.14  77.61  94.23   184  1.03
-# a[4]       48.63 6.66  36.69  58.57    26  1.19
-# a[5]       76.55 5.32  67.81  85.57    66  1.07
-# a[6]       75.77 5.14  68.18  83.18   100  1.04
-# a[7]       74.20 5.59  66.82  83.56   108  1.05
-# a[8]       64.34 5.46  56.13  73.21    85  1.06
-# b[1]      -32.76 6.84 -49.77 -24.93    11  1.55
-# b[2]      -31.16 4.13 -37.24 -24.74    33  1.15
-# b[3]      -31.56 4.65 -40.11 -24.73    20  1.23
-# b[4]      -27.79 6.96 -35.22 -10.13    10  1.67
-# b[5]      -31.53 4.68 -40.12 -24.74    20  1.23
-# b[6]      -31.49 4.65 -39.90 -24.53    21  1.22
-# b[7]      -29.00 4.78 -35.47 -19.93    16  1.31
-# b[8]      -29.01 4.71 -35.34 -20.07    16  1.31
-# b_bar     -30.30 3.51 -35.65 -24.65   109  1.06
-# sigma       6.54 2.42   0.23   9.41    10  1.60
-# sigma_bar   2.13 2.93   0.17   9.77     9  1.73
-
-# We might expect that birds who took many trials during their first reversal had to improve more to reach the criterion. This means that we can expect that there is a correlation between the intercept and the slope of change of each bird. We built a model that incorporates that potential correlation
-
-dat_change_trials_noncentered <- list(
-      trials = standardize(c(improvementdata$TrialsFirstReversal,improvementdata$TrialsLastReversal)), 
-      bird = c(as.factor(improvementdata$Bird),as.factor(improvementdata$Bird)), 
-      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
-           )
-
-# Model 16
-mchangetrialnoncentered <- ulam(
-    alist(
-        trials ~ normal(mu,sigma),
-        mu <- a_reversal[reversal] + b_reversal[bird,reversal],
-        # adaptive priors - non-centered
-        transpars> matrix[bird,2]:b_reversal <-
-                compose_noncentered( sigma_reversal , L_Rho_reversal , z_reversal ),
-        matrix[2,bird]:z_reversal ~ normal( 0 , 1 ),
-        # fixed priors
-        a_reversal[reversal] ~ normal(0,20),
-        sigma ~ exponential(1),
-        vector[2]:sigma_reversal ~ dexp(1),
-        cholesky_factor_corr[2]:L_Rho_reversal ~ lkj_corr_cholesky( 2 ),
-        # compute ordinary correlation matrixes from Cholesky factors
-        gq> matrix[2,2]:Rho_actor <<- Chol_to_Corr(L_Rho_reversal)
-    ) , data=dat_change_trials_noncentered , chains=4 , cores=4 , log_lik=TRUE )
-
-precis(mchangetrialnoncentered,depth=4)
+#            mean   sd   5.5%  94.5% n_eff Rhat4
+#a[1]       90.71 5.39  81.90  98.50   408  1.01
+#a[2]       57.28 5.42  48.75  65.87   544  1.01
+#a[3]       85.74 5.25  77.34  94.26   525  1.01
+#a[4]       50.35 5.51  41.14  58.86   599  1.01
+#a[5]       75.96 5.17  67.73  83.76   698  1.01
+#a[6]       75.75 5.18  66.87  84.00   823  1.01
+#a[7]       75.30 5.53  66.72  84.39   570  1.00
+#a[8]       65.50 5.59  56.25  74.31   520  1.01
+#b[1]      -31.37 4.44 -38.46 -24.30   199  1.03
+#b[2]      -30.86 4.01 -37.12 -24.14   223  1.02
+#b[3]      -31.06 4.06 -37.35 -24.26   252  1.02
+#b[4]      -29.68 4.53 -35.73 -22.23   148  1.02
+#b[5]      -30.94 4.05 -37.35 -24.23   257  1.02
+#b[6]      -31.00 4.07 -37.40 -24.21   233  1.03
+#b[7]      -30.10 4.06 -35.97 -23.10   169  1.02
+#b[8]      -30.09 4.03 -35.97 -23.05   166  1.02
+#b_bar     -30.52 3.65 -36.05 -24.16   194  1.02
+#sigma       7.08 1.40   5.21   9.39   254  1.02
+#sigma_bar   1.47 1.50   0.25   4.42    76  1.04
 
 
 
 # We can similarly check whether phi and lambda changed between the first and the last reversal, and again whether the values during the first reversal are linked to how much they change
 
-# Phi increases for the manipulated birds by +0.02 - +0.05, whereas lambda decreases by-1.63 - -0.56. For phi, we observe the same correlation between the initial value and the change (-0.4; 50% HPDI all negative), there is no such obvious relationship for lambda (-0.15; 50% HPDI spans zero).
+dat_change_phi <- list(
+      phi = c(improvementdata$beginningphi,improvementdata$manipulatedphi), 
+      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
+           )
+# Model 19
+mchangephi <- ulam(
+    alist(
+        phi ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_change_phi , chains=4 , cores=4 )
+
+precis(mchangephi,depth=2)
+
+#               mean   sd  5.5% 94.5% n_eff Rhat4
+# b_bird[1]     0.03 0.01  0.01  0.05   123  1.03
+# b_bird[2]     0.03 0.01  0.01  0.05   129  1.03
+# b_bird[3]     0.03 0.01  0.01  0.05   130  1.02
+# b_bird[4]     0.03 0.01  0.00  0.05   118  1.03
+# b_bird[5]     0.03 0.01  0.01  0.06   111  1.04
+# b_bird[6]     0.03 0.01  0.01  0.05   149  1.02
+# b_bird[7]     0.03 0.01  0.02  0.05   121  1.03
+# b_bird[8]     0.03 0.01  0.01  0.05   129  1.03
+# a_bird[1]     0.00 0.02 -0.04  0.03   118  1.03
+# a_bird[2]     0.02 0.02 -0.01  0.05   119  1.03
+# a_bird[3]     0.00 0.02 -0.04  0.03   122  1.03
+# a_bird[4]     0.02 0.02 -0.01  0.07   114  1.04
+# a_bird[5]     0.00 0.02 -0.03  0.03   118  1.03
+# a_bird[6]     0.00 0.02 -0.03  0.03   132  1.03
+# a_bird[7]     0.00 0.02 -0.03  0.03   126  1.04
+# a_bird[8]     0.01 0.02 -0.02  0.04   123  1.03
+# a             0.01 0.02 -0.02  0.03   113  1.03
+# b             0.03 0.01  0.02  0.05   105  1.03
+# sigma_bird[1] 0.02 0.01  0.00  0.04   117  1.03
+# sigma_bird[2] 0.01 0.01  0.00  0.02   105  1.05
+# sigma         0.02 0.01  0.01  0.03   129  1.04
+
+
+
+
+
+
+
+dat_change_lambda <- list(
+      lambda = c(improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
+      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
+      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
+           )
+# Model 18
+mchangelambda <- ulam(
+    alist(
+        lambda ~ normal( mu , sigma ),
+        mu <- a_bird[bird] + b_bird[bird]*reversal,
+        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
+        a ~ normal(5,2),
+        b ~ normal(-1,0.5),
+        sigma_bird ~ exponential(1),
+        sigma ~ exponential(1),
+        Rho ~ lkj_corr(2)
+    ) , data=dat_change_lambda , chains=4 , cores=4 )
+
+precis(mchangelambda,depth=2)
+
+#                mean   sd  5.5% 94.5% n_eff Rhat4
+# b_bird[1]     -1.09 0.36 -1.64 -0.52   338  1.01
+# b_bird[2]     -1.21 0.40 -1.86 -0.60   346  1.01
+# b_bird[3]     -1.07 0.36 -1.62 -0.48   368  1.01
+# b_bird[4]     -1.14 0.37 -1.71 -0.55   355  1.01
+# b_bird[5]     -1.07 0.41 -1.70 -0.45   332  1.01
+# b_bird[6]     -0.93 0.41 -1.52 -0.22   264  1.02
+# b_bird[7]     -1.21 0.37 -1.83 -0.65   382  1.01
+# b_bird[8]     -1.09 0.37 -1.66 -0.47   342  1.01
+# a_bird[1]      5.42 0.61  4.51  6.37   338  1.01
+# a_bird[2]      4.93 0.72  3.76  6.03   287  1.00
+# a_bird[3]      5.43 0.61  4.51  6.42   363  1.01
+# a_bird[4]      5.29 0.63  4.32  6.27   358  1.00
+# a_bird[5]      5.79 0.74  4.75  7.00   319  1.01
+# a_bird[6]      5.50 0.66  4.47  6.51   307  1.01
+# a_bird[7]      5.21 0.63  4.24  6.23   382  1.00
+# a_bird[8]      5.26 0.63  4.23  6.26   341  1.01
+# a              5.36 0.51  4.57  6.18   255  1.01
+# b             -1.10 0.30 -1.57 -0.64   260  1.01
+# sigma_bird[1]  0.51 0.35  0.09  1.12   240  1.00
+# sigma_bird[2]  0.26 0.20  0.03  0.63   220  1.03
+# sigma          0.85 0.20  0.58  1.19   648  1.01
+# Rho[1,1]       1.00 0.00  1.00  1.00   NaN   NaN
+# Rho[1,2]      -0.08 0.44 -0.77  0.64   566  1.00
+# Rho[2,1]      -0.08 0.44 -0.77  0.64   566  1.00
+# Rho[2,2]       1.00 0.00  1.00  1.00   NaN   NaN
+
+
+
+
+
+
+
+
+# Phi increases for the manipulated birds by +0.02 - +0.05, whereas lambda decreases by -1.57 - -0.64. 
+
+
+
+
+
+# For phi, we observe the same correlation between the initial value and the change (-0.4; 50% HPDI all negative), there is no such obvious relationship for lambda (-0.15; 50% HPDI spans zero).
 
 
 # How much the phi of individuals changes depends on where their phi was at the beginning
@@ -2240,53 +2321,6 @@ precis(mchangelambdaphi_correlated)
 
 
 
-
-dat_change_lambda <- list(
-      lambda = c(improvementdata$beginninglambda,improvementdata$manipulatedlambda), 
-      bird = c(as.integer(as.factor(improvementdata$Bird)),as.integer(as.factor(improvementdata$Bird))),
-      reversal = c(rep(1,nrow(improvementdata)),rep(2,nrow(improvementdata)))
-           )
-# Model 18
-mchangelambda <- ulam(
-    alist(
-        lambda ~ normal( mu , sigma ),
-        mu <- a_bird[bird] + b_bird[bird]*reversal,
-        c(a_bird,b_bird)[bird] ~ multi_normal( c(a,b) , Rho , sigma_bird ),
-        a ~ normal(5,2),
-        b ~ normal(-1,0.5),
-        sigma_bird ~ exponential(1),
-        sigma ~ exponential(1),
-        Rho ~ lkj_corr(2)
-    ) , data=dat_change_lambda , chains=4 , cores=4 )
-
-precis(mchangelambda,depth=2)
-
-#                mean   sd  5.5% 94.5% n_eff Rhat4
-# b_bird[1]     -1.09 0.36 -1.64 -0.52   338  1.01
-# b_bird[2]     -1.21 0.40 -1.86 -0.60   346  1.01
-# b_bird[3]     -1.07 0.36 -1.62 -0.48   368  1.01
-# b_bird[4]     -1.14 0.37 -1.71 -0.55   355  1.01
-# b_bird[5]     -1.07 0.41 -1.70 -0.45   332  1.01
-# b_bird[6]     -0.93 0.41 -1.52 -0.22   264  1.02
-# b_bird[7]     -1.21 0.37 -1.83 -0.65   382  1.01
-# b_bird[8]     -1.09 0.37 -1.66 -0.47   342  1.01
-# a_bird[1]      5.42 0.61  4.51  6.37   338  1.01
-# a_bird[2]      4.93 0.72  3.76  6.03   287  1.00
-# a_bird[3]      5.43 0.61  4.51  6.42   363  1.01
-# a_bird[4]      5.29 0.63  4.32  6.27   358  1.00
-# a_bird[5]      5.79 0.74  4.75  7.00   319  1.01
-# a_bird[6]      5.50 0.66  4.47  6.51   307  1.01
-# a_bird[7]      5.21 0.63  4.24  6.23   382  1.00
-# a_bird[8]      5.26 0.63  4.23  6.26   341  1.01
-# a              5.36 0.51  4.57  6.18   255  1.01
-# b             -1.10 0.30 -1.57 -0.64   260  1.01
-# sigma_bird[1]  0.51 0.35  0.09  1.12   240  1.00
-# sigma_bird[2]  0.26 0.20  0.03  0.63   220  1.03
-# sigma          0.85 0.20  0.58  1.19   648  1.01
-# Rho[1,1]       1.00 0.00  1.00  1.00   NaN   NaN
-# Rho[1,2]      -0.08 0.44 -0.77  0.64   566  1.00
-# Rho[2,1]      -0.08 0.44 -0.77  0.64   566  1.00
-# Rho[2,2]       1.00 0.00  1.00  1.00   NaN   NaN
 
 
 
