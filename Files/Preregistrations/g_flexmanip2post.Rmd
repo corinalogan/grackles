@@ -2985,6 +2985,14 @@ colnames(posteriorsamples_lastreversal_phi)<-eachbirdslearningparameters[is.na(e
 # e    1.09 0.49  0.28  1.87   792     1
 # phi  1.20 0.52  0.54  2.10   863     1          
 
+
+plasticlatencyquadratic<- link( mplat1alternative12, data=data.frame(learningphi=rep(0,17),learninglambda=seq(from=-2, to=+2,length=17) ) ) 
+plasticlatencyquadratic_mean <- apply( plasticlatencyquadratic , 2 , mean ) 
+plasticlatencyquadratic_ci <- apply( plasticlatencyquadratic , 2 , PI , prob=0.97 )        
+        
+        
+            
+      
             
       # Model with the sampled phi and lambda values from the posterior as predictors
       
@@ -3315,6 +3323,10 @@ write.csv(precis(combinedposterior_mwlat),file="woodenlatency.csv")
 # c -0.16 0.28 -0.59  0.28  1192     1
 # d  0.17 0.27 -0.27  0.61  1776     1
 # e  0.59 0.26  0.18  1.02  1315     1
+
+plasticlociquadratic<- link( m5plasticloci, data=data.frame(learningphi=rep(0,17),learninglambda=seq(from=-2, to=+2,length=17) ) ) 
+plasticlociquadratic_mean <- apply( plasticlociquadratic , 2 , mean ) 
+plasticlociquadratic_ci <- apply( plasticlociquadratic , 2 , PI , prob=0.97 )              
         
 
         
@@ -3476,6 +3488,10 @@ write.csv(precis(combinedposterior_mploci),file="plasticloci.csv")
 # d  0.03 0.34 -0.50  0.59  1596     1
 # e  0.64 0.33  0.12  1.19  1992     1
 
+woodenlociquadratic<- link( m6woodenlociquadratic, data=data.frame(learningphi=rep(0,17),learninglambda=seq(from=-2, to=+2,length=17) ) ) 
+woodenlociquadratic_mean <- apply( woodenlociquadratic , 2 , mean ) 
+woodenlociquadratic_ci <- apply( woodenlociquadratic , 2 , PI , prob=0.97 )        
+        
         
         
 # Model with the sampled phi and lambda values from the posterior as predictors
@@ -3622,7 +3638,7 @@ phi_samples_for_plotting_ranges<-sapply(1 : ncol(phi_samples_for_plotting), func
 colnames(phi_samples_for_plotting_ranges)<-colnames(posteriorsamples_initialandreversal_phi)
 
 phi_samples_for_plotting_ranges_wooden<-phi_samples_for_plotting_ranges[,inputdata_philociwooden$Bird]
-phi_samples_for_plotting_ranges_wooden<-(phi_samples_for_plotting_ranges_wooden-phi_samples_for_plotting_ranges_wooden)/0.0277076
+phi_samples_for_plotting_ranges_wooden<-(phi_samples_for_plotting_ranges_wooden-0.05967069)/0.0277076
 
 phi_samples_for_plotting_ranges_plastic<-phi_samples_for_plotting_ranges[,inputdata_philociplastic$Bird]
 phi_samples_for_plotting_ranges_plastic<-(phi_samples_for_plotting_ranges_plastic-0.05248961)/0.02712191
@@ -3641,10 +3657,7 @@ lambda_samples_for_plotting_ranges_wooden<-(lambda_samples_for_plotting_ranges_w
 lambda_samples_for_plotting_ranges_plastic<-lambda_samples_for_plotting_ranges[,inputdata_philociplastic$Bird]
 lambda_samples_for_plotting_ranges_plastic<-(lambda_samples_for_plotting_ranges_plastic-3.733967)/0.8262337
 
-par(mfrow=c(2,2))
 
-plot( NULL , xlim=c(-2.5,2.5) , ylim=c(-0.25,4.5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-rect(xleft=-0.66,ybottom=-0.5,xright=0.77,ytop=5.5,col="grey90",border="NA")
 
 offset_plastic<-rnorm(ncol(lambda_samples_for_plotting_ranges_plastic),mean=0.1,sd=0.05)
 offset_wooden<-rnorm(ncol(lambda_samples_for_plotting_ranges_wooden),mean=-0.1,sd=0.05)
@@ -3652,15 +3665,24 @@ offset_wooden<-rnorm(ncol(lambda_samples_for_plotting_ranges_wooden),mean=-0.1,s
 plasticlocisolved<-dat_loci_plastic_both$locisolved+offset_plastic
 woodenlocisolved<-dat_loci_wooden_both$locisolved+offset_wooden
 
+
+
+par(mfrow=c(2,2))
+
+plot( NULL , xlim=c(-2.5,2.5) , ylim=c(-0.25,4.5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
+
 points(woodenlocisolved~dat_loci_wooden_both$learninglambda,col="black",pch=16,cex=2)
 points(plasticlocisolved~dat_loci_plastic_both$learninglambda,col="red",pch=16,cex=2)
 
 legend(x="bottomleft", legend=c(pch16="Wooden MAB", pch16="Plastic MAB"), pch=c(16,16), col=c("black","red"), box.lty=0, cex=0.7,pt.cex=1.7)
 
-mtext("central third of λ values", side=3,line=-2,font=3)
 mtext("a)", side=3,line=0,font=2,at=-2,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
 mtext("λ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+
+shade(woodenlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("black"),0.4)
+shade(plasticlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("red"),0.4)
+
 
 for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
   lines(y=c(plasticlocisolved[i],plasticlocisolved[i]),x=c(lambda_samples_for_plotting_ranges_plastic[1,i],lambda_samples_for_plotting_ranges_plastic[2,i]),col="red")
@@ -3671,40 +3693,115 @@ for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
 }
 
 
+
+
 plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-rect(xleft=-0.7,ybottom=-0.5,xright=0.7,ytop=5.5,col="grey90",border="NA")
 
-points(dat_loci_wooden_both$locisolved~dat_loci_wooden_both$learningphi,col="black",pch=16,cex=2)
-points(dat_loci_plastic_both$locisolved~dat_loci_plastic_both$learningphi,col="red",pch=16,cex=2)
+points(woodenlocisolved~dat_loci_wooden_both$learningphi,col="black",pch=16,cex=2)
+points(plasticlocisolved~dat_loci_plastic_both$learningphi,col="red",pch=16,cex=2)
 
-mtext("central third of φ values", side=3,line=-2,font=3)
 mtext("b)", side=3,line=0,font=2,at=-2,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
 mtext("φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
+for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
+  lines(y=c(plasticlocisolved[i],plasticlocisolved[i]),x=c(phi_samples_for_plotting_ranges_plastic[1,i],phi_samples_for_plotting_ranges_plastic[2,i]),col="red")
+}
+
+for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
+  lines(y=c(woodenlocisolved[i],woodenlocisolved[i]),x=c(phi_samples_for_plotting_ranges_wooden[1,i],phi_samples_for_plotting_ranges_wooden[2,i]),col="black")
+}
+
+
+
+
+
+dat_latency_wooden_both <- list(latency = as.numeric(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden),
+            learningphi = (standardize(as.numeric(inputdata_philatencywooden$lastphi))),
+            learninglambda = (standardize(as.numeric(inputdata_philatencywooden$lastlambda)))
+              )
+
+dat_latency_plastic_both <- list(latency = as.numeric(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic),
+            learningphi = (standardize(as.numeric(inputdata_philatencyplastic$lastphi))),
+            learninglambda = (standardize(as.numeric(inputdata_philatencyplastic$lastlambda)))
+              )
+
+
+phi_samples_for_plotting<-posteriorsamples_initialandreversal_phi
+for(i in 1:8){
+  phi_samples_for_plotting[,colnames(posteriorsamples_lastreversal_phi)[i]]<-posteriorsamples_lastreversal_phi[,colnames(posteriorsamples_lastreversal_phi)[i]]
+}
+
+phi_samples_for_plotting_ranges<-sapply(1 : ncol(phi_samples_for_plotting), function(x) HPDI(phi_samples_for_plotting[,x],0.5))
+colnames(phi_samples_for_plotting_ranges)<-colnames(posteriorsamples_initialandreversal_phi)
+
+phi_samples_for_plotting_ranges_wooden<-phi_samples_for_plotting_ranges[,inputdata_philatencywooden$Bird]
+phi_samples_for_plotting_ranges_wooden<-(phi_samples_for_plotting_ranges_wooden-0.05800687)/0.0284243
+
+phi_samples_for_plotting_ranges_plastic<-phi_samples_for_plotting_ranges[,inputdata_philatencyplastic$Bird]
+phi_samples_for_plotting_ranges_plastic<-(phi_samples_for_plotting_ranges_plastic-0.05934977)/0.02750371
+
+lambda_samples_for_plotting<-posteriorsamples_initialandreversal_lambda
+for(i in 1:8){
+  lambda_samples_for_plotting[,colnames(posteriorsamples_lastreversal_lambda)[i]]<-posteriorsamples_lastreversal_lambda[,colnames(posteriorsamples_lastreversal_lambda)[i]]
+}
+
+lambda_samples_for_plotting_ranges<-sapply(1 : ncol(lambda_samples_for_plotting), function(x) HPDI(lambda_samples_for_plotting[,x],0.5))
+colnames(lambda_samples_for_plotting_ranges)<-colnames(posteriorsamples_initialandreversal_lambda)
+
+lambda_samples_for_plotting_ranges_wooden<-lambda_samples_for_plotting_ranges[,inputdata_philatencywooden$Bird]
+lambda_samples_for_plotting_ranges_wooden<-(lambda_samples_for_plotting_ranges_wooden-3.566315)/1.024301
+
+lambda_samples_for_plotting_ranges_plastic<-lambda_samples_for_plotting_ranges[,inputdata_philatencyplastic$Bird]
+lambda_samples_for_plotting_ranges_plastic<-(lambda_samples_for_plotting_ranges_plastic-3.704481)/1.090913
+
+
+
+offset_plastic<-rnorm(nrow(inputdata_philatencyplastic),mean=0.1,sd=0.05)
+offset_wooden<-rnorm(nrow(inputdata_philatencywooden),mean=-0.1,sd=0.05)
+
+plasticlatency<-dat_latency_plastic_both$latency+offset_plastic
+woodenlatency<-dat_latency_wooden_both$latency+offset_wooden
+
+
 
 plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-rect(xleft=-0.7,ybottom=-0.5,xright=0.7,ytop=1805.5,col="grey90",border="NA")
 
-points(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden~standardize(inputdata_philatencywooden$lastlambda),col="black",pch=16,cex=2)
-points(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic~standardize(inputdata_philatencyplastic$lastlambda),col="red",pch=16,cex=2)
+points(woodenlatency~dat_latency_wooden_both$learninglambda,col="black",pch=16,cex=2)
+points(plasticlatency~standardize(dat_latency_plastic_both$learninglambda),col="red",pch=16,cex=2)
 
-mtext("central third of λ values", side=3,line=-2,font=3)
 mtext("c)", side=3,line=0,font=2,at=-2,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
 mtext("λ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
+for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
+  lines(y=c(plasticlatency[i],plasticlatency[i]),x=c(lambda_samples_for_plotting_ranges_plastic[1,i],lambda_samples_for_plotting_ranges_plastic[2,i]),col="red")
+}
+
+for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
+  lines(y=c(woodenlatency[i],woodenlatency[i]),x=c(lambda_samples_for_plotting_ranges_wooden[1,i],lambda_samples_for_plotting_ranges_wooden[2,i]),col="black")
+}
+
+
 
 plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-rect(xleft=-0.7,ybottom=-0.5,xright=0.7,ytop=1805.5,col="grey90",border="NA")
 
-points(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden~standardize(inputdata_philatencywooden$lastphi),col="black",pch=16,cex=2)
-points(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic~standardize(inputdata_philatencyplastic$lastphi),col="red",pch=16,cex=2)
+points(woodenlatency~dat_latency_wooden_both$learningphi,col="black",pch=16,cex=2)
+points(plasticlatency~dat_latency_plastic_both$learningphi,col="red",pch=16,cex=2)
 
-mtext("central third of φ values", side=3,line=-2,font=3)
 mtext("d)", side=3,line=0,font=2,at=-2,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
 mtext("φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+
+shade(plasticlatencyquadratic_ci,seq(from=-2, to=+2,length=17),col=col.alpha("red"),0.4)
+
+for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
+  lines(y=c(plasticlatency[i],plasticlatency[i]),x=c(phi_samples_for_plotting_ranges_plastic[1,i],phi_samples_for_plotting_ranges_plastic[2,i]),col="red")
+}
+
+for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
+  lines(y=c(woodenlatency[i],woodenlatency[i]),x=c(phi_samples_for_plotting_ranges_wooden[1,i],phi_samples_for_plotting_ranges_wooden[2,i]),col="black")
+}
 
 
 
