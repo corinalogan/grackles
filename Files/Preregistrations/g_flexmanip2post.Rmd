@@ -2,11 +2,11 @@
 title: "Behavioral flexibility is manipulatable and it improves flexibility and problem solving in a new context: post-hoc analyses of the components of behavioral flexibility."
 author: 
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^*'
-- '[McCune KB](https://www.kelseymccune.com)^3^'
-- '[Blaisdell AP](http://pigeonrat.psych.ucla.edu)^2^'
-- 'Johnson-Ulrich Z^3^'
-- '[MacPherson M](http://maggiepmacpherson.com)^3^'
-- '[Seitz B](https://benjaminseitz.wixsite.com/mysite)^2^'
+- '[McCune KB](https://www.kelseymccune.com)^2^'
+- '[Blaisdell AP](http://pigeonrat.psych.ucla.edu)^3^'
+- 'Johnson-Ulrich Z^2^'
+- '[MacPherson M](http://maggiepmacpherson.com)^2^'
+- '[Seitz B](https://benjaminseitz.wixsite.com/mysite)^3^'
 - 'Sevchik A^4^'
 - '[Logan CJ](http://CorinaLogan.com)^1^*'
 date: '`r Sys.Date()`'
@@ -41,7 +41,7 @@ Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%}
 
 &nbsp;
 
-**Affiliations:** 1) Max Planck Institute for Evolutionary Anthropology, Leipzig, Germany, 2) University of California Los Angeles, USA, 3) University of California Santa Barbara, USA, 4) Arizona State University, Tempe, AZ USA. *Corresponding author: dieter_lukas@eva.mpg.de
+**Affiliations:** 1) Max Planck Institute for Evolutionary Anthropology, Leipzig, Germany, 2) University of California Santa Barbara, USA, 3) University of California Los Angeles, USA, 4) Arizona State University, Tempe, AZ USA. *Corresponding author: dieter_lukas@eva.mpg.de
 
 ```{r setup, include=FALSE}
 library(knitr)
@@ -1633,8 +1633,8 @@ plot( NULL , xlim=c(0.01,0.07) , ylim=c(0,250) , cex=2,cex.lab=1.5,font=2 ,bty="
 points(summarysimulateddata_ll$TrialsReversal~summarysimulateddata_ll$ThisBirdsPhi,col="#007477",pch=1,cex=1)
 points(combinedreversaldata$TrialsFirstReversal~combinedreversaldata$beginningphi,bg="#E69F00",pch=21,cex=2,col="black")
 legend(x=0.045,y=250,legend=c(pch1="Simulated individuals", pch1="Great-tailed grackles"), pch=c(1,16), col=c("#007477","#E69F00"), box.lty=0, cex=0.9,pt.cex=2)
-mtext("Association-updating rate φ", side=1,line=3,font=3,cex=1.5)
-mtext("Number of trials to reach criterion", side=2,line=2.5,font=3,cex=1.5)
+mtext("Association-updating rate φ", side=1,line=3,font=2,cex=1.5)
+mtext("Number of trials to reach criterion", side=2,line=2.5,font=2,cex=1.5)
 shade(mu_1_ci_simulated,seq(from=0.01,to=0.07,length=17), col=col.alpha("#007477",0.4))
 shade(mu_1_ci,seq(from=0.01,to=0.07,length=17), col=col.alpha("#E69F00",0.4))
 
@@ -2996,38 +2996,6 @@ plasticlatencyquadratic_ci <- apply( plasticlatencyquadratic , 2 , PI , prob=0.9
             
       # Model with the sampled phi and lambda values from the posterior as predictors
       
-for(i in 1:4000) {
-  dl_phi2 <- list(learningphi = standardize(as.numeric(philatencyplastic_phi[i,])), 
-                      learninglambda = standardize(as.numeric(philatencyplastic_lambda[i,])), 
-              latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic)
-                 )
-# Model 21      
-      mplat1alternative12 <- ulam(alist(
-        latency ~ dgampois(lambda, phi), 
-        log(lambda) <- a + b * learningphi + c*learningphi^2 + d*learninglambda + e*learninglambda^2, 
-        a ~ dnorm(1, 1), 
-        b ~ dnorm(0, 1),
-        c ~ dnorm(0, 1),
-        d ~ dnorm(0, 1),
-        e ~ dnorm(0, 1),
-        phi ~ dexp(1)
-        ), data = dl_phi2, chains=4, log_lik = TRUE, messages = FALSE, refresh=0)
-  
-  ifelse(i == 1,combinedposterior_mplat<-as.data.frame(extract.samples(mplat1alternative12)), combinedposterior_mplat<-rbind(combinedposterior_mplat,as.data.frame(extract.samples(mplat1alternative12))))
-      
-}      
-      
-precis(combinedposterior_mplat)  
-      
-#      mean   sd  5.5% 94.5%       histogram
-# a    3.75 0.62  2.74  4.72        ▁▁▁▂▇▃▁▁
-# b   -0.39 0.61 -1.38  0.56 ▁▁▁▁▁▂▇▇▃▁▁▁▁▁▁
-# c    0.80 0.58 -0.12  1.72 ▁▁▁▁▁▁▃▇▅▂▁▁▁▁▁
-# d   -0.19 0.65 -1.23  0.82        ▁▁▁▇▅▁▁▁
-# e    0.61 0.61 -0.31  1.61 ▁▁▁▁▃▇▇▃▁▁▁▁▁▁▁
-# phi  1.13 0.62  0.43  2.24    ▇▅▁▁▁▁▁▁▁▁▁▁    
-
-
 
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
@@ -3169,37 +3137,6 @@ write.csv(precis(combinedposterior_mplat),file="plasticlatency.csv")
  
 # Model with the sampled phi and lambda values from the posterior as predictors
       
-for(i in 1:4000) {
-  dl_phi2 <- list(learningphi = standardize(as.numeric(philatencywooden_phi[i,])), 
-                      learninglambda = standardize(as.numeric(philatencywooden_lambda[i,])), 
-              latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden),               batch = as.integer(inputdata_philatencywooden$Batch)
-                 )
-# Model 21      
-      mwlat1alternative12 <- ulam(alist(
-        latency ~ dgampois(lambda, phi), 
-        log(lambda) <- a + b * learningphi + c*learningphi^2 + d*learninglambda + e*learninglambda^2, 
-        a ~ dnorm(1, 1), 
-        b ~ dnorm(0, 1),
-        c ~ dnorm(0, 1),
-        d ~ dnorm(0, 1),
-        e ~ dnorm(0, 1),
-        phi ~ dexp(1)
-        ), data = dl_phi2, chains=4, log_lik = TRUE, messages = FALSE, refresh=0)
-  
-  ifelse(i == 1,combinedposterior_mwlat<-as.data.frame(extract.samples(mwlat1alternative12)), combinedposterior_mwlat<-rbind(combinedposterior_mwlat,as.data.frame(extract.samples(mwlat1alternative12))))
-      
-}      
-      
-precis(combinedposterior_mwlat)  
-#      mean   sd  5.5% 94.5%     histogram
-# a    5.07 0.59  4.13  6.01     ▁▁▁▃▇▇▃▁▁
-# b    0.19 0.54 -0.71  1.00   ▁▁▁▁▂▅▇▅▁▁▁
-# c    0.51 0.59 -0.41  1.46  ▁▁▁▃▇▇▃▁▁▁▁▁
-# d   -0.66 0.71 -1.79  0.44  ▁▁▁▁▃▇▇▇▃▁▁▁
-# e    0.41 0.61 -0.74  1.27 ▁▁▁▁▁▂▇▇▂▁▁▁▁
-# phi  0.91 0.49  0.34  1.81   ▂▇▃▁▁▁▁▁▁▁▁        
-
-
 
 
 currentlocation<-getwd()
@@ -3344,36 +3281,6 @@ plasticlociquadratic_ci <- apply( plasticlociquadratic , 2 , PI , prob=0.97 )
         
         
 # Model with the sampled phi and lambda values from the posterior as predictors
-      
-for(i in 1:4000) {
-         dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
-                    learningphi = standardize(as.numeric(lociplastic_phi[i,])),
-                    learninglambda = standardize(as.numeric(lociplastic_lambda[i,]))
-                      )
-        
-  # Model 37
-        m5plasticloci <- ulam( alist(
-          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-          logit(p) <- a+ b*learningphi+c*learningphi^2+d*learninglambda+e*learninglambda^2 , #batch=random effect, standardize trials so 0=mean
-          a ~ dnorm(0,1) , #each batch gets its own intercept
-          b ~ dnorm(0,0.4),#our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-          c ~ dnorm(0,0.4),
-          d ~ dnorm(0,0.4),
-          e ~ dnorm(0,0.4)
-        ) , data=dat_loci_plastic_both , chains=4, messages=FALSE, refresh=0 )
-  
-  ifelse(i == 1,combinedposterior_mploci<-as.data.frame(extract.samples(m5plasticloci)), combinedposterior_mploci<-rbind(combinedposterior_mploci,as.data.frame(extract.samples(m5plasticloci))))
-      
-}      
-      
-precis(combinedposterior_mploci)                  
-#    mean   sd  5.5% 94.5%      histogram
-# a -0.25 0.46 -0.94  0.54       ▁▁▅▇▃▁▁▁
-# b  0.13 0.29 -0.34  0.60  ▁▁▁▁▂▅▇▇▃▁▁▁▁
-# c -0.05 0.30 -0.55  0.43 ▁▁▁▁▁▂▅▇▇▃▂▁▁▁
-# d  0.12 0.33 -0.40  0.66 ▁▁▁▁▃▇▇▇▃▂▁▁▁▁
-# e  0.38 0.39 -0.36  0.94        ▁▁▂▇▇▁▁  
-
 
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
@@ -3508,37 +3415,7 @@ woodenlociquadratic_ci <- apply( woodenlociquadratic , 2 , PI , prob=0.97 )
       lociwooden_phi<-cbind(controlbirds_phi,manipulatedbirds_phi)
       lociwooden_phi<-lociwooden_phi[ , order(names(lociwooden_phi))]         
         
-              
-for(i in 1:4000) {
-         dat_loci_wooden_both_quadratic <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
-                    learningphi = standardize(as.numeric(lociwooden_phi[i,])),
-                    learninglambda = standardize(as.numeric(lociwooden_lambda[i,]))
-                      )
-        
-  # Model 37
-         m6woodenlociquadratic <- ulam( alist(
-          locisolved ~ dbinom(4,p) , #4 loci, p=probability of solving a locus
-          logit(p) <- a+ b*learningphi+ c*learningphi^2+d*learninglambda+e*learninglambda^2 , #batch=random effect, standardize trials so 0=mean
-          a ~ dnorm(0,1) , #each batch gets its own intercept
-          b ~ dnorm(0,0.4),#our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1. normal distribution works for binomial (Rethinking p.341)
-          c ~ dnorm(0,0.4),
-          d ~ dnorm(0,0.4),
-          e ~ dnorm(0,0.4)
-        ) , data=dat_loci_wooden_both_quadratic , chains=4, messages=FALSE,refresh=0 )
-  
-  ifelse(i == 1,combinedposterior_mwloci<-as.data.frame(extract.samples(m6woodenlociquadratic)), combinedposterior_mwloci<-rbind(combinedposterior_mwloci,as.data.frame(extract.samples(m6woodenlociquadratic))))
-      
-}      
-      
-precis(combinedposterior_mwloci)       
-#    mean   sd  5.5% 94.5%      histogram
-# a  0.84 0.48  0.09  1.62       ▁▁▃▇▅▁▁▁
-# b -0.04 0.33 -0.57  0.48  ▁▁▁▁▂▅▇▇▃▂▁▁▁
-# c  0.38 0.37 -0.23  0.96        ▁▁▂▇▅▁▁
-# d  0.08 0.37 -0.50  0.68 ▁▁▁▂▅▇▇▅▃▂▁▁▁▁
-# e  0.49 0.35 -0.06  1.05        ▁▁▇▇▁▁▁        
-        
-
+     
 ### Number of solved loci on the wooden multi-access box associated with lambda squared        
 
 
@@ -3674,14 +3551,14 @@ plot( NULL , xlim=c(-2.5,2.5) , ylim=c(-0.25,4.5) , cex=2,cex.lab=1.5,font=2 ,bt
 points(woodenlocisolved~dat_loci_wooden_both$learninglambda,col="black",pch=16,cex=2)
 points(plasticlocisolved~dat_loci_plastic_both$learninglambda,col="red",pch=16,cex=2)
 
-legend(x="bottomleft", legend=c(pch16="Wooden MAB", pch16="Plastic MAB"), pch=c(16,16), col=c("black","red"), box.lty=0, cex=0.7,pt.cex=1.7)
+#legend(x="bottomleft", legend=c(pch16="Wooden MAB", pch16="Plastic MAB"), pch=c(16,16), col=c("black","red"), box.lty=0, cex=0.7,pt.cex=1.7)
 
-mtext("a)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("a)", side=3,line=0,font=2,at=-2.8,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
 mtext("λ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
-shade(woodenlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("black"),0.4)
-shade(plasticlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("red"),0.4)
+shade(woodenlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("black",0.4))
+shade(plasticlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("red",0.4))
 
 
 for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
@@ -3700,7 +3577,7 @@ plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,5) , cex=2,cex.lab=1.5,font=2 ,bty="n",
 points(woodenlocisolved~dat_loci_wooden_both$learningphi,col="black",pch=16,cex=2)
 points(plasticlocisolved~dat_loci_plastic_both$learningphi,col="red",pch=16,cex=2)
 
-mtext("b)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("b)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
 mtext("φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
@@ -3770,7 +3647,15 @@ plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="
 points(woodenlatency~dat_latency_wooden_both$learninglambda,col="black",pch=16,cex=2)
 points(plasticlatency~standardize(dat_latency_plastic_both$learninglambda),col="red",pch=16,cex=2)
 
-mtext("c)", side=3,line=0,font=2,at=-2,cex=1.7)
+legend(x=c(0.75,2.25),y=c(1300,1900), legend=c(pch16="", pch16=""), pch=c(16,16), col=c("white","white"), box.lty=1, cex=0.8,pt.cex=1.7,text.font=2,xpd=TRUE)
+
+points(x=0.85,y=1775,col="black",pch=16,cex=2)
+points(x=0.85,y=1500,col="red",pch=16,cex=2)
+text(x=1.5,y=1775,labels="Wooden MAB",font=2,cex=1.5)
+text(x=1.45,y=1500,labels="Plastic MAB",font=2,cex=1.5)
+
+
+mtext("c)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
 mtext("λ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
@@ -3789,11 +3674,13 @@ plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="
 points(woodenlatency~dat_latency_wooden_both$learningphi,col="black",pch=16,cex=2)
 points(plasticlatency~dat_latency_plastic_both$learningphi,col="red",pch=16,cex=2)
 
-mtext("d)", side=3,line=0,font=2,at=-2,cex=1.7)
+mtext("d)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
 mtext("φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
-shade(plasticlatencyquadratic_ci,seq(from=-2, to=+2,length=17),col=col.alpha("red"),0.4)
+plasticlatencyquadratic_ci_1700<-plasticlatencyquadratic_ci
+plasticlatencyquadratic_ci_1700[plasticlatencyquadratic_ci_1700>1700]<-1700
+shade(plasticlatencyquadratic_ci_1700,seq(from=-2, to=+2,length=17),col=col.alpha("red",0.4))
 
 for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
   lines(y=c(plasticlatency[i],plasticlatency[i]),x=c(phi_samples_for_plotting_ranges_plastic[1,i],phi_samples_for_plotting_ranges_plastic[2,i]),col="red")
