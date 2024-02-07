@@ -1440,20 +1440,20 @@ output_tr_binom <- precis( tr_binom , depth=2 )
 posttr <- extract.samples(tr_binom)
 difftr <- inv_logit( posttr$a[,1])*20 - inv_logit( posttr$a[,2])*20 #it shows a probability so multiply by 20 food types
 contrasttr <- precis( difftr )
-#      mean   sd  5.5% 94.5%  histogram
-#difftr -2.02 0.82 -3.36 -0.76 ▁▁▁▂▅▇▇▅▂▁▁▁▁
-#control group has 2.02 fewer food types than the manipulated group
+#         mean   sd  5.5% 94.5%   histogram
+# difftr -1.85 0.75 -3.02 -0.65 ▁▁▁▃▇▇▅▂▁▁▁
+#control group has 1.9 fewer food types than the manipulated group
 
 #look at the predicted number of techniques that manipulated individuals are expected to show if they would be observed for the full 10 min
-manipulatedtype <- link(tr_binom,data=list(treatment=2,obstime=max(tr$obstime)))*20
-contrasttrm <- precis(manipulatedtype[,1])
+# manipulatedtype <- link(tr_binom,data=list(treatment=2,obstime=max(tr$obstime)))*20
+# contrasttrm <- precis(manipulatedtype[,1])
 #                 mean   sd 5.5% 94.5% histogram
 #manipulatedtype...1. 9.71 1.52 7.26 12.18 ▁▁▂▅▇▇▃▂▁▁
 #they would eat an average of 9.7 food types
 
 #look at the predicted number of techniques that control individuals are expected to show if they would be observed for the full 10 min
-controltype <- link(tr_binom,data=list(treatment=1,obstime=max(tr$obstime)))*20
-contrasttrc <- precis(controltype[,1])
+# controltype <- link(tr_binom,data=list(treatment=1,obstime=max(tr$obstime)))*20
+# contrasttrc <- precis(controltype[,1])
 #                 mean   sd 5.5% 94.5%   histogram
 #controltype...1. 5.93 1.12 4.23  7.75  ▁▁▃▇▇▃▁▁
 #they would use an average of 5.9 techniques
@@ -1534,22 +1534,22 @@ outputtphimanipp <- precis( phimanip , depth=2 )
 
 #contrast to see if treatment groups differ
 postphi <- extract.samples(phimanip)
-diffpm <- inv_logit( postphi$a[,1])*10 - inv_logit( postphi$a[,2])*10 #it shows a probability so multiply by 12 techniques
+diffpm <- inv_logit( postphi$a[,1])*9 - inv_logit( postphi$a[,2])*9 #it shows a probability so multiply by 9 techniques
 contrastbinomtech <- precis( diffpm )
-#      mean   sd  5.5% 94.5%  histogram
-#diffpm -1.25 0.71 -2.36 -0.14 ▁▁▁▁▃▇▇▇▃▁▁▁
-#control group has 1.3 fewer foraging techniques than the manipulated group
+#         mean   sd  5.5% 94.5%  histogram
+# diffpm -1.12 0.65 -2.16 -0.09 ▁▁▂▅▇▇▃▁▁▁
+#control group has 1.1 fewer foraging techniques than the manipulated group
 
 #look at the predicted number of techniques that manipulated individuals are expected to show if they would be observed for the full 10 min
-manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*10
-contrastbinomm <- precis(manipulated[,1])
+# manipulated<- link(phimanip,data=list(treatment=2,obstime=max(manip$obstime)))*10
+# contrastbinomm <- precis(manipulated[,1])
 #                 mean   sd 5.5% 94.5% histogram
 #manipulated...1. 6.39 0.86 4.95   7.7 ▁▁▁▂▃▅▇▇▅▂▁▁
 #they would use an average of 6.4 techniques
 
 #look at the predicted number of techniques that control individuals are expected to show if they would be observed for the full 10 min
-control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*10
-contrastbinomc <- precis(control[,1])
+# control<- link(phimanip,data=list(treatment=1,obstime=max(manip$obstime)))*10
+# contrastbinomc <- precis(control[,1])
 #             mean   sd 5.5% 94.5%   histogram
 #control...1. 4.83 0.78 3.56  6.04 ▁▁▁▃▅▇▇▃▁▁▁▁
 #they would use an average of 4.8 techniques
@@ -1563,6 +1563,7 @@ inv_logit( outputtphimanipp[2,1]) / inv_logit( outputtphimanipp[1,1]) #manipulat
 
 #VISUALIZE
 op <- par(mfrow=c(2,1), mar=c(5.9,4.9,2,0.9))
+k<-1 #used to standardize the plotting
 #types binomial plot
 plot( fo$SumFocalTime , fo$NumFoodTypes , xlab="" , ylab="Total food types" ,
     col=ifelse( tr$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
