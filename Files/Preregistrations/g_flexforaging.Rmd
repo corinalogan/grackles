@@ -4076,7 +4076,168 @@ m0u_binary_hyper <- ulam(
         a_sigma~exponential(1)
     ), data=dat_list_binary , chains=4 , cores=4 , sample=TRUE , iter=2500 )
 
-precis(m0u_binary_hyper,3,pars=c("a_bar","sigma","bvl"))
+precis(m0u_binary_hyper,3,pars=c("a_bar"))
+
+
+
+### repeat for foraging techniques
+
+#Load the foraging data
+f1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+f1 <- data.frame(f1)
+
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+c1 <- f1[f1$Population=="AZ",]
+
+#Count per bird the number of times it took a food type for all food types
+f_tech <- c1 %>% group_by(BirdID,How) %>% summarise (Count=n())
+f2_tech <- pivot_wider(f_tech,names_from=How,values_from=Count)
+
+# AZ population: How many different food types? 20 (from R code chunk p2manipunregistered)
+#length(unique(ft1$What)) #20
+#unique(ft1$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken
+
+# AZ population: How many different foraging techniques? 9 (from R code chunk p2manipunregistered)
+#length(unique(ft1$How)) # 11 - 1 (eat) - 1 (tolerated theft) = 9
+#unique(ft1$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig
+
+# link with general datasheet to identify which birds were manipulated and their sum focal time
+g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+g <- g[g$Population=="AZ",]
+ca<- g %>% group_by(BirdID) %>% summarise (Treatment=unique(FlexibilityManipulated), obstime=unique(SumFocalTime))
+
+ty_tech <- left_join(f2_tech,ca,by="BirdID")
+ty_tech <- subset(ty_tech, is.na(ty_tech$Treatment) == FALSE)
+ty_tech <- as.data.frame(ty_tech)
+#nrow(ty) #NOTE: n=13 (6=manipulated, 7=control) birds because some dropped out due to not having any foraging events in their focals or not having any focals
+
+# Remove "eat" and "tolerated theft" from the techniques
+ty_tech<-ty_tech[,-c(2,9)]
+
+#replace NAs with zeros
+ty_tech[is.na(ty_tech)] <- 0
+
+# remove food types that neither the manipulated nor the control birds ate: we cannot say whether they are more or less likely to be part of their repertoire
+for(i in 2:10){
+  if(sum(ty_tech[,i])==0){print(i)}
+}
+
+ty_tech_minus<-ty_tech[,-c(9)]
+
+
+# Convert the table into long form: take the values from the matrix and put them one behind the other, starting with the first row (all counts for bird 1 for all food types) followed by the second row (all counts for bird 2 for all food types), etc.
+
+# Make a matrix that only has the food types and their counts
+dat_tech<-ty_tech_minus[,2:9]
+
+YY <- rep(NA,length(dat_tech))
+MM <- YY
+ID <- YY
+JJ <- YY
+k <- 1
+for ( j in 1:nrow(dat_tech) ) for ( m in 1:ncol(dat_tech) ) {
+    YY[k] <- dat_tech[j,m]
+    MM[k] <- m
+    ID[k] <- ty_tech_minus$BirdID[j]
+    JJ[k] <- j
+    k <- k + 1
+}
+
+
+### Richard's model: the probability for each bird for each food type that this food type is in their repertoire
+dat_list_tech <- list(
+    Y = YY,    # behavior counts
+    ID = as.integer(as.factor(ID)),   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = ty_tech_minus$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_tech_minus$Treatment)) # 1 = Control, 2 = manipulated
+)
+
+m0u_tech <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID,group[ID]]*sigma + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        matrix[M,2]:a ~ normal(0,1),
+        sigma ~ exponential(1)
+    ), data=dat_list_tech , chains=4 , cores=4 , sample=TRUE , iter=500 )
+
+precis(m0u_tech,3,pars=c("a_mean","sigma","bvl"))
+
+# Calculate contrast for each food type between control and manipulated birds
+posterior_m0u_tech<-extract.samples(m0u_tech)
+pairwisecontrast_byforagingtechnique<-as.data.frame(matrix(ncol=dat_list_tech$M,nrow=nrow(posterior_m0u_tech$a)))
+for(i in 1:dat_list_tech$M){
+  pairwisecontrast_byforagingtechnique[,i]<-posterior_m0u_tech$a[,i,2]-posterior_m0u_tech$a[,i,1]
+}
+colnames(pairwisecontrast_byforagingtechnique)<-colnames(dat_tech)
+precis(pairwisecontrast_byforagingtechnique)
+
+
+
+### group as treatment yes versus no rather than group as id 1 or 2
+dat_list_binary_tech <- list(
+    Y = YY,    # behavior counts
+    ID = as.integer(as.factor(ID)),   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = ty_tech_minus$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_tech_minus$Treatment))-1 # 0 = Control, 1 = manipulated
+)
+
+# control=0 and treatment=1 with a hyperprior for the differences across the food types
+m0u_binary_hyper_tech <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID]*group[ID] + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        vector[M]:a ~ normal(a_bar,a_sigma),
+        a_bar~normal(0,1),
+        a_sigma~exponential(1)
+    ), data=dat_list_binary_tech , chains=4 , cores=4 , sample=TRUE , iter=2500 )
+
+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))
+
+
+
+
 ```
 
 
