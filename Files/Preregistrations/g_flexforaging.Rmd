@@ -1358,7 +1358,7 @@ In this dataset, there are 8 manipulated birds and 10 control birds who have 1-8
 Using the **binomial model** to determine, of the known food types and foraging techniques, how many are used, we find that flexibility manipulated individuals take an average of 1.8 more food types and use an average of 1.3 more foraging techniques than control individuals because the compatibility interval did not cross zero (food types: mean=-1.82, sd=0.74, 89% compatibility interval=-3.03 - -0.64; techniques: mean=-1.31, sd=0.80, 89% compatibility interval=-2.62 - -0.02; Figure). Not all birds were followed for the same amount of time and our expectation is that the number of food types and foraging techniques increases with increasing observation time. Therefore, we use the model to predict the number of food types and foraging techniques used if all birds were observed for the maximum amount of time. The model predicts that manipulated birds have an average of 8.9 food types and 5.8 techniques, and control birds an average of 5.4 food types and 4.3 techniques. These differences of 3.5 (food types) and 1.5 (techniques) are higher than the differences we observe with our dataset (1.8 and 1.3, respectively) because most birds were not observed for the maximum period of time. The manipulated birds have a 1.9 (food types) and 1.6 (techniques) higher likelihood of using any of the 22 food types or 10 foraging techniques than the control birds, regardless of the amount of observation time.
 
 ```{r p2manipvsctrl, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-### NUMBER OF FORAGING TECHNIQUES for flexibility manipulated vs control birds
+### NUMBER OF FOOD TYPES AND FORAGING TECHNIQUES for flexibility manipulated vs control birds
 library(rethinking)
 c1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 c1 <- data.frame(c1)
@@ -1417,7 +1417,7 @@ diftype <- precis( diff )
 # RUN the models
 #rebuild_cmdstan() #run this if you get an error about a PCH file
 
-## BINOMIAL model - foraging techniques
+## BINOMIAL model - food types
 tr <- list(foods = fo$NumFoodTypes,
             obstime = standardize(fo$SumFocalTime),
             treatment = as.integer(as.factor(fo$FlexibilityManipulated)) #1=control, 2=manipulated
@@ -3904,14 +3904,14 @@ cohen.kappa(x=cbind(clr,orig), w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #Unweigh
 
 If a bird has only been observed for a short period of time, we might not have had a chance to see a given behavior that it actually uses. This is called undersampling. We adapted a model that McElreath developed (https://github.com/rmcelreath/cg_vocal_repertoires/blob/main/model_ulam_covariates.r) that better accounts for undersampling. We applied the model to Prediction 2 where we examine whether there are differences between control and manipulated birds in the number of food types and foraging techniques they use. We omitted food types and foraging techniques that none of these individuals used, which resulted in 14 food types and X foraging techniques.
 
-We found that these models came to the same conclusion that manipulated birds ate 1.6 more food types and used X.X more foraging techniques, however the model was much less certain about the results given that most individuals were not observed using very many food types and foraging techniques (Table S2.1). As such, all of the 89% compatability intervals crossed zero. The model also revealed that there are some foods that the manipulated birds were less likely to eat, suggesting that they ate different food tyoes, rather than more of the same.
+We found that these models came to the same conclusion that manipulated birds ate 1.6 more food types and used 1.1 more foraging techniques, however the model was much less certain about the results given that most individuals were not observed using very many food types and foraging techniques (Table S2.1). As such, all of the 89% compatibility intervals crossed zero. The model also revealed that there are some foods and foraging techniques that the manipulated birds were less likely to use, suggesting that they ate different food types and used different techniques, rather than more of the same.
 
-**Table 2.** Summary data by bird for each of the variables measured. Population indicates where they were trapped (Sacramento is part of the Woodland population), bird is the bird’s name, sex indicates whether they are female (F) or male (M), learn speed is the number of trials to form the initial color preference, reversal speed is the number of trials to reverse the color preference (first reversal), $\phi$ and $\lambda$ are the two flexibility components (from the first reversal), MAB loci are the number of loci solved on the multiaccess box, MAB max is the maximum number of loci available to that bird, Exploration is the average number of seconds it took the bird to approach within 20 cm of the novel environment (note that 2701 s means the bird never approached), persistence is the proportion of reversal learning and multiaccess box trials the bird participated in, and flexibility manipulated indicates whether this was one of the 8 Tempe grackles who underwent the serial reversals to make them more flexible (Yes) or not (No). “X” indicates that this bird did not complete this experiment or that we cannot count the data for this experiment, and “-” indicates this bird was not given this experiment.
+**Table SM2.1.** Contrasts showing that, for each food type and each foraging technique as well as across food types and foraging techniques, whether manipulated birds are more likely to use them than control birds.
 
 ```{r p2manipvsctrlsupp1table, eval=T, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
 library(dplyr)
-smtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F)
+smtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_table_sm_p2.csv"), header=T, sep=",", stringsAsFactors=F)
 smtable <- data.frame(smtable)
 colnames(sumtable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
@@ -4235,9 +4235,18 @@ m0u_binary_hyper_tech <- ulam(
 
 precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))
 
+# number of foraging techniques control birds
+inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1]))
+#> 0.4900608*8
+# 3.920486
 
+# number of foraging techniques manipulated birds
+inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))[1,1])
+#> 0.6314007*8
+# 5.051206
 
-
+inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))[1,1])*8-inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1]))*8
+# 1.130719
 ```
 
 
