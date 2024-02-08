@@ -1739,22 +1739,201 @@ ty <- as.data.frame(ty)
 #replace NAs with zeros
 ty[is.na(ty)] <- 0
 
+# remove food types that neither the manipulated nor the control birds ate: we cannot say whether they are more or less likely to be part of their repertoire
+
+for(i in 2:21){
+  if(sum(ty[,i])==0){print(i)}
+}
+
+ty_minus<-ty[,-c(10,12,13,18,19,21)]
+
+
+
+
+# Convert the table into long form: take the values from the matrix and put them one behind the other, starting with the first row (all counts for bird 1 for all food types) followed by the second row (all counts for bird 2 for all food types), etc.
+
+# Make a matrix that only has the food types and their counts
+dat<-ty_minus[,2:15]
+
+YY <- rep(NA,length(dat))
+MM <- YY
+ID <- YY
+JJ <- YY
+k <- 1
+for ( j in 1:nrow(dat) ) for ( m in 1:ncol(dat) ) {
+    YY[k] <- dat[j,m]
+    MM[k] <- m
+    ID[k] <- ty_minus$BirdID[j]
+    JJ[k] <- j
+    k <- k + 1
+}
+
+
 
 ### Richard's model: the probability for each bird for each food type that this food type is in their repertoire
 dat_list <- list(
     Y = YY,    # behavior counts
-    ID = ID,   # individual ID
+    ID = as.integer(as.factor(ID)),   # individual ID
     BID = MM,  # behavior ID
     J = JJ,    # recording ID
-    D = dat$d, # duration of recording
-    M = max(MM)
+    D = ty$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_minus$Treatment)) # 1 = Control, 2 = manipulated
 )
 
-# models for rate of behavior and prob possess behavior
+m0u <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
         log_lambda1 <- log(L[BID]) + log(D[J]),
         save> logit(p) <- 
             # vocialization intercepts for each group
-            a_mean[BID] + a[BID,group[ID]]*sigma
+            a_mean[BID] + a[BID,group[ID]]*sigma + 
+            # age-sex offsets for each group
+            #B_mean[age[ID],sex[ID]] + B[age[ID],sex[ID],group[ID]]*tau + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        matrix[M,2]:a ~ normal(0,1),
+        sigma ~ exponential(1)
+    ), data=dat_list , chains=4 , cores=4 , sample=TRUE , iter=500 )
+
+precis(m0u,3,pars=c("a_mean","sigma","bvl"))
+
+# Calculate contrast for each food type between control and manipulated birds
+posterior_m0u<-extract.samples(m0u)
+pairwisecontrast_byfoodtype<-as.data.frame(matrix(ncol=dat_list$M,nrow=nrow(posterior_m0u$a)))
+for(i in 1:dat_list$M){
+  pairwisecontrast_byfoodtype[,i]<-posterior_m0u$a[,i,2]-posterior_m0u$a[,i,1]
+}
+colnames(pairwisecontrast_byfoodtype)<-colnames(dat)
+precis(pairwisecontrast_byfoodtype)
+
+
+
+# Without nesting food types inside treatment versus manipulated, instead asking whether treatment overall had an effect on all the rates for all food types
+
+m0u_nonnested <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[group[ID]]*sigma + 
+            # age-sex offsets for each group
+            #B_mean[age[ID],sex[ID]] + B[age[ID],sex[ID],group[ID]]*tau + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        vector[2]:a ~ normal(0,1),
+        sigma ~ exponential(1)
+    ), data=dat_list , chains=4 , cores=4 , sample=TRUE , iter=500 )
+
+precis(m0u_nonnested,3,pars=c("a","sigma","bvl"))
+
+posterior_m0u_nonnested<-extract.samples(m0u_nonnested)
+contrast_treatmentminuscontrol_nonnested<-posterior_m0u_nonnested$a[,2]-posterior_m0u_nonnested$a[,1]
+precis(contrast_treatmentminuscontrol_nonnested)
+
+
+
+
+
+
+### group as treatment yes versus no rather than group as id 1 or 2
+dat_list_binary <- list(
+    Y = YY,    # behavior counts
+    ID = as.integer(as.factor(ID)),   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = ty$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_minus$Treatment))-1 # 0 = Control, 1 = manipulated
+)
+
+m0u_binary <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID]*group[ID]*sigma + 
+            # age-sex offsets for each group
+            #B_mean[age[ID],sex[ID]] + B[age[ID],sex[ID],group[ID]]*tau + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        vector[M]:a ~ normal(0,1),
+        sigma ~ exponential(1)
+    ), data=dat_list_binary , chains=4 , cores=4 , sample=TRUE , iter=500 )
+
+precis(m0u_binary,3,pars=c("a","sigma","bvl"))
+
+
+# repeat model with control=0 and treatment=1 with a hyperprior for the differences across the food types
+m0u_binary_hyper <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID]*group[ID]*sigma + 
+            # age-sex offsets for each group
+            #B_mean[age[ID],sex[ID]] + B[age[ID],sex[ID],group[ID]]*tau + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        vector[M]:a ~ normal(a_bar,a_sigma),
+        a_bar~normal(0,1),
+        a_sigma~exponential(1),
+        sigma ~ exponential(1)
+    ), data=dat_list_binary , chains=4 , cores=4 , sample=TRUE , iter=2500 )
+
+precis(m0u_binary_hyper,3,pars=c("a_bar","sigma","bvl"))
+
+
+
 ```
 
 **UNREGISTERED ANALYSES:** The results from the binomial suggest that the difference between manipulated and control individuals could be due to differences in the probability that birds will switch among foraging techniques. We predict that manipulated birds have a higher probability of switching techniques per second or per minute because switching is a measure of flexibility, which was manipulated in the aviaries for these individuals. The food type data set consisted of 13 individuals (6=manipulated, 7=control), and the foraging technique data set consisted of 12 individuals (n=5 manipulated, n=7 control) who had data that involved eating at least one food type or using at least one foraging technique. For each focal follow, we calculate the number of switches between food types or techniques that occur and the total amount of time that the bird was observed. We sum both measures across focal follows to have one data point per bird. This model takes the form of:
