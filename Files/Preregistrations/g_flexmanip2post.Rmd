@@ -292,7 +292,7 @@ datfirstsimulated$N_id <- length(unique(firstreversal_simulated$id))
 
 # Next, we also look at the estimation of the phi and lambda values based on their performance in the initial association learning phase
 
-# We first focus only on the performance in the reversal trials
+# We  focus only on the performance in the initial association trials
 simulatedreversaldata_attractionscores_learningphase<-simulatedreversaldata_attractionscores[simulatedreversaldata_attractionscores$Reversal=="initial",]
 
 # Let's start with 30 individuals for comparison
@@ -406,7 +406,7 @@ fit <- mod$sample(
 outcome_firstsimulated<-data.frame(fit$summary())
 rownames(outcome_firstsimulated)<-outcome_firstsimulated$variable
 
-# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+
 library(posterior)
 library(rethinking)
 drawsarray_firstsimulated<-fit$draws()
@@ -415,9 +415,9 @@ drawsdataframe_firstsimulated<-data.frame(drawsdataframe_firstsimulated)
 firstsimulated_lambda <- sapply(1 : datfirstsimulated$N_id, function(x) exp( mean(drawsdataframe_firstsimulated$log_L) + mean(drawsdataframe_firstsimulated[,x+3])))
 firstsimulated_phi <- sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( mean(drawsdataframe_firstsimulated$logit_phi) + mean(drawsdataframe_firstsimulated[,x+33])))
 firstsimulated_lambda_individuals <- sapply(1 : datfirstsimulated$N_id, function(x) exp( (drawsdataframe_firstsimulated$log_L) + (drawsdataframe_firstsimulated[,x+3])))
-firstsimulated_lambda_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(firstsimulated_lambda_individuals[,x],0.5))
+firstsimulated_lambda_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(firstsimulated_lambda_individuals[,x],0.89))
 firstsimulated_phi_individuals<-sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( (drawsdataframe_firstsimulated$logit_phi) + (drawsdataframe_firstsimulated[,x+33])))
-firstsimulated_phi_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(firstsimulated_phi_individuals[,x],0.5))
+firstsimulated_phi_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(firstsimulated_phi_individuals[,x],0.89))
 
 # Remove the stan command line file we created for this particular model from your computer
 fn<-"myowntrial"
@@ -529,17 +529,16 @@ fit <- mod$sample(
   refresh = 500
 )
 
-
-# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+#Extract relevant variables
 drawsarray<-fit$draws()
 drawsdataframe<-as_draws_df(drawsarray)
 drawsdataframe<-data.frame(drawsdataframe)
 initialandreversal_lambda <- sapply(1 : datinitialandreversalsimulated$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[,x+3]))) 
 initialandreversal_phi <- sapply(1 : datinitialandreversalsimulated$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[,x+33]))) 
 initialandreversal_lambda_individuals <- sapply(1 : datfirstsimulated$N_id, function(x) exp( (drawsdataframe$log_L) + (drawsdataframe[,x+3])))
-initialandreversal_lambda_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(initialandreversal_lambda_individuals[,x],0.5))
+initialandreversal_lambda_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(initialandreversal_lambda_individuals[,x],0.89))
 initialandreversal_phi_individuals<-sapply(1 : datfirstsimulated$N_id, function(x) inv_logit( (drawsdataframe$logit_phi) + (drawsdataframe[,x+33])))
-initialandreversal_phi_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(initialandreversal_phi_individuals[,x],0.5))
+initialandreversal_phi_range<-sapply(1 : datfirstsimulated$N_id, function(x) HPDI(initialandreversal_phi_individuals[,x],0.89))
 
 
 
@@ -672,7 +671,7 @@ precis(model_simulatedvsestimated_onlyone_both,depth=2)
 
 
 ################################################################################
-#### Plot for Figure 1
+#### Plot for Figure 2
 plot(firstsimulated_phi~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06),bty="n",cex=3,pch=18,col="#00DADF",ann=F)
 points(initialandreversal_phi~simulatedphis,col="#007477",pch=16,cex=2)
 abline(a=0,b=1,lty=2)
@@ -870,7 +869,7 @@ library(ggplot2)
 library(ggtext)
 
 ################################################################################
-##### Plot for Figure 2
+##### Plot for Figure 3
 
 
 summarysimulateddata_forplotting$color<-NA
@@ -920,7 +919,7 @@ probability_choose_rewarded
 
 
 ################################################################################
-### Plot for Figure 3
+### Plot for Figure 4
 
 phis_85percent<-c(0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10)
 lambda_85percent<-c(9.5,6.6,5.2,4.4,3.8,3.4,3.1,2.9,2.7)
@@ -1204,7 +1203,7 @@ fit <- mod$sample(
 )
 
 
-# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+# Extract relevant variables
 drawsarray<-fit$draws()
 drawsdataframe<-as_draws_df(drawsarray)
 drawsdataframe<-data.frame(drawsdataframe)
@@ -1375,7 +1374,7 @@ fit <- mod$sample(
 )
 
 
-# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
+#Extract relevant variables
 drawsarray<-fit$draws()
 drawsdataframe<-as_draws_df(drawsarray)
 drawsdataframe<-data.frame(drawsdataframe)
@@ -1689,7 +1688,7 @@ write.csv(precis(combinedposterior_trialslastphiandlambda),file="trialslast_phia
 
 
 
-
+ 
 # For comparison with the grackles, check relationship in the range observed in the experiments
 summarysimulateddata_ll<-summarysimulateddata[summarysimulateddata$ThisBirdsLambda>2,]
 summarysimulateddata_ll<-summarysimulateddata_ll[summarysimulateddata_ll$ThisBirdsPhi>0.01,]
@@ -1697,6 +1696,8 @@ summarysimulateddata_ll<-summarysimulateddata_ll[summarysimulateddata_ll$TrialsR
 plot(summarysimulateddata_ll$TrialsReversal~summarysimulateddata_ll$ThisBirdsPhi)
 points(combinedreversaldata$TrialsFirstReversal~combinedreversaldata$beginningphi,col="red",pch=16,cex=2)
 
+
+## Plot for Figure 6
 plot( NULL , xlim=c(0.01,0.07) , ylim=c(0,250) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
 points(summarysimulateddata_ll$TrialsReversal~summarysimulateddata_ll$ThisBirdsPhi,col="#007477",pch=1,cex=1)
 points(combinedreversaldata$TrialsFirstReversal~combinedreversaldata$beginningphi,bg="#E69F00",pch=21,cex=2,col="black")
@@ -1769,7 +1770,7 @@ write.csv(precis(combinedposterior_trialsphiandlambda),file="trials_phiandlambda
 
 ##########################################################################################
 ##########################################################################################
-# For plotting Figure 4
+# For plotting Figure 5
 ##########################################################################################
 
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
@@ -2117,18 +2118,6 @@ where *Improvement in the number of trials* is the difference in the number of t
 
 
 ```{r question4_improvementmanipulatedgrackles, eval=F}
-# What did the manipulation change? Determine what mechanisms of flexibility the birds in the manipulated group who were already fast at reversing rely on. We predicted that birds that were already faster at reversing would have similar deviation rates from the learned attractions between the first and last reversals and lower learning rates than slower birds, which would allow them to change their preference more quickly because the attraction would be weaker and easier to reverse. We predicted that birds that were initially slower to reverse would have high deviation rates in the first reversal compared with the last reversal because once one has a small preference for one option, it will be heavily preferred in future trials.
-
-# Questions:
-# 1) Effect of manipulation
-# Say that manipulation reduces number of trials birds needed to reverse (trials ~ reversal) - on average, by how many trials did they improve?
-# 1a) Did manipulation change phi and lambda? (phi ~ reversal (first vs last); lambda ~ reversal)
-# 1b) Does extent of change depend on how the birds started? Expect that birds that were already good initially needed to change less (cafe visiting model model m14.1: phi ~ id +id*manipulation)
-
-# 2) Is improvement in performance mainly due to change in phi or in lambda? 
-# 2a) (model mimprovement: trialimprovement ~ lambdaimprovement + phiimprovement)
-# 2b) cafe waiting model for trials to reverse, with morning/afternoon as first/last, and slope depends on phi improvement and lambda improvement
-# 2c) Can we estimate all changes simultaneously?  mallchanges, maybe run with just phi and just lambda because of their correlation in last
 
 library(rethinking)
 library(cmdstanr)
@@ -2143,9 +2132,6 @@ colnames(d3) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","
 
 # n=11: 5 in manipulated group, 6 in control group
 #length(d3$AverageLatencyAttemptNewLocusMABplastic)
-
-# make Batch a factor
-d3$Batch <- as.factor(d3$Batch)
 
 # Need to fix spelling mistake in a bird name to match it to the other data
 d3[d3$Bird=="Huachinago",]$Bird<-"Huachinango"
@@ -2950,7 +2936,7 @@ probability_rewarded[i+1]<-exp(attraction_rewarded[i]*lambda)/(exp(attraction_re
 probability_rewarded_phi08<-probability_rewarded
 
 
-
+## Plot for Figure 7
 plot( NULL , ylim=c(0,1) , xlim=c(0,40) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
 
 lines(probability_rewarded_phi06[2:36]~c(1:35),col="darkblue",lwd=8)
@@ -3621,7 +3607,7 @@ write.csv(precis(combinedposterior_mwloci),file="woodenloci.csv")
         
         
         
-#  Create a plot that shows the U-shaped relationship
+#  Plot for Figure 8
 
 dat_loci_wooden_both <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
             learningphi = (standardize(as.numeric(inputdata_philociwooden$lastphi))),
@@ -3639,7 +3625,7 @@ for(i in 1:8){
   phi_samples_for_plotting[,colnames(posteriorsamples_lastreversal_phi)[i]]<-posteriorsamples_lastreversal_phi[,colnames(posteriorsamples_lastreversal_phi)[i]]
 }
 
-phi_samples_for_plotting_ranges<-sapply(1 : ncol(phi_samples_for_plotting), function(x) HPDI(phi_samples_for_plotting[,x],0.5))
+phi_samples_for_plotting_ranges<-sapply(1 : ncol(phi_samples_for_plotting), function(x) HPDI(phi_samples_for_plotting[,x],0.89))
 colnames(phi_samples_for_plotting_ranges)<-colnames(posteriorsamples_initialandreversal_phi)
 
 phi_samples_for_plotting_ranges_wooden<-phi_samples_for_plotting_ranges[,inputdata_philociwooden$Bird]
@@ -3653,7 +3639,7 @@ for(i in 1:8){
   lambda_samples_for_plotting[,colnames(posteriorsamples_lastreversal_lambda)[i]]<-posteriorsamples_lastreversal_lambda[,colnames(posteriorsamples_lastreversal_lambda)[i]]
 }
 
-lambda_samples_for_plotting_ranges<-sapply(1 : ncol(lambda_samples_for_plotting), function(x) HPDI(lambda_samples_for_plotting[,x],0.5))
+lambda_samples_for_plotting_ranges<-sapply(1 : ncol(lambda_samples_for_plotting), function(x) HPDI(lambda_samples_for_plotting[,x],0.89))
 colnames(lambda_samples_for_plotting_ranges)<-colnames(posteriorsamples_initialandreversal_lambda)
 
 lambda_samples_for_plotting_ranges_wooden<-lambda_samples_for_plotting_ranges[,inputdata_philociwooden$Bird]
@@ -3827,260 +3813,6 @@ for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
 
 
 
-```{r posthoc_alternative, eval=F}
-
-### Below is an alternative approach where phi and lambda are estimated in the same STAN model in which their association with other parameters is assessed.
-
-### Code below copied from Blaisdell et al. 2021
-
-dflex <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv"), header=T, sep=",", stringsAsFactors=F) 
-dmabp <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F) 
-
-# PREPARE reversal learning data
-#exclude yellow tube trials for control birds because we are only interested in reversal data
-dflex <- subset(dflex, dflex$Reversal != "Control: Yellow Tube" & dflex$ID !="Memela") 
-#include only those trials where the bird made a choice (0 or 1)
-dflex <- subset(dflex, dflex$CorrectChoice != -1) 
-#reverse number. 0=initial discrimination
-dflex$Reversal <- as.integer(dflex$Reversal)
-#exclude reversal=0 because this was the initial discrimination and not a reversal
-dflex <- subset(dflex, dflex$Reversal != 0) 
-dflex$Correct <- as.integer(dflex$CorrectChoice)
-dflex$Trial <- as.integer(dflex$Trial)
-#exclude NAs from the CorrectChoice column
-dflex <- subset(dflex, is.na(dflex$Correct) == FALSE)
-
-# Want data ONLY from LAST TWO reversals to compare with main results from the other model in the Results section (which were from the last reversal)
-reduceddata <- matrix(ncol=ncol(dflex),nrow=0)
-reduceddata <- data.frame(reduceddata)
-for (i in 1:length(unique(dflex$ID))) {
-  thisbird <- unique(dflex$ID)[i]
-  thisbirddata <- dflex[dflex$ID==thisbird,]
-  thisbirdslastreversal <- thisbirddata[thisbirddata$Reversal %in% c((max(thisbirddata$Reversal)-1),max(thisbirddata$Reversal)),]
-  reduceddata <- rbind(reduceddata,thisbirdslastreversal)
-}
-dflex <- reduceddata
-length(unique(dflex$ID)) #21 birds
-
-#Construct Choice variable
-dflex$Choice <- NA
-for (i in 1: nrow(dflex)) {
-  if (dflex$Reversal[i] %in% seq(0, max(unique(dflex$Reversal)), by = 2)){
-    
-    if (dflex$Correct[i] == 1){
-      dflex$Choice[i] <- 1
-    } else {
-      dflex$Choice[i] <- 2
-    } 
-  } else {
-    if (dflex$Correct[i] == 1){
-      dflex$Choice[i] <- 2
-    } else {
-      dflex$Choice[i] <- 1
-    } 
-  }
-}
-dflex <- dflex[with(dflex, order(dflex$ID)), ]
-
-
-# PREPARE MAB data for models
-dmabp <- data.frame(dmabp)
-colnames(dmabp) <- c("Bird","Batch","Sex","Trials to learn","TrialsFirstReversal","TrialsLastReversal","ReversalsToPass","TotalLociSolvedMABplastic","TotalLociSolvedMABwooden","AverageLatencyAttemptNewLocusMABplastic","AverageLatencyAttemptNewLocusMABwooden","Trials to learn (touchscreen)","Trials to first reversal (touchscreen)","MotorActionsPlastic","MotorActionsWooden")
-
-# Keep only birds who finished the task
-dmabp <- subset(dmabp, is.na(dmabp$AverageLatencyAttemptNewLocusMABplastic) == FALSE)
-
-#Flexibility data for birds with inhibition score
-d <- subset(dflex, dflex$ID %in% dmabp$ID)
-
-# Sort birds alphabetically, so the birds are always in the same order in both data sets and the model can attribute the right data to the right birds
-d <- d[with(d, order(d$ID)), ]
-dmabp   <- dmabp[with(dmabp, order(dmabp$ID)), ]
-
-# Store the bird names in case we want to link their data from here back to other datasets
-birdnames<-unique(d$ID)
-
-# Convert bird names into numeric ids
-d$ID <- as.numeric(as.factor(d$ID))
-dmabp$ID <- as.numeric(as.factor(dmabp$ID))
-
-# Keep only the columns we are going to analyze
-d <- subset(d, select = c(ID, Choice, Correct))
-
-
-### The STAN model. Code below copied from Logan et al. 2020 http://corinalogan.com/Preregistrations/gxpopbehaviorhabitat.html and modified to obtain phi and lambda from reversal learning (explanatory variables) and MAB plastic latency to switch (response variable)
-
-# PREPARE the data for the STAN model
-dat_full <- as.list(d)
-dat_full$N <- nrow(d)
-dat_full$N_id <- length(unique(d$ID))
-dat_full$Choice <- as.numeric(as.factor(d$Correct))
-# to modify our code for your purposes, insert your response variable here. Replace dmabp$AverageLatencyAttemptNewLocusMABplastic with the column in your data sheet that is the response variable
-dat_full$Response <- dmabp$AverageLatencyAttemptNewLocusMABplastic
-
-
-# This STAN model, in addition to estimating phi and lambda for each individual, also estimates means for each site. It again starts with attractions set to 0.1 and assumes that individuals only learn about the option they chose.
-
-# In case you want to learn how to convert R code to STAN code, you can use the function stancode(). In this case, where we want to use the gamma poisson distribution, we can see the STAN code translation from the rethinking model mplat1 with stancode(mplat1)
-
-# DEFINE the model in STAN. This model links phi and lambda from reversal learning to the MAB plastic latency to switch data per bird
-reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- "
-data{
-   int N;
-   int N_id;
-   int ID[N];
-   int Choice[N];
-   int Correct[N];
-   int Response[N_id];
-}
-
-parameters{
-  real logit_phi;
-  real log_L;
-
-  // Varying effects clustered on individual
-  matrix[2,N_id] z_ID;
-  vector<lower=0>[2] sigma_ID;       //SD of parameters among individuals
-  cholesky_factor_corr[2] Rho_ID;
-
-  // GLM
-  real alpha;
-  real b_phi;
-  real b_lambda;
-  real b_int;
-  real <lower=0> spread;
-}
-
-transformed parameters{
-matrix[N_id,2] v_ID; // varying effects on individuals
-
-v_ID = ( diag_pre_multiply( sigma_ID , Rho_ID ) * z_ID )';
-}
-
-model{
-matrix[N_id,2] A; // attraction matrix
-
-vector[N_id] phi_i;
-vector[N_id] lambda_i;
-
-vector[N_id] phi_i_s ;
-vector[N_id] lambda_i_s ;
-vector[N_id] binomial_lambda;
-
-alpha ~ normal(5,0.5);
-b_phi ~ normal(0,0.3);
-b_lambda ~ normal(0,0.3);
-b_int ~ normal(0,0.3);
-spread ~ exponential(1);
-
-logit_phi ~  normal(0,1);
-log_L ~  normal(0,1);
-
-// varying effects
-to_vector(z_ID) ~ normal(0,1);
-sigma_ID ~ exponential(1);
-Rho_ID ~ lkj_corr_cholesky(4);
-
-// initialize attraction scores, which are set to 0.1 for both choices (lt gray and dk gray)
-for ( i in 1:N_id ) A[i,1:2] = rep_vector(0.1,2)';
-
-// loop over Choices
-for ( i in 1:N ) {
-vector[2] pay;
-vector[2] p;
-real L;
-real phi;
-
-// first, what is log-prob of observed choice
-L =  exp(log_L + v_ID[ID[i],1]);
-p = softmax(L*A[ID[i],1:2]' );
-Choice[i] ~ categorical( p );
-
-// second, update attractions conditional on observed choice
-phi =  inv_logit(logit_phi + v_ID[ID[i],2]);
-pay[1:2] = rep_vector(0,2);
-pay[ Choice[i] ] = Correct[i];
-A[ ID[i] , Choice[i] ] = ((1-phi)*(A[ ID[i] , Choice[i] ]) + phi*pay[Choice[i]]);
-}//i
-
-// Define bird specific values on the outcome scale and standardize
-lambda_i = exp(log_L + v_ID[,1]);
-phi_i = inv_logit(logit_phi + v_ID[,2]);
-
-lambda_i_s = (lambda_i - mean(lambda_i)) / sd(lambda_i);
-phi_i_s = (phi_i - mean(phi_i)) / sd(phi_i);
-
-
-binomial_lambda = alpha + b_lambda * lambda_i_s + b_phi * phi_i_s  + b_int * lambda_i_s .* phi_i_s;
-binomial_lambda = exp(binomial_lambda);
-
-Response ~ neg_binomial_2(binomial_lambda, spread);
-}
-"
-
-### Prepare to run the model using cmdstan
-#NOTE: CmdStan will help the stan models run faster. Instructions on how to install this are at https://mc-stan.org/cmdstanr/articles/cmdstanr.html
-
-# Save where your working directory is so we can reset it to this at the end of the session. You might have to copy and paste the following 2 sections directly into the Console because they sometimes don't otherwise run
-currentlocation<-getwd()
-cmdstanlocation <- cmdstan_path()
-setwd(cmdstanlocation)
-
-# access the output file created by the model running the reinforcement model
-write(reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison,file="myowntrial.stan")
-file <- file.path(cmdstan_path(), "myowntrial.stan")
-mod <- cmdstan_model(file)
-options(mc.cores=4)
-
-# RUN the model
-fit <- mod$sample(
-  data = dat_full,
-  seed = 123,
-  chains = 4,
-  parallel_chains = 4,
-  refresh = 500
-)
-# Extract relevant variables
-outcome<-data.frame(fit$summary())
-rownames(outcome)<-outcome$variable
-
-# Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
-drawsarray<-fit$draws()
-drawsdataframe<-as_draws_df(drawsarray)
-drawsdataframe<-data.frame(drawsdataframe)
-HPDI(drawsdataframe$b_lambda)
-HPDI(drawsdataframe$b_phi)
-HPDI(drawsdataframe$b_int)
-# all values cross zero so there is no correlation between mab latencies and phi or lambda
-
-# Plot the distribution of the estimated associations to see whether they overlap zero (if so, then there is no effect)
-library(bayesplot)
-mcmc_hist(fit$draws("b_lambda"))
-mcmc_hist(fit$draws("b_phi"))
-mcmc_hist(fit$draws("b_int"))
-
-# Calculate the lambda and phi values for each individual
-lambda <- sapply(1 : dat_full$N_id, function(x) exp( mean(drawsdataframe$log_L) + mean(drawsdataframe[ ,36+x])))
-# 2.733134 4.955325 4.195128 3.346893 3.934143 4.651078 3.408593 2.709205 2.763549 3.197556 2.594222
-phi <- sapply(1 : dat_full$N_id, function(x) inv_logit( mean(drawsdataframe$logit_phi) + mean(drawsdataframe[ ,47+x])))
-# 0.02692541 0.08285155 0.06224467 0.05683807 0.04781117 0.05612348 0.02987072 0.01878873 0.01372789  0.02764422 0.01833556
-
-# Here, for the last reversal data, lambda and phi are correlated across individuals
-plot(lambda~phi)
-
-
-# Remove the stan command line file we created for this particular model from your computer
-fn<-"myowntrial"
-file.remove(fn)
-
-# Reset your working directory to what it was before we ran the model
-setwd(currentlocation)
-
-
-### NOTE: if you aren't running cmdstan, then run the model with this code instead of the above "fit" model
-run_reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison <- stan( model_code =  reinforcement_model_id_mabplatency_nonzeroattraction_gammapoison, data=dat_full ,iter = 5000, cores = 4, chains=4, control = list(adapt_delta=0.9, max_treedepth = 12))
-```
- 
 \newpage
 
 ## RESULTS
