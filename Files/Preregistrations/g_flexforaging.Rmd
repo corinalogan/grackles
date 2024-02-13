@@ -3863,9 +3863,9 @@ cohen.kappa(x=cbind(clr,orig), w=NULL,n.obs=NULL,alpha=.05,levels=NULL) #Unweigh
 
 # SUPPLEMENTARY MATERIAL 2: additional analyses for P2
 
-##  2.1 Accounting for undersampling
+##  2.1 Accounting for undersampling in the main P2 model
 
-If a bird has only been observed for a short period of time, we might not have had a chance to see a given behavior that it actually uses. This is called undersampling. We adapted a model that McElreath developed (https://github.com/rmcelreath/cg_vocal_repertoires/blob/main/model_ulam_covariates.r) that better accounts for undersampling. We applied the model to Prediction 2 where we examine whether there are differences between control and manipulated birds in the number of food types and foraging techniques they use. We omitted food types and foraging techniques that none of these individuals used, which resulted in 14 food types and X foraging techniques.
+If a bird has only been observed for a short period of time, we might not have had a chance to see a given behavior that it actually uses. This is called undersampling. We adapted a model that McElreath developed (https://github.com/rmcelreath/cg_vocal_repertoires/blob/main/model_ulam_covariates.r) that better accounts for undersampling than the model we used in the Results section for P2. We applied the model to Prediction 2 where we examine whether there are differences between control and manipulated birds in the number of food types and foraging techniques they use. We omitted food types and foraging techniques that none of these individuals used, which resulted in 14 food types and 9 foraging techniques.
 
 We found that these models came to the same conclusion that manipulated birds ate 1.6 more food types and used 1.1 more foraging techniques, however the model was much less certain about the results given that most individuals were not observed using very many food types and foraging techniques (Table S2.1). As such, all of the 89% compatibility intervals crossed zero. The model also revealed that there are some foods and foraging techniques that the manipulated birds were less likely to use, suggesting that they ate different food types and used different techniques, rather than more of the same.
 
@@ -4312,6 +4312,312 @@ predevents_manipulated_seq<-predevents_manipulated_mean*seq(from=0,to=9000,lengt
 plot(dat_list_rate_binom$events ~ dat_list_rate_binom$obstime,col=dat_list_rate_binom$treatment)
 lines(predevents_control_seq ~  seq(from=0,to=9000,length=10),col=1)
 lines(predevents_manipulated_seq ~  seq(from=0,to=9000,length=10),col=2)
+```
+
+
+## 2.3 Accounting for undersampling in the unregistered switching analysis
+
+Unregistered analysis: If a bird has only been observed for a short period of time, we might not have had a chance to see a given behavior that it actually uses. This is called undersampling. We adapted a model that McElreath developed (https://github.com/rmcelreath/cg_vocal_repertoires/blob/main/model_ulam_covariates.r) that better accounts for undersampling than the model we used in the switching analysis in the Results section for P2. We applied the model to the P2 unregistered analysis where we examine whether there are differences between control and manipulated birds in the number of times they switch between food types and foraging techniques within a focal follow. We omitted food types and foraging techniques that none of these individuals used, which resulted in 14 food types and 9 foraging techniques.
+
+We found that these models came to the same conclusion: manipulated birds switched 1.6 more food types and used 1.1 more foraging techniques, however the model was much less certain about the results given that most individuals were not observed using very many food types and foraging techniques (Table S2.1). As such, all of the 89% compatibility intervals crossed zero. The model also revealed that there are some foods and foraging techniques that the manipulated birds were less likely to use, suggesting that they ate different food types and used different techniques, rather than more of the same.
+
+**Table SM2.3.** Contrasts showing that, for each food type and each foraging technique as well as across food types and foraging techniques, whether manipulated birds are more likely to use them than control birds.
+
+```{r p2manipvsctrlsupptableswitching, eval=T, warning=FALSE, results='asis', include=TRUE}
+library(kableExtra)
+library(dplyr)
+smtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_table_sm_p2.csv"), header=T, sep=",", stringsAsFactors=F)
+smtable <- data.frame(smtable)
+colnames(sumtable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+
+knitr::kable(sumtable) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 6)
+```
+
+
+```{r p2manipvsctrlsuppswitching, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### NUMBER OF FORAGING TECHNIQUES for flexibility manipulated vs control birds - did manipulated switch more?
+library(rethinking)
+library(dplyr)
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- data.frame(ft)
+
+# ONLY AZ: select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+ft1 <- ft[ft$Population=="AZ",]
+
+#FOOD TYPES: count the number of technique switches during each focal
+#exclude NAs from the variables in this model
+fo <- subset(ft1, is.na(ft1$What) == FALSE)
+
+#calculate food type switches per bird across all follows
+fo$FoodSwitch<-NA
+fo[1,]$FoodSwitch<-0
+for(i in 2:nrow(fo)){
+  ifelse(fo[i,]$FocalID==fo[i-1,]$FocalID & fo[i,]$What !=fo[i-1,]$What, fo[i,]$FoodSwitch<-1,fo[i,]$FoodSwitch<-0)
+}
+
+fo2 <- fo %>% group_by(BirdID,FocalID) %>% summarise(foodswitchesperfocal=sum(FoodSwitch),timeperfocal=mean(TotalTimeInView))
+fo3 <- fo2 %>% group_by(BirdID) %>% summarise(totalfoodswitches=sum(foodswitchesperfocal),totaltime=sum(timeperfocal))
+
+# link with general datasheet to identify which birds were manipulated
+c1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+c1 <- data.frame(c1)
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+c1 <- c1[c1$Population=="AZ",]
+ca<- c1 %>% group_by(BirdID) %>% summarise (Treatment=unique(FlexibilityManipulated))
+
+fo4 <- left_join(fo3,ca,by="BirdID")
+fo4 <- subset(fo4, is.na(fo4$Treatment) == FALSE)
+#nrow(fo4) #NOTE: n=13 (6=manipulated, 7=control) birds because some dropped out due to not having any foraging events in their focals or not having any focals
+
+
+### Richard's model: the probability for each bird for each food type that this food type is in their repertoire
+dat_list <- list(
+    Y = fo4$totalfoodswitches,    # switch counts
+    ID = as.integer(as.factor(fo4$BirdID)),   # individual ID
+    #BID = MM,  # behavior ID
+    #J = JJ,    # recording ID
+    D = fo4$totaltime, # duration of observation time
+    #M = max(MM), # total number of different food types
+    #vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(fo4$Treatment)) # 1 = Control, 2 = manipulated
+)
+
+m0u <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L) + log(D),
+        save> logit(p) <- 
+            # switch intercepts for each group
+            a_mean + a[group]*sigma + 
+        # priors
+        L ~ exponential(1),
+        a_mean ~ normal(0,1),
+        a[group] ~ normal(0,1),
+        sigma ~ exponential(1)
+    ), data=dat_list , chains=4 , cores=4 , cmdstan=TRUE, sample=TRUE , iter=500)
+
+precis(m0u,2,pars=c("a_mean","sigma"))
+
+# Calculate contrast for each food type between control and manipulated birds
+posterior_m0u<-extract.samples(m0u)
+pairwisecontrast_byfoodtype<-as.data.frame(matrix(ncol=dat_list$M,nrow=nrow(posterior_m0u$a)))
+for(i in 1:dat_list$M){
+  pairwisecontrast_byfoodtype[,i]<-posterior_m0u$a[,i,2]-posterior_m0u$a[,i,1]
+}
+colnames(pairwisecontrast_byfoodtype)<-colnames(dat)
+precis(pairwisecontrast_byfoodtype)
+
+
+
+### group as treatment yes versus no rather than group as id 1 or 2
+dat_list_binary <- list(
+    Y = YY,    # behavior counts
+    ID = as.integer(as.factor(ID)),   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = ty$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_minus$Treatment))-1 # 0 = Control, 1 = manipulated
+)
+
+# control=0 and treatment=1 with a hyperprior for the differences across the food types
+m0u_binary_hyper <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID]*group[ID] + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        vector[M]:a ~ normal(a_bar,a_sigma),
+        a_bar~normal(0,1),
+        a_sigma~exponential(1)
+    ), data=dat_list_binary , chains=4 , cores=4 , sample=TRUE , iter=2500 )
+
+precis(m0u_binary_hyper,3,pars=c("a_bar"))
+
+
+
+### repeat for foraging techniques
+
+#Load the foraging data
+f1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+f1 <- data.frame(f1)
+
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+c1 <- f1[f1$Population=="AZ",]
+
+#Count per bird the number of times it took a food type for all food types
+f_tech <- c1 %>% group_by(BirdID,How) %>% summarise (Count=n())
+f2_tech <- pivot_wider(f_tech,names_from=How,values_from=Count)
+
+# link with general datasheet to identify which birds were manipulated and their sum focal time
+g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
+g <- g[g$Population=="AZ",]
+ca<- g %>% group_by(BirdID) %>% summarise (Treatment=unique(FlexibilityManipulated), obstime=unique(SumFocalTime))
+
+ty_tech <- left_join(f2_tech,ca,by="BirdID")
+ty_tech <- subset(ty_tech, is.na(ty_tech$Treatment) == FALSE)
+ty_tech <- as.data.frame(ty_tech)
+#nrow(ty) #NOTE: n=13 (6=manipulated, 7=control) birds because some dropped out due to not having any foraging events in their focals or not having any focals
+
+# Remove "eat" and "tolerated theft" from the techniques
+ty_tech<-ty_tech[,-c(2,9)] #9 foraging techniques used by these birds in total
+
+#replace NAs with zeros
+ty_tech[is.na(ty_tech)] <- 0
+
+# remove food types that neither the manipulated nor the control birds ate: we cannot say whether they are more or less likely to be part of their repertoire
+for(i in 2:10){
+  if(sum(ty_tech[,i])==0){print(i)}
+}
+
+ty_tech_minus<-ty_tech[,-c(9)]
+
+
+# Convert the table into long form: take the values from the matrix and put them one behind the other, starting with the first row (all counts for bird 1 for all food types) followed by the second row (all counts for bird 2 for all food types), etc.
+
+# Make a matrix that only has the food types and their counts
+dat_tech<-ty_tech_minus[,2:9]
+
+YY <- rep(NA,length(dat_tech))
+MM <- YY
+ID <- YY
+JJ <- YY
+k <- 1
+for ( j in 1:nrow(dat_tech) ) for ( m in 1:ncol(dat_tech) ) {
+    YY[k] <- dat_tech[j,m]
+    MM[k] <- m
+    ID[k] <- ty_tech_minus$BirdID[j]
+    JJ[k] <- j
+    k <- k + 1
+}
+
+
+### Richard's model: the probability for each bird for each food type that this food type is in their repertoire
+dat_list_tech <- list(
+    Y = YY,    # behavior counts
+    ID = as.integer(as.factor(ID)),   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = ty_tech_minus$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_tech_minus$Treatment)) # 1 = Control, 2 = manipulated
+)
+
+m0u_tech <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID,group[ID]]*sigma + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        matrix[M,2]:a ~ normal(0,1),
+        sigma ~ exponential(1)
+    ), data=dat_list_tech , chains=4 , cores=4 , sample=TRUE , iter=500 )
+
+precis(m0u_tech,3,pars=c("a_mean","sigma","bvl"))
+
+# Calculate contrast for each food type between control and manipulated birds
+posterior_m0u_tech<-extract.samples(m0u_tech)
+pairwisecontrast_byforagingtechnique<-as.data.frame(matrix(ncol=dat_list_tech$M,nrow=nrow(posterior_m0u_tech$a)))
+for(i in 1:dat_list_tech$M){
+  pairwisecontrast_byforagingtechnique[,i]<-posterior_m0u_tech$a[,i,2]-posterior_m0u_tech$a[,i,1]
+}
+colnames(pairwisecontrast_byforagingtechnique)<-colnames(dat_tech)
+precis(pairwisecontrast_byforagingtechnique)
+
+
+
+### group as treatment yes versus no rather than group as id 1 or 2
+dat_list_binary_tech <- list(
+    Y = YY,    # behavior counts
+    ID = as.integer(as.factor(ID)),   # individual ID
+    BID = MM,  # behavior ID
+    J = JJ,    # recording ID
+    D = ty_tech_minus$obstime, # duration of recording
+    M = max(MM), # total number of different food types
+    vlen=rep(1,max(MM)), # each of the different food types takes 1 second to process
+    group=as.integer(as.factor(ty_tech_minus$Treatment))-1 # 0 = Control, 1 = manipulated
+)
+
+# control=0 and treatment=1 with a hyperprior for the differences across the food types
+m0u_binary_hyper_tech <- ulam(
+    alist(
+        # Y > 0
+        Y|Y>0 ~ custom( log(p) + poisson_log_lpmf(Y|log_lambda1) ),
+        # Y = 0
+        Y|Y==0 ~ custom( log_sum_exp( 
+            log(p) + poisson_log_lpmf(0|log_lambda1) , 
+            log1m(p)
+         ) ),
+        # models for rate of behavior and prob possess behavior
+        log_lambda1 <- log(L[BID]) + log(D[J]),
+        save> logit(p) <- 
+            # vocialization intercepts for each group
+            a_mean[BID] + a[BID]*group[ID] + 
+            # association of vocalization length with intercept
+            bvl*vlen[BID],
+        # priors
+        bvl ~ normal(0,1),
+        vector[M]:L ~ exponential(1),
+        vector[M]:a_mean ~ normal(0,1),
+        vector[M]:a ~ normal(a_bar,a_sigma),
+        a_bar~normal(0,1),
+        a_sigma~exponential(1)
+    ), data=dat_list_binary_tech , chains=4 , cores=4 , sample=TRUE , iter=2500 )
+
+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))
+
+# number of foraging techniques control birds
+inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1]))
+#> 0.4900608*8
+# 3.920486
+
+# number of foraging techniques manipulated birds
+inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))[1,1])
+#> 0.6314007*8
+# 5.051206
+
+inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))[1,1])*8-inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1]))*8
+# 1.130719
 ```
 
 # REFERENCES
