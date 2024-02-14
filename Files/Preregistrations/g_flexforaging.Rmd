@@ -1318,7 +1318,7 @@ In this dataset, there are 8 manipulated birds and 10 control birds who have 1-8
 
 Using the **binomial model** to determine, of the known food types and foraging techniques, how many are used, we find that flexibility manipulated individuals take an average of 1.8 more food types and use an average of 1.3 more foraging techniques than control individuals because the compatibility interval did not cross zero (food types: mean=-1.82, sd=0.74, 89% compatibility interval=-3.03 - -0.64; techniques: mean=-1.31, sd=0.80, 89% compatibility interval=-2.62 - -0.02; Figure). Not all birds were followed for the same amount of time and our expectation is that the number of food types and foraging techniques increases with increasing observation time. Therefore, we use the model to predict the number of food types and foraging techniques used if all birds were observed for the maximum amount of time. The model predicts that manipulated birds have an average of 8.9 food types and 5.8 techniques, and control birds an average of 5.4 food types and 4.3 techniques. These differences of 3.5 (food types) and 1.5 (techniques) are higher than the differences we observe with our dataset (1.8 and 1.3, respectively) because most birds were not observed for the maximum period of time. The manipulated birds have a 1.9 (food types) and 1.6 (techniques) higher likelihood of using any of the 22 food types or 10 foraging techniques than the control birds, regardless of the amount of observation time.
 
-```{r p2manipvsctrl, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2manipvsctrl, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 ### NUMBER OF FOOD TYPES AND FORAGING TECHNIQUES for flexibility manipulated vs control birds
 library(rethinking)
 c1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -1347,31 +1347,31 @@ fo <- subset(fo, is.na(fo$FlexibilityManipulated) == FALSE)
 
 
 # SIMULATION
-n = 18
-t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
-time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
-m = rbinom(n=n,size=20, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.41)+(1/6000)*time),sd=0.2)) #22 food types eaten. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
-sim_boxtype <- boxplot(m~t)
-sim_plottype <- plot(m~time)
+#n = 18
+#t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
+#time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
+#m = rbinom(n=n,size=20, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.41)+(1/6000)*time),sd=0.2)) #22 food types eaten. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+#sim_boxtype <- boxplot(m~t)
+#sim_plottype <- plot(m~time)
 #plots look good - any relationship is possible, but all values are within the feasible range
 
 #run the simulated data through the model
-s_type <- list(m = m,
+#s_type <- list(m = m,
             time = standardize(time),
             t = t
               )
-simtype <- ulam( alist(
+#simtype <- ulam( alist(
         m ~ dbinom(20,p), #max 22 food types in AZ (from data_FlexForaging > Foraging > How, and then counted the categories)
         logit(p) <- a[t] + b*time, #include total observation time because this varied per focal (with a target max time of 10 min)
         a[t] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc response variable is standardized
         b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
     ) , data=s_type , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-s_outputtype <- precis( simtype , depth=2 )
+#s_outputtype <- precis( simtype , depth=2 )
 
 #contrast
-postt <- extract.samples(simtype)
-diff <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
-diftype <- precis( diff )
+#postt <- extract.samples(simtype)
+#diff <- inv_logit( postt$a[,1]) - inv_logit( postt$a[,2])
+#diftype <- precis( diff )
 #shows a difference between the treatment groups when means differ by 0.01 or more when sd=0.2
 
 
@@ -1420,10 +1420,10 @@ contrasttr <- precis( difftr )
 #they would use an average of 5.9 techniques
 
 #Probability of using a food type
-inv_logit( output_tr_binom[1,1]) # 0.09748999 control
-inv_logit( output_tr_binom[2,1]) # 0.1893969 manipulated
+#inv_logit( output_tr_binom[1,1]) # 0.09748999 control
+#inv_logit( output_tr_binom[2,1]) # 0.1893969 manipulated
 #how much more likely are manipulated birds to use a food type?
-inv_logit( output_tr_binom[2,1]) / inv_logit( output_tr_binom[1,1]) #manipulated birds are 1.94 times more likely
+#inv_logit( output_tr_binom[2,1]) / inv_logit( output_tr_binom[1,1]) #manipulated birds are 1.94 times more likely
 
 
 
@@ -1442,32 +1442,32 @@ c2 <- subset(c2, is.na(c2$FlexibilityManipulated) == FALSE)
 #range(c2$NumFollows) #1-8 follows
 
 # SIMULATION
-n = 100
-t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
-time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
-m = rbinom(n=n,size=9, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.45)+(1/6000)*time),sd=0.15)) #9 techniques used. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
-boxplot(m~t)
-plot(m~time)
+#n = 100
+#t = sample(1:2,size=n,replace=T) #treatment is a categorical variable
+#time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
+#m = rbinom(n=n,size=9, prob=rnorm(n,mean=(ifelse(t==1,0.4,0.45)+(1/6000)*time),sd=0.15)) #9 techniques used. Now change the mean: a=the ifelse term giving each t a different intercept (a[1]=0.4), a[2]=0.5, b=1/6000. If you have been observed for the full 600 s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
+#boxplot(m~t)
+#plot(m~time)
 #plots look good - any relationship is possible, but all values are within the feasible range
 
 #run the simulated data through the model
-s_manip <- list(m = m,
+#s_manip <- list(m = m,
             time = standardize(time),
             t = t
               )
-set.seed(11)
-simmanip <- ulam( alist(
+#set.seed(11)
+#simmanip <- ulam( alist(
         m ~ dbinom(12,p), #max 12 foraging techniques used across both populations (from data_FlexForaging > Foraging > How, and then counted the categories)
         logit(p) <- a[t] + b*time, #include total observation time because this varied per focal (with a target max time of 10 min)
         a[t] ~ dnorm(0,1), #each treatment gets its own intercept, mean=0 bc response variable is standardized
         b ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
     ) , data=s_manip , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-s_output <- precis( simmanip , depth=2 )
+#s_output <- precis( simmanip , depth=2 )
 
 #contrast
-posts <- extract.samples(simmanip)
-diffs <- inv_logit( posts$a[,1]) - inv_logit( posts$a[,2])
-contrastsim_binom <- precis( diffs )
+#posts <- extract.samples(simmanip)
+#diffs <- inv_logit( posts$a[,1]) - inv_logit( posts$a[,2])
+#contrastsim_binom <- precis( diffs )
 #shows a difference between the treatment groups when means differ by 0.05 or more when sd=0.15
 
 
@@ -1544,7 +1544,7 @@ shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
 points(fo[fo$FlexibilityManipulated=="No",]$NumFoodTypes~fo[fo$FlexibilityManipulated=="No",]$SumFocalTime,pch=1)
 points(fo[fo$FlexibilityManipulated=="Yes",]$NumFoodTypes~fo[fo$FlexibilityManipulated=="Yes",]$SumFocalTime,pch=2,col="black")
 legend(x="topleft", y=8, legend=c(pch1="Control", pch2="Manipulated"), pch=c(1,2), col=c("Black","Black"), box.lty=1, cex=1)
-mtext("A: Binomial",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
+mtext("A",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
 ##techs binomial plot: the manipulated birds had consistently more techniques across all observation times and the rate of observing a given technique is higher for manipulated birds, therefore the difference between them and the control group gets larger as time increases
 plot( c2$SumFocalTime , c2$NumForageTechs , xlab="Observation time (sec)" , ylab="Total foraging techniques" ,
     col=ifelse( manip$treatment==1 , 4 , 2 ) , lwd=4+4*normalize(k) ,
@@ -1563,7 +1563,7 @@ lines( time_seq_unst , lmu , lty=1 , lwd=1.5 )
 shade( lci , time_seq_unst , xpd=TRUE , col=col.alpha(2,0.3) )
 points(c2[c2$FlexibilityManipulated=="No",]$NumForageTechs~c2[c2$FlexibilityManipulated=="No",]$SumFocalTime,pch=1)
 points(c2[c2$FlexibilityManipulated=="Yes",]$NumForageTechs~c2[c2$FlexibilityManipulated=="Yes",]$SumFocalTime,pch=2,col="black")
-mtext("C: Binomial",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
+mtext("B",side=3,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
 par(op)
 
 
@@ -1657,6 +1657,8 @@ par(op)
 #assume observe a bird for 3 min and it shows techs a b and c. Assume a 2nd bird for 3 min, shows a and b. Why are fewer techs observed in the 2nd bird? Option 1 = it knows fewer techs, Option 2= it changes between techs at a lower rate. The binomial model captures the rate of switching among techs at a given time point, so as long as you look at the difference between the treatment groups away from the two ends of observation time (not close to zero and not once the techniques have asymptoted), the you will be able to see the difference between the groups, if any. 
 #With binomial, assume every bird can reach the full 10 maximum techniques, whereas the poisson tries to extrapolate the maximum number of techs each bird could have and it says that this number is not different between the groups. 
 ```
+
+**Figure X.** .
 
 
 **UNREGISTERED ANALYSES:** The results from the binomial suggest that the difference between manipulated and control individuals could be due to differences in the probability that birds will switch among foraging techniques. We predict that manipulated birds have a higher probability of switching techniques per second or per minute because switching is a measure of flexibility, which was manipulated in the aviaries for these individuals. The food type data set consisted of 13 individuals (6=manipulated, 7=control), and the foraging technique data set consisted of 12 individuals (n=5 manipulated, n=7 control) who had data that involved eating at least one food type or using at least one foraging technique. For each focal follow, we calculate the number of switches between food types or techniques that occur and the total amount of time that the bird was observed. We sum both measures across focal follows to have one data point per bird. This model takes the form of:
@@ -3555,6 +3557,114 @@ outputfl <- precis( f8lam , depth=2 ) #look at the bp effect size and whether th
 #bl    -0.33 0.59 -1.30  0.59   943     1
 #br     0.39 0.65 -0.56  1.47   805     1
 #sigma  1.05 0.29  0.69  1.58  1153     1
+
+
+
+
+### CODY ROSS'S CODE: we ran a model that accounts more for the small numbers of observations per individual and that can estimate the uncertainty around the entropy (a measure of habitat diversity) and it found the same results as the model based on the Shannon Diversity Index above (note: we ran it on the females and not the males). Note: the entropy values per individual were almost exactly the same as that individual's Shannon Diversity Index
+
+#run the stan model
+entropymodel <- "functions{
+  real Entropy(vector X, int N){
+    vector[N] Y;
+
+    for(i in 1:N){
+      if(X[i] == 0)
+      Y[i] = 0;
+      else
+      Y[i] = X[i]*log(X[i]);
+    }
+
+    return(-sum(Y));
+  }
+}
+
+data {
+  int N_ind;                            //# Number of individuals
+  int N_habs;                          //# Number of habitat types
+  array[N_ind] int Id;                //# indicator for each unique individual
+  array[N_ind, N_habs] int Outcomes;   //# Outcome data, count of visits per habitat, per individual
+  array[N_ind] real phi;               //# phi of each individual
+  array[N_ind] real lambda;               //# lambda of each individual
+}
+
+parameters {
+  array[N_ind] simplex[N_habs] Theta;          //# Vector of habitat choice parameters
+}
+
+model{
+  //# Priors on habitat choice parameters
+   for(individual in 1:N_ind){
+   Theta[individual] ~ dirichlet(rep_vector(0.01, N_habs)); 
+    }
+
+  //# Multinomial model of outcomes
+  for(n in 1:N_ind){
+    Outcomes[n] ~ multinomial(Theta[Id[n]]);
+  }
+ }
+
+generated quantities{
+ //# Calculate entropy and entropy difference
+  vector[N_ind] H;                     //# Entropy
+ 
+ for(indentropies in 1:N_ind){
+  H[indentropies] = Entropy(Theta[indentropies], N_habs);
+ }
+  }
+"
+
+# MODELING FEMALES
+# Prepare data
+f9<-f8[,c(2,13:21)]
+f9[,2:10]<-round(f9[,2:10]*c(5, 6, 1, 6, 6, 3, 4, 2, 4),0) #f8$NumFollows but reduced Chalupa's from 6 to 5 because couldn't find her habitat data for the 6th follow
+
+model_dat = list(N_ind = nrow(f9), 
+	             N_habs = ncol(f9)-1,
+	             Id = as.integer(as.factor(f9$BirdID)),
+	             Outcomes = f9[,2:10], #note that column names are wrong: this isn't a proportion, it is now the number of follows
+	             phi = f8$Phi,
+	             lambda = f8$Lambda
+	            )
+
+#Run the model
+model <- stan( model_code  = entropymodel , data=model_dat ,iter = 5000, cores = 2, chains=2, control = list(adapt_delta=0.95, max_treedepth = 13))  
+
+#Extract samples from the posterior
+posterior_model<-extract.samples(model)
+
+for(i in 1:100){
+  dat_entropy=list(H=posterior_model$H[i,],
+            phi = standardize(f8$Phi),
+            lambda = standardize(f8$Lambda),
+            rank = standardize(f8$DomRank)
+                   )
+  
+  model_entropy <-ulam(
+    alist(
+        H ~ dnorm(mu,sigma),
+        log(mu) <- a + bl*lambda + bp*phi + br*rank , 
+        a ~ dnorm(0,1), 
+        bl ~ dnorm(0,1),
+        bp ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=dat_entropy , chains=1 , cores=1 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+  
+  posterior_entropy<-extract.samples(model_entropy)
+ ifelse(i==1,combined_bl<-posterior_entropy$bl[,1],c(combined_bl,posterior_entropy$bl[,1]))
+ ifelse(i==1,combined_bp<-posterior_entropy$bp[,1],c(combined_bp,posterior_entropy$bp[,1])) 
+ print(i)
+}
+
+# determine whether phi or lambda were associated with the number of habitats used by looking at bl and bp and seeing if the CI crosses zero. Both CIs cross zero, so they are not associated with the number of habitats used
+la <- precis(combined_bl)
+#             mean  sd  5.5% 94.5% histogram
+#combined_bl -0.31 0.5 -1.22  0.42  ▁▁▁▃▇▃▁▁
+
+ph <- precis(combined_bp)
+#            mean   sd  5.5% 94.5%      histogram
+#combined_bp -0.34 0.43 -1.07  0.29 ▁▁▁▂▂▃▅▇▇▅▂▁▁▁
 ```
 
 ```{r p6fig, eval=T}
