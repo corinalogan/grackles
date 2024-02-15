@@ -2298,19 +2298,19 @@ fo <- subset(fo, is.na(fo$SumFocalTime) == FALSE)
 fo <- subset(fo, is.na(fo$Phi) == FALSE)
 fo <- subset(fo, is.na(fo$Lambda) == FALSE)
 fo <- subset(fo, is.na(fo$DomRank) == FALSE)
-length(unique(fo$BirdID)) #35 individuals
+#length(unique(fo$BirdID)) #35 individuals
 
 #Separate the sexes
 f <- fo[fo$Sex=="F",]
 m <- fo[fo$Sex=="M",]
 
 #sample sizes
-length(unique(f$BirdID)) #9 females
-length(unique(m$BirdID)) #26 males
-mean(f$NumFollows) #4.2 follows for females
-range(f$NumFollows) #1-6 follows for females
-mean(m$NumFollows) #4.6 follows for females
-range(m$NumFollows) #1-8 follows for females
+#length(unique(f$BirdID)) #9 females
+#length(unique(m$BirdID)) #26 males
+#mean(f$NumFollows) #4.2 follows for females
+#range(f$NumFollows) #1-6 follows for females
+#mean(m$NumFollows) #4.6 follows for females
+#range(m$NumFollows) #1-8 follows for females
 
 
 # SIMULATION
@@ -2495,7 +2495,7 @@ var(repeata) # 0.004
 posterior.mode(repeata) # 0.26
 HPDinterval(repeata, 0.95) # 0.14 - 0.39
 
-## YES - distance is repeatable of each individual to a human food location across focal follows
+## YES - distance (in meters) is repeatable of each individual to a human food location across focal follows
 
 #If repeatable, take average distance across focal follows per bird to model relationship with flexibility
 tmp = aggregate(DistHumanFood ~ BirdID, FUN = "mean", data = rpt.dist)
@@ -2504,223 +2504,166 @@ general = merge(tmp, general, by = "BirdID",all = T)
 general = general[!is.na(general$Sex),]
 #write.csv(general, "g_flexforaging_data_general.csv")
 
+general<-general[is.na(general$DistHumanFood)==FALSE,] # remove NAs
+#Separate the sexes
+fg <- general[general$Sex=="F",]
+mg <- general[general$Sex=="M",]
+
+#sample sizes
+#length(unique(f$BirdID)) #9 females
+#length(unique(m$BirdID)) #26 males
+#mean(f$NumFollows) #4.2 follows for females
+#range(f$NumFollows) #1-6 follows for females
+#mean(m$NumFollows) #4.6 follows for females
+#range(m$NumFollows) #1-8 follows for females
+
+#determine the distribution
+#hist(general$DistHumanFood) #poisson bc count of meters, but some large outliers so need to log transform. If you are relatively close, small distance changes can make a big difference, but if you are farther away, small distance changes don't make much difference. Therefore, this is a NORMAL distribution (page 242 McElreath 2020)
+#hist(log(general$DistHumanFood)) #log fixed it so it is normal
+
+# FEMALE model
+dat_list_distancef <- list(
+  distance = log(fg$DistHumanFood),
+  phi = standardize(fg$Phi),
+  lambda = standardize(fg$Lambda),
+  rank = standardize(fg$DomRank)
+)
+
+m_distancef<-ulam( alist(
+       distance ~dnorm(mu,sigma),
+       mu <- a + bp*phi + bl*lambda + br*rank,
+       a~dnorm(4.5,1),
+       c(bp,bl,br)~dnorm(0,1),
+       sigma~dexp(1)
+    ) , data=dat_list_distancef , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+dfout <- precis( m_distancef , depth=2 )
+#       mean   sd  5.5% 94.5% rhat ess_bulk
+# a      4.32 0.23  3.96  4.69 1.00  1310.27
+#br    -0.11 0.24 -0.48  0.26 1.01  1501.11
+#bl    -1.07 0.28 -1.51 -0.60 1.00  1259.35
+#bp    -0.11 0.28 -0.55  0.33 1.00  1217.33
+#sigma  0.68 0.23  0.40  1.10 1.00   766.14
+#even though flexibility is not related to the proportion of human foods eaten, birds with a higher lambda (less flexible) are closer to human food sources (so flexible birds have to actively seek human food). Phi's CI does not cross zero
+
+# MALE model
+dat_list_distancem <- list(
+  distance = log(mg$DistHumanFood),
+  phi = standardize(mg$Phi),
+  lambda = standardize(mg$Lambda),
+  rank = standardize(mg$DomRank)
+)
+
+m_distancem<-ulam( alist(
+       distance ~dnorm(mu,sigma),
+       mu <- a + bp*phi + bl*lambda + br*rank,
+       a~dnorm(4.5,1),
+       c(bp,bl,br)~dnorm(0,1),
+       sigma~dexp(1)
+    ) , data=dat_list_distancem , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+dmout <- precis( m_distancem , depth=2 )
+#       mean   sd  5.5% 94.5% rhat ess_bulk
+#a      4.76 0.25  4.38  5.15    1  2215.61
+#br    -0.23 0.26 -0.63  0.20    1  1936.88
+#bl    -0.20 0.26 -0.61  0.21    1  2033.19
+#bp     0.11 0.27 -0.32  0.55    1  2147.77
+#sigma  1.28 0.20  1.01  1.63    1  1792.89
+#flexibility is not related to the proportion of human foods eaten, and lambda and phi show no association with the distance to human food sources
+
+#VISUALIZE
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(dat_list_distancem$distance~dat_list_distancem$lambda, xlab="λ", ylab="Distance to human food source (log meters)", pch=1,cex=2,cex.lab=1.5)
+points(dat_list_distancef$distance~dat_list_distancef$lambda,pch=2,col="blue",cex=2)
+legend(x="topright", y=7, legend=c(pch1="Males", pch2="Females"), pch=c(1,2), col=c("Black","Blue"), box.lty=1, cex=1.3)
+par(op)
 
 
-
-
-### Number of outdoor human food sources PER HOME RANGE
+### NUMBER OF OUTDOOR HUMAN FOOD SOURCES PER HOME RANGE
 # LOAD the foraging data sheet
 f1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 f1 <- data.frame(f1)
 
 # only include the columns I want to add to the general data sheet
-f2 <- subset(f1, select=c(BirdID,NumberHumanFood))
-colnames(f2) = c("BirdID","NumberHumanFoodSourcesInHomeRance")
+f2 <- subset(f1, select=c(BirdID,NumberHumanFoodSourcesInHomeRange))
+colnames(f2) = c("BirdID","NumberHumanFoodSourcesInHomeRange")
 
-###### I AM HERE!!!! To do next....
+f3<-f2[is.na(f2$NumberHumanFoodSourcesInHomeRange)==FALSE,] # remove NAs
+f3<-f3[f3$NumberHumanFoodSourcesInHomeRange!="N/A",] # remove N/As
+f3$NumberHumanFoodSourcesInHomeRange<-as.numeric(f3$NumberHumanFoodSourcesInHomeRange)
 #reduce the number of rows to only 1 per bird
 
-# Add the column number of human food sources inside a home range to the general data sheet
-hr <- left_join(b1,f2,by="BirdID")
-ft3 <-  #1st entry=data sheet (b1) to which I want to add the info from the second entry (ft2)
-ft3[is.na(ft3$SumFoodEvents)==TRUE,]$SumFoodEvents <- 0  #add zeros to birds who had focals but were never observed eating
-ft3[ft3$SumFocalTime==0,]$SumFoodEvents <- NA 
-#write.csv(ft3,file="g_flexforaging_data_general.csv") #uploaded this to github so now can just use the SumFoodEvents column in the general data sheet
+f4 <- as.data.frame(f3 %>% group_by(BirdID) %>% summarise(NumberHumanFoodSourcesInHomeRange=mean(NumberHumanFoodSourcesInHomeRange)))
+
+# Add the column number of human food sources inside a home range to the general data sheet: IT IS ALREADY IN https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv
+#hr <- left_join(b1,f4,by="BirdID")
 
 
+#remove the birds who don't have data in all variables
+b2 <- subset(b1,!(is.na(b1["Phi"])) & !(is.na(b1["DomRank"])) & !(is.na(b1["NumberHumanFoodSourcesInHomeRange"]))) 
 
-# SIMULATION
-n = 100
-ph = rnorm(n,mean=0,sd=1) #phi can range from 0 to 1, but standardize it by making mean=0 and SD=1. FYI avg phi for AZ grackles is about 0.06 and only goes up to 0.12 so this is a small number, hence the small sd to keep it in this low range. 
-la =  rnorm(n,mean=0,sd=1) #lambda can range from 0 to 9, but standardize by making mean=0 and SD=2
-r = rnorm(n,mean=0,sd=1) #rank can range from -1 to 1, but standardize it
-fevent = rnorm(n,mean=0,sd=1) #number of food events per bird can range from 0 and up, but standardize it
-mod = rbinom(n=n,size=22, prob=inv_logit(rnorm(n,mean=(0.25*ph + 0.5*la + 1*r + 1*fevent),sd=0.2))) #22 food types eaten.
-plot(mod~ph)
-plot(mod~la)
-#plots look good - any relationship is possible, but all values are within the feasible range
-
-#Simulation with observation time in
-#time =  600-rexp(n=n,rate=1/50) #each focal follow was 10 min (600 sec), but many weren't able to be conducted for this long bc the bird went out of view. Expect most follows to have met the 10 min criteria
-#model = rbinom(n=n,size=22, prob=inv_logit(rnorm(n,mean=(0.25*ph + 0.5*la + 1*r + (1/6000)*time),sd=0.2))) #22 food types eaten. Now change the mean: a=4 which makes the phis and lambdas positive which is what we need, betas are the 1s before p, l, and r;  b=1/6000. If you have been observed for the full 600s, the probability of having more foraging techniques increases by 0.1 with the 1/6000 term
-
-#run the simulated data through the model
-s_type <- list(mod = mod,
-               phi = ph,
-               lambda = la,
-               r = r,
-               fevent = fevent
-              )
-simtype <- ulam( alist(
-        mod ~ dbinom(22,p), #max 22 food types across AZ & CA (from data_FlexForaging > Foraging > How, and then counted the categories)
-        logit(p) <- a + bp*phi + bl*lambda + br*r + bf*fevent, #include total observation time because this varied per focal (with a target max time of 10 min)
-        a ~ dnorm(0,1), 
-        bp ~ dnorm(0,1),
-        bl ~ dnorm(0,1),
-        br ~ dnorm(0,1),
-        bf ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
-    ) , data=s_type , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-s_outputtype <- precis( simtype , depth=2 )
-#   mean   sd  5.5% 94.5% n_eff Rhat4
-#a  0.06 0.05 -0.02  0.14  2546     1
-#bp 0.25 0.06  0.17  0.34  2238     1
-#bl 0.50 0.06  0.40  0.59  2539     1
-#br 1.00 0.06  0.90  1.10  2112     1
-#bf 1.06 0.06  0.97  1.15  2292     1
-#check bp and bl to see if it crosses zero. neff and rhat look good
-
-
-# RUN the models
-## FEMALE - food types
-fe <- list(foods = f$,
-            events = standardize(f$SumFoodEvents),
-            phi = standardize(as.numeric(f$Phi)),
-            lambda = standardize(as.numeric(f$Lambda)),
-            rank = standardize(f$DomRank)
-              )
-set.seed(9)
-fe_binom <- ulam( alist(
-        foods ~ dbinom(22,p), #max 22 food types
-        logit(p) <- a + bp*phi + bl*lambda + br*rank + be*events, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
-        a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bp ~ dnorm(0,1),
-        bl ~ dnorm(0,1),
-        br ~ dnorm(0,1),
-        be ~ dnorm(0,1) #our prior expectation for b is that it is around 0, can be negative or positive, and should not be larger than 1
-    ) , data=fe , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-output_fe_binom <- precis( fe_binom , depth=2 )
-#      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -2.69 0.31 -3.18 -2.22  1297     1
-#bp -0.61 0.47 -1.41  0.05  1066     1
-#bl -0.46 0.35 -1.03  0.10  1240     1
-#br  0.27 0.32 -0.21  0.79  1402     1
-#be  0.26 0.27 -0.19  0.69  1129     1
-#look at bp and bl to see if a relationship with foods: food types and phi/lambda are not strongly related in females
-
-
-
-
-
-
-
-#---OLD---
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-
-ff <- data.frame(ff)
-
-#exclude NAs from the DomRank column
-ff <- subset(ff, is.na(ff$DomRank) == FALSE)
+#determine the distribution: poisson bc number of human food sources inside home range
+#hist(b2$NumberHumanFoodSourcesInHomeRange)
 
 #Separate the sexes
-ff <- ff[ff$Sex=="F",]
-mal <- ff[ff$Sex=="M",]
-
-#Factor the random effect variables
-ff$ID <- as.factor(ff$BirdID)
-ff$Population <- as.factor(ff$Population)
-mal$ID <- as.factor(mal$BirdID)
-mal$Population <- as.factor(mal$Population)
-
-#sample sizes
-length(unique(ff$ID)) #9 ffales
-length(unique(mal$ID)) #26 males
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-
-#Data checking for ffale GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=binomial, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ProportionFoodsEatenHumanFood, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#Data checking for male GLMM
-simulationOutput <- simulateResiduals(fittedModel = glmer(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime + (1|ID) + (1|Population), family=binomial, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ProportionFoodsEatenHumanFood, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+fd <- b2[b2$Sex=="F",] #n=8
+md <- b2[b2$Sex=="M",] #n=26
 
 
-#GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
+#FEMALE model
+fn <- list(num = fd$NumberHumanFoodSourcesInHomeRange,
+              phi = standardize(fd$Phi),
+              lambda = standardize(fd$Lambda),
+              rank = standardize(fd$DomRank)
+)
 
-#GLMM with response variable = NumberFoodsEaten
-#females
-set.seed(15)
-f1 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
+mn <- ulam(
+  alist(
+    num ~ dpois( l ),
+        log(l) <- a + bp*phi + bl*lambda + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(bp,bl,br)~dnorm(0,1)
+  ),data=fn, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-#males
-set.seed(16)
-f2 <- MCMCglmm(PropHumanFood ~ Phi + Lambda + FlexibilityManipulated + DomRank + SumFocalTime, random=~Population+ID, family="categorical", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
-
-
-
+#precis(mn,depth=2)
+#   mean   sd  5.5% 94.5% rhat ess_bulk
+#a   3.25 0.07  3.14  3.36    1  1666.97
+#br -0.08 0.07 -0.20  0.03    1  1734.80
+#bl  0.17 0.08  0.03  0.30    1  1613.96
+#bp -0.01 0.09 -0.16  0.13    1  1570.98
+#females with a larger lambda (less flexible) have more human food sources inside their home range. No effect for phi
 
 
-# P3 Distance to human food locations and flexibility
+#MALE model
+mnl <- list(num = md$NumberHumanFoodSourcesInHomeRange,
+              phi = standardize(md$Phi),
+              lambda = standardize(md$Lambda),
+              rank = standardize(md$DomRank)
+)
 
-d2 <- MCMCglmm(avg_dist ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-d2
+mnmale <- ulam(
+  alist(
+    num ~ dpois( l ),
+        log(l) <- a + bp*phi + bl*lambda + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(bp,bl,br)~dnorm(0,1)
+  ),data=mnl, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-# Number of outdoor cafes within the home range of each individual, measured by calculating home range size and then summing the number of cafes.
-distance <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
-distance <- data.frame(distance)
+#precis(mnmale,depth=2)
+#   mean   sd  5.5% 94.5% rhat ess_bulk
+#a  2.63 0.06  2.54  2.71    1  1598.52
+#br 0.29 0.07  0.18  0.39    1  1582.21
+#bl 0.37 0.05  0.29  0.45    1  1325.43
+#bp 0.03 0.06 -0.07  0.13    1  1606.01
+#males with a larger lambda (less flexible) have more human food sources inside their home range. No effect for phi
 
-#Load packages
-library(adehabitatHR)
-library(sf)
-#Point to the correct data file and load it
-setwd("~/Documents/Grackle project/Space use")
-pts<-read.csv("gtgr_points.csv", header = T)
-#Set variables to ensure the models read the data properly
-pts$Latitude = as.numeric(as.character(pts$Latitude))
-pts$Longitude = as.numeric(as.character(pts$Longitude))
-pts$Date = as.character(pts$Date)
-pts$Time = as.character(pts$Time)
-pts$da.ti = as.POSIXct(paste(pts$Date, pts$Time), format="%Y-%m-%d %H:%M:%S")
-#Home range size can only be calculated when a bird has more than 5 relocations
-#Count the number of relocations for each bird, then exclude individuals with less than 6
-tmp = pts
-tmp$count = 1
-tmp = aggregate(count ~ Bird.Name, FUN = "sum", data = tmp)
-pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
-pts.min = pts.min[-which(pts.min$count<6),]
-pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
-#Convert dataframe to Spatial file type
-p.sf <- st_as_sf(pts.min, coords = c("Longitude", "Latitude"), crs = 4326) 
-class(p.sf) 
-p.spatial <- as(p.sf, "Spatial")
-class(p.spatial)
-#Calculate home range in square meters for each individual, excluding outliers
-hr = mcp(p.spatial[1], percent = 100, unout = "m2")
-plot(hr)
-#Read in dataframe with cafe locations
-cafs<-read.csv("cafe_points.csv", header = T)
-#Convert to spatial points dataframe
-c <- SpatialPointsDataFrame(cafs)
-#Count the number of cafes in each home range polygon
-cafes <- over(c, hr)
-cafe_data <- table(cafes$NAME_1)
-cafe_data <- merge(cafe_data, ff, by = "ID")
+#VISUALIZE
+op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
+plot(mnl$num~mnl$lambda, xlab="λ", ylab="Number of human food sources inside home range", pch=1,cex=2,cex.lab=1.5)
+points(fn$num~fn$lambda,pch=2,col="blue",cex=2)
+legend(x="topleft", y=7, legend=c(pch1="Males", pch2="Females"), pch=c(1,2), col=c("Black","Blue"), box.lty=1, cex=1.3)
+par(op)
 
-set.seed(17)
-c1 <- MCMCglmm(NumberCafesInTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="categorical", data=cafe_data, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(c1)
 ```
 
 ## P4: Flexibility and social bonds
