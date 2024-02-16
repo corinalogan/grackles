@@ -1,5 +1,5 @@
 ---
-title: Behavioral flexibility is related to foraging behavior in a rapidly expanding species
+title: Behavioral flexibility is related to foraging behavior, but not habitat use, in a rapidly expanding species
 author: 
 - '[Logan CJ](http://CorinaLogan.com)^1^*'
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^*'
@@ -166,13 +166,20 @@ This is one of the first studies planned for our long-term research on the role 
 
 **P3 alternative 2:** There is a negative correlation between an individual's flexibility and the proportion of human foods in their diet, potentially because some of the less flexible individuals might specialize on human foods, thus increasing their consumption above that of the more flexible individuals.
 
-### H2: [Behavioral flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) [see @mikhalevich_is_2017 for a detailed definition] is related to social behavior (measured year-round with focal follows using this [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing)) in wild individuals. Flexibility is measured in aviaries using two paradigms: reversal learning and switching between options on a multi-access box. To give an example of the types of social relationships this sexually dimorphic species engages in, they forage and roost socially [@selander1961analysis] and they have a non-faithful-male frank polygynous mating system [@johnson2000male]. In terms of male social relationships, @johnson2000male found during the breeding season in a population in Texas that one or more territorial males defend a territory with several nests from females, that non-territory holding resident males will queue to gain access to a territory, and that transient males move from colony to colony. There could be varying needs for males to manage their relationships with each other in breeding and non-breeding seasons, and flexibility could potentially play a role in such management.
 
-**P4** Flexible individuals are more likely to have a greater number of bonds OR stronger bonds with others, in particular with individuals who are less related, potentially because they are better able to adjust their behavior to that of an affiliate. Social bonds are measured using the focal follow method to sample affiliative and aggressive behaviors.
+#### H3: Individuals that are [behaviorally flexible](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) [see @mikhalevich_is_2017 for a detailed definition] will differ in their use of microhabitats within human-modified landscapes (substrate qualification during each focal follow), but the macrohabitat (square kilometer) of each population will not differ in human population density (measured with a GPS point for each focal follow after their release from the aviaries; we measure microhabitat types according to the last substrate the focal individual was seen on at the end of the focal follow: grass, gravel, tree, cement cafe, dumpster, [additional substrates will be added as they are encountered]). Flexibility is measured in aviaries using two paradigms: reversal learning and switching between options on a multi-access box. Although we were only able to find this species in association with human-modified landscapes based on eBird sightings (i.e., there appear to be no forest-based populations), individuals could use these landscapes in a variety of ways. For example, they could specialize on particular foods or at particular types of locations (e.g., foraging exclusively at cafes or in grassy areas), they could generalize across all foods and location types, or they might fall somewhere in between these extremes. 
 
-**P4 alternative 1:** Individual flexibility is not related to the number or strength of social bonds, potentially because all individuals are able to form bonds with like individuals, including the less flexible individuals.
+**P5:** Individuals immigrating into a population are more likely to be flexible, potentially because they need to learn how to obtain resources in an unfamiliar area. Immigrants are individuals who carry many genetic variants (identified using ddRADseq) that are not found in other individuals in this population.
 
-**P4 alternative 2:** Flexible individuals may have fewer affiliates or be less likely to regularly affiliate with the same individuals, potentially because they frequently change their behavior and are difficult to associate with. We are not able to test this alternative in this study, but could propose experimental designs for future research if this alternative is supported by the data.
+**P5 alternative:** Individuals immigrating into a population are not more likely to be flexible, potentially because the human urban environment is comparable across landscapes. 
+
+**P6:** Flexible individuals will be found more regularly in a wider diversity microhabitats (human-modified substrates including cement, dumpsters or cafes; or natural substrates including grass, shrubs, and trees [additional substrates will be added as they are encountered]) during focal follows.
+
+**P6 alternative:** Flexibility is not associated with presence in diverse microhabitats because the more flexible individuals might specialize in specific foraging strategies best suited to particular microhabitats. 
+
+**P7:** There will be no difference in human population density among the sites for our three grackle populations because all great-tailed grackle populations are highly associated with human-modified landscapes. Human population density per square mile data will be obtained from census information (US census bureau: https://www.census.gov/quickfacts/fact/note/US/LND110210, still looking for a source for Central American countries)
+
+**P8:** Flexible individuals will not be associated with presence in diverse microhabitats not necessarily because they are specialists or generalists in specific foraging strategies, but rather because they may focus on high quality resources in particular habitat types. If this prediction is supported, we will conduct an additional analysis to examine the proportion of focal follows associated with a particular microhabitat type, which will allow us to determine whether the more flexible individuals are associated with particular microhabitats more than the less flexible individuals.
 
 
 # Methods {-}
@@ -2663,7 +2670,6 @@ plot(mnl$num~mnl$lambda, xlab="λ", ylab="Number of human food sources inside ho
 points(fn$num~fn$lambda,pch=2,col="blue",cex=2)
 legend(x="topleft", y=7, legend=c(pch1="Males", pch2="Females"), pch=c(1,2), col=c("Black","Blue"), box.lty=1, cex=1.3)
 par(op)
-
 ```
 
 ## P4: Flexibility and social bonds
@@ -2753,8 +2759,12 @@ plot(Ya, layout = l*8.0,
 
 
 ```{r p4pt2socnetmetrics, eval = F}
-### Now we can quantify social network metrics on individuals with the minimum number of focal follows ###
-### We do not have enough breeding season data, so we are only using nonbreeding season data. Which birds meet the minimum requirement of 4 total follows?
+# QUANTIFY SOCAL NETWORK METRICS on individuals with the minimum number of focal follows ###
+# NOTE: skip this R chunk to go to the models
+
+### We do not have enough breeding season data, so we are only using nonbreeding season data. 
+
+### Which birds meet the minimum requirement of 4 total follows?
 
 #load attribute data
 g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -2853,9 +2863,6 @@ g$BirdID[which(g$BirdID == "Tzanatl preciosa")]<-"Tzanatl Preciosa"
 g = merge(g, maxBond, by = "BirdID", all = T)
 
 
-
-
-
 ### Calculate IndividualStrength - the sum of the association values for each individual
 strength = aggregate(hwi ~ ID, data = bonds, FUN = "sum")
 # only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
@@ -2865,8 +2872,6 @@ strength = strength[-which(strength$ID == "Aquaman" | strength$ID == "Guapo" | s
 #Combining strength with general data sheet that will be used for analyses
 colnames(strength) = c("BirdID","Strength")
 g = merge(g, strength, by = "BirdID", all = T)
-
-
 
 
 ### Calculate Degree
@@ -2883,207 +2888,204 @@ g = merge(g, degree, by = "BirdID", all = T)
 
 ### TO DO: Add to data sheet Relatedness of strongest bonds - dyadic data? Have to wait for DNA data to be available (Sep 2023) 
 
-write.csv(g, "g_flexforaging_data_general.csv")
-```
-
-
-```{r p4pt4results, eval = F}
-### Do social network metrics vary as a function of flexibility (and dominance, population)
-g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-g <- data.frame(g)
-
-
-### OLD
-
-#Factor the random effect variables
-ID <- as.factor(ff$ID)
-Population <- as.factor(ff$Site)
-ID <- as.factor(mal$ID)
-Population <- as.factor(mal$Site)
-
-# DATA CHECKING
-library(DHARMa)
-library(lme4)
-
-
-### MAX BOND STRENGTH ###
-#Data checking for female GLMM 1
-simulationOutput <- simulateResiduals(fittedModel = glmer(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(MaxBondStrength, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#Data checking for male GLMM 1
-simulationOutput <- simulateResiduals(fittedModel = glmer(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(MaxBondStrength, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0),R4=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0),G2=list(V=1,nu=0)))
-
-#GLMM 1 with response variable = MaxBondStrength#
-#females
-set.seed(19)
-f1 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
-
-#males
-set.seed(20)
-f2 <- MCMCglmm(MaxBondStrength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
-
-
-
-### STRENGTH ###
-#Data checking for female GLMM 2
-simulationOutput <- simulateResiduals(fittedModel = glmer(Strength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(Strength, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#Data checking for male GLMM 2
-simulationOutput <- simulateResiduals(fittedModel = glmer(Strength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(Strength, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#GLMM 2 with response variable = AvgBondStrength
-#female
-set.seed(21)
-f3 <- MCMCglmm(Strength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f3)
-#autocorr(f3$Sol) #Did fixed effects converge?
-#autocorr(f3$VCV) #Did random effects converge?
-
-#male
-set.seed(22)
-f4 <- MCMCglmm(Strength ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f4)
-#autocorr(f4$Sol) #Did fixed effects converge?
-#autocorr(f4$VCV) #Did random effects converge?
-
-
-### DEGREE ###
-#Data checking for female GLMM 3
-simulationOutput <- simulateResiduals(fittedModel = glmer(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(Degree, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#Data checking for male GLMM 3
-simulationOutput <- simulateResiduals(fittedModel = glmer(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(Degree, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#GLMM 3 with response variable = Degree
-#female
-set.seed(23)
-f5 <- MCMCglmm(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f5)
-#autocorr(f5$Sol) #Did fixed effects converge?
-#autocorr(f5$VCV) #Did random effects converge?
-
-#male
-set.seed(24)
-f6 <- MCMCglmm(Degree ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f6)
-#autocorr(f6$Sol) #Did fixed effects converge?
-#autocorr(f6$VCV) #Did random effects converge?
-
-
-
-### MALE TERRITORY OVERLAP ###
-#Data checking for male GLMM 4
-simulationOutput <- simulateResiduals(fittedModel = glmer(MaleSharesTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(MaleSharesTerritory, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#GLMM 4 with response variable = MaleSharesTerritory
-#male
-f8 <- MCMCglmm(MaleSharesTerritory ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f8)
-#autocorr(f8$Sol) #Did fixed effects converge?
-#autocorr(f8$VCV) #Did random effects converge?
-
-
-
-### RELATEDNESS FOR MAX BOND ### TO DO
-#Data checking for female GLMM 5
-simulationOutput <- simulateResiduals(fittedModel = glmer(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=ff), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(RelatednessForMaxBond, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-#Data checking for male GLMM 5
-simulationOutput <- simulateResiduals(fittedModel = glmer(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition + (1|ID) + (1|Population), family=poisson, data=mal), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(RelatednessForMaxBond, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-
-#GLMM 5 with response variable = RelatednessForMaxBond
-#female
-set.seed(25)
-f9 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=ff, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f9)
-#autocorr(f9$Sol) #Did fixed effects converge?
-#autocorr(f9$VCV) #Did random effects converge?
-
-#male
-set.seed(26)
-f10 <- MCMCglmm(RelatednessForMaxBond ~ TrialsToReverseLast + ExperimentalGroup + DominanceRank + Condition, random=~Population+ID, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f4)
-#autocorr(f10$Sol) #Did fixed effects converge?
-#autocorr(f10$VCV) #Did random effects converge?
+#write.csv(g, "g_flexforaging_data_general.csv")
 ```
 
 
 ```{r p4results, eval=F}
-### RUN THE MODELS
+### Are social network metrics associated with flexibility?
 library(rethinking)
 
+g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+g <- data.frame(g)
+
+
+
 ### MAX BOND - strength of the strongest bond (calculated as the half-weight index based on association behavior during focal follows)
+#Maxbond (half weight index, width of line) ranges 0-1 and is kind of the proportion of times birds were seen together. Can use binomial distribution
+#Maxbond equation: number of times birds were seen together divided by (half of the sum of the number of times bird is seen individually + times seen together). 
+
+#remove the birds who don't have data in all variables
+max <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
+
+#determine the distribution: binomial bc variable ranges from 0 to 1
+#hist(max$MaxBond)
+
+#Separate the sexes
+maxf <- max[max$Sex=="F",] #n=6 
+maxm <- max[max$Sex=="M",] #n=12
+
+#FEMALE model
+mbf <- list(maxbond = maxf$MaxBondStrength,
+            phi = standardize(maxf$Phi),
+            lambda = standardize(maxf$Lambda),
+            rank = standardize(maxf$DomRank)
+              )
+set.seed(1109)
+mbfmodel <- ulam( alist(
+        maxbond ~ dbinom(1,p), 
+        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
+        a ~ dnorm(-2,1), #maxbondstrength values are close to 0.1 and logit(0.1)=-2 
+        c(bp,bl,br)~dnorm(0,1)
+    ) , data=mbf, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mbfout <- precis( mbfmodel , depth=2 )
+#   mean   sd  5.5% 94.5% rhat ess_bulk
+#a  -2.71 0.86 -4.13 -1.40    1  2362.98
+#br  0.06 0.84 -1.30  1.39    1  2236.13
+#bl  0.03 0.86 -1.37  1.41    1  2522.87
+#bp -0.01 0.86 -1.41  1.33    1  2102.50
+#No relationship between phi or lambda and max bond strength
+
+#MALE model
+mbm <- list(maxbond = maxm$MaxBondStrength,
+            phi = standardize(maxm$Phi),
+            lambda = standardize(maxm$Lambda),
+            rank = standardize(maxm$DomRank)
+              )
+set.seed(1110)
+mbmmodel <- ulam( alist(
+        maxbond ~ dbinom(1,p), 
+        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
+        a ~ dnorm(-2,1), #maxbondstrength values are close to 0.1 and logit(0.1)=-2 
+        c(bp,bl,br)~dnorm(0,1)
+    ) , data=mbm, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mbmout <- precis( mbmmodel , depth=2 )
+#    mean   sd  5.5% 94.5% rhat ess_bulk
+# a  -3.06 0.79 -4.33 -1.83    1  2174.63
+# br -0.04 0.79 -1.33  1.23    1  2200.95
+# bl -0.10 0.80 -1.37  1.17    1  2087.71
+# bp  0.03 0.81 -1.21  1.32    1  2224.26
+#No relationship between phi or lambda and max bond strength
+
 
 
 ### STRENGTH - the sum of all bonds an individual has
+#Strength (sum of half weight indices/individual) ranges 0.00-2.07 and is what kind of number? It is a sum, so use a normal distribution.
+
+#remove the birds who don't have data in all variables
+st <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Strength"]))) 
+
+#determine the distribution: binomial bc variable ranges from 0 to 1
+#hist(max$MaxBond)
+
+#Separate the sexes
+stf <- st[st$Sex=="F",] #n=6 
+stm <- st[st$Sex=="M",] #n=12
+
+#FEMALE model
+sf <- list(
+  strength = stf$Strength,
+  phi = standardize(stf$Phi),
+  lambda = standardize(stf$Lambda),
+  rank = standardize(stf$DomRank)
+)
+
+sfm <-ulam( alist(
+       strength ~dnorm(mu,sigma),
+       mu <- a + bp*phi + bl*lambda + br*rank,
+       a~dnorm(0.15,1), #0.15 is about the average strength for the birds in this analysis
+       c(bp,bl,br)~dnorm(0,1),
+       sigma~dexp(1)
+    ) , data=sf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+sfmout <- precis( sfm , depth=2 )
+#     mean   sd  5.5% 94.5% rhat ess_bulk
+# a     0.13 0.08  0.04  0.22 1.01  1112.41
+# br    0.02 0.09 -0.09  0.13 1.00  1126.33
+# bl    0.03 0.11 -0.10  0.17 1.01  1242.21
+# bp    0.05 0.11 -0.10  0.20 1.01  1210.05
+# sigma 0.15 0.17  0.04  0.42 1.02   186.84
+#No relationship between phi or lambda and strength
+
+
+#MALE model
+sm <- list(
+  strength = stm$Strength,
+  phi = standardize(stm$Phi),
+  lambda = standardize(stm$Lambda),
+  rank = standardize(stm$DomRank)
+)
+
+smm <-ulam( alist(
+       strength ~dnorm(mu,sigma),
+       mu <- a + bp*phi + bl*lambda + br*rank,
+       a~dnorm(0.15,1), #0.15 is about the average strength for the birds in this analysis
+       c(bp,bl,br)~dnorm(0,1),
+       sigma~dexp(1)
+    ) , data=sm , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+smmout <- precis( smm , depth=2 )
+#       mean   sd  5.5% 94.5% rhat ess_bulk
+# a      0.26 0.07  0.15  0.37    1  1749.08
+# br    -0.05 0.08 -0.18  0.08    1  1367.08
+# bl    -0.03 0.09 -0.16  0.12    1  1110.81
+# bp     0.01 0.09 -0.14  0.15    1  1168.50
+# sigma  0.25 0.07  0.16  0.38    1   838.00
+#No relationship between phi or lambda and strength
+
 
 
 ### DEGREE - maximum number of other individuals that the focal subject associated with
+#Degree (max number of individuals a bird is associated with) ranges 1-5 (whole numbers) and is a count
+
+#remove the birds who don't have data in all variables
+de <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Degree"]))) 
+
+#determine the distribution: binomial bc variable ranges from 0 to 1
+#hist(max$MaxBond)
+
+#Separate the sexes
+def <- de[de$Sex=="F",] #n=6 
+dem <- de[de$Sex=="M",] #n=12
+
+#FEMALE model
+fde <- list(degree = def$Degree,
+              phi = standardize(def$Phi),
+              lambda = standardize(def$Lambda),
+              rank = standardize(def$DomRank)
+)
+
+fdem <- ulam(
+  alist(
+    degree ~ dpois( l ),
+        log(l) <- a + bp*phi + bl*lambda + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(bp,bl,br)~dnorm(0,1)
+  ),data=fde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+fdemout <- precis( fdem , depth=2 )
+#  mean   sd  5.5% 94.5% rhat ess_bulk
+# a  0.45 0.27  0.02  0.86    1  1789.38
+# br 0.16 0.39 -0.43  0.78    1  1413.46
+# bl 0.16 0.39 -0.49  0.78    1  1156.29
+# bp 0.17 0.38 -0.44  0.74    1  1376.09
+#No relationship between phi or lambda and degree
+
+
+#MALE model
+mde <- list(degree = dem$Degree,
+              phi = standardize(dem$Phi),
+              lambda = standardize(dem$Lambda),
+              rank = standardize(dem$DomRank)
+)
+
+mdem <- ulam(
+  alist(
+    degree ~ dpois( l ),
+        log(l) <- a + bp*phi + bl*lambda + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(bp,bl,br)~dnorm(0,1)
+  ),data=fde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+mdemout <- precis( mdem , depth=2 )
+#  mean   sd  5.5% 94.5% rhat ess_bulk
+# a  0.46 0.26  0.02  0.86 1.00  1580.26
+# br 0.16 0.36 -0.38  0.78 1.00  1588.26
+# bl 0.15 0.38 -0.45  0.74 1.01  1122.75
+# bp 0.17 0.37 -0.42  0.73 1.00  1291.35
+#No relationship between phi or lambda and degree
+
+
 
 
 ### PERCENT TERRITORY SHARED WITH ANOTHER MALE
@@ -3093,7 +3095,6 @@ te <- data.frame(te)
 # remove NAs
 te <- subset(te,!(is.na(te["PercentTerritoryShared"])))
 te <- subset(te,!(is.na(te["Phi"])))
-te <- subset(te,!(is.na(te["Lambda"])))
 te <- subset(te,!(is.na(te["DomRank"])))
 
 #Summary
@@ -3112,7 +3113,6 @@ terr = rnorm(n,mean=(-1*p + -1*d),sd=0.5) #territory is a proportion. Now change
 #plots look good - any relationship is possible, but all values are within the feasible range
 
 # RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
-# PHI
 dat <- list(ter = te$PercentTerritoryShared, #range=0-1.54 so standardizing centers on 0
             phi = standardize(te$Phi),
             lambda = standardize(te$Lambda),
@@ -3120,43 +3120,56 @@ dat <- list(ter = te$PercentTerritoryShared, #range=0-1.54 so standardizing cent
               )
 
 # Run the model: normal distribution bc the index is a variable that has already been modified to account for presence in habitats, therefore it is more similar to a sum (McElreath 2nd edition, Fig 10.6)
-tephi <- ulam(
+ter <- ulam(
     alist(
         ter ~ dnorm(mu,sigma),
-        log(mu) <- a + bp*phi + br*rank ,
-        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
-        bp ~ dnorm(0,1),
-        br ~ dnorm(0,1),
+        log(mu) <- a + bp*phi + bl*lambda + br*rank ,
+        a ~ dnorm(0,1), 
+        c(bp,bl,br)~dnorm(0,1),
         sigma~dexp(1)
     ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputp <- precis( tephi , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the percent shared territory (does not cross 0) or not (does cross 0)
-#        mean   sd  5.5% 94.5% n_eff Rhat4
-#a      4.24 0.06  4.14  4.33  2096     1
-#bp     0.05 0.06 -0.04  0.14  1490     1
-#br    -0.01 0.06 -0.10  0.08  1978     1
-#sigma 19.90 2.00 16.90 23.23  1868     1
-# bp interval crosses zero so not much relationship between phi and the percent shared territory
+terout <- precis( ter , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the percent shared territory (does not cross 0) or not (does cross 0)
+#        mean   sd  5.5% 94.5% rhat ess_bulk
+# a      4.23 0.06  4.13  4.32 1.01  1985.43
+# br    -0.01 0.06 -0.10  0.09 1.00  1933.71
+# bl    -0.01 0.07 -0.12  0.10 1.00  1676.30
+# bp     0.05 0.06 -0.05  0.15 1.00  2046.40
+# sigma 20.15 2.05 17.15 23.75 1.00  2047.62
+# bp and bl intervals crosse zero so not much relationship between phi or lambda and the percent shared territory
 
 
-# LAMBDA
-telam <- ulam(
-    alist(
-        ter ~ dnorm(mu,sigma),
-        log(mu) <- a + bl*lambda + br*rank , #bird=random variable
-        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
-        bl ~ dnorm(0,1),
-        br ~ dnorm(0,1),
-        sigma~dexp(1)
-    ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputl <- precis( telam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
-#       mean   sd  5.5% 94.5% n_eff Rhat4
-#a      4.24 0.06  4.14  4.33  1875     1
-#bl    -0.02 0.06 -0.12  0.07  1960     1
-#br    -0.02 0.06 -0.11  0.08  1639     1
-#sigma 20.11 1.96 17.24 23.39  2256     1
-# bl interval crosses zero so not much relationship between phi and the percent shared territory
+
+### RELATEDNESS: Relatedness for the strongest bond (measured following the protocol in Thrasher et al. (2018) to estimate pairwise relatedness between all individuals based on the extent of sharing of genetic variants as determined by ddRADseq)
+
+#remove the birds who don't have data in all variables
+re <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
+
+#determine the distribution: binomial bc variable ranges from 0 to 1
+#hist(re$)
+
+#Separate the sexes
+def <- de[de$Sex=="F",] #n=6 
+dem <- de[de$Sex=="M",] #n=12
+
+
+mbf <- list(maxbond = maxf$MaxBondStrength,
+            phi = standardize(maxf$Phi),
+            lambda = standardize(maxf$Lambda),
+            rank = standardize(maxf$DomRank)
+              )
+set.seed(1109)
+mbfmodel <- ulam( alist(
+        maxbond ~ dbinom(1,p), 
+        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
+        a ~ dnorm(-2,1), #maxbondstrength values are close to 0.1 and logit(0.1)=-2 
+        c(bp,bl,br)~dnorm(0,1)
+    ) , data=mbf, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mbfout <- precis( mbfmodel , depth=2 )
+
+
 ```
 
 ```{r p4figterritory, eval=T}
