@@ -2411,6 +2411,63 @@ head(fe) #n=9 females
 head(ma) #n=26 males
 
 
+#LATENCY model: females
+#remove the birds who don't have data in all variables
+mflat <- subset(f,!(is.na(f["MABavgLatencySwitch"])) & !(is.na(f["DomRank"])) & !(is.na(f["PropHumanFood"]))) 
+mflat2 <- mflat[!mflat$MABavgLatencySwitch=="-",]
+mflat2$MABavgLatencySwitch <- as.numeric(mflat2$MABavgLatencySwitch)
+#nrow(mflat2) #n=7
+
+mfl <- list(foods = mflat2$PropHumanFood,
+            latency = standardize(as.numeric(mflat2$MABavgLatencySwitch)),
+            rank = standardize(mflat2$DomRank)
+              )
+set.seed(19)
+mfl_binom <- ulam( alist(
+        foods ~ dbinom(1,p), 
+        logit(p) <- a + blat*latency + br*rank, 
+        a ~ dnorm(0,1), 
+        br ~ dnorm(0,1),
+        blat ~ dnorm(0,1)
+    ) , data=mfl, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis( mfl_binom , depth=2 )
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# a    -0.64 0.67 -1.75  0.40    1  2216.43
+# br    0.18 0.72 -0.99  1.35    1  1842.56
+# blat -0.01 0.71 -1.14  1.08    1  1983.13
+#No relationship between latency and proportion human foods
+
+
+#LATENCY model: males
+#remove the birds who don't have data in all variables
+malat <- subset(m,!(is.na(m["MABavgLatencySwitch"])) & !(is.na(m["DomRank"])) & !(is.na(m["PropHumanFood"]))) 
+malat2 <- malat[!malat$MABavgLatencySwitch=="-",]
+malat2$MABavgLatencySwitch <- as.numeric(malat2$MABavgLatencySwitch)
+#nrow(malat2) #n=21
+
+mal <- list(foods = malat2$PropHumanFood,
+            latency = standardize(as.numeric(malat2$MABavgLatencySwitch)),
+            rank = standardize(malat2$DomRank)
+              )
+set.seed(193)
+mal_binom <- ulam( alist(
+        foods ~ dbinom(1,p), 
+        logit(p) <- a + blat*latency + br*rank, 
+        a ~ dnorm(0,1), 
+        br ~ dnorm(0,1),
+        blat ~ dnorm(0,1)
+    ) , data=mal, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis( mal_binom , depth=2 )
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# a    -1.06 0.46 -1.83 -0.33 1.01  1485.53
+# br    0.57 0.51 -0.23  1.36 1.00  1613.95
+# blat  0.29 0.51 -0.49  1.10 1.00  1605.78
+#No relationship between latency and proportion human foods
+
+
+
 
 ### Correlation between proportion HUMAN FOODS taken and foraging TECHNIQUES
 ## FEMALE - prop human food and foraging TECHNIQUES
@@ -2457,6 +2514,7 @@ plot(m$PropHumanFood~m$NumForageTechs)
 #sample sizes
 head(fet) #n=9 females
 head(mat) #n=26 males
+
 
 
 
@@ -2511,7 +2569,7 @@ general = merge(tmp, general, by = "BirdID",all = T)
 general = general[!is.na(general$Sex),]
 #write.csv(general, "g_flexforaging_data_general.csv")
 
-general<-general[is.na(general$DistHumanFood)==FALSE,] # remove NAs
+general<-general[is.na(general$AvgDistHumanFood)==FALSE,] # remove NAs
 #Separate the sexes
 fg <- general[general$Sex=="F",]
 mg <- general[general$Sex=="M",]
@@ -2525,12 +2583,12 @@ mg <- general[general$Sex=="M",]
 #range(m$NumFollows) #1-8 follows for females
 
 #determine the distribution
-#hist(general$DistHumanFood) #poisson bc count of meters, but some large outliers so need to log transform. If you are relatively close, small distance changes can make a big difference, but if you are farther away, small distance changes don't make much difference. Therefore, this is a NORMAL distribution (page 242 McElreath 2020)
-#hist(log(general$DistHumanFood)) #log fixed it so it is normal
+#hist(general$AvgDistHumanFood) #poisson bc count of meters, but some large outliers so need to log transform. If you are relatively close, small distance changes can make a big difference, but if you are farther away, small distance changes don't make much difference. Therefore, this is a NORMAL distribution (page 242 McElreath 2020)
+#hist(log(general$AvgDistHumanFood)) #log fixed it so it is normal
 
 # FEMALE model
 dat_list_distancef <- list(
-  distance = log(fg$DistHumanFood),
+  distance = log(fg$AvgDistHumanFood),
   phi = standardize(fg$Phi),
   lambda = standardize(fg$Lambda),
   rank = standardize(fg$DomRank)
@@ -2555,7 +2613,7 @@ dfout <- precis( m_distancef , depth=2 )
 
 # MALE model
 dat_list_distancem <- list(
-  distance = log(mg$DistHumanFood),
+  distance = log(mg$AvgDistHumanFood),
   phi = standardize(mg$Phi),
   lambda = standardize(mg$Lambda),
   rank = standardize(mg$DomRank)
@@ -2578,12 +2636,72 @@ dmout <- precis( m_distancem , depth=2 )
 #sigma  1.28 0.20  1.01  1.63    1  1792.89
 #flexibility is not related to the proportion of human foods eaten, and lambda and phi show no association with the distance to human food sources
 
+
+#LATENCY model: females
+#remove the birds who don't have data in all variables
+mfglat <- subset(fg,!(is.na(fg["MABavgLatencySwitch"])) & !(is.na(fg["DomRank"])) & !(is.na(fg["AvgDistHumanFood"]))) 
+mfglat2 <- mfglat[!mfglat$MABavgLatencySwitch=="-",]
+mfglat2$MABavgLatencySwitch <- as.numeric(mfglat2$MABavgLatencySwitch)
+#nrow(mfglat2) #n=7
+
+mfgl <- list(distance = log(mfglat2$AvgDistHumanFood),
+            latency = standardize(as.numeric(mfglat2$MABavgLatencySwitch)),
+            rank = standardize(mfglat2$DomRank)
+              )
+set.seed(21)
+m_mfgl<-ulam( alist(
+       distance ~dnorm(mu,sigma),
+       mu <- a + blat*latency + br*rank,
+       a~dnorm(4.5,1),
+       c(blat,br)~dnorm(0,1),
+       sigma~dexp(1)
+    ) , data=mfgl , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis( m_mfgl , depth=2 )
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# a     4.31 0.47  3.61  5.06    1  1908.40
+# br    0.09 0.51 -0.77  0.82    1  1640.83
+# blat  0.47 0.53 -0.41  1.28    1  1554.33
+# sigma 1.45 0.45  0.88  2.28    1  1565.61
+#No relationship between latency and distance
+
+
+#LATENCY model: males
+#remove the birds who don't have data in all variables
+mglat <- subset(mg,!(is.na(mg["MABavgLatencySwitch"])) & !(is.na(mg["DomRank"])) & !(is.na(mg["AvgDistHumanFood"]))) 
+mglat2 <- mglat[!mglat$MABavgLatencySwitch=="-",]
+mglat2$MABavgLatencySwitch <- as.numeric(mglat2$MABavgLatencySwitch)
+
+mal <- list(distance = log(mglat2$AvgDistHumanFood),
+            latency = standardize(as.numeric(mglat2$MABavgLatencySwitch)),
+            rank = standardize(mglat2$DomRank)
+              )
+set.seed(22)
+m_mal<-ulam( alist(
+       distance ~dnorm(mu,sigma),
+       mu <- a + blat*latency + br*rank,
+       a~dnorm(4.5,1),
+       c(blat,br)~dnorm(0,1),
+       sigma~dexp(1)
+    ) , data=mal , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis( m_mal , depth=2 )
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# a      4.70 0.27  4.27  5.13    1  2083.37
+# br    -0.34 0.29 -0.80  0.12    1  2003.45
+# blat   0.10 0.28 -0.35  0.56    1  1893.13
+# sigma  1.21 0.20  0.92  1.57    1  1707.69
+#No relationship between latency and distance
+
+
 #VISUALIZE
 op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
 plot(dat_list_distancem$distance~dat_list_distancem$lambda, xlab="λ", ylab="Distance to human food source (log meters)", pch=1,cex=2,cex.lab=1.5)
 points(dat_list_distancef$distance~dat_list_distancef$lambda,pch=2,col="blue",cex=2)
 legend(x="topright", y=7, legend=c(pch1="Males", pch2="Females"), pch=c(1,2), col=c("Black","Blue"), box.lty=1, cex=1.3)
 par(op)
+
+
 
 
 ### NUMBER OF OUTDOOR HUMAN FOOD SOURCES PER HOME RANGE
@@ -2606,6 +2724,7 @@ f4 <- as.data.frame(f3 %>% group_by(BirdID) %>% summarise(NumberHumanFoodSources
 #hr <- left_join(b1,f4,by="BirdID")
 
 
+# PHI AND LAMBDA models
 #remove the birds who don't have data in all variables
 b2 <- subset(b1,!(is.na(b1["Phi"])) & !(is.na(b1["DomRank"])) & !(is.na(b1["NumberHumanFoodSourcesInHomeRange"]))) 
 
@@ -2617,12 +2736,11 @@ fd <- b2[b2$Sex=="F",] #n=8
 md <- b2[b2$Sex=="M",] #n=26
 
 
-#FEMALE model
+#FEMALE phi and lambda model
 fn <- list(num = fd$NumberHumanFoodSourcesInHomeRange,
               phi = standardize(fd$Phi),
               lambda = standardize(fd$Lambda),
-              rank = standardize(fd$DomRank)
-)
+              rank = standardize(fd$DomRank))
 
 mn <- ulam(
   alist(
@@ -2641,7 +2759,7 @@ mn <- ulam(
 #females with a larger lambda (less flexible) have more human food sources inside their home range. No effect for phi
 
 
-#MALE model
+#MALE phi and lambda model
 mnl <- list(num = md$NumberHumanFoodSourcesInHomeRange,
               phi = standardize(md$Phi),
               lambda = standardize(md$Lambda),
@@ -2663,6 +2781,59 @@ mnmale <- ulam(
 #bl 0.37 0.05  0.29  0.45    1  1325.43
 #bp 0.03 0.06 -0.07  0.13    1  1606.01
 #males with a larger lambda (less flexible) have more human food sources inside their home range. No effect for phi
+
+
+#LATENCY models
+#remove the birds who don't have data in all variables
+latrange <- subset(b1,!(is.na(b1["MABavgLatencySwitch"])) & !(is.na(b1["DomRank"])) & !(is.na(b1["NumberHumanFoodSourcesInHomeRange"]))) 
+latrange2 <- latrange[!latrange$MABavgLatencySwitch=="-",]
+latrange2$MABavgLatencySwitch <- as.numeric(latrange2$MABavgLatencySwitch)
+
+#Separate the sexes
+fl <- latrange2[latrange2$Sex=="F",] #n=8
+ml <- latrange2[latrange2$Sex=="M",] #n=26
+#nrow(fl) #6
+#nrow(ml) #21
+
+#FEMALE model
+fldat <- list(num = fl$NumberHumanFoodSourcesInHomeRange,
+              latency = standardize(fl$MABavgLatencySwitch),
+              rank = standardize(fl$DomRank))
+
+mlfemale <- ulam(
+  alist(
+    num ~ dpois( l ),
+        log(l) <- a + blat*latency + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(blat,br)~dnorm(0,1)
+  ),data=fldat, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis(mlfemale,depth=2)
+#     mean   sd  5.5% 94.5% rhat ess_bulk
+# a    3.40 0.07  3.28  3.51    1  1650.45
+# br   0.05 0.07 -0.06  0.17    1  1572.26
+# blat 0.33 0.08  0.20  0.45    1  1795.68
+#females that are faster to switch have fewer human food sources in their home range
+
+#MALE model
+mldat <- list(num = ml$NumberHumanFoodSourcesInHomeRange,
+              latency = standardize(ml$MABavgLatencySwitch),
+              rank = standardize(ml$DomRank))
+
+mlmale <- ulam(
+  alist(
+    num ~ dpois( l ),
+        log(l) <- a + blat*latency + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(blat,br)~dnorm(0,1)
+  ),data=mldat, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+precis(mlmale,depth=2)
+#a    2.78 0.06 2.69  2.86    1  1537.06
+# br   0.39 0.07 0.28  0.50    1  1688.47
+# blat 0.11 0.05 0.02  0.20    1  1860.73
+#males that are faster to switch have fewer human food sources in their home range
+
 
 #VISUALIZE
 op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
@@ -2842,6 +3013,8 @@ hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1 b
 ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
 hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
 
+#SIDE NOTE: used hwis to find the maxbond partner for each bird. HOWEVER, Chalupa and Piña and Tzanatl have maxbondstrengths, but no partners. We used the ID.1 column because these were the focal birds and chose the bird from the ID.2 column with the highest hwi for each bird to find their maxbond partner
+#hwis[order(hwis$ID.1),]
 
 ### Calculate MaxBondStrength - the strength of the strongest association value (half-weight index) for each individual
 bonds1 = hwis[,c(1,8)] #select only ID.2/ID.1 and hwi
@@ -2911,15 +3084,11 @@ max <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBond
 #determine the distribution: binomial bc variable ranges from 0 to 1
 #hist(max$MaxBond)
 
-#Separate the sexes
-maxf <- max[max$Sex=="F",] #n=6 
-maxm <- max[max$Sex=="M",] #n=12
-
-#FEMALE model
-mbf <- list(maxbond = maxf$MaxBondStrength,
-            phi = standardize(maxf$Phi),
-            lambda = standardize(maxf$Lambda),
-            rank = standardize(maxf$DomRank)
+#PHI AND LAMBDA model
+mbf <- list(maxbond = max$MaxBondStrength,
+            phi = standardize(max$Phi),
+            lambda = standardize(max$Lambda),
+            rank = standardize(max$DomRank)
               )
 set.seed(1109)
 mbfmodel <- ulam( alist(
@@ -2931,33 +3100,37 @@ mbfmodel <- ulam( alist(
 
 mbfout <- precis( mbfmodel , depth=2 )
 #   mean   sd  5.5% 94.5% rhat ess_bulk
-#a  -2.71 0.86 -4.13 -1.40    1  2362.98
-#br  0.06 0.84 -1.30  1.39    1  2236.13
-#bl  0.03 0.86 -1.37  1.41    1  2522.87
-#bp -0.01 0.86 -1.41  1.33    1  2102.50
+# a  -3.27 0.74 -4.50 -2.15 1.00  2362.45
+# br  0.18 0.77 -0.96  1.45 1.00  1875.86
+# bl -0.03 0.77 -1.26  1.15 1.00  2265.36
+# bp -0.09 0.76 -1.34  1.08 1.01  1866.22
 #No relationship between phi or lambda and max bond strength
 
-#MALE model
-mbm <- list(maxbond = maxm$MaxBondStrength,
-            phi = standardize(maxm$Phi),
-            lambda = standardize(maxm$Lambda),
-            rank = standardize(maxm$DomRank)
+
+#LATENCY model
+#remove the birds who don't have data in all variables
+mlat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
+mlat2 <- mlat[!mlat$MABavgLatencySwitch=="-",]
+mlat2$MABavgLatencySwitch <- as.numeric(mlat2$MABavgLatencySwitch)
+
+mbm <- list(maxbond = mlat2$MaxBondStrength,
+            latency = standardize(mlat2$MABavgLatencySwitch),
+            rank = standardize(mlat2$DomRank)
               )
 set.seed(1110)
 mbmmodel <- ulam( alist(
         maxbond ~ dbinom(1,p), 
-        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
+        logit(p) <- a + blat*latency + br*rank, 
         a ~ dnorm(-2,1), #maxbondstrength values are close to 0.1 and logit(0.1)=-2 
-        c(bp,bl,br)~dnorm(0,1)
+        c(blat,br)~dnorm(0,1)
     ) , data=mbm, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 mbmout <- precis( mbmmodel , depth=2 )
 #    mean   sd  5.5% 94.5% rhat ess_bulk
-# a  -3.06 0.79 -4.33 -1.83    1  2174.63
-# br -0.04 0.79 -1.33  1.23    1  2200.95
-# bl -0.10 0.80 -1.37  1.17    1  2087.71
-# bp  0.03 0.81 -1.21  1.32    1  2224.26
-#No relationship between phi or lambda and max bond strength
+# a    -3.09 0.74 -4.31 -1.90 1.00  1293.01
+# br    0.11 0.74 -1.05  1.29 1.00  1777.21
+# blat -0.01 0.76 -1.22  1.17 1.01  1484.41
+#No relationship between latency and max bond strength
 
 
 
@@ -2970,18 +3143,15 @@ st <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Strength
 #determine the distribution: binomial bc variable ranges from 0 to 1
 #hist(max$MaxBond)
 
-#Separate the sexes
-stf <- st[st$Sex=="F",] #n=6 
-stm <- st[st$Sex=="M",] #n=12
-
-#FEMALE model
+#PHI AND LAMBDA model
 sf <- list(
-  strength = stf$Strength,
-  phi = standardize(stf$Phi),
-  lambda = standardize(stf$Lambda),
-  rank = standardize(stf$DomRank)
+  strength = st$Strength,
+  phi = standardize(st$Phi),
+  lambda = standardize(st$Lambda),
+  rank = standardize(st$DomRank)
 )
 
+set.seed(417)
 sfm <-ulam( alist(
        strength ~dnorm(mu,sigma),
        mu <- a + bp*phi + bl*lambda + br*rank,
@@ -2992,43 +3162,48 @@ sfm <-ulam( alist(
 
 sfmout <- precis( sfm , depth=2 )
 #     mean   sd  5.5% 94.5% rhat ess_bulk
-# a     0.13 0.08  0.04  0.22 1.01  1112.41
-# br    0.02 0.09 -0.09  0.13 1.00  1126.33
-# bl    0.03 0.11 -0.10  0.17 1.01  1242.21
-# bp    0.05 0.11 -0.10  0.20 1.01  1210.05
-# sigma 0.15 0.17  0.04  0.42 1.02   186.84
+# a      0.22 0.05  0.15  0.29 1.00  1561.54
+# br     0.05 0.05 -0.03  0.13 1.01  1636.93
+# bl    -0.01 0.06 -0.10  0.09 1.00  1311.79
+# bp     0.00 0.06 -0.09  0.09 1.00  1138.27
+# sigma  0.19 0.04  0.14  0.27 1.01  1049.59
 #No relationship between phi or lambda and strength
 
 
-#MALE model
+#LATENCY model
+#remove the birds who don't have data in all variables
+slat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["Strength"]))) 
+slat2 <- slat[!slat$MABavgLatencySwitch=="-",]
+slat2$MABavgLatencySwitch <- as.numeric(slat2$MABavgLatencySwitch)
+
 sm <- list(
-  strength = stm$Strength,
-  phi = standardize(stm$Phi),
-  lambda = standardize(stm$Lambda),
-  rank = standardize(stm$DomRank)
+  strength = slat2$Strength,
+  latency = standardize(slat2$MABavgLatencySwitch),
+  rank = standardize(slat2$DomRank)
 )
 
+set.seed(416)
 smm <-ulam( alist(
        strength ~dnorm(mu,sigma),
-       mu <- a + bp*phi + bl*lambda + br*rank,
+       mu <- a + blat*latency + br*rank,
        a~dnorm(0.15,1), #0.15 is about the average strength for the birds in this analysis
-       c(bp,bl,br)~dnorm(0,1),
+       c(blat,br)~dnorm(0,1),
        sigma~dexp(1)
     ) , data=sm , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 smmout <- precis( smm , depth=2 )
 #       mean   sd  5.5% 94.5% rhat ess_bulk
-# a      0.26 0.07  0.15  0.37    1  1749.08
-# br    -0.05 0.08 -0.18  0.08    1  1367.08
-# bl    -0.03 0.09 -0.16  0.12    1  1110.81
-# bp     0.01 0.09 -0.14  0.15    1  1168.50
-# sigma  0.25 0.07  0.16  0.38    1   838.00
-#No relationship between phi or lambda and strength
+# a      0.22 0.05  0.15  0.30    1  1581.44
+# br     0.05 0.05 -0.02  0.13    1  1817.98
+# blat  -0.09 0.05 -0.17 -0.01    1  1748.09
+# sigma  0.18 0.04  0.13  0.25    1  1458.95
+#The more flexible individuals (faster to switch) had stronger strengths
 
 
 
 ### DEGREE - maximum number of other individuals that the focal subject associated with
 #Degree (max number of individuals a bird is associated with) ranges 1-5 (whole numbers) and is a count
+#n=6 females, 12 males
 
 #remove the birds who don't have data in all variables
 de <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Degree"]))) 
@@ -3036,17 +3211,13 @@ de <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Degree"]
 #determine the distribution: binomial bc variable ranges from 0 to 1
 #hist(max$MaxBond)
 
-#Separate the sexes
-def <- de[de$Sex=="F",] #n=6 
-dem <- de[de$Sex=="M",] #n=12
-
-#FEMALE model
-fde <- list(degree = def$Degree,
-              phi = standardize(def$Phi),
-              lambda = standardize(def$Lambda),
-              rank = standardize(def$DomRank)
+#PHI and LAMBDA model
+fde <- list(degree = de$Degree,
+              phi = standardize(de$Phi),
+              lambda = standardize(de$Lambda),
+              rank = standardize(de$DomRank)
 )
-
+set.seed(415)
 fdem <- ulam(
   alist(
     degree ~ dpois( l ),
@@ -3056,34 +3227,36 @@ fdem <- ulam(
   ),data=fde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 fdemout <- precis( fdem , depth=2 )
 #  mean   sd  5.5% 94.5% rhat ess_bulk
-# a  0.45 0.27  0.02  0.86    1  1789.38
-# br 0.16 0.39 -0.43  0.78    1  1413.46
-# bl 0.16 0.39 -0.49  0.78    1  1156.29
-# bp 0.17 0.38 -0.44  0.74    1  1376.09
+# a  0.73 0.16  0.48  0.98    1  1361.58
+# br 0.23 0.20 -0.07  0.56    1  1676.72
+# bl 0.12 0.20 -0.21  0.43    1  1268.28
+# bp 0.00 0.21 -0.35  0.32    1  1211.44
 #No relationship between phi or lambda and degree
 
 
-#MALE model
-mde <- list(degree = dem$Degree,
-              phi = standardize(dem$Phi),
-              lambda = standardize(dem$Lambda),
-              rank = standardize(dem$DomRank)
-)
+#LATENCY model
+#remove the birds who don't have data in all variables
+delat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["Degree"]))) 
+delat2 <- delat[!delat$MABavgLatencySwitch=="-",]
+delat2$MABavgLatencySwitch <- as.numeric(delat2$MABavgLatencySwitch)
 
+mde <- list(degree = delat2$Degree,
+              latency = standardize(delat2$MABavgLatencySwitch),
+              rank = standardize(delat2$DomRank))
+set.seed(1439)
 mdem <- ulam(
   alist(
     degree ~ dpois( l ),
-        log(l) <- a + bp*phi + bl*lambda + br*rank,
+        log(l) <- a + blat*latency + br*rank,
         a ~ dnorm(1, 0.5),
-        c(bp,bl,br)~dnorm(0,1)
-  ),data=fde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+        c(blat,br)~dnorm(0,1)
+  ),data=mde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 mdemout <- precis( mdem , depth=2 )
 #  mean   sd  5.5% 94.5% rhat ess_bulk
-# a  0.46 0.26  0.02  0.86 1.00  1580.26
-# br 0.16 0.36 -0.38  0.78 1.00  1588.26
-# bl 0.15 0.38 -0.45  0.74 1.01  1122.75
-# bp 0.17 0.37 -0.42  0.73 1.00  1291.35
-#No relationship between phi or lambda and degree
+# a     0.75 0.17  0.47  1.00    1  1698.36
+# br    0.21 0.21 -0.10  0.56    1  1895.00
+# blat -0.16 0.18 -0.45  0.11    1  1688.88
+#No relationship between latency and degree
 
 
 
@@ -3131,12 +3304,39 @@ ter <- ulam(
 
 terout <- precis( ter , depth=2 ) #look at the bp mean and whether the interval crosses zero to determine whether phi is strongly related to the percent shared territory (does not cross 0) or not (does cross 0)
 #        mean   sd  5.5% 94.5% rhat ess_bulk
-# a      4.23 0.06  4.13  4.32 1.01  1985.43
-# br    -0.01 0.06 -0.10  0.09 1.00  1933.71
-# bl    -0.01 0.07 -0.12  0.10 1.00  1676.30
-# bp     0.05 0.06 -0.05  0.15 1.00  2046.40
-# sigma 20.15 2.05 17.15 23.75 1.00  2047.62
-# bp and bl intervals crosse zero so not much relationship between phi or lambda and the percent shared territory
+# a      4.23 0.06  4.14  4.32    1  1684.60
+# br    -0.01 0.06 -0.10  0.09    1  1936.64
+# bl    -0.01 0.07 -0.12  0.10    1  1776.33
+# bp     0.05 0.06 -0.06  0.15    1  1901.05
+# sigma 20.09 2.12 16.93 23.62    1  1780.88
+# bp and bl intervals cross zero so not much relationship between phi or lambda and the percent shared territory
+
+
+#LATENCY model
+#remove the birds who don't have data in all variables
+terlat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["PercentTerritoryShared"]))) 
+terlat2 <- terlat[!terlat$MABavgLatencySwitch=="-",]
+terlat2$MABavgLatencySwitch <- as.numeric(terlat2$MABavgLatencySwitch)
+#nrow(terlat2) #21 males
+
+mde <- list(ter = terlat2$PercentTerritoryShared,
+              latency = standardize(terlat2$MABavgLatencySwitch),
+              rank = standardize(terlat2$DomRank))
+set.seed(440)
+mdem <- ulam(
+  alist(
+    ter ~ dpois( l ),
+        log(l) <- a + blat*latency + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(blat,br)~dnorm(0,1)
+  ),data=mde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+mdemout <- precis( mdem , depth=2 )
+#  mean   sd  5.5% 94.5% rhat ess_bulk
+# a     4.23 0.03  4.19  4.27    1  1722.07
+# br   -0.01 0.03 -0.06  0.03    1  1231.15
+# blat  0.03 0.03 -0.02  0.07    1  1548.26
+#No relationship between latency and degree
+
 
 
 
@@ -3144,32 +3344,61 @@ terout <- precis( ter , depth=2 ) #look at the bp mean and whether the interval 
 ### RELATEDNESS: Relatedness for the strongest bond (measured following the protocol in Thrasher et al. (2018) to estimate pairwise relatedness between all individuals based on the extent of sharing of genetic variants as determined by ddRADseq)
 
 #remove the birds who don't have data in all variables
-re <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
+re <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["MaxBondPartner"]))) 
 
-#determine the distribution: binomial bc variable ranges from 0 to 1
-#hist(re$)
+#Load the data sheet that has the relatedness data
+# relatedness <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_relatedness.csv"), header=T, sep=",", stringsAsFactors=F)
+#Link the two data sheets
+re$maxbondrelatedness<-NA
+for(i in 1:nrow(re)){
+re[i,]$maxbondrelatedness<-relatedness[which(rownames(relatedness)==re[i,]$BirdID),which(colnames(relatedness)==re[i,]$MaxBondPartner)]
+}
 
-#Separate the sexes
-def <- de[de$Sex=="F",] #n=6 
-dem <- de[de$Sex=="M",] #n=12
+#binomial distribution because relatedness is between 0 and 1 (the proportion of alleles you share)
 
+#PHI and LAMBDA
+#remove the birds who don't have data in all variables
+rem <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["maxbondrelatedness"]))) 
 
-mbf <- list(maxbond = maxf$MaxBondStrength,
-            phi = standardize(maxf$Phi),
-            lambda = standardize(maxf$Lambda),
-            rank = standardize(maxf$DomRank)
+mr <- list(maxbondrelatedness = rem$maxbondrelatedness,
+            phi = standardize(rem$Phi),
+            lambda = standardize(rem$Lambda),
+            rank = standardize(rem$DomRank)
               )
-set.seed(1109)
-mbfmodel <- ulam( alist(
-        maxbond ~ dbinom(1,p), 
+set.seed(1439)
+mrmodel <- ulam( alist(
+        maxbondrelatedness ~ dbinom(1,p), 
         logit(p) <- a + bp*phi + bl*lambda + br*rank, 
-        a ~ dnorm(-2,1), #maxbondstrength values are close to 0.1 and logit(0.1)=-2 
+        a ~ dnorm(-2,1), #maxbondrelatedness values are close to 0.1 and logit(0.1)=-2 
         c(bp,bl,br)~dnorm(0,1)
-    ) , data=mbf, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+    ) , data=mr, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-mbfout <- precis( mbfmodel , depth=2 )
+mrout <- precis( mrmodel , depth=2 )
+#
+#Flexible individuals are/are not more/less likely related to their main bonded partner
 
 
+#LATENCY
+#remove the birds who don't have data in all variables
+relat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["maxbondrelatedness"]))) 
+relat2 <- relat[!relat$MABavgLatencySwitch=="-",]
+relat2$MABavgLatencySwitch <- as.numeric(relat2$MABavgLatencySwitch)
+
+mr <- list(maxbondrelatedness = re$maxbondrelatedness,
+            latency = standardize(re$MABavgLatencySwitch),
+            rank = standardize(re$DomRank)
+              )
+set.seed(1440)
+mrmodel <- ulam( alist(
+        maxbondrelatedness ~ dbinom(1,p), 
+        logit(p) <- a + blat*latency + br*rank, 
+        a ~ dnorm(-2,1), #maxbondrelatedness values are close to 0.1 and logit(0.1)=-2 
+        c(blat,br)~dnorm(0,1)
+    ) , data=mr, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mrout <- precis( mrmodel , depth=2 )
+#
+#Flexible individuals are/are not more/less likely related to their main bonded partner
 ```
 
 ```{r p4figterritory, eval=T}
@@ -3428,7 +3657,7 @@ sdiu = sd(m8$ShannonDiversityIndex)*sdi+mean(m8$ShannonDiversityIndex)
 
 
 # RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
-# MALES, phi. Set up data sheet for model
+# MALES. Set up data sheet for model
 dat <- list(div = standardize(m8$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
             phi = standardize(m8$Phi),
             lambda = standardize(m8$Lambda),
@@ -3439,81 +3668,111 @@ dat <- list(div = standardize(m8$ShannonDiversityIndex), #range=0-1.54 so standa
 m8phi <- ulam(
     alist(
         div ~ dnorm(mu,sigma),
-        log(mu) <- a + bp*phi + br*rank ,
+        log(mu) <- a + bp*phi + bl*lambda + br*rank ,
         a ~ dnorm(0,1), #mean=0 bc response variable is standardized
         bp ~ dnorm(0,1),
+        bl ~ dnorm(0,1),
         br ~ dnorm(0,1),
         sigma~dexp(1)
     ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 outputm8p <- precis( m8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether phi is strongly related to the diversity index (does not cross 0) or not (does cross 0). Look at the direction of the relationship to determine whether higher phi (more flexible bc associated with reversing in fewer trials, see Lukas et al. 2023 figs 2 & 3) have lower SDIs, which would indicate that they are specializing in particular microhabitats
 #        mean   sd  5.5% 94.5% n_eff Rhat4
-#a     -1.87 0.57 -2.82 -1.03  1225  1.00
-#bp     0.05 0.55 -0.81  0.92  1127  1.00
-#br     0.27 0.51 -0.46  1.11   932  1.01
-#sigma  1.04 0.15  0.82  1.30  1474  1.00
+#a     -1.98 0.59 -2.95 -1.08    1  1131.19
+# bp     0.15 0.63 -0.85  1.13    1   976.38
+# bl     0.06 0.55 -0.88  0.87    1   865.96
+# br     0.32 0.49 -0.40  1.15    1  1201.40
+# sigma  1.04 0.15  0.82  1.31    1  1573.13
 # The result here and for all of the below models is the same: bp interval crosses zero and the slope is negative (-0.02 to -0.33) so not much relationship between phi and the shannon diversity index, indicating that the more flexible individuals do not specialize or generalize in microhabitat types, but are somewhere in the middle. This means that P6 and P6 alt are not supported and do not need to be analyzed. Do need to analyze P8 though because can't tell from this analysis whether different birds preferred different habitats. We can only see how they split their time among the habitats, not what the habitats are.
 
 
-# MALES, lambda
-m8lam <- ulam(
-    alist(
-        div ~ dnorm(mu,sigma),
-        log(mu) <- a + bl*lambda + br*rank , #bird=random variable
-        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
-        bl ~ dnorm(0,1),
-        br ~ dnorm(0,1),
-        sigma~dexp(1)
-    ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-outputm8l <- precis( m8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
-#       mean   sd  5.5% 94.5% n_eff Rhat4
-#a     -1.86 0.58 -2.89 -1.00  1081     1
-#bl    -0.02 0.47 -0.83  0.66  1071     1
-#br     0.31 0.54 -0.48  1.23  1114     1
-#sigma  1.05 0.15  0.83  1.32  1467     1
-
-
-# FEMALES, phi
+# FEMALES
 daf <- list(div = standardize(f8$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
             phi = standardize(f8$Phi),
             lambda = standardize(f8$Lambda),
             rank = standardize(f8$DomRank)
               )
-
+set.seed(234)
 f8phi <- ulam(
     alist(
         div ~ dnorm(mu,sigma),
-        log(mu) <- a + bp*phi + br*rank , #bird=random variable
+        log(mu) <- a + bp*phi + bl*lambda + br*rank , #bird=random variable
         a ~ dnorm(0,1), #mean=0 bc response variable is standardized
         bp ~ dnorm(0,1),
-        br ~ dnorm(0,1),
-        sigma~dexp(1)
-    ) , data=daf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-outputfp <- precis( f8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
-#a     -1.50 0.62 -2.54 -0.61   904     1
-#bp    -0.14 0.58 -1.17  0.65   905     1
-#br     0.44 0.70 -0.66  1.57  1005     1
-#sigma  1.08 0.29  0.71  1.59  1180     1
-
-f8lam <- ulam(
-    alist(
-        div ~ dnorm(mu,sigma),
-        log(mu) <- a + bl*lambda + br*rank , #bird=random variable
-        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
         bl ~ dnorm(0,1),
         br ~ dnorm(0,1),
         sigma~dexp(1)
     ) , data=daf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputfl <- precis( f8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
-#       mean   sd  5.5% 94.5% n_eff Rhat4
-#a     -1.50 0.60 -2.53 -0.60   975     1
-#bl    -0.33 0.59 -1.30  0.59   943     1
-#br     0.39 0.65 -0.56  1.47   805     1
-#sigma  1.05 0.29  0.69  1.58  1153     1
+outputfp <- precis( f8phi , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#        mean   sd  5.5% 94.5% rhat ess_bulk
+# a     -1.56 0.61 -2.57 -0.68    1   964.06
+# bp    -0.26 0.64 -1.37  0.65    1  1047.28
+# bl    -0.32 0.63 -1.34  0.71    1  1036.79
+# br     0.38 0.66 -0.65  1.43    1  1114.20
+# sigma  1.08 0.31  0.69  1.62    1  1283.46
 
+
+#LATENCY models
+lat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+lat <- data.frame(lat)
+
+#remove the birds who don't have data in all variables
+la <- subset(lat,!(is.na(lat["MABavgLatencySwitch"])) & !(is.na(lat["DomRank"])) & !(is.na(lat["ShannonDiversityIndex"]))) 
+la2 <- la[!la$MABavgLatencySwitch=="-",]
+la2$MABavgLatencySwitch <- as.numeric(la2$MABavgLatencySwitch)
+
+#Separate the sexes
+f6 <- la2[la2$Sex=="F",]
+m6 <- la2[la2$Sex=="M",]
+#nrow(f6) #7
+#nrow(m6) #21
+
+# FEMALES
+dafl <- list(div = standardize(f6$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
+            latency = standardize(f6$MABavgLatencySwitch),
+            rank = standardize(f6$DomRank) )
+set.seed(235)
+f8lat <- ulam(
+    alist(
+        div ~ dnorm(mu,sigma),
+        log(mu) <- a + blat*latency + br*rank , #bird=random variable
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        blat ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=dafl , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputfl <- precis( f8lat , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.44 0.63 -2.50 -0.52 1.00   956.77
+# blat   0.35 0.66 -0.81  1.34 1.00   692.97
+# br     0.25 0.61 -0.74  1.23 1.01   577.35
+# sigma  1.04 0.33  0.65  1.63 1.00  1093.87
+# no relationship between latency and the shannon diversity index
+
+# MALES
+daml <- list(div = standardize(m6$ShannonDiversityIndex), #range=0-1.54 so standardizing centers on 0
+            latency = standardize(m6$MABavgLatencySwitch),
+            rank = standardize(m6$DomRank) )
+set.seed(236)
+m8lat <- ulam(
+    alist(
+        div ~ dnorm(mu,sigma),
+        log(mu) <- a + blat*latency + br*rank , #bird=random variable
+        a ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        blat ~ dnorm(0,1),
+        br ~ dnorm(0,1),
+        sigma~dexp(1)
+    ) , data=daml , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputm8lat <- precis( m8lat , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
+#       mean   sd  5.5% 94.5% n_eff Rhat4
+#a     -1.77 0.59 -2.76 -0.90 1.01  1005.13
+# blat   0.11 0.49 -0.74  0.79 1.01   991.53
+# br     0.36 0.55 -0.47  1.27 1.00   939.52
+# sigma  1.05 0.17  0.81  1.36 1.01  1236.07
+# no relationship between latency and the shannon diversity index
 
 
 
@@ -3910,6 +4169,78 @@ outputdfl <- precis( df8lam , depth=2 ) #look at the bp effect size and whether 
 
 # put all of the model outputs into a csv file
 #write.csv(c(outputdfp,outputdfl,outputd8l,outputd8l),file="flexforaging_P8outputs.csv")
+
+
+
+#LATENCY models
+lat8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
+lat8 <- data.frame(lat8)
+
+#remove the birds who don't have data in all variables
+laten <- subset(lat8,!(is.na(lat8["MABavgLatencySwitch"])) & !(is.na(lat8["Microhabitat"])) & !(is.na(lat8["ProportionFollows"]))) 
+laten2 <- laten[!laten$MABavgLatencySwitch=="-",]
+laten2$MABavgLatencySwitch <- as.numeric(laten2$MABavgLatencySwitch)
+
+#Separate the sexes
+f8 <- laten2[laten2$Sex=="F",]
+m8 <- laten2[laten2$Sex=="M",]
+#unique(f8$BirdID) #7
+#unique(m8$BirdID) #21
+
+# FEMALES
+dat_l8 <- list(follows = f8$ProportionFollows, 
+            latency = standardize(f8$MABavgLatencySwitch),
+            hab = as.factor(f8$Microhabitat) )
+
+set.seed(237)
+d8lat <- ulam( alist(
+        follows ~ dbinom(1,p),
+        logit(p) <- a[hab] + b[hab]*latency , #microhabitat=random variable
+        a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
+    ) , data=dat_l8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputd8l <- precis( d8lat , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# b[1] -0.06 0.74 -1.25  1.11 1.00  2718.55
+# b[2] -0.05 0.73 -1.19  1.10 1.00  3170.06
+# b[3] -0.04 0.71 -1.17  1.10 1.00  2577.58
+# b[4] -0.03 0.73 -1.22  1.12 1.00  3228.09
+# b[5] -0.40 0.69 -1.50  0.67 1.00  2887.17
+# b[6] -0.03 0.70 -1.14  1.00 1.00  2923.27
+# b[7] -0.04 0.73 -1.20  1.10 1.00  2596.25
+# b[8] -0.01 0.74 -1.21  1.17 1.00  2724.46
+# b[9] -0.40 0.71 -1.56  0.75 1.00  2479.63
+#none cross zero
+
+# MALES
+dat_l8m <- list(follows = m8$ProportionFollows, 
+            latency = standardize(m8$MABavgLatencySwitch),
+            hab = as.factor(m8$Microhabitat) )
+
+set.seed(238)
+d8latm <- ulam( alist(
+        follows ~ dbinom(1,p),
+        logit(p) <- a[hab] + b[hab]*latency , #microhabitat=random variable
+        a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
+        b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
+    ) , data=dat_l8m , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+outputd8lm <- precis( d8latm , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# b[1] -0.11 0.62 -1.13  0.86 1.01  2655.35
+# b[2]  0.04 0.54 -0.89  0.86 1.00  2475.08
+# b[3] -0.09 0.62 -1.15  0.85 1.00  2524.58
+# b[4] -0.43 0.63 -1.43  0.50 1.00  2932.29
+# b[5] -0.10 0.62 -1.15  0.89 1.00  2769.50
+# b[6] -0.06 0.57 -1.02  0.83 1.00  2712.63
+# b[7] -0.07 0.62 -1.08  0.90 1.00  3077.13
+# b[8] -0.08 0.57 -1.01  0.79 1.00  2548.46
+# b[9] -0.85 0.61 -1.84  0.11 1.00  2734.07
+#none cross zero
+
+# add the model outputs into a csv file
+write.csv(c(outputd8l),file="flexforaging_P8outputs.csv")
 ```
 
 ```{r p8figure, eval=T}
