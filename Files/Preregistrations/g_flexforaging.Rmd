@@ -3013,38 +3013,113 @@ hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1 b
 ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
 hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
 
-#SIDE NOTE: used hwis to find the maxbond partner for each bird. HOWEVER, Chalupa and Piña and Tzanatl have maxbondstrengths, but no partners. We used the ID.1 column because these were the focal birds and chose the bird from the ID.2 column with the highest hwi for each bird to find their maxbond partner
-#hwis[order(hwis$ID.1),]
 
-### Calculate MaxBondStrength - the strength of the strongest association value (half-weight index) for each individual
-bonds1 = hwis[,c(1,8)] #select only ID.2/ID.1 and hwi
-colnames(bonds1)[1] = "ID"
-bonds2 = hwis[,c(3,8)] #select only ID.2/ID.1 and hwi
-colnames(bonds2)[1] = "ID"
-bonds = rbind(bonds1, bonds2)
-maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
-# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
-maxBond = maxBond[-which(maxBond$ID == "Aquaman" | maxBond$ID == "Guapo" | maxBond$ID == "Morada" | maxBond$ID == "Naranja" | maxBond$ID == "Pepino" | maxBond$ID == "Pico" | maxBond$ID == "Tortilla" | maxBond$ID == "Urraca" | maxBond$ID == "Wachil"),]
-### n = 18
+###### NOTE TO KELSEY: After our meeting on 18 Feb 2024, Dieter realized that the matrix is not symmetrical (e.g. there are separate entries for Adobo with Taco and for Taco with Adobo which have different numbers in x (numbers of times seen together), leading to different hwi numbers). The different numbers probably reflect how often the two were seen together when ID1 was the focal and when ID2 was the focal. We want to combine these two observations, to get the sum of all the times they were seen together. Dieter wrote code here that calculates MaxBond, MaxBondPartner, and Strength using matrices that are symmetrical
+
+# Create a list of all birds
+uniquehwibirds<-unique(c(hwis$ID.2,hwis$ID.1))
+
+# create a matrix of all pairwise combos
+allpairs<-combn(uniquehwibirds,2)
+
+#set up data frame to store for each pair how often they were seen together and apart
+allpairshwis<-as.data.frame(matrix(ncol=6,nrow=ncol(allpairs)))
+colnames(allpairshwis)<-c("ID1","ID2","seentogether","seentotal","seenapart","hwi")
+allpairshwis$ID1<-allpairs[1,]
+allpairshwis$ID2<-allpairs[2,]
+allpairshwis$seentotal<-0 #remove NAs
+allpairshwis$seentogether<-0 #remove NAs
+for(id1 in 1:ncol(allpairs)){
+ifelse(
+  length(hwis[hwis$ID.2 %in% allpairs[1,id1] & hwis$ID.1 %in% allpairs[2,id1], ]$x)==1, 
+  allpairshwis[id1,]$seentogether<-allpairshwis[id1,]$seentogether+hwis[hwis$ID.2 %in% allpairs[1,id1] & hwis$ID.1 %in% allpairs[2,id1], ]$x,
+  allpairshwis[id1,]$seentogether<-allpairshwis[id1,]$seentogether+0
+  ) #go through each pair and check whether their name combination appears in ID1-ID2. If they appear, add their value to seentogether
+
+ifelse(
+  length(hwis[hwis$ID.1 %in% allpairs[1,id1] & hwis$ID.2 %in% allpairs[2,id1], ]$x)==1, 
+  allpairshwis[id1,]$seentogether<-allpairshwis[id1,]$seentogether+hwis[hwis$ID.1 %in% allpairs[1,id1] & hwis$ID.2 %in% allpairs[2,id1], ]$x,
+  allpairshwis[id1,]$seentogether<-allpairshwis[id1,]$seentogether+0
+  ) #go through each pair and check whether their name combination appears in ID2-ID1. If they appear, add their value to seentogether
+
+ifelse(
+  length(hwis[hwis$ID.2 %in% allpairs[1,id1] & hwis$ID.1 %in% allpairs[2,id1], ]$y)==1, 
+  allpairshwis[id1,]$seentotal<-allpairshwis[id1,]$seentotal+hwis[hwis$ID.2 %in% allpairs[1,id1] & hwis$ID.1 %in% allpairs[2,id1], ]$y,
+  allpairshwis[id1,]$seentotal<-allpairshwis[id1,]$seentotal+0
+  ) #go through each pair and check whether their name combination appears in ID1-ID2. If they appear, add their value to seentotal
+
+ifelse(
+  length(hwis[hwis$ID.1 %in% allpairs[1,id1] & hwis$ID.2 %in% allpairs[2,id1], ]$y)==1, 
+  allpairshwis[id1,]$seentotal<-allpairshwis[id1,]$seentotal+hwis[hwis$ID.1 %in% allpairs[1,id1] & hwis$ID.2 %in% allpairs[2,id1], ]$y,
+  allpairshwis[id1,]$seentotal<-allpairshwis[id1,]$seentotal+0
+  ) #go through each pair and check whether their name combination appears in ID2-ID1. If they appear, add their value to seentotal
+}
+
+allpairshwis$seenapart<-allpairshwis$seentotal-allpairshwis$seentogether #Calculate seen apart
+allpairshwis$hwi<-allpairshwis$seentogether/(0.5*(allpairshwis$seentotal)) #calculate the half weight index (hwi)
+
+#make the data frame that stores the output symmetrical so that each individual appears both in ID1 and ID2
+allpairshwis<-rbind(allpairshwis,allpairshwis)
+allpairshwis[(ncol(allpairs)+1):(2*ncol(allpairs)),]$ID1<-allpairshwis[1:ncol(allpairs),]$ID2
+allpairshwis[(ncol(allpairs)+1):(2*ncol(allpairs)),]$ID2<-allpairshwis[1:ncol(allpairs),]$ID1
+allpairshwis<-allpairshwis[order(allpairshwis$ID1,allpairshwis$ID2),]
+allpairshwis[is.na(allpairshwis$hwi),]$hwi<-0
 
 
-#Combining MaxBond strength with general data sheet that will be used for analyses
-colnames(maxBond) = c("BirdID","MaxBondStrength")
-#Edit names of 2 birds to match across data sheets
-g$BirdID[which(g$BirdID == "Piña")]<-"Pina"
-g$BirdID[which(g$BirdID == "Tzanatl preciosa")]<-"Tzanatl Preciosa"
-g = merge(g, maxBond, by = "BirdID", all = T)
+# Calculate MAXBOND strength and MAXBOND PARTNER and STRENGTH for each individual
+#set up a data frame to store the data
+maxBond<-as.data.frame(matrix(nrow=length(uniquehwibirds),ncol=5))
+colnames(maxBond)<-c("ID","maxbondstrength","maxbondpartner1","maxbondpartner2","strength")
+maxBond$ID<-uniquehwibirds
+maxBond$maxbondstrength<-0 #set all NAs to zero otherwise it messes up the for loop
+#loop going through each individual 
+for(id1 in 1:length(uniquehwibirds)){
+  maxBond[id1,]$maxbondstrength<-max(allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1],]$hwi,na.rm=TRUE) #calculate maxbond
+  
+  if(length(allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1] & allpairshwis$hwi==maxBond[id1,]$maxbondstrength,]$ID2)==1){
+  maxBond[id1,]$maxbondpartner1<-allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1] & allpairshwis$hwi==maxBond[id1,]$maxbondstrength,]$ID2
+  } #if max only occurs with a single partner, take this partner and store its name in the maxbondpartner1 column
+    if(length(allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1] & allpairshwis$hwi==maxBond[id1,]$maxbondstrength,]$ID2)>1){
+  maxBond[id1,]$maxbondpartner1<-allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1] & allpairshwis$hwi==maxBond[id1,]$maxbondstrength,]$ID2[1]
+  maxBond[id1,]$maxbondpartner2<-allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1] & allpairshwis$hwi==maxBond[id1,]$maxbondstrength,]$ID2[2]
+  } #if max occurs with more than one partner, take the first 2 partners and store their names in the maxbondpartner1 and maxbondpartner2 columns
+  
+  maxBond[id1,]$strength <- sum(allpairshwis[allpairshwis$ID1 %in% uniquehwibirds[id1],]$hwi,na.rm=T) #calculate strength as the sum of all of the hwis for each individual
+}
 
 
-### Calculate IndividualStrength - the sum of the association values for each individual
-strength = aggregate(hwi ~ ID, data = bonds, FUN = "sum")
-# only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
-strength = strength[-which(strength$ID == "Aquaman" | strength$ID == "Guapo" | strength$ID == "Morada" | strength$ID == "Naranja" | strength$ID == "Pepino" | strength$ID == "Pico" | strength$ID == "Tortilla" | strength$ID == "Urraca" | strength$ID == "Wachil"),]
-### n = 18
+# ####### CAN DELETE THIS NOW
+# ### Calculate MaxBondStrength - the strength of the strongest association value (half-weight index) for each individual
+# bonds1 = hwis[,c(1,8)] #select only ID.2/ID.1 and hwi
+# colnames(bonds1)[1] = "ID"
+# bonds2 = hwis[,c(3,8)] #select only ID.2/ID.1 and hwi
+# colnames(bonds2)[1] = "ID"
+# bonds = rbind(bonds1, bonds2)
+# maxBond = aggregate(hwi ~ ID, data = bonds, FUN = "max")
+# # only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
+# maxBond = maxBond[-which(maxBond$ID == "Aquaman" | maxBond$ID == "Guapo" | maxBond$ID == "Morada" | maxBond$ID == "Naranja" | maxBond$ID == "Pepino" | maxBond$ID == "Pico" | maxBond$ID == "Tortilla" | maxBond$ID == "Urraca" | maxBond$ID == "Wachil"),]
+# ### n = 18
+# 
+# 
+# #Combining MaxBond strength with general data sheet that will be used for analyses
+# colnames(maxBond) = c("BirdID","MaxBondStrength")
+# #Edit names of 2 birds to match across data sheets
+# g$BirdID[which(g$BirdID == "Piña")]<-"Pina"
+# g$BirdID[which(g$BirdID == "Tzanatl preciosa")]<-"Tzanatl Preciosa"
+# g = merge(g, maxBond, by = "BirdID", all = T)
+# 
+# 
+# ### Calculate IndividualStrength - the sum of the association values for each individual
+# strength = aggregate(hwi ~ ID, data = bonds, FUN = "sum")
+# # only interested in data from grackles that were in the aviaries and for which we have the minimum number of focal follows (2 per season)
+# strength = strength[-which(strength$ID == "Aquaman" | strength$ID == "Guapo" | strength$ID == "Morada" | strength$ID == "Naranja" | strength$ID == "Pepino" | strength$ID == "Pico" | strength$ID == "Tortilla" | strength$ID == "Urraca" | strength$ID == "Wachil"),]
+# ### n = 18
+# 
+# #Combining strength with general data sheet that will be used for analyses
+# colnames(strength) = c("BirdID","Strength")
+# g = merge(g, strength, by = "BirdID", all = T)
+# ####### END DELETE
 
-#Combining strength with general data sheet that will be used for analyses
-colnames(strength) = c("BirdID","Strength")
-g = merge(g, strength, by = "BirdID", all = T)
 
 
 ### Calculate Degree
@@ -3057,9 +3132,7 @@ degree = degree[-which(degree$ID == "Aquaman" | degree$ID == "Guapo" | degree$ID
 colnames(degree) = c("BirdID","Degree")
 g = merge(g, degree, by = "BirdID", all = T)
 
-### We also said we would calculate a degree-like variable using the group size from the scan sample at the end of the focal follow.
-
-### TO DO: Add to data sheet Relatedness of strongest bonds - dyadic data? Have to wait for DNA data to be available (Sep 2023) 
+### We also said we would calculate a degree-like variable using the group size from the scan sample at the end of the focal follow because there were so few banded associations that group size could be a replacement variable with more data. It is column "Group size" at data_flexforaging > tab: Social. This is in the preregistration (Analysis plan > P4), but not exactly clear what we were planning on doing with it. Can add an analysis that uses this variable instead of degree. But does the current degree variable at the general data sheet already use group size?
 
 #write.csv(g, "g_flexforaging_data_general.csv")
 ```
