@@ -2933,9 +2933,9 @@ plot(Ya, layout = l*8.0,
 # QUANTIFY SOCAL NETWORK METRICS on individuals with the minimum number of focal follows ###
 # NOTE: skip this R chunk to go to the models
 
-### We do not have enough breeding season data, so we are only using nonbreeding season data. 
+### We do not have enough breeding season data (only 5 interactions between banded birds), so we are only using nonbreeding season data. 
 
-### Which birds meet the minimum requirement of 4 total follows?
+### Which birds meet the minimum requirement of 4 total follows (actually 2 focals in the non breeding season because now we are only looking at non breeding season data)?
 
 #load attribute data
 g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -3330,6 +3330,57 @@ mdemout <- precis( mdem , depth=2 )
 # br    0.21 0.21 -0.10  0.56    1  1895.00
 # blat -0.16 0.18 -0.45  0.11    1  1688.88
 #No relationship between latency and degree
+
+
+
+### DEGREE using maximum group size at the end of the focal follow
+#remove the birds who don't have data in all variables
+deg <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxGroupSize"]))) 
+
+#determine the distribution: binomial bc variable ranges from 0 to 1
+#hist(max$MaxBond)
+
+#PHI and LAMBDA model
+fdeg <- list(degreegrp = deg$MaxGroupSize,
+              phi = standardize(deg$Phi),
+              lambda = standardize(deg$Lambda),
+              rank = standardize(deg$DomRank)
+)
+set.seed(415)
+fdemg <- ulam(
+  alist(
+    degreegrp ~ dpois( l ),
+        log(l) <- a + bp*phi + bl*lambda + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(bp,bl,br)~dnorm(0,1)
+  ),data=fdeg, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+fdemgout <- precis( fdemg , depth=2 )
+#  mean   sd  5.5% 94.5% rhat ess_bulk
+# 
+#? relationship between phi or lambda and degree
+
+
+#LATENCY model
+#remove the birds who don't have data in all variables
+delatg <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxGroupSize"]))) 
+delat2g <- delatg[!delatg$MABavgLatencySwitch=="-",]
+delat2g$MABavgLatencySwitch <- as.numeric(delat2g$MABavgLatencySwitch)
+
+mdeg <- list(degreegrp = delat2g$MaxGroupSize,
+              latency = standardize(delat2g$MABavgLatencySwitch),
+              rank = standardize(delat2g$DomRank))
+set.seed(1439)
+mdemg <- ulam(
+  alist(
+    degreegrp ~ dpois( l ),
+        log(l) <- a + blat*latency + br*rank,
+        a ~ dnorm(1, 0.5),
+        c(blat,br)~dnorm(0,1)
+  ),data=mdeg, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+mdemoutg <- precis( mdemg , depth=2 )
+#  mean   sd  5.5% 94.5% rhat ess_bulk
+#
+#? relationship between latency and degree
 
 
 
