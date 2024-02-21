@@ -2343,13 +2343,27 @@ b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/maste
 b1 <- data.frame(b1)
 
 
+
 ### PROPORTION HUMAN FOOD
+
+# CALCULATE the total number of eating events per bird (How > eat) and add it to the general data sheet
+# the number of human food eating events per bird is already in the general data sheet b1$NumHumanFood
+# load the foraging data sheet
+#fdat <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+#fdat <- data.frame(fdat)
+
+#library(dplyr)
+#fdat$How <- as.factor(fdat$How)
+#fdat1 <- as.data.frame(fdat %>% group_by(BirdID) %>% summarise(How=n(),humfoods=sum(HumanFood=="Yes")))
+#colnames(fdat1) = c("BirdID","TotalFoodEvents") #Name the new column
+
+# add this new variable to the general data sheet
+#fo0 <- left_join(fdat1,b1,by="BirdID")
+#write.csv(fo0,"flexfordatageneral.csv")
+
+
 #exclude NAs from the variables in this model
-fo <- subset(b1, is.na(b1$PropHumanFood) == FALSE) #note that this also eliminates the NAs for foraging techniques for the same birds bc NAs were always in both variables for the same birds
-fo <- subset(fo, is.na(fo$SumFocalTime) == FALSE)
-fo <- subset(fo, is.na(fo$Phi) == FALSE)
-fo <- subset(fo, is.na(fo$Lambda) == FALSE)
-fo <- subset(fo, is.na(fo$DomRank) == FALSE)
+fo <- subset(b1, !(is.na(b1["TotalFoodEvents"])) & !(is.na(b1["SumFocalTime"])) & !(is.na(b1["Phi"])) & !(is.na(b1["DomRank"]))) #note that this also eliminates the NAs for foraging techniques for the same birds bc NAs were always in both variables for the same birds
 #length(unique(fo$BirdID)) #35 individuals
 
 #Separate the sexes
@@ -2357,8 +2371,8 @@ f <- fo[fo$Sex=="F",]
 m <- fo[fo$Sex=="M",]
 
 #sample sizes
-#length(unique(f$BirdID)) #9 females
-#length(unique(m$BirdID)) #26 males
+#length(unique(f$BirdID)) #6 females
+#length(unique(m$BirdID)) #20 males
 #mean(f$NumFollows) #4.2 follows for females
 #range(f$NumFollows) #1-6 follows for females
 #mean(m$NumFollows) #4.6 follows for females
@@ -2397,14 +2411,15 @@ precis( simtype , depth=2 )
 
 # RUN the models
 ## FEMALE - food types - bc the dependent variable is a proportion, it already accounts for the total number of observations, therefore don't need to include observation time
-fe <- list(foods = f$PropHumanFood,
+fe <- list(humfood = f$NumHumanFood,
+            totalfoods = f$TotalFoodEvents,
             phi = standardize(as.numeric(f$Phi)),
             lambda = standardize(as.numeric(f$Lambda)),
             rank = standardize(f$DomRank)
               )
 set.seed(19)
 fe_binom <- ulam( alist(
-        foods ~ dbinom(1,p), 
+        humfood ~ dbinom(totalfoods,p), 
         logit(p) <- a + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
         bp ~ dnorm(0,1), #standardized
@@ -2414,62 +2429,61 @@ fe_binom <- ulam( alist(
 
 precis( fe_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -1.05 0.64 -2.08 -0.01  1568     1
-#bp -0.35 0.78 -1.63  0.87  1897     1
-#bl  1.01 0.69 -0.07  2.12  1914     1
-#br  0.14 0.70 -0.97  1.27  2107     1
-#prophumanfoods are not strongly related with phi/lambda
+#a  -1.49 0.48 -2.26 -0.75    1  1549.08
+# bp  0.23 0.62 -0.77  1.22    1  1099.81
+# bl  1.69 0.62  0.73  2.75    1  1161.26
+# br  0.24 0.65 -0.75  1.35    1  1235.52
+#Females that eat more human foods are less flexible (higher lambda), no strongly relationship with phi
 
 
 ## MALE - food types - bc the dependent variable is a proportion, it already accounts for the total number of observations, therefore don't need to include observation time
-ma <- list(foods = m$PropHumanFood,
+ma <- list(humfood = m$NumHumanFood,
+            totalfoods = as.numeric(m$TotalFoodEvents),
             phi = standardize(as.numeric(m$Phi)),
             lambda = standardize(as.numeric(m$Lambda)),
             rank = standardize(m$DomRank)
               )
 set.seed(119)
 ma_binom <- ulam( alist(
-        foods ~ dbinom(1,p), 
-        logit(p) <- a + bp*phi + bl*lambda + br*rank, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
-        a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
-        bp ~ dnorm(0,1), #standardized
+        humfood ~ dbinom(totalfoods,p), 
+        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
+        a ~ dnorm(0,1), 
+        bp ~ dnorm(0,1), 
         bl ~ dnorm(0,1),
         br ~ dnorm(0,1)
     ) , data=ma, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 precis( ma_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -1.25 0.47 -2.03 -0.51  2053     1
-#bp -0.07 0.49 -0.83  0.70  1816     1
-#bl  0.64 0.48 -0.12  1.43  2092     1
-#br  0.60 0.55 -0.23  1.52  1580     1
-#prophumanfoods are not strongly related with phi/lambda
+#a  -1.59 0.18 -1.88 -1.32 1.00  2078.93
+# bp  0.11 0.20 -0.22  0.41 1.00  1912.84
+# bl  0.39 0.19  0.09  0.68 1.00  1600.11
+# br  0.12 0.19 -0.18  0.43 1.01  1843.03
+#Males that eat more human foods are less flexible (higher lambda), no strongly relationship with phi
 
 #Have a look at the data to confirm
-plot(f$PropHumanFood~f$Phi)
-plot(f$PropHumanFood~f$Lambda)
-plot(m$PropHumanFood~m$Phi)
-plot(m$PropHumanFood~m$Lambda)
+# plot(f$PropHumanFood~f$Phi)
+# plot(f$PropHumanFood~f$Lambda)
+# plot(m$PropHumanFood~m$Phi)
+# plot(m$PropHumanFood~m$Lambda)
 
-#sample sizes
-head(fe) #n=9 females
-head(ma) #n=26 males
 
 
 #LATENCY model: females
 #remove the birds who don't have data in all variables
-mflat <- subset(f,!(is.na(f["MABavgLatencySwitch"])) & !(is.na(f["DomRank"])) & !(is.na(f["PropHumanFood"]))) 
+mflat <- subset(f,!(is.na(f["MABavgLatencySwitch"])) & !(is.na(f["DomRank"])) & !(is.na(f["TotalFoodEvents"]))) 
 mflat2 <- mflat[!mflat$MABavgLatencySwitch=="-",]
 mflat2$MABavgLatencySwitch <- as.numeric(mflat2$MABavgLatencySwitch)
-#nrow(mflat2) #n=7
+#nrow(mflat2) #n=4
 
-mfl <- list(foods = mflat2$PropHumanFood,
+mfl <- list(humfood = mflat2$NumHumanFood,
+            totalfoods = as.numeric(mflat2$TotalFoodEvents),
             latency = standardize(as.numeric(mflat2$MABavgLatencySwitch)),
             rank = standardize(mflat2$DomRank)
               )
-set.seed(19)
+set.seed(23)
 mfl_binom <- ulam( alist(
-        foods ~ dbinom(1,p), 
+        humfood ~ dbinom(totalfoods,p), 
         logit(p) <- a + blat*latency + br*rank, 
         a ~ dnorm(0,1), 
         br ~ dnorm(0,1),
@@ -2478,26 +2492,27 @@ mfl_binom <- ulam( alist(
 
 precis( mfl_binom , depth=2 )
 #      mean   sd  5.5% 94.5% rhat ess_bulk
-# a    -0.64 0.67 -1.75  0.40    1  2216.43
-# br    0.18 0.72 -0.99  1.35    1  1842.56
-# blat -0.01 0.71 -1.14  1.08    1  1983.13
-#No relationship between latency and proportion human foods
+# a    -1.24 0.58 -2.17 -0.31    1  1686.13
+# br   -0.32 0.60 -1.27  0.67    1  1817.16
+# blat -1.59 0.58 -2.55 -0.68    1  1522.42
+#The more flexible (lower latency) females eat more human foods
 
 
 #LATENCY model: males
 #remove the birds who don't have data in all variables
-malat <- subset(m,!(is.na(m["MABavgLatencySwitch"])) & !(is.na(m["DomRank"])) & !(is.na(m["PropHumanFood"]))) 
+malat <- subset(m,!(is.na(m["MABavgLatencySwitch"])) & !(is.na(m["DomRank"])) & !(is.na(m["TotalFoodEvents"]))) 
 malat2 <- malat[!malat$MABavgLatencySwitch=="-",]
 malat2$MABavgLatencySwitch <- as.numeric(malat2$MABavgLatencySwitch)
-#nrow(malat2) #n=21
+#nrow(malat2) #n=15
 
-mal <- list(foods = malat2$PropHumanFood,
+mal <- list(humfood = malat2$NumHumanFood,
+            totalfoods = as.numeric(malat2$TotalFoodEvents),
             latency = standardize(as.numeric(malat2$MABavgLatencySwitch)),
             rank = standardize(malat2$DomRank)
               )
 set.seed(193)
 mal_binom <- ulam( alist(
-        foods ~ dbinom(1,p), 
+        humfood ~ dbinom(totalfoods,p), 
         logit(p) <- a + blat*latency + br*rank, 
         a ~ dnorm(0,1), 
         br ~ dnorm(0,1),
@@ -2506,22 +2521,23 @@ mal_binom <- ulam( alist(
 
 precis( mal_binom , depth=2 )
 #      mean   sd  5.5% 94.5% rhat ess_bulk
-# a    -1.06 0.46 -1.83 -0.33 1.01  1485.53
-# br    0.57 0.51 -0.23  1.36 1.00  1613.95
-# blat  0.29 0.51 -0.49  1.10 1.00  1605.78
-#No relationship between latency and proportion human foods
+# a    -1.40 0.19 -1.70 -1.09 1.00  1695.68
+# br    0.19 0.23 -0.15  0.58 1.01  1494.11
+# blat  0.93 0.29  0.48  1.38 1.00  1572.61
+#The less flexible (higher latency) males eat more human foods
 
 
 
 
 ### Correlation between proportion HUMAN FOODS taken and foraging TECHNIQUES
 ## FEMALE - prop human food and foraging TECHNIQUES
-fet <- list(foods = f$PropHumanFood,
-            tech = standardize(as.numeric(f$NumForageTechs))
-              )
-set.seed(190)
+fet <- list(humfood = f$NumHumanFood,
+            totalfoods = as.numeric(f$TotalFoodEvents),
+            tech = standardize(as.numeric(f$NumForageTechs)))
+#length(fet$humfood) #n=6
+set.seed(194)
 fet_binom <- ulam( alist(
-        foods ~ dbinom(1,p), #max 22 food types
+        humfood ~ dbinom(totalfoods,p), #max 22 food types
         logit(p) <- a + bt*tech, #the intercept is the probability of observing any of the food types. Include total observation time because this varied per focal (with a target max time of 10 min)
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
         bt ~ dnorm(0,1) #standardized
@@ -2529,18 +2545,19 @@ fet_binom <- ulam( alist(
 
 precis( fet_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -0.87 0.64 -1.95  0.12  1018     1
-#bt -0.33 0.64 -1.40  0.67  1161     1
-#prophumanfoods are not strongly related with foraging techniques
+#a  -1.71 0.43 -2.41 -1.04    1  1187.62
+#bt -1.46 0.61 -2.47 -0.56    1  1108.12
+#prophumanfoods is negatively related with the number of foraging techniques in females
 
 
 ## MALE - prop human food and foraging TECHNIQUES
-mat <- list(foods = m$PropHumanFood,
-            tech = standardize(m$NumForageTechs)
-              )
-set.seed(119)
+mat <- list(humfood = m$NumHumanFood,
+            totalfoods = as.numeric(m$TotalFoodEvents),
+            tech = standardize(m$NumForageTechs))
+#length(mat$humfood) #n=20
+set.seed(126)
 mat_binom <- ulam( alist(
-        foods ~ dbinom(1,p), #max 22 food types
+        humfood ~ dbinom(totalfoods,p), #max 22 food types
         logit(p) <- a + bt*tech, 
         a ~ dnorm(0,1), #intercept, mean=0 bc assume an average bird might show half of the total food types, so 0 on inverse logit = 50%
         bt ~ dnorm(0,1) 
@@ -2548,17 +2565,9 @@ mat_binom <- ulam( alist(
 
 precis( mat_binom , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#a  -1.15 0.43 -1.85 -0.46  1014  1.01
-#bt -0.73 0.50 -1.54  0.05  1258  1.00
-#prophumanfoods are not strongly related with foraging techniques
-
-#Have a look at the data to confirm
-plot(f$PropHumanFood~f$NumForageTechs)
-plot(m$PropHumanFood~m$NumForageTechs)
-
-#sample sizes
-head(fet) #n=9 females
-head(mat) #n=26 males
+#a  -1.48 0.17 -1.76 -1.21    1    816.6
+#bt -0.34 0.17 -0.60 -0.07    1    911.1
+#prophumanfoods is negatively related with the number of foraging techniques in males
 
 
 
@@ -4208,24 +4217,25 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 
 ```{r p8, eval=F}
 library(rethinking)
+# load the data sheet
 d8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_proportionmicrohabitats.csv"), header=T, sep=",", stringsAsFactors=F)
 d8 <- data.frame(d8)
 
+# Add a new variable to the foraging data sheet from the general data sheet: total number of focal follows per habitat per bird
+#g <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+#g <- data.frame(g)
+#g1 <- select(g,BirdID,NumFollows)
+#d8dat <- left_join(d8,g1,by="BirdID")
+#d8dat$FollowsPerHabitat <- round(d8dat$ProportionFollows*d8dat$NumFollows,0)
+#write.csv(d8dat,"g_flexforaging_data_proportionmicrohabitats.csv")
+
+
 # remove NAs
-d8 <- subset(d8,!(is.na(d8["ProportionFollows"])))
-d8 <- subset(d8,!(is.na(d8["Phi"])))
-d8 <- subset(d8,!(is.na(d8["Lambda"])))
-d8 <- subset(d8,!(is.na(d8["Microhabitat"])))
+d8dat <- subset(d8,!(is.na(d8["FollowsPerHabitat"]) & is.na(d8["Phi"]) & is.na(d8["Microhabitat"]) & is.na(d8["NumFollows"])))
 
 #Separate the sexes
 ff8 <- d8[d8$Sex=="F",]
 mm8 <- d8[d8$Sex=="M",]
-
-#Summary
-ff8$BirdID <- as.factor(ff8$BirdID)
-#length(levels(ff8$BirdID)) #9 females
-mm8$BirdID <- as.factor(mm8$BirdID)
-#length(levels(mm8$BirdID)) #26 males
 
 # SIMULATE
 n = 99 #99 rows / 9 microhabitat types = 11 individuals
@@ -4239,15 +4249,16 @@ pf = rnorm(n,mean=(0*ha + slopes1*ph),sd=0.5) #proportion follows
 
 # RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
 # MALES, phi. Set up data sheet for model
-dat8 <- list(follows = mm8$ProportionFollows, 
-            phi = standardize(mm8$Phi),
+dat8 <- list(follows = mm8$FollowsPerHabitat, 
+            totalfollows = mm8$NumFollows, 
+             phi = standardize(mm8$Phi),
             lambda = standardize(mm8$Lambda),
-            hab = as.factor(mm8$Microhabitat)
-              )
-
+            hab = as.factor(mm8$Microhabitat))
+#length(unique(mm8$BirdID)) #n=26
 # Run the model
+set.seed(93)
 d8phi <- ulam( alist(
-        follows ~ dbinom(1,p),
+        follows ~ dbinom(totalfollows,p),
         logit(p) <- a[hab] + b[hab]*phi , #microhabitat=random variable
         a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
         b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
@@ -4255,20 +4266,21 @@ d8phi <- ulam( alist(
 
 outputd8p <- precis( d8phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to determine whether phi is strongly related to the proportion of follows (does not cross 0) or not (does cross 0). b1=building, b2=dumpster, b3=grass, b4=human surface, b5=misc human, b6=natural ground, b7=rock, b8=shrub, b9=tree
 #        mean   sd  5.5% 94.5% n_eff Rhat4
-#b[1] -0.02 0.58 -0.96  0.90  2345     1
-#b[2]  0.23 0.54 -0.62  1.10  3214     1
-#b[3] -0.02 0.61 -1.00  0.93  2660     1
-#b[4] -0.27 0.55 -1.16  0.57  2854     1
-#b[5] -0.01 0.59 -0.97  0.92  2987     1
-#b[6] -0.02 0.57 -0.92  0.89  2601     1
-#b[7] -0.03 0.57 -0.94  0.90  2815     1
-#b[8] -0.02 0.58 -0.96  0.88  2693     1
-#b[9] -0.33 0.47 -1.07  0.42  2810     1
-# The result here and for all of the below models is the same: the b intervals cross zero in all microhabitat types and the slope is negative, so not much relationship between phi and the proportion of follows, indicating that the more flexible individuals do not specialize in a particular microhabitat type
+#b[1]  0.20 0.27 -0.23  0.61 1.00  2858.45
+# b[2] -0.01 0.42 -0.71  0.62 1.01  2688.07
+# b[3]  0.28 0.29 -0.19  0.73 1.00  2757.13
+# b[4] -0.18 0.30 -0.68  0.28 1.00  3228.37
+# b[5] -0.24 0.30 -0.72  0.23 1.00  3234.41
+# b[6]  0.04 0.34 -0.48  0.58 1.01  3603.94
+# b[7]  0.28 0.42 -0.41  0.96 1.01  2327.11
+# b[8] -0.16 0.40 -0.84  0.46 1.00  2549.61
+# b[9] -0.01 0.19 -0.32  0.29 1.00  3069.74
+# the b intervals cross zero in all microhabitat types and the slope is negative, so not much relationship between phi and the proportion of follows, indicating that the more flexible individuals do not specialize in a particular microhabitat type
 
 # MALES, lambda
+set.seed(94)
 d8lam <- ulam( alist(
-        follows ~ dbinom(1,p),
+        follows ~ dbinom(totalfollows,p),
         logit(p) <- a[hab] + b[hab]*lambda , #microhabitat=random variable
         a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
         b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
@@ -4276,28 +4288,32 @@ d8lam <- ulam( alist(
 
 outputd8l <- precis( d8lam , depth=2 )
 #       mean   sd  5.5% 94.5% n_eff Rhat4
-#b[1] -0.08 0.59 -1.04  0.84  2610     1
-#b[2] -0.26 0.56 -1.18  0.59  2123     1
-#b[3] -0.08 0.58 -1.09  0.80  2531     1
-#b[4] -0.11 0.56 -1.01  0.75  3014     1
-#b[5] -0.07 0.58 -1.03  0.81  1705     1
-#b[6] -0.08 0.58 -1.10  0.81  2744     1
-#b[7] -0.07 0.57 -0.99  0.83  3115     1
-#b[8] -0.09 0.59 -1.06  0.77  2644     1
-#b[9]  0.42 0.45 -0.28  1.12  2415     1
+#b[1]  0.18 0.28 -0.27  0.60    1  2835.84
+# b[2] -0.10 0.43 -0.80  0.57    1  2562.04
+# b[3] -0.07 0.32 -0.59  0.42    1  3069.80
+# b[4]  0.18 0.31 -0.32  0.65    1  3180.71
+# b[5]  0.35 0.27 -0.10  0.76    1  2851.33
+# b[6]  0.33 0.35 -0.24  0.89    1  2826.38
+# b[7]  0.08 0.48 -0.70  0.80    1  2660.91
+# b[8] -0.60 0.50 -1.45  0.16    1  2277.51
+# b[9] -0.31 0.22 -0.67  0.04    1  2663.20
+#the b intervals cross zero in all microhabitat types and the slope is negative, so not much relationship between phi and the proportion of follows, indicating that the more flexible individuals do not specialize in a particular microhabitat type
 #look at b9 Tree because it has a large mean relative to the others
 #plot(mm8[mm8$Microhabitat=="Tree",]$ProportionFollows ~ mm8[mm8$Microhabitat=="Tree",]$Lambda)
 #this relationship is pretty randomly scattered, with the zero proportions having lower lambdas
 
 # FEMALES, phi
-daf8 <- list(follows = ff8$ProportionFollows, 
+ff8 <- subset(ff8,!(is.na(ff8["FollowsPerHabitat"]) & is.na(ff8["NumFollows"]))) # remove NAs
+#unique(ff8$BirdID) #n=7
+
+daf8 <- list(follows = ff8$FollowsPerHabitat, 
+            totalfollows = ff8$NumFollows, 
             phi = standardize(ff8$Phi),
             lambda = standardize(ff8$Lambda),
-            hab = as.factor(ff8$Microhabitat)
-              )
-
+            hab = as.factor(ff8$Microhabitat))
+set.seed(96)
 df8phi <- ulam( alist(
-        follows ~ dbinom(1,p),
+        follows ~ dbinom(totalfollows,p),
         logit(p) <- a[hab] + b[hab]*phi , #microhabitat=random variable
         a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
         b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
@@ -4305,18 +4321,19 @@ df8phi <- ulam( alist(
 
 outputdfp <- precis( df8phi , depth=2 ) 
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-#b[1] -0.12 0.73 -1.32  0.98  3283     1
-#b[2] -0.11 0.72 -1.29  0.99  2439     1
-#b[3] -0.13 0.71 -1.28  0.94  2915     1
-#b[4] -0.11 0.70 -1.28  0.99  3604     1
-#b[5] -0.26 0.71 -1.45  0.82  3307     1
-#b[6] -0.11 0.67 -1.21  0.94  2994     1
-#b[7] -0.09 0.71 -1.34  0.98  2787     1
-#b[8] -0.11 0.71 -1.28  0.98  3012     1
-#b[9] -0.29 0.72 -1.50  0.78  3101     1
+# b[1]  0.33 0.47 -0.43  1.08 1.00  2293.36
+# b[2] -0.39 0.52 -1.27  0.40 1.00  2740.15
+# b[3]  0.13 0.46 -0.59  0.85 1.01  2520.01
+# b[4]  0.13 0.44 -0.59  0.84 1.00  2095.21
+# b[5]  0.11 0.45 -0.62  0.81 1.00  2505.86
+# b[6] -0.27 0.50 -1.09  0.50 1.00  2221.74
+# b[7]  0.02 0.46 -0.73  0.74 1.00  2770.03
+# b[8]  0.37 0.44 -0.31  1.07 1.00  2347.32
+# b[9] -0.66 0.33 -1.22 -0.16 1.00  2220.67
+#the females with the higher phi (more flexible) had fewer focal follows in trees
 
 df8lam <- ulam(alist(
-        follows ~ dbinom(1,p),
+        follows ~ dbinom(totalfollows,p),
         logit(p) <- a[hab] + b[hab]*lambda , #microhabitat=random variable
         a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
         b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
@@ -4324,22 +4341,16 @@ df8lam <- ulam(alist(
 
 outputdfl <- precis( df8lam , depth=2 ) #look at the bp effect size and whether the interval crosses zero to determine whether 
 #       mean   sd  5.5% 94.5% n_eff Rhat4
-#b[1] -0.03 0.67 -1.10  1.01  2861     1
-#b[2] -0.01 0.67 -1.07  1.02  2932     1
-#b[3] -0.06 0.71 -1.23  1.03  2212     1
-#b[4] -0.04 0.69 -1.18  1.04  2739     1
-#b[5]  0.56 0.66 -0.47  1.62  2977     1
-#b[6] -0.02 0.69 -1.14  1.06  2949     1
-#b[7]  0.00 0.67 -1.10  1.06  3289     1
-#b[8] -0.02 0.67 -1.09  1.02  2355     1
-#b[9] -0.09 0.66 -1.12  0.96  2884     1
-
-#look at b5 MiscHuman because it has a large mean relative to the others
-#plot(ff8[ff8$Microhabitat=="MiscHuman",]$ProportionFollows ~ ff8[ff8$Microhabitat=="MiscHuman",]$Lambda)
-#this relationship is due to 1 female that spends 100% of her time in this habitat, while the others don't often visit it
-
-# put all of the model outputs into a csv file
-#write.csv(c(outputdfp,outputdfl,outputd8l,outputd8l),file="flexforaging_P8outputs.csv")
+#b[1] -0.11 0.55 -1.01  0.73 1.00  2362.50
+# b[2]  0.51 0.49 -0.27  1.28 1.00  3024.54
+# b[3] -0.14 0.51 -1.00  0.66 1.00  2824.06
+# b[4] -0.19 0.50 -1.01  0.57 1.00  2886.54
+# b[5]  0.13 0.47 -0.63  0.87 1.00  3629.00
+# b[6] -0.01 0.51 -0.84  0.77 1.00  3125.07
+# b[7] -0.27 0.52 -1.11  0.51 1.00  2930.38
+# b[8] -0.55 0.54 -1.42  0.30 1.00  2595.46
+# b[9]  0.58 0.40 -0.03  1.24 1.00  2578.53
+#the b intervals cross zero in all microhabitat types and the slope is negative, so not much relationship between phi and the proportion of follows, indicating that the more flexible individuals do not specialize in a particular microhabitat type
 
 
 
@@ -4348,70 +4359,72 @@ lat8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/mas
 lat8 <- data.frame(lat8)
 
 #remove the birds who don't have data in all variables
-laten <- subset(lat8,!(is.na(lat8["MABavgLatencySwitch"])) & !(is.na(lat8["Microhabitat"])) & !(is.na(lat8["ProportionFollows"]))) 
+laten <- subset(lat8,!(is.na(lat8["MABavgLatencySwitch"])) & !(is.na(lat8["Microhabitat"])) & !(is.na(lat8["FollowsPerHabitat"])) & !(is.na(lat8["NumFollows"]))) 
 laten2 <- laten[!laten$MABavgLatencySwitch=="-",]
 laten2$MABavgLatencySwitch <- as.numeric(laten2$MABavgLatencySwitch)
 
 #Separate the sexes
 f8 <- laten2[laten2$Sex=="F",]
 m8 <- laten2[laten2$Sex=="M",]
-#unique(f8$BirdID) #7
-#unique(m8$BirdID) #21
+#length(unique(f8$BirdID)) #5
+#length(unique(m8$BirdID)) #21
 
 # FEMALES
-dat_l8 <- list(follows = f8$ProportionFollows, 
+dat_l8 <- list(follows = f8$FollowsPerHabitat, 
+            totalfollows = f8$NumFollows, 
             latency = standardize(f8$MABavgLatencySwitch),
             hab = as.factor(f8$Microhabitat) )
 
 set.seed(237)
 d8lat <- ulam( alist(
-        follows ~ dbinom(1,p),
+        follows ~ dbinom(totalfollows,p),
         logit(p) <- a[hab] + b[hab]*latency , #microhabitat=random variable
         a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
         b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
     ) , data=dat_l8 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputd8l <- precis( d8lat , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero
+outputd8latf <- precis( d8lat , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero
 #      mean   sd  5.5% 94.5% rhat ess_bulk
-# b[1] -0.06 0.74 -1.25  1.11 1.00  2718.55
-# b[2] -0.05 0.73 -1.19  1.10 1.00  3170.06
-# b[3] -0.04 0.71 -1.17  1.10 1.00  2577.58
-# b[4] -0.03 0.73 -1.22  1.12 1.00  3228.09
-# b[5] -0.40 0.69 -1.50  0.67 1.00  2887.17
-# b[6] -0.03 0.70 -1.14  1.00 1.00  2923.27
-# b[7] -0.04 0.73 -1.20  1.10 1.00  2596.25
-# b[8] -0.01 0.74 -1.21  1.17 1.00  2724.46
-# b[9] -0.40 0.71 -1.56  0.75 1.00  2479.63
+# b[1] -0.25 0.63 -1.29  0.75 1.01  3027.81
+# b[2] -0.44 0.58 -1.39  0.47 1.00  2766.35
+# b[3] -0.25 0.61 -1.24  0.68 1.00  2697.11
+# b[4]  0.13 0.56 -0.77  1.00 1.00  2501.44
+# b[5] -0.17 0.52 -1.01  0.63 1.00  2355.71
+# b[6]  0.11 0.57 -0.79  0.98 1.00  2143.10
+# b[7]  0.12 0.54 -0.75  0.95 1.00  2429.98
+# b[8]  0.37 0.50 -0.43  1.18 1.00  2800.71
+# b[9] -0.60 0.43 -1.34  0.06 1.00  2495.63
 #none cross zero
 
 # MALES
-dat_l8m <- list(follows = m8$ProportionFollows, 
+dat_l8m <- list(follows = m8$FollowsPerHabitat, 
+            totalfollows = m8$NumFollows, 
             latency = standardize(m8$MABavgLatencySwitch),
             hab = as.factor(m8$Microhabitat) )
 
 set.seed(238)
 d8latm <- ulam( alist(
-        follows ~ dbinom(1,p),
+        follows ~ dbinom(totalfollows,p),
         logit(p) <- a[hab] + b[hab]*latency , #microhabitat=random variable
         a[hab] ~ dnorm(0,1), #mean=0 bc response variable is standardized
         b[hab] ~ dnorm(0,1)  #mean=0 bc response variable is standardized
     ) , data=dat_l8m , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-outputd8lm <- precis( d8latm , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero
+outputd8latm <- precis( d8latm , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero
 #      mean   sd  5.5% 94.5% rhat ess_bulk
-# b[1] -0.11 0.62 -1.13  0.86 1.01  2655.35
-# b[2]  0.04 0.54 -0.89  0.86 1.00  2475.08
-# b[3] -0.09 0.62 -1.15  0.85 1.00  2524.58
-# b[4] -0.43 0.63 -1.43  0.50 1.00  2932.29
-# b[5] -0.10 0.62 -1.15  0.89 1.00  2769.50
-# b[6] -0.06 0.57 -1.02  0.83 1.00  2712.63
-# b[7] -0.07 0.62 -1.08  0.90 1.00  3077.13
-# b[8] -0.08 0.57 -1.01  0.79 1.00  2548.46
-# b[9] -0.85 0.61 -1.84  0.11 1.00  2734.07
+# b[1]  0.40 0.26 -0.01  0.81 1.00  2509.69
+# b[2] -0.02 0.44 -0.76  0.62 1.00  2622.36
+# b[3] -0.39 0.39 -1.06  0.18 1.00  2174.13
+# b[4]  0.21 0.29 -0.26  0.68 1.00  2455.05
+# b[5] -0.22 0.34 -0.78  0.28 1.00  2207.25
+# b[6]  0.05 0.34 -0.51  0.55 1.00  3218.02
+# b[7] -0.12 0.48 -0.95  0.60 1.00  2946.13
+# b[8]  0.34 0.35 -0.24  0.89 1.01  2699.78
+# b[9] -0.28 0.21 -0.63  0.05 1.00  3230.49
 #none cross zero
 
-# add the model outputs into a csv file
-write.csv(c(outputd8l),file="flexforaging_P8outputs.csv")
+# put all of the model outputs into a csv file
+#write.csv(c(outputdfp,outputdfl,outputd8p,outputd8l,outputd8latf,outputd8latm),file="flexforaging_P8outputs.csv")
 ```
 
 ```{r p8figure, eval=T}
