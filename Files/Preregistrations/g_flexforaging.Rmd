@@ -810,9 +810,9 @@ where $follows_{i}$ is the proportion of focal follows that were recorded in a p
 
 ```{r powertable, eval=T}
 library(kableExtra)
-pt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep6.csv"), header=F, sep=",", stringsAsFactors=F)
+pt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_table_power.csv"), header=F, sep=",", stringsAsFactors=F)
 pt <- data.frame(pt)
-colnames(pt) <- c("","Mean","Standard deviation","Lower","Upper")
+colnames(pt) <- c("Model type","Sample size","Effect size","Avg slope / avg contrast","Proportion of iterations that cross zero")
 
 knitr::kable(pt) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
@@ -820,9 +820,379 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 
 
 ```{r poweranalyses, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+######## Power simulations for flexforaging
 
+# Load the relevant libraries
+library(cmdstanr)
+library(posterior)
+library(rethinking)
+library(dplyr)
+
+##################################################################################################
+## Scenario 1: outcome variable has binomial distribution, predictor variable is continuous (phi, lambda, latency)
+
+# Example with a sample size of 9 to determine how to simulate the three different effect sizes
+samplesize<-9 
+
+# We create a vector to store the estimated representation (R-squared) of the effect size for a given setting
+r_squared<-NA
+
+# We estimate this effect size 1000 times to get an average estimate for a given seting
+for(i in 1:1000){
+  # Simulate the values of the predictor variable for each individual in the sample:
+  # Predictor is a standardized variable to reflect phi, lambda, or latency (which are standardized before they are entered into the statistical models, and appear normally distributed among the individuals in our sample). A standardized variable has a mean of zero and a standard deviation of 1.
+  predictor<-rnorm(samplesize,mean=0,sd=1)
+  
+  # For the binomial model, the predictor influences p, the proportion of the total that a given individual will have of the outcome variable. In our data, most of the outcome variables in the binomial models show a range between 0% and 50% across the individuals in our sample. So we simulate outcome values between 0 and ~50% 
+  
+  # We change the ratio between the multiplier for the predictor and the sd of the noise parameter to simulate different effect sizes. The multiplier and the noise have to sum to 0.5 to have the expected range in the outcome variable of 0% to 50%. A setting with multiplier = sd = 0.25 is a medium effect (~0.5), as the variation introduced by the predictor is the same as the variation introduced by the noise; multiplier = 0.15 and sd = 0.35 is a small effect (~0.2); and multiplier = 0.35 and sd = 0.15 is a large effect (~0.75); change the values below accordingly to observe the change in the effect size
+  outcome<-0.35*predictor+rnorm(samplesize,mean=0.25,sd=0.15)
+  outcome[outcome<0]<-0 # Values cannot be smaller than zero
+  
+  # Store the information of R-squared for a given repetition from a linear regression of the output on the predictor
+  r_squared<-c(r_squared,summary(lm(outcome~predictor))$r.squared)
+}
+# Display the average effect size for a given pair of multiplier and noise values
+mean(r_squared[2:1001])
+
+
+# We estimate the models with cmdstan. This is quicker here because we do not need to recompile the model during each iteration of the power simulation. To use cmdstan, we need to tell R where to store and look for the compiled model
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+options(mc.cores=4)
+
+# We set the range of values which we want to change during the power simulation. We have three effects (small, medium, large) which are represented by the respective values for the multiplier and the noise, and three sample sizes
+effects<-c("small","medium","large")
+multiplier<-c(0.15,0.25,0.35)
+noise<-c(0.35,0.25,0.15)
+# For the power simulations, we chose the three sample sizes that reflect the smallest sample (4 individuals), the most common sample (9 individuals), and the largest sample (26 individuals)
+samplesizes<-c(4,9,26)
+
+# We create a table to store the output from the power simulations. We have nine combinations (three effect sizes times three sample sizes), each of which we will run 100 times to get an estimate how often we can expect to detect the simulated effect with a given sample size. For each iteration of the power simulation, we store the information on the current sample size, the current effect size, the estimated slope, and whether the 89% compatibility interval of the estimate does cross zero suggesting that the model cannot reliably infer the relationship
+powertable_binomial<-as.data.frame(matrix(ncol=5,nrow=900))
+colnames(powertable_binomial)<-c("id","samplesize","effect","slope","crosseszero")
+
+# We now run the iteration on a loop, going through the three different sample sizes and the three different effect sizes
+counter<-1
+for(ss in 1:length(samplesizes)){
+  currentsamplesize<-samplesizes[ss]
+  for(effect in 1:length(noise)){
+    currentmultiplier<-multiplier[effect]
+    currentnoise<-noise[effect]
+    
+    predictor<-rnorm(currentsamplesize,mean=0,sd=1)
+    outcome<-currentmultiplier*predictor+rnorm(currentsamplesize,mean=0.25,sd=currentnoise)
+    outcome[outcome<0]<-0 # Values cannot be smaller than zero
+    outcome[outcome>1]<-1 # Values cannot be larger than one
+    
+    # The outcome is currently a probability. We need to translate this to the data we observed, which are counts relative to a total. For the simulations here, we reflect that the probabilities reflect how likely individuals are to eat any of the 22 food types. The total options of 22 appears the average across the variables which have a binomial distribution:
+    outcome<-round(outcome*22,0)
+    dat_list<-list(outcome=outcome,
+                   predictor=predictor)
+ 
+    # We define the binomial model using the package rethinking 
+    binomial_p <- ulam(
+      alist(
+        outcome ~ dbinom( 22 , p ) ,
+        logit(p) <- a+b*predictor,
+        a~dnorm(0,1),
+        b~dnorm(0,1)
+      ) , data=dat_list,cmdstan=T ,log_lik=T, chains=4,cores=4, control=list(adapt_delta=0.99))
+    
+    # We translate the model to stan code, and use cmdstan to create the compiled model
+    write(stancode(binomial_p),file="myowntrial.stan")
+    file <- file.path(cmdstan_path(), "myowntrial.stan")
+    mod <- cmdstan_model(file)
+    
+    # We run the model 100 times for a given combination of sample size and effect size
+    for(repetition in 1:100){
+    predictor<-rnorm(currentsamplesize,mean=0,sd=1)
+    outcome<-currentmultiplier*predictor+rnorm(currentsamplesize,mean=0.25,sd=currentnoise)
+    outcome[outcome<0]<-0 # Values cannot be smaller than zero
+    outcome[outcome>1]<-1 # Values cannot be larger than one
+    outcome<-round(outcome*22,0)
+    dat_list<-list(outcome=outcome,
+               predictor=predictor)
+    
+    fit <- mod$sample(
+      data = dat_list,
+      seed = 123,
+      chains = 4,
+      parallel_chains = 4,
+      refresh = 500
+    )
+    
+    # We store the information about this repetition in the table
+    powertable_binomial[counter,1]<-counter
+    powertable_binomial[counter,2]<-currentsamplesize
+    powertable_binomial[counter,3]<-effects[effect]
+    powertable_binomial[counter,4]<-data.frame(fit$summary())[3,2]
+    powertable_binomial[counter,5]<-data.frame(fit$summary())[3,6]<0
+    print(counter)
+    counter<-counter+1
+    }
+    
+    # We remove the used version of the stan model so we always refer to the up-to-date compiled file
+    fn<-"myowntrial"
+    file.remove(fn)
+  }
+}
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+# Create a summary table from the output and save it to file
+# powertable_binomial$crosseszero<-as.integer(as.factor(powertable_binomial$crosseszero))-1
+# powertable_summary_binomialcont<-as.data.frame(powertable_binomial %>% group_by(samplesize,effect) %>% summarise("average slope"=mean(slope),"percentage crosses zero"=mean(crosseszero)))
+# write.csv(powertable_summary_binomialcont,file="flexforaging_powertable_summary_binomialcont.csv")
+
+
+
+##################################################################################################
+## Scenario 2: outcome variable has binomial distribution, predictor variable is categorical (manipulated vs control)
+
+# This scenario reflects the comparison between manipulated and control individuals. Here, the sample always consists of 8 manipulated and 10 control individuals
+samplesize_m<-8 
+samplesize_c<-10
+
+# We are interested in the difference between the groups. We base the effect sizes on
+# Cohen's d: small 0.2, medium 0.5, large 0.8, based on https://en.wikipedia.org/wiki/Effect_size#Cohen's_d
+# Cohen's d can be estimated as mean manipulated minus mean control divided by joined standard deviation
+# As before, the outcome represents a probability, which for the variables in our sample ranges between 0% and 50%, so we set it that the overall mean (mean manipulated plus mean control divided by two) is close to 0.25.
+
+  # small:
+  0.06/sqrt( (7*0.1+9*0.1) / ( 8+10 ) ) # 0.2 - difference 0.06, sd in each 0.1
+  outcome_m<-rnorm(samplesize_m,mean=0.28,sd=0.1)
+  outcome_m[outcome_m<0]<-0 # Values cannot be smaller than zero
+  outcome_c<-rnorm(samplesize_c,mean=0.22,sd=0.1)
+  outcome_c[outcome_c<0]<-0 # Values cannot be smaller than zero
+  predictor<-c(rep(1,samplesize_m),rep(0,samplesize_c))
+  outcome<-c(outcome_m,outcome_c)
+  boxplot(outcome~predictor)
+  
+  # medium:
+  0.15/sqrt( (7*0.1+9*0.1) / ( 8+10 ) ) # 0.5 - difference 0.15, sd in each 0.1
+  outcome_m<-rnorm(samplesize_m,mean=0.35,sd=0.1)
+  outcome_m[outcome_m<0]<-0 # Values cannot be smaller than zero
+  outcome_c<-rnorm(samplesize_c,mean=0.20,sd=0.1)
+  outcome_c[outcome_c<0]<-0 # Values cannot be smaller than zero
+  predictor<-c(rep(1,samplesize_m),rep(0,samplesize_c))
+  outcome<-c(outcome_m,outcome_c)
+  boxplot(outcome~predictor)
+  
+  # large:
+  0.2/sqrt( (7*0.1+9*0.1) / ( 8+10 ) ) # 0.7 - difference 0.20, sd in each 0.1
+  outcome_m<-rnorm(samplesize_m,mean=0.40,sd=0.1)
+  outcome_m[outcome_m<0]<-0 # Values cannot be smaller than zero
+  outcome_c<-rnorm(samplesize_c,mean=0.20,sd=0.1)
+  outcome_c[outcome_c<0]<-0 # Values cannot be smaller than zero
+  predictor<-c(rep(1,samplesize_m),rep(0,samplesize_c))
+  outcome<-c(outcome_m,outcome_c)
+  boxplot(outcome~predictor)
+
+  
+# We again set everything up for cmdstan
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+
+# We run an example to get and test the model
+predictor<-c(rep(1,samplesize_m),rep(0,samplesize_c))
+outcome_m<-rnorm(samplesize_m,mean=0.40,sd=0.1)
+outcome_m[outcome_m<0]<-0 # Values cannot be smaller than zero
+outcome_c<-rnorm(samplesize_c,mean=0.20,sd=0.1)
+outcome_c[outcome_c<0]<-0 # Values cannot be smaller than zero
+outcome<-c(outcome_m,outcome_c)
+
+# We again assume that the probability reflects the likelihood that individuals will choose each of the 22 different food types
+outcome<-round(outcome*22,0)
+
+dat_list_c<-list(outcome=as.numeric(outcome),
+               predictor=predictor+1)
+
+binomial_p_c <- ulam(
+  alist(
+    outcome ~ dbinom( 22 , p ) ,
+    logit(p) <- b[predictor],
+    b[predictor]~dnorm(0,1)
+  ) , data=dat_list_c,cmdstan=T , chains=4,cores=4, control=list(adapt_delta=0.99))
+
+precis(binomial_p_c,depth=2)
+
+
+# We compile the model with cmdstan
+write(stancode(binomial_p_c),file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+options(mc.cores=4)
+
+# We set the range of values for the three different effect sizes. Here, we are not changing the sample sizes.
+controlmean<-c(0.22,0.20,0.20)
+manipulatedmean<-c(0.28,0.35,0.40)
+effects<-c("small","medium","large")
+
+# We create a table to store the outcome
+powertable_binomial_c<-as.data.frame(matrix(ncol=4,nrow=300))
+colnames(powertable_binomial_c)<-c("id","effect","contrast","crosseszero")
+
+# We run the iterations of the power simulation
+counter<-1
+  for(effect in 1:length(controlmean)){
+    currentmanipulatedmean<-manipulatedmean[effect]
+    currentcontrolmean<-controlmean[effect]
+    for(repetition in 1:100){
+      predictor<-c(rep(1,samplesize_m),rep(0,samplesize_c))
+      outcome_m<-rnorm(samplesize_m,mean=currentmanipulatedmean,sd=0.1)
+      outcome_m[outcome_m<0]<-0 # Values cannot be smaller than zero
+      outcome_c<-rnorm(samplesize_c,mean=currentcontrolmean,sd=0.1)
+      outcome_c[outcome_c<0]<-0 # Values cannot be smaller than zero
+      outcome<-c(outcome_m,outcome_c)
+      outcome<-round(outcome*22,0)
+      
+      dat_list_c<-list(outcome=as.numeric(outcome),
+                       predictor=predictor+1)
+      
+      fit <- mod$sample(
+        data = dat_list_c,
+        seed = 123,
+        chains = 4,
+        parallel_chains = 4,
+        refresh = 500
+      )
+      
+      drawsarray_binomial_c<-fit$draws()
+      drawsarray_binomial_c<-as_draws_df(drawsarray_binomial_c)
+      drawsarray_binomial_c<-data.frame(drawsarray_binomial_c)
+      contrast_binomial_c<-inv_logit(drawsarray_binomial_c$b.2.)-inv_logit(drawsarray_binomial_c$b.1.)
+      
+      powertable_binomial_c[counter,1]<-counter
+      powertable_binomial_c[counter,2]<-effects[effect]
+      powertable_binomial_c[counter,3]<-precis(contrast_binomial_c)[1,1]
+      powertable_binomial_c[counter,4]<-precis(contrast_binomial_c)[1,3]<0
+      counter<-counter+1
+    }
+  }
+
+# Remove the stan command line file we created for this particular model from your computer
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+# Create the summary table and save it to file
+# powertable_binomial_c$crosseszero<-as.integer(as.factor(powertable_binomial_c$crosseszero))-1
+# powertable_summary_binomialcat<-as.data.frame(powertable_binomial_c %>% group_by(effect) %>% summarise("average contrast"=mean(contrast),"percentage crosses zero"=mean(crosseszero)))
+# write.csv(powertable_summary_binomialcat,file="flexforaging_powertable_summary_binomialcat.csv")
+
+
+
+##################################################################################################
+## Scenario 3: outcome variable has normal distribution, predictor variable is continuous
+
+# Example with a sample size of 9 to determine how to simulate the three different effect sizes
+samplesize<-9 
+
+# Predictor is a standardized variable to reflect phi, lambda, or latency (which appear normally distributed among the individuals in our sample). A standardized variable has a mean of zero and a standard deviation of 1.
+
+# A quick assessment to check the strength of the effects
+# Create a vector to store the output of the estimated effects
+r_squared<-NA
+
+for(i in 1:1000){
+  # Simulate the values of the predictor variable for each individual in the sample:
+  predictor<-rnorm(samplesize,mean=0,sd=1)
+  
+  # Our outcome variable is also a standardized variable, ranging between -2 and +2. To reflect the relative influence of the predictor, we take it as the sum of the influence of the predictor plus noise. For a completely deterministic relationship, the predictor would reflect the outcome completely, if there is no relationship, the outcome just reflects the noise. We can change the effects by adjusting their relative weights. The relative weights of the influence of the predictor and of the influence of noise sum to 1.
+  noise<-rnorm(samplesize,mean=0,sd=1)
+  outcome<-0.2*predictor+0.8*noise
+  
+  r_squared<-c(r_squared,summary(lm(outcome~predictor))$r.squared)
+}
+mean(r_squared[2:1001])
+
+
+# We again set everything up for cmdstan
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+options(mc.cores=4)
+
+# We simulate three effect sizes, small means the predictor explains 20% of the variation, medium 50%, large 80%.
+effects<-c("small","medium","large")
+multipliers<-c(0.2,0.5,0.8)
+noises<-c(0.8,0.5,0.2)
+# We again simulate the three sample sizes, reflecting the smallest sample (4 individuals), the most common sample (9 individuals), and the largest sample (26 individuals)
+samplesizes<-c(4,9,26)
+
+
+# We create a table to store the output
+powertable_normal<-as.data.frame(matrix(ncol=5,nrow=900))
+colnames(powertable_normal)<-c("id","samplesize","effect","slope","crosseszero")
+
+counter<-1
+for(ss in 1:length(samplesizes)){
+  currentsamplesize<-samplesizes[ss]
+  for(effect in 1:length(noises)){
+    currentmultiplier<-multipliers[effect]
+    currentnoise<-noises[effect]
+    
+    predictor<-rnorm(currentsamplesize,mean=0,sd=1)
+    noise<-rnorm(currentsamplesize,mean=0,sd=1)
+    outcome<-currentmultiplier*predictor+currentnoise*noise
+    dat_list<-list(outcome=outcome,
+                   predictor=predictor)
+    
+    normal_p <- ulam(
+      alist(
+        outcome ~ dnorm( mu , sigma ) ,
+        mu <- a+b*predictor,
+        a~dnorm(0,1),
+        b~dnorm(0,1),
+        sigma~dexp(1)
+      ) , data=dat_list,cmdstan=T , chains=4,cores=4, control=list(adapt_delta=0.99))
+    
+    write(stancode(normal_p),file="myowntrial.stan")
+    file <- file.path(cmdstan_path(), "myowntrial.stan")
+    mod <- cmdstan_model(file)
+    
+    for(repetition in 1:100){
+      predictor<-rnorm(currentsamplesize,mean=0,sd=1)
+      noise<-rnorm(currentsamplesize,mean=0,sd=1)
+      outcome<-currentmultiplier*predictor+currentnoise*noise
+      dat_list<-list(outcome=outcome,
+                     predictor=predictor)
+      
+      fit <- mod$sample(
+        data = dat_list,
+        seed = 123,
+        chains = 4,
+        parallel_chains = 4,
+        refresh = 500
+      )
+      
+      powertable_normal[counter,1]<-counter
+      powertable_normal[counter,2]<-currentsamplesize
+      powertable_normal[counter,3]<-effects[effect]
+      powertable_normal[counter,4]<-data.frame(fit$summary())[3,2]
+      powertable_normal[counter,5]<-data.frame(fit$summary())[3,6]<0
+      print(counter)
+      counter<-counter+1
+    }
+    
+    fn<-"myowntrial"
+    file.remove(fn)
+  }
+}
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+# Create a summary table and save it to file.
+# powertable_normal$crosseszero<-as.integer(as.factor(powertable_normal$crosseszero))-1
+# powertable_summary_normal<-as.data.frame(powertable_normal %>% group_by(samplesize,effect) %>% summarise("average slope"=mean(slope),"percentage crosses zero"=mean(crosseszero)))
+# write.csv(powertable_summary_normal,file="flexforaging_powertable_summary_normal.csv")
 ```
-
 
 
 # Results {-}
@@ -3210,7 +3580,7 @@ g <- data.frame(g)
 #remove the birds who don't have data in all variables
 max <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
 
-#determine the distribution: binomial bc variable ranges from 0 to 1
+#determine the distribution: normal even though the variable ranges from 0 to 1, but it is on a continuous scale, therefore binomial doesn't work bc it is not binary with a proportion that can be broken up into number of X/number of X+Y
 #hist(max$MaxBond)
 
 #PHI AND LAMBDA model
@@ -3221,10 +3591,11 @@ mbf <- list(maxbond = max$MaxBondStrength,
               )
 set.seed(1109)
 mbfmodel <- ulam( alist(
-        maxbond ~ dbinom(1,p), 
-        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
-        a ~ dnorm(-2,1), #maxbondstrength values are close to 0.1 and logit(0.1)=-2 
-        c(bp,bl,br)~dnorm(0,1)
+       maxbond ~dnorm(mu,sigma),
+       mu <- a + bp*phi + bl*lambda + br*rank,
+       a~dnorm(0.1,1), #maxbondstrength values are close to 0.1
+       c(bp,bl,br)~dnorm(0,1),
+       sigma~dexp(1)
     ) , data=mbf, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 mbfout <- precis( mbfmodel , depth=2 )
@@ -3534,7 +3905,7 @@ for(i in 1:nrow(re)){
 re[i,]$maxbondrelatedness<-relatedness[which(rownames(relatedness)==re[i,]$BirdID),which(colnames(relatedness)==re[i,]$MaxBondPartner)]
 }
 
-#binomial distribution because relatedness is between 0 and 1 (the proportion of alleles you share)
+#distribution: even though relatedness is between 0 and 1 (the proportion of alleles you share), it is a continuous variable so the binomial doesn't work. Use normal distribution
 
 #PHI and LAMBDA
 #remove the birds who don't have data in all variables
@@ -3547,10 +3918,11 @@ mr <- list(maxbondrelatedness = rem$maxbondrelatedness,
               )
 set.seed(1439)
 mrmodel <- ulam( alist(
-        maxbondrelatedness ~ dbinom(1,p), 
-        logit(p) <- a + bp*phi + bl*lambda + br*rank, 
-        a ~ dnorm(-2,1), #maxbondrelatedness values are close to 0.1 and logit(0.1)=-2 
-        c(bp,bl,br)~dnorm(0,1)
+       maxbondrelatedness ~dnorm(mu,sigma),
+       mu <- a + bp*phi + bl*lambda + br*rank,
+       a~dnorm(0.1,1), #maxbondstrength values are close to 0.1
+       c(bp,bl,br)~dnorm(0,1),
+       sigma~dexp(1)
     ) , data=mr, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 mrout <- precis( mrmodel , depth=2 )
