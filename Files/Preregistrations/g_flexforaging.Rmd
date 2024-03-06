@@ -2897,6 +2897,18 @@ precis( mal_binom , depth=2 )
 #The less flexible (higher latency) males eat more human foods
 
 
+#VISUALIZE
+op <- par(mfrow=c(1,2), mar=c(5.9,4.9,2,0.9))
+plot((ma$humfood/ma$totalfoods)~ma$lambda, xlab="λ", ylab="Proportion of human foods", pch=1,cex=2,cex.lab=1.5)
+points((fe$humfood/fe$totalfoods)~fe$lambda,pch=2,col="blue",cex=2)
+legend(x="topleft", y=7, legend=c(pch1="Males", pch2="Females"), pch=c(1,2), col=c("Black","Blue"), box.lty=1, cex=1.3)
+mtext("A",side=3,outer=FALSE,adj=0,font=1,cex=1.3,line=0.6)
+
+plot((mal$humfood/mal$totalfoods)~mal$latency, xlab="Latency (sec) to switch", ylab="", pch=1,cex=2,cex.lab=1.5)
+points((mfl$humfood/mfl$totalfoods)~mfl$latency,pch=2,col="blue",cex=2)
+mtext("B",side=3,outer=FALSE,adj=0,font=1,cex=1.3,line=0.6)
+par(op)
+
 
 
 ### Correlation between proportion HUMAN FOODS taken and foraging TECHNIQUES
@@ -2942,9 +2954,10 @@ precis( mat_binom , depth=2 )
 
 
 
-### DISTANCE to outdoor human food sources
+### DISTANCE (in meters) to outdoor human food sources
 #If distance per bird is repeatable, then use the avg distance per bird as the dependent variable
 
+####### BEGIN CALCULATiON OF distance repeatability
 # REPEATABILITY of DISTANCE: Is distance from outdoor cafes a REPEATABLE trait within individuals, as measured with a GPS point of individual locations during several separate focal follows
 library(DHARMa)
 rpt.dist <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_P3repeatability.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -2992,19 +3005,27 @@ general = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/m
 general = merge(tmp, general, by = "BirdID",all = T)
 general = general[!is.na(general$Sex),]
 #write.csv(general, "g_flexforaging_data_general.csv")
+####### END CALCULATiON OF distance repeatability
 
-general<-general[is.na(general$AvgDistHumanFood)==FALSE,] # remove NAs
+
+###### BEGIN MODELS to answer the research question
+general = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+
 #Separate the sexes
 fg <- general[general$Sex=="F",]
 mg <- general[general$Sex=="M",]
 
+#exclude NAs from the variables in this model
+fg <- subset(fg, !(is.na(fg["AvgDistHumanFood"])) & !(is.na(fg["DomRank"])) & !(is.na(fg["Phi"]))) 
+mg <- subset(mg, !(is.na(mg["AvgDistHumanFood"])) & !(is.na(mg["DomRank"])) & !(is.na(mg["Phi"]))) 
+
 #sample sizes
-#length(unique(f$BirdID)) #9 females
-#length(unique(m$BirdID)) #26 males
-#mean(f$NumFollows) #4.2 follows for females
-#range(f$NumFollows) #1-6 follows for females
-#mean(m$NumFollows) #4.6 follows for females
-#range(m$NumFollows) #1-8 follows for females
+#length(unique(fg$BirdID)) #9 females
+#length(unique(mg$BirdID)) #26 males
+#mean(fg$NumFollows) #4.2 follows for females
+#range(fg$NumFollows) #1-6 follows for females
+#mean(mg$NumFollows) #4.6 follows for females
+#range(mg$NumFollows) #1-8 follows for females
 
 #determine the distribution
 #hist(general$AvgDistHumanFood) #poisson bc count of meters, but some large outliers so need to log transform. If you are relatively close, small distance changes can make a big difference, but if you are farther away, small distance changes don't make much difference. Therefore, this is a NORMAL distribution (page 242 McElreath 2020)
@@ -3129,6 +3150,8 @@ par(op)
 
 
 ### NUMBER OF OUTDOOR HUMAN FOOD SOURCES PER HOME RANGE
+
+#### CALCULATE number of human food sources per bird's home range and insert it into the GENERAL data sheet
 # LOAD the foraging data sheet
 f1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 f1 <- data.frame(f1)
@@ -3145,10 +3168,16 @@ f3$NumberHumanFoodSourcesInHomeRange<-as.numeric(f3$NumberHumanFoodSourcesInHome
 f4 <- as.data.frame(f3 %>% group_by(BirdID) %>% summarise(NumberHumanFoodSourcesInHomeRange=mean(NumberHumanFoodSourcesInHomeRange)))
 
 # Add the column number of human food sources inside a home range to the general data sheet: IT IS ALREADY IN https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv
-#hr <- left_join(b1,f4,by="BirdID")
+hr <- left_join(b1,f4,by="BirdID")
+#write.csv(hr, "g_flexforaging_data_general.csv")
+#### DONE with the calculation
 
 
 # PHI AND LAMBDA models
+# LOAD the General data sheet
+b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+b1 <- data.frame(b1)
+
 #remove the birds who don't have data in all variables
 b2 <- subset(b1,!(is.na(b1["Phi"])) & !(is.na(b1["DomRank"])) & !(is.na(b1["NumberHumanFoodSourcesInHomeRange"]))) 
 
@@ -3156,9 +3185,11 @@ b2 <- subset(b1,!(is.na(b1["Phi"])) & !(is.na(b1["DomRank"])) & !(is.na(b1["Numb
 #hist(b2$NumberHumanFoodSourcesInHomeRange)
 
 #Separate the sexes
-fd <- b2[b2$Sex=="F",] #n=8
-md <- b2[b2$Sex=="M",] #n=26
+fd <- b2[b2$Sex=="F",] 
+md <- b2[b2$Sex=="M",] 
 
+#length(unique(fd$BirdID)) #6
+#length(unique(md$BirdID)) #21
 
 #FEMALE phi and lambda model
 fn <- list(num = fd$NumberHumanFoodSourcesInHomeRange,
@@ -3166,7 +3197,7 @@ fn <- list(num = fd$NumberHumanFoodSourcesInHomeRange,
               phi = standardize(fd$Phi),
               lambda = standardize(fd$Lambda),
               rank = standardize(fd$DomRank))
-
+set.seed(34)
 mn <- ulam( alist(
         num ~ dbinom(total,p), #total is the maximum number of human food sources a bird had in its home range in this sample
         logit(p) <- a + bp*phi + bl*lambda + br*rank,
@@ -3175,10 +3206,10 @@ mn <- ulam( alist(
   ),data=fn, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 #precis(mn,depth=2)
 #   mean   sd  5.5% 94.5% rhat ess_bulk
-#a   0.59 0.11  0.40  0.77    1  2306.54
-# br -0.19 0.13 -0.40  0.01    1  1915.26
-# bl  0.48 0.16  0.23  0.73    1  1531.15
-# bp -0.01 0.14 -0.23  0.21    1  1404.68
+# a   1.03 0.14  0.82  1.26 1.00  1159.41
+# br -0.55 0.24 -0.95 -0.17 1.01   966.76
+# bl  0.80 0.26  0.39  1.23 1.01   947.25
+# bp  0.47 0.31 -0.02  0.98 1.01   782.70
 #females with a larger lambda (less flexible) have more human food sources inside their home range. No effect for phi
 
 
@@ -3188,7 +3219,7 @@ mnl <- list(num = md$NumberHumanFoodSourcesInHomeRange,
             phi = standardize(md$Phi),
               lambda = standardize(md$Lambda),
               rank = standardize(md$DomRank))
-
+set.seed(35)
 mnmale <- ulam(
   alist(
     num ~ dbinom( total,p ),
@@ -3199,11 +3230,11 @@ mnmale <- ulam(
 
 #precis(mnmale,depth=2)
 #   mean   sd  5.5% 94.5% rhat ess_bulk
-#a  -0.90 0.06 -1.00 -0.80    1  2000.84
-# br  0.37 0.08  0.24  0.49    1  2213.21
-# bl  0.59 0.07  0.48  0.70    1  1654.77
-# bp  0.05 0.07 -0.07  0.16    1  1663.68
-#males with a larger lambda (less flexible) have more human food sources inside their home range. No effect for phi
+# a  -0.71 0.07 -0.82 -0.60    1  1867.08
+# br  0.59 0.09  0.45  0.75    1  1836.99
+# bl  0.70 0.08  0.58  0.83    1  1585.59
+# bp  0.23 0.08  0.10  0.36    1  1426.90
+#males with a larger lambda (less flexible) and phi (more flexible) have more human food sources inside their home range
 
 
 #LATENCY models
@@ -3215,15 +3246,15 @@ latrange2$MABavgLatencySwitch <- as.numeric(latrange2$MABavgLatencySwitch)
 #Separate the sexes
 fl <- latrange2[latrange2$Sex=="F",] #n=8
 ml <- latrange2[latrange2$Sex=="M",] #n=26
-#nrow(fl) #6
-#nrow(ml) #21
+#nrow(fl) #4
+#nrow(ml) #16
 
 #FEMALE model
 fldat <- list(num = fl$NumberHumanFoodSourcesInHomeRange,
               total = rep(max(fl$NumberHumanFoodSourcesInHomeRange),nrow(fl)),  
               latency = standardize(fl$MABavgLatencySwitch),
               rank = standardize(fl$DomRank))
-
+set.seed(36)
 mlfemale <- ulam(
   alist(
     num ~ dbinom( total,p ),
@@ -3234,17 +3265,17 @@ mlfemale <- ulam(
 
 precis(mlfemale,depth=2)
 #     mean   sd  5.5% 94.5% rhat ess_bulk
-# a    1.68 0.21 1.35  2.01    1   750.36
-# br   0.87 0.33 0.34  1.41    1   768.88
-# blat 1.90 0.29 1.46  2.38    1   650.86
-#females that are faster to switch have fewer human food sources in their home range
+# a     2.49 0.25  2.11  2.90 1.00  1422.80
+# br    0.33 0.31 -0.16  0.83 1.01  1236.60
+# blat -0.04 0.34 -0.58  0.50 1.00  1398.24
+#no relationship between switch speeds and number of human food sources in their home range
 
 #MALE model
 mldat <- list(num = ml$NumberHumanFoodSourcesInHomeRange,
              total = rep(max(ml$NumberHumanFoodSourcesInHomeRange),nrow(ml)),  
               latency = standardize(ml$MABavgLatencySwitch),
               rank = standardize(ml$DomRank))
-
+set.seed(37)
 mlmale <- ulam(
   alist(
     num  ~ dbinom( total,p ),
@@ -3255,17 +3286,21 @@ mlmale <- ulam(
 
 precis(mlmale,depth=2)
 #     mean   sd  5.5% 94.5% rhat ess_bulk
-# a    -0.70 0.07 -0.80 -0.59    1  1727.61
-# br    0.53 0.08  0.41  0.67    1  1627.44
-# blat  0.19 0.07  0.07  0.29    1  1626.87
+# a    -0.44 0.08 -0.56 -0.32    1  1499.06
+# br    0.58 0.10  0.42  0.74    1  1818.92
+# blat  0.40 0.08  0.28  0.53    1  1931.52
 #males that are faster to switch have fewer human food sources in their home range
 
 
 #VISUALIZE
-op <- par(mfrow=c(1,1), mar=c(5.9,4.9,2,0.9))
-plot(mnl$num~mnl$lambda, xlab="λ", ylab="Number of human food sources inside home range", pch=1,cex=2,cex.lab=1.5)
+op <- par(mfrow=c(1,2), mar=c(5.9,4.9,2,0.9))
+plot(mnl$num~mnl$phi, xlab="ϕ", ylab="Number of human food sources inside home range", pch=1,cex=2,cex.lab=1.5)
+points(fn$num~fn$phi,pch=2,col="blue",cex=2)
+mtext("A",side=3,outer=FALSE,adj=0,font=1,cex=1.3,line=0.6)
+plot(mnl$num~mnl$lambda, xlab="λ", ylab="", pch=1,cex=2,cex.lab=1.5)
 points(fn$num~fn$lambda,pch=2,col="blue",cex=2)
 legend(x="topleft", y=7, legend=c(pch1="Males", pch2="Females"), pch=c(1,2), col=c("Black","Blue"), box.lty=1, cex=1.3)
+mtext("B",side=3,outer=FALSE,adj=0,font=1,cex=1.3,line=0.6)
 par(op)
 ```
 
@@ -4574,19 +4609,6 @@ precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 
 There is not a strong relationship between phi or lambda and the proportion of focal follows in a given micro habitat type: the compatibility intervals for the slopes cross zero in all microhabitat types (Table, Figure).
 
-**Table.** Model output showing that phi and lambda did not have a strong relationship with the proportion of focal follows in a given microhabitat type for either sex as indicated by the slopes. n_eff is the effective sample size and Rhat4 is an indicator of model convergence (1.00 is ideal).
-
-```{r resltsp8table, eval=T}
-library(kableExtra)
-t8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep8.csv"), header=F, sep=",", stringsAsFactors=F)
-t8 <- data.frame(t8)
-colnames(t8) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)","n_eff","Rhat4")
-
-knitr::kable(t8) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
-```
-
-
 ```{r p8, eval=F}
 library(rethinking)
 # load the data sheet
@@ -5379,6 +5401,22 @@ inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_
 
 inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_binary_hyper_tech,3,pars=c("a_bar"))[1,1])*8-inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1]))*8
 # 1.130719
+```
+
+\newpage
+
+# SUPPLEMENTARY MATERIAL 3: P8 model outputs
+
+**Table SM3.** Model output showing that $\phi$ (learning rate of attraction) and $\lambda$ (rate of deviating from learned attractions) did not have a strong relationship with the proportion of focal follows in a given microhabitat type for either sex as indicated by the slopes ($\beta$). n_eff is the effective sample size and Rhat4 is an indicator of model convergence (1.00 is ideal).
+
+```{r resltsp8table, eval=T}
+library(kableExtra)
+t8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep8.csv"), header=F, sep=",", stringsAsFactors=F)
+t8 <- data.frame(t8)
+colnames(t8) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)","n_eff","Rhat4")
+
+knitr::kable(t8) %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 # REFERENCES
