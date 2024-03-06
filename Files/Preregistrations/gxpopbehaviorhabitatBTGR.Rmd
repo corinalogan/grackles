@@ -222,7 +222,7 @@ library(dplyr)
 ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 ft <- data.frame(ft)
 
-# FYI across AZ and CA populations...
+# FYI across all populations...
 #How many different food types?
 #length(unique(ft$What)) #22
 #unique(ft$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken, peanut, mulch
@@ -232,19 +232,9 @@ ft <- data.frame(ft)
 #unique(ft$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig, pick up, sweep
 
 
-# ONLY AZ: select only the AZ birds who were manipulated or control individuals in the flexibility experiment
-ft1 <- ft[ft$Population=="AZ",]
+### NUMBER OF FOOD TYPES for flexibility manipulated vs control birds - did manipulated switch more?
 
-# AZ population: How many different food types?
-#length(unique(ft1$What)) #20
-#unique(ft1$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken
-
-# AZ population: How many different foraging techniques?
-#length(unique(ft1$How)) # 11 - 1 (eat) - 1 (tolerated theft) = 9
-#unique(ft1$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig
-
-
-#FOOD TYPES: count the number of technique switches during each focal
+#FOOD TYPES: count the number of food type switches during each focal
 #exclude NAs from the variables in this model
 fo <- subset(ft1, is.na(ft1$What) == FALSE)
 
@@ -269,14 +259,25 @@ fo4 <- left_join(fo3,ca,by="BirdID")
 fo4 <- subset(fo4, is.na(fo4$Treatment) == FALSE)
 #nrow(fo4) #NOTE: n=13 (6=manipulated, 7=control) birds because some dropped out due to not having any foraging events in their focals or not having any focals
 
+
+# What is the average number of focals per bird? 
+ff <- fo2 %>% group_by(BirdID,FocalID) %>% summarise (Count=n()) #Doesn't work yet, so just looked at fo2 and hand calculated
+ff1 <- data.frame(ff)
+##Total number of focals per bird in this dataset
+#Manipulated: Adobo=1, Burrito=7, Chalupa=3, Chilaquile=5, Diablo=2, Habanero=1.
+#mean(c(1,7,3,5,2,1)) #3.2 focals per manipulated bird
+#Control: Fideo=5, Mofongo=2, Queso=3, Taco=7, Tapa=2, Taquito=3, Tomatillo=3
+#mean(c(5,2,3,7,2,3,3)) #3.6 focals per control bird
+
+
 # RUN the models
 dat_swfo <- list(foodswitches = fo4$totalfoodswitches,
             totaltime = fo4$totaltime, 
-            treatment = as.integer(as.factor(fo4$Treatment)) #1=control, 2=manipulated
+            site = as.integer(as.factor(fo4$Treatment)) #1=control, 2=manipulated
               )
 swfo <- ulam( alist(
         foodswitches ~ dbinom(totaltime,p),
-        logit(p) <- a[treatment], #the intercept is the probability of observing any of the types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a[site], #the intercept is the probability of observing any of the types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
         a[treatment] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
     ) , data=dat_swfo , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
@@ -344,11 +345,11 @@ ft5 <- subset(ft5, is.na(ft5$Treatment) == FALSE)
 # RUN the models
 dat_sw <- list(switches = ft5$totalswitches,
             totaltime = ft5$totaltime, 
-            treatment = as.integer(as.factor(ft5$Treatment)) #1=control, 2=manipulated
+            site = as.integer(as.factor(ft5$Treatment)) #1=control, 2=manipulated
               )
 sw <- ulam( alist(
         switches ~ dbinom(totaltime,p), 
-        logit(p) <- a[treatment], #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
+        logit(p) <- a[site], #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
         a[treatment] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
     ) , data=dat_sw , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
@@ -385,7 +386,6 @@ contrast_sw <- precis( diffsw )
 #HPDI(inv_logit(postsw$a[,2]))/mean(inv_logit(postsw$a[,1]))
 #   |0.89    0.89| 
 #1.187837 2.211168 
-
 
 
 
