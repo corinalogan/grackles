@@ -3309,7 +3309,7 @@ par(op)
 The social network is... (say something general about Figure) (Figure).
 
 ```{r p4pt1socialnetwork, eval=T}
-### Create social network graph figure from associations between banded birds ###
+### Create social network graph figure from ALL associations between banded birds ###
 #Load social data
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
 ff <- data.frame(ff)
@@ -3441,7 +3441,7 @@ colnames(y)[3] = "y"
 els.nb = els.nb[which(els.nb$FocalBirdID == "Adobo" | els.nb$FocalBirdID == "Burrito" | els.nb$FocalBirdID == "Chilaquile" | els.nb$FocalBirdID == "Chalupa" | els.nb$FocalBirdID == "Diablo" | els.nb$FocalBirdID == "Fideo" | els.nb$FocalBirdID == "Taco" | els.nb$FocalBirdID == "Taquito" |  els.nb$FocalBirdID == "Yuca" | els.nb$FocalBirdID == "Tembleque" | els.nb$FocalBirdID == "Polvorones" | els.nb$FocalBirdID == "Camote" | els.nb$FocalBirdID == "Dulce de Leche" | els.nb$FocalBirdID == "Zapote Negro" | els.nb$FocalBirdID == "Cuervo" | els.nb$FocalBirdID == "Xunub" | els.nb$FocalBirdID == "Galandra" | els.nb$FocalBirdID == "Kel" | els.nb$FocalBirdID == "Kau" | els.nb$FocalBirdID == "Cutuy" | els.nb$FocalBirdID == "Tzanatl Preciosa" | els.nb$FocalBirdID == "Pina"),]
 
 #Exclude unbanded birds
-els.nb2 <- els.nb[!els.nb$NonFocalBirdID=="NA" & !els.nb$NonFocalBirdID=="unbanded adult female" & !els.nb$NonFocalBirdID=="unbanded adult male" & !els.nb$NonFocalBirdID=="unbanded juvenile" & !els.nb$NonFocalBirdID=="unbanded juvenile female" & !els.nb$NonFocalBirdID=="unbanded juvenile male" & !els.nb$NonFocalBirdID=="unbanded unknown female" & !els.nb$NonFocalBirdID=="unbanded unknown male"  & !els.nb$NonFocalBirdID=="unknown adult female" & !els.nb$NonFocalBirdID=="unknown adult male" & !els.nb$NonFocalBirdID=="unknown adult male " & !els.nb$NonFocalBirdID=="unknown banded female" & !els.nb$NonFocalBirdID=="unknown female" & !els.nb$NonFocalBirdID=="unknown grackle"  & !els.nb$NonFocalBirdID=="unknown individual" & !els.nb$NonFocalBirdID=="unknown juvenile" & !els.nb$NonFocalBirdID=="unknown juvenile female"  & !els.nb$NonFocalBirdID=="unknown juvenile male" & !els.nb$NonFocalBirdID=="unknown male" & !els.nb$NonFocalBirdID=="unknown unbanded male",] 
+els.nb2 <- els.nb[!els.nb$NonFocalBirdID=="NA" & !els.nb$NonFocalBirdID=="unbanded adult female" & !els.nb$NonFocalBirdID=="unbanded adult male" & !els.nb$NonFocalBirdID=="unbanded juvenile" & !els.nb$NonFocalBirdID=="unbanded juvenile female" & !els.nb$NonFocalBirdID=="unbanded juvenile male" & !els.nb$NonFocalBirdID=="unbanded unknown female" & !els.nb$NonFocalBirdID=="unbanded unknown male"  & !els.nb$NonFocalBirdID=="unknown adult female" & !els.nb$NonFocalBirdID=="unknown adult male" & !els.nb$NonFocalBirdID=="unknown banded female" & !els.nb$NonFocalBirdID=="unknown female" & !els.nb$NonFocalBirdID=="unknown grackle"  & !els.nb$NonFocalBirdID=="unknown individual" & !els.nb$NonFocalBirdID=="unknown juvenile" & !els.nb$NonFocalBirdID=="unknown juvenile female"  & !els.nb$NonFocalBirdID=="unknown juvenile male" & !els.nb$NonFocalBirdID=="unknown male" & !els.nb$NonFocalBirdID=="unknown unbanded male",] 
 
 
 #Create an edgelist - a two column matrix of birds seen together
@@ -3584,10 +3584,43 @@ for(id1 in 1:length(uniquehwibirds)){
 
 
 ### Calculate Degree
-bonds$degree = 1
-degree = aggregate(degree ~ ID, data = bonds, FUN = "sum")
-degree = degree[-which(degree$ID == "Aquaman" | degree$ID == "Guapo" | degree$ID == "Morada" | degree$ID == "Naranja" | degree$ID == "Pepino" | degree$ID == "Pico" | degree$ID == "Tortilla" | degree$ID == "Urraca" | degree$ID == "Wachil"),]
-### n = 18
+# for degree, we want to count the number of associations of banded birds that had at least 2 focal follows in the non-breeding season
+# in undirected networks like ours, this includes associations when it was not the focal bird of the focal follow.
+# So, we use the symmetrized hwis dataframe to see number of associations each grackle had, excluding UBs & UNKs
+id1 = hwis[3]
+colnames(id1) = "ID"
+id2 = hwis[1]
+colnames(id2) = "ID"
+degree = rbind(id1,id2)
+degree$degree = 1
+degree = aggregate(degree ~ ID, data = degree, FUN = "sum")
+
+# because there were many unbanded or unknown birds seen in association with the focal bird during focal follows,
+# it is possible that banded-banded bird associations only do not give an accurate degree estimate.
+# So, we also calculate degree including the unbanded and unknown grackles seen in association with focal grackles during follows
+
+els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
+# the original edgelist that includes only 1 association between bird pairs. For UB or UNK grackles, this assumes that if they are seen together on different days, 
+# then it is a different UB or UNK grackle
+
+#since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
+colnames(els.nb)[c(2,3)]=c("ID.1","ID.2")
+els.nb$ID.1 = as.character(els.nb$ID.1)
+els.nb$ID.2 = as.character(els.nb$ID.2)
+for (i in 1:nrow(els.nb)) {
+  tmp = els.nb[i, c("ID.1", "ID.2")]
+  tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
+  els.nb[i, "ID.1"] = tmp[,1]
+  els.nb[i, "ID.2"] = tmp[,2]
+}
+
+id1 = els.nb[2]
+colnames(id1) = "ID"
+id2 = els.nb[3]
+colnames(id2) = "ID"
+degree2 = rbind(id1,id2)
+degree2$degree = 1
+degree2 = aggregate(degree ~ ID, data = degree2, FUN = "sum")
 
 #Combining degree with general data sheet that will be used for analyses
 colnames(degree) = c("BirdID","Degree")
