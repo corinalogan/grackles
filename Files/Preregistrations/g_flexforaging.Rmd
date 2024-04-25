@@ -3469,13 +3469,16 @@ hwis$Y.1 = hwis$y - hwis$x #the number of times bird 1 was seen without bird 2
 hwis = hwis[,-5]
 colnames(y)[1] = "ID.2"
 hwis = merge(hwis,y, by = c("ID.2","Site"))
-hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1 by season
+hwis$Y.2 = hwis$y - hwis$x #the number of times bird 2 was seen without bird 1
+hwis = hwis[,-6]
 #data frame ready for half-weight index equation
 ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
 hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
-
+#write.csv(hwis, "hwiValues.csv")
 
 ###### NOTE TO KELSEY: After our meeting on 18 Feb 2024, Dieter realized that the matrix is not symmetrical (e.g. there are separate entries for Adobo with Taco and for Taco with Adobo which have different numbers in x (numbers of times seen together), leading to different hwi numbers). The different numbers probably reflect how often the two were seen together when ID1 was the focal and when ID2 was the focal. We want to combine these two observations, to get the sum of all the times they were seen together. Dieter wrote code here that calculates MaxBond, MaxBondPartner, and Strength using matrices that are symmetrical
+
+###### NOTE FROM KELSEY (25 Apr 2024): I am not seeing the error you're talking about, where there are separate entries for Taco/Adobo with different numbers. In hwis, which is considered and undirected edgelist and not a symmetrical matrix, there should only be one row per pair. From the undirected edgelist you can create a symmetrical matrix. However, Dieter's code yields different hwi values, but I don't really understand what it is doing well enough to say why. One possibility is that Dieter's calculation of the number of times birds were seen apart does not include times the focal bird was seen with unbanded/unknown individuals because he creates the list of possible association from the banded birds only?
 
 # Create a list of all birds
 uniquehwibirds<-unique(c(hwis$ID.2,hwis$ID.1))
@@ -3600,8 +3603,7 @@ degree = aggregate(degree ~ ID, data = degree, FUN = "sum")
 # So, we also calculate degree including the unbanded and unknown grackles seen in association with focal grackles during follows
 
 els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
-# the original edgelist that includes only 1 association between bird pairs. For UB or UNK grackles, this assumes that if they are seen together on different days, 
-# then it is a different UB or UNK grackle
+# the original edgelist that includes only 1 association between bird pairs. For UB or UNK grackles, this assumes that if they are seen together on different days, then it is a different UB or UNK grackle
 
 #since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
 colnames(els.nb)[c(2,3)]=c("ID.1","ID.2")
@@ -4064,6 +4066,115 @@ par(op)
 
 **Figure.** Scatterplots showing the lack of relationship between the Shannon Diversity Index with $\phi$ and $\lambda$ for both sexes.
 
+```{r p4 permutation tests, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+# Because social network metrics are not independent, we randomly permute the associations among individuals and re-run the models to test if the effect of flexibility on the social network metrics is greater than that seen at random association levels.
+# To generate random associations, we need the original edgelist, before it has been aggregated for calculations of hwi. In this edgelist we can randomize which grackles are seen together, then re-calculate hwi and the social network metrics, degree, strength and max bond strength.
+ffs = rbind(ffAZ_nbs,ffCA_nbs) 
+#aggregate to only one association per pair per follow
+els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
+colnames(els.nb)[2] = "ID.1"
+colnames(els.nb)[3] = "ID.2"
+ids = unique(c(els.nb$ID.2,els.nb$ID.1)) #83
+
+#randomly permute the nonFocalBirdID (ID.2)
+strength.perm = matrix(NA, nrow=10000, ncol=1:length(ids))
+degree.perm = matrix(NA, nrow=10000, ncol=1:length(ids))
+
+tmp = els.nb
+for(i in 1:10000){
+  tmp$new.id2 = NA
+  tmp$new.id2 = sample(tmp$ID.2, nrow(tmp), replace=F) # permuted edgelist, includes UBs and UNKs
+
+  # Now go through exact same process as with original data to calculate half-weight index  
+  
+  # count number of times each focal bird is seen individually (y)
+  tmp2 = tmp[,c(2,4)] #ID.1, Site
+  colnames(tmp2)[1] = "ID"
+  tmp3 = tmp[,c(4,6)] #Site, new.id2
+  colnames(tmp3)[2] = "ID"
+  y = rbind(tmp2, tmp3)
+  y$count = 1
+  y = aggregate(count ~ ID + Site, data = y, FUN = "sum") 
+  colnames(y)[3] = "y"
+  
+  #Now reduce to birds with at least 2 focal follows 
+  tmp = tmp[which(tmp$ID.1 == "Adobo" | tmp$ID.1 == "Burrito" | tmp$ID.1 == "Chilaquile" | 
+                          tmp$ID.1 == "Chalupa" | tmp$ID.1 == "Diablo" | tmp$ID.1 == "Fideo" | 
+                          tmp$ID.1 == "Taco" | tmp$ID.1 == "Taquito" |  tmp$ID.1 == "Yuca" | 
+                          tmp$ID.1 == "Tembleque" | tmp$ID.1 == "Polvorones" | tmp$ID.1 == "Camote" | 
+                          tmp$ID.1 == "Dulce de Leche" | tmp$ID.1 == "Zapote Negro" | tmp$ID.1 == "Cuervo" | 
+                          tmp$ID.1 == "Xunub" | tmp$ID.1 == "Galandra" | tmp$ID.1 == "Kel" | 
+                          tmp$ID.1 == "Kau" | tmp$ID.1 == "Cutuy" | tmp$ID.1 == "Tzanatl Preciosa" | 
+                          tmp$ID.1 == "Pina"),]
+
+  # And exclude unbanded birds
+  tmp <- tmp[!tmp$new.id2=="NA" & !tmp$new.id2=="unbanded adult female" & 
+                      !tmp$new.id2=="unbanded adult male" & !tmp$new.id2=="unbanded juvenile" & 
+                      !tmp$new.id2=="unbanded juvenile female" & !tmp$new.id2=="unbanded juvenile male" &
+                      !tmp$new.id2=="unbanded unknown female" & !tmp$new.id2=="unbanded unknown male"  & 
+                      !tmp$new.id2=="unknown adult female" & !tmp$new.id2=="unknown adult male" & 
+                      !tmp$new.id2=="unknown banded female" & !tmp$new.id2=="unknown female" & 
+                      !tmp$new.id2=="unknown grackle"  & !tmp$new.id2=="unknown individual" & 
+                      !tmp$new.id2=="unknown juvenile" & !tmp$new.id2=="unknown juvenile female"  & 
+                      !tmp$new.id2=="unknown juvenile male" & !tmp$new.id2=="unknown male" & 
+                      !tmp$new.id2=="unknown unbanded male",] 
+
+
+  #Create an edgelist, symmetrize the associations so all are in the same order and repeat pairs can be identified
+  #### Something wrong here where UBs and UNKs are not getting cut from new.id2 ####
+  tmp$ID.1 = as.character(tmp$ID.1)
+  tmp$new.id2 = as.character(tmp$new.id2)
+  for (j in 1:nrow(tmp)) {
+    el.tmp = tmp[j, c("ID.1", "new.id2")]
+    el.tmp = el.tmp[,sort.list(el.tmp)] #produces warning messages, but works
+    tmp[j, "ID.1"] = el.tmp[,1]
+    tmp[j, "new.id2"] = el.tmp[,2]
+    }
+  #For the half-weight index, calculate the number of times two birds are seen together (x)
+  tmp$count = 1
+  x = aggregate(count ~ ID.1 + ID.2 + Site, data = tmp, FUN = "sum")
+  colnames(x)[4]="x"
+
+  colnames(y)[1] = "ID.1" 
+  hwi.perm = merge(x,y, by = c("ID.1","Site"))
+  hwi.perm$Y.1 = hwi.perm$y - hwi.perm$x #the number of times bird 1 was seen without bird 2
+  hwi.perm = hwi.perm[,-5]
+  colnames(y)[1] = "ID.2"
+  hwi.perm = merge(hwi.perm,y, by = c("ID.2","Site"))
+  hwi.perm$Y.2 = hwi.perm$y - hwi.perm$x #the number of times bird 2 was seen without bird 1
+  hwi.perm = hwi.perm[,-6]
+  #data frame ready for half-weight index equation
+  ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
+  hwi.perm$hwi = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x)
+  
+}
+
+
+hwis = read.csv("hwiValues.csv") #data frame containing edgelist for strength and max bond.
+el = hwis[,c(1,3,7)] # only want ID1, ID2 and hwi
+library(igraph)
+library(sna)
+el = graph_from_data_frame(el, directed = F)
+mat = as_adjacency_matrix(el, attr = "hwi", names = T)
+el = as.matrix(mat) #symmetrical matrix
+rowSums(el) #strength
+perm1 = rmperm(el)
+rowSums(perm1)
+
+perm.strength = NA
+perm.maxbond = NA
+perm.degree = NA
+
+
+for i in 1:10000 {
+ perm[i] = rmperm(mat)
+ for j in 1:ids {
+   
+ }
+}
+
+
+```
 
 ## P5: Flexibility and immigration
 
