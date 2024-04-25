@@ -3623,10 +3623,26 @@ degree2$degree = 1
 degree2 = aggregate(degree ~ ID, data = degree2, FUN = "sum")
 
 #Combining degree with general data sheet that will be used for analyses
-colnames(degree) = c("BirdID","Degree")
-g = merge(g, degree, by = "BirdID", all = T)
+#colnames(degree) = c("BirdID","Degree")
+#g = merge(g, degree, by = "BirdID", all = T)
 
 ### We also said we would calculate a degree-like variable using the group size from the scan sample at the end of the focal follow because there were so few banded associations that group size could be a replacement variable with more data. It is column "Group size" at data_flexforaging > tab: Social. This is in the preregistration (Analysis plan > P4), but not exactly clear what we were planning on doing with it. Can add an analysis that uses this variable instead of degree. But does the current degree variable at the general data sheet already use group size?
+
+grpsz = read.csv("g_flexforaging_data_social.csv") # this gives the group size for each individual per follow. So there are multiple values per bird.
+grpsz = grpsz[,c(1,2,8)]
+grpsz$GroupSize = as.numeric(grpsz$GroupSize)
+grpsz.mean = aggregate(GroupSize ~ FocalBirdID, data = grpsz, FUN = "mean")
+colnames(grpsz.mean) = c("ID", "mean.grpsz")
+grpsz.max = aggregate(GroupSize ~ FocalBirdID, data = grpsz, FUN = "max")
+colnames(grpsz.max) = c("ID", "max.grpsz")
+
+# Does either (or both) variable correlate with Degree?
+degree3 = merge(degree,grpsz.mean, by = "ID")
+degree3 = merge(degree3,grpsz.max,by = "ID")
+cor(degree3[, c('degree','mean.grpsz','max.grpsz')]) #mean and max group size from the end of focals are correlated at 0.74
+# but neither is correlated with the measure of Degree from social associations.
+
+# Added Max_GrpSz column to data_general. Note that group size = 1 means the focal bird was not seen associating with any other birds
 
 #write.csv(g, "g_flexforaging_data_general.csv")
 ```
