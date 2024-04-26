@@ -3474,7 +3474,7 @@ hwis = hwis[,-6]
 #data frame ready for half-weight index equation
 ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
 hwis$hwi = hwis$x/(0.5*(hwis$Y.1 + hwis$Y.2)+hwis$x)
-#write.csv(hwis, "hwiValues.csv")
+write.csv(hwis, "hwiValues.csv")
 
 ###### NOTE TO KELSEY: After our meeting on 18 Feb 2024, Dieter realized that the matrix is not symmetrical (e.g. there are separate entries for Adobo with Taco and for Taco with Adobo which have different numbers in x (numbers of times seen together), leading to different hwi numbers). The different numbers probably reflect how often the two were seen together when ID1 was the focal and when ID2 was the focal. We want to combine these two observations, to get the sum of all the times they were seen together. Dieter wrote code here that calculates MaxBond, MaxBondPartner, and Strength using matrices that are symmetrical
 
@@ -4074,23 +4074,35 @@ ffs = rbind(ffAZ_nbs,ffCA_nbs)
 els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
 colnames(els.nb)[2] = "ID.1"
 colnames(els.nb)[3] = "ID.2"
-ids = unique(c(els.nb$ID.2,els.nb$ID.1)) #83
+ids = unique(c(els.nb$new.id2,els.nb$ID.1)) #67
+
+obs.hwi = read.csv("hwiValues.csv")
+el = obs.hwi[,c(2,4,8)] # only want ID1, ID2 and hwi
+library(igraph)
+library(sna)
+el = graph_from_data_frame(el, directed = F)
+mat = as_adjacency_matrix(el, attr = "hwi", names = T)
+el = as.matrix(mat) #symmetrical matrix
+obs.strength = data.frame("ID" = names(rowSums(el)),
+                          "obs.strength" = rowSums(el)) # strength values for each individual from actual data
+
 
 #randomly permute the nonFocalBirdID (ID.2)
-strength.perm = matrix(NA, nrow=10000, ncol=1:length(ids))
+
 degree.perm = matrix(NA, nrow=10000, ncol=1:length(ids))
 
-tmp = els.nb
-for(i in 1:10000){
-  tmp$new.id2 = NA
-  tmp$new.id2 = sample(tmp$ID.2, nrow(tmp), replace=F) # permuted edgelist, includes UBs and UNKs
+strength.perm = obs.strength
+for(i in 1:5){
+  perm = els.nb
+  perm$new.id2 = NA
+  perm$new.id2 = sample(perm$ID.2, nrow(perm), replace=F) # permuted edgelist, includes UBs and UNKs
 
   # Now go through exact same process as with original data to calculate half-weight index  
   
   # count number of times each focal bird is seen individually (y)
-  tmp2 = tmp[,c(2,4)] #ID.1, Site
+  tmp2 = perm[,c(2,4)] #ID.1, Site
   colnames(tmp2)[1] = "ID"
-  tmp3 = tmp[,c(4,6)] #Site, new.id2
+  tmp3 = perm[,c(4,6)] #Site, new.id2
   colnames(tmp3)[2] = "ID"
   y = rbind(tmp2, tmp3)
   y$count = 1
@@ -4098,80 +4110,74 @@ for(i in 1:10000){
   colnames(y)[3] = "y"
   
   #Now reduce to birds with at least 2 focal follows 
-  tmp = tmp[which(tmp$ID.1 == "Adobo" | tmp$ID.1 == "Burrito" | tmp$ID.1 == "Chilaquile" | 
-                          tmp$ID.1 == "Chalupa" | tmp$ID.1 == "Diablo" | tmp$ID.1 == "Fideo" | 
-                          tmp$ID.1 == "Taco" | tmp$ID.1 == "Taquito" |  tmp$ID.1 == "Yuca" | 
-                          tmp$ID.1 == "Tembleque" | tmp$ID.1 == "Polvorones" | tmp$ID.1 == "Camote" | 
-                          tmp$ID.1 == "Dulce de Leche" | tmp$ID.1 == "Zapote Negro" | tmp$ID.1 == "Cuervo" | 
-                          tmp$ID.1 == "Xunub" | tmp$ID.1 == "Galandra" | tmp$ID.1 == "Kel" | 
-                          tmp$ID.1 == "Kau" | tmp$ID.1 == "Cutuy" | tmp$ID.1 == "Tzanatl Preciosa" | 
-                          tmp$ID.1 == "Pina"),]
+  perm = perm[which(perm$ID.1 == "Adobo" | perm$ID.1 == "Burrito" | perm$ID.1 == "Chilaquile" | 
+                          perm$ID.1 == "Chalupa" | perm$ID.1 == "Diablo" | perm$ID.1 == "Fideo" | 
+                          perm$ID.1 == "Taco" | perm$ID.1 == "Taquito" |  perm$ID.1 == "Yuca" | 
+                          perm$ID.1 == "Tembleque" | perm$ID.1 == "Polvorones" | perm$ID.1 == "Camote" | 
+                          perm$ID.1 == "Dulce de Leche" | perm$ID.1 == "Zapote Negro" | perm$ID.1 == "Cuervo" | 
+                          perm$ID.1 == "Xunub" | perm$ID.1 == "Galandra" | perm$ID.1 == "Kel" | 
+                          perm$ID.1 == "Kau" | perm$ID.1 == "Cutuy" | perm$ID.1 == "Tzanatl Preciosa" | 
+                          perm$ID.1 == "Pina"),]
 
   # And exclude unbanded birds
-  tmp <- tmp[!tmp$new.id2=="NA" & !tmp$new.id2=="unbanded adult female" & 
-                      !tmp$new.id2=="unbanded adult male" & !tmp$new.id2=="unbanded juvenile" & 
-                      !tmp$new.id2=="unbanded juvenile female" & !tmp$new.id2=="unbanded juvenile male" &
-                      !tmp$new.id2=="unbanded unknown female" & !tmp$new.id2=="unbanded unknown male"  & 
-                      !tmp$new.id2=="unknown adult female" & !tmp$new.id2=="unknown adult male" & 
-                      !tmp$new.id2=="unknown banded female" & !tmp$new.id2=="unknown female" & 
-                      !tmp$new.id2=="unknown grackle"  & !tmp$new.id2=="unknown individual" & 
-                      !tmp$new.id2=="unknown juvenile" & !tmp$new.id2=="unknown juvenile female"  & 
-                      !tmp$new.id2=="unknown juvenile male" & !tmp$new.id2=="unknown male" & 
-                      !tmp$new.id2=="unknown unbanded male",] 
+  # perm <- perm[!perm$new.id2=="NA" & !perm$new.id2=="unbanded adult female" & 
+  #                     !perm$new.id2=="unbanded adult male" & !perm$new.id2=="unbanded juvenile" & 
+  #                     !perm$new.id2=="unbanded juvenile female" & !perm$new.id2=="unbanded juvenile male" &
+  #                     !perm$new.id2=="unbanded unknown female" & !perm$new.id2=="unbanded unknown male"  & 
+  #                     !perm$new.id2=="unknown adult female" & !perm$new.id2=="unknown adult male" & 
+  #                     !perm$new.id2=="unknown banded female" & !perm$new.id2=="unknown female" & 
+  #                     !perm$new.id2=="unknown grackle"  & !perm$new.id2=="unknown individual" & 
+  #                     !perm$new.id2=="unknown juvenile" & !perm$new.id2=="unknown juvenile female"  & 
+  #                     !perm$new.id2=="unknown juvenile male" & !perm$new.id2=="unknown male" & 
+  #                     !perm$new.id2=="unknown unbanded male",] 
 
 
   #Create an edgelist, symmetrize the associations so all are in the same order and repeat pairs can be identified
-  #### Something wrong here where UBs and UNKs are not getting cut from new.id2 ####
-  tmp$ID.1 = as.character(tmp$ID.1)
-  tmp$new.id2 = as.character(tmp$new.id2)
-  for (j in 1:nrow(tmp)) {
-    el.tmp = tmp[j, c("ID.1", "new.id2")]
-    el.tmp = el.tmp[,sort.list(el.tmp)] #produces warning messages, but works
-    tmp[j, "ID.1"] = el.tmp[,1]
-    tmp[j, "new.id2"] = el.tmp[,2]
+  perm$ID.1 = as.character(perm$ID.1)
+  perm$new.id2 = as.character(perm$new.id2)
+  for (j in 1:nrow(perm)) {
+    el.perm = perm[j, c("ID.1", "new.id2")]
+    el.perm = el.perm[,sort.list(el.perm)] #produces warning messages, but works
+    perm[j, "ID.1"] = el.perm[,1]
+    perm[j, "new.id2"] = el.perm[,2]
     }
   #For the half-weight index, calculate the number of times two birds are seen together (x)
-  tmp$count = 1
-  x = aggregate(count ~ ID.1 + ID.2 + Site, data = tmp, FUN = "sum")
+  perm$count = 1
+  x = aggregate(count ~ ID.1 + new.id2 + Site, data = perm, FUN = "sum")
   colnames(x)[4]="x"
 
   colnames(y)[1] = "ID.1" 
   hwi.perm = merge(x,y, by = c("ID.1","Site"))
   hwi.perm$Y.1 = hwi.perm$y - hwi.perm$x #the number of times bird 1 was seen without bird 2
   hwi.perm = hwi.perm[,-5]
-  colnames(y)[1] = "ID.2"
-  hwi.perm = merge(hwi.perm,y, by = c("ID.2","Site"))
+  colnames(y)[1] = "new.id2"
+  hwi.perm = merge(hwi.perm,y, by = c("new.id2","Site"))
   hwi.perm$Y.2 = hwi.perm$y - hwi.perm$x #the number of times bird 2 was seen without bird 1
   hwi.perm = hwi.perm[,-6]
   #data frame ready for half-weight index equation
   ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
   hwi.perm$hwi = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x)
   
-}
+  ### Strength
+  el = hwi.perm[,c(1,3,7)] # only want ID1, ID2 and hwi
+  el = graph_from_data_frame(el, directed = F)
+  mat = as_adjacency_matrix(el, attr = "hwi", names = T)
+  el = as.matrix(mat) #symmetrical matrix
+  tmp = data.frame(rowSums(el)) #strength
+  tmp2 = data.frame("ID" = names(tmp),
+                    i=tmp)
+  strength.perm = merge(strength.perm,tmp2, by = "ID", all = T)
+            #merge(strength.perm,tmp2[,2], by = 'ID', all = T)
+            #cbind(strength.perm, tmp[match(rownames(strength.perm), rownames(tmp))])
+            #
+            #tmp2[,2]
+  }
 
 
-hwis = read.csv("hwiValues.csv") #data frame containing edgelist for strength and max bond.
-el = hwis[,c(1,3,7)] # only want ID1, ID2 and hwi
-library(igraph)
-library(sna)
-el = graph_from_data_frame(el, directed = F)
-mat = as_adjacency_matrix(el, attr = "hwi", names = T)
-el = as.matrix(mat) #symmetrical matrix
-rowSums(el) #strength
-perm1 = rmperm(el)
-rowSums(perm1)
-
-perm.strength = NA
-perm.maxbond = NA
-perm.degree = NA
+ids = unique(c(perm$new.id2,perm$ID.1))
 
 
-for i in 1:10000 {
- perm[i] = rmperm(mat)
- for j in 1:ids {
-   
- }
-}
+
 
 
 ```
