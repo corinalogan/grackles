@@ -3591,9 +3591,9 @@ els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data 
 
 ## For the strength of bonds, we use the half-weight index to quantify the association strength between two banded birds.
 # For the half-weight index we need the number of times bird 1 is seen without bird 2 (Y.1), and the number of times bird 2 is seen without bird 1 (Y.2). Use raw data, including UB and UNK birds, to get the number of times each bird is seen.
-tmp = els.nb[,c(2,4)] #FocalBirdID, Site
+tmp = els.nb[,c(3,5)] #FocalBirdID, Site
 colnames(tmp)[1] = "ID"
-tmp2 = els.nb[,c(3:4)] #NonFocalBirdID, Site
+tmp2 = els.nb[,c(4:5)] #NonFocalBirdID, Site
 colnames(tmp2)[1] = "ID"
 y = rbind(tmp, tmp2)
 y$count = 1
@@ -4233,115 +4233,127 @@ par(op)
 ```{r p4 permutation tests, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 # Because social network metrics are not independent, we randomly permute the associations among individuals and re-run the models to test if the effect of flexibility on the social network metrics is greater than that seen at random association levels.
 # To generate random associations, we need the original edgelist, before it has been aggregated for calculations of hwi. In this edgelist we can randomize which grackles are seen together, then re-calculate hwi and the social network metrics, degree, strength and max bond strength.
-ffs = rbind(ffAZ_nbs,ffCA_nbs) 
-#aggregate to only one association per pair per follow
-els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
-colnames(els.nb)[2] = "ID.1"
-colnames(els.nb)[3] = "ID.2"
-ids = unique(c(els.nb$new.id2,els.nb$ID.1)) #67
+#load social association data
+ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
+ff <- data.frame(ff)
+#Exlude aggressive assocations
+ff1aff <- subset(ff, ff$BehavType == "affiliative")
 
-obs.hwi = read.csv("hwiValues.csv")
-el = obs.hwi[,c(2,4,8)] # only want ID1, ID2 and hwi
+# Only want non-breeding season data
+# separate Sites because breeding started earlier in AZ
+ff_AZ = ff1aff[which(ff1aff$Site == "AZ"),]
+ff_AZ$Date = as.Date(ff_AZ$Date, format = "%Y-%m-%d")
+ffAZ_nbs = ff_AZ[which(ff_AZ$Date < "2019-03-08" | c(ff_AZ$Date > "2019-08-31" & ff_AZ$Date < "2020-03-08")),] # nonbreeding season = 1 Sept 2019 - 8 Mar 2020
+ffAZ_nbs$Season = "NBS"
+#now repeat in CA
+ff_CA = ff1aff[which(ff1aff$Site == "CA"),]
+ff_CA$Date = as.Date(ff_CA$Date, format = "%Y-%m-%d")
+ffCA_nbs = ff_CA[which(ff_CA$Date > "2021-08-31" & ff_CA$Date < "2022-03-30"),] # nonbreeding season = 1 Sept 2021 - 29 Mar 2022
+ffCA_nbs$Season = "NBS"
+
+
+## AZ first ##
 library(igraph)
 library(sna)
-el = graph_from_data_frame(el, directed = F)
-mat = as_adjacency_matrix(el, attr = "hwi", names = T)
-el = as.matrix(mat) #symmetrical matrix
-obs.strength = data.frame("ID" = names(rowSums(el)),
-                          "obs.strength" = rowSums(el)) # strength values for each individual from actual data
+### igraph function "permute" to permute the vertices (bird IDs) in a graph
+
+colnames(ffAZ_nbs)[2] = "ID.1"
+colnames(ffAZ_nbs)[5] = "ID.2"
+AZel = ffAZ_nbs[-which(is.na(ffAZ_nbs$ID.2)),c(2,5)]
+ids = unique(c(AZel$ID.1,AZel$ID.2)) #57
 
 
-#randomly permute the nonFocalBirdID (ID.2)
+out.strength = data.frame("ID" = ids)
+out.degree = data.frame("ID" = ids)
+for(i in 1:10000){
+ # Make a network graph from what we have (an edgelist)
+    TotgrAZ = graph_from_data_frame(AZel, directed = F) # All associations in data (i.e., the associations have not been aggregated to create the hwi for each dyad. This is needed for the edge permutations to create random networks. Data need to be a class "igraph" for the permutation function to work.
+ #permute the edges
+    perm.az = rewire(TotgrAZ,each_edge(prob = 1)) #permute all edges
 
-degree.perm = matrix(NA, nrow=10000, ncol=1:length(ids))
+    perm.el = igraph::as_data_frame(perm.az, what = "edges") #turn from graph format back into edge list
+    colnames(perm.el)[1] = "ID.1"
+    colnames(perm.el)[2] = "ID.2"
 
-strength.perm = obs.strength
-for(i in 1:5){
-  perm = els.nb
-  perm$new.id2 = NA
-  perm$new.id2 = sample(perm$ID.2, nrow(perm), replace=F) # permuted edgelist, includes UBs and UNKs
-
-  # Now go through exact same process as with original data to calculate half-weight index  
-  
-  # count number of times each focal bird is seen individually (y)
-  tmp2 = perm[,c(2,4)] #ID.1, Site
-  colnames(tmp2)[1] = "ID"
-  tmp3 = perm[,c(4,6)] #Site, new.id2
-  colnames(tmp3)[2] = "ID"
+ #symmetrize the associations so they can be aggregated to calculate association strengths with half-weight index
+    for(j in 1:nrow(perm.el)){
+      tmp = sort(as.vector(as.matrix(perm.el[j, c('ID.1', 'ID.2')])))
+      perm.el[j, 'ID.1'] = tmp[1]
+      perm.el[j, 'ID.2'] = tmp[2]
+    }
+## Data manipulations for Half-weight index
+ #count number of times each focal bird is seen individually (y)
+  tmp2 = data.frame(perm[,3]) #ID.1
+  colnames(tmp2) = "ID"
+  tmp3 = data.frame(perm[,4]) #ID.2 
+  colnames(tmp3) = "ID"
   y = rbind(tmp2, tmp3)
   y$count = 1
-  y = aggregate(count ~ ID + Site, data = y, FUN = "sum") 
-  colnames(y)[3] = "y"
-  
-  #Now reduce to birds with at least 2 focal follows 
-  perm = perm[which(perm$ID.1 == "Adobo" | perm$ID.1 == "Burrito" | perm$ID.1 == "Chilaquile" | 
-                          perm$ID.1 == "Chalupa" | perm$ID.1 == "Diablo" | perm$ID.1 == "Fideo" | 
-                          perm$ID.1 == "Taco" | perm$ID.1 == "Taquito" |  perm$ID.1 == "Yuca" | 
-                          perm$ID.1 == "Tembleque" | perm$ID.1 == "Polvorones" | perm$ID.1 == "Camote" | 
-                          perm$ID.1 == "Dulce de Leche" | perm$ID.1 == "Zapote Negro" | perm$ID.1 == "Cuervo" | 
-                          perm$ID.1 == "Xunub" | perm$ID.1 == "Galandra" | perm$ID.1 == "Kel" | 
-                          perm$ID.1 == "Kau" | perm$ID.1 == "Cutuy" | perm$ID.1 == "Tzanatl Preciosa" | 
-                          perm$ID.1 == "Pina"),]
+  y = aggregate(count ~ ID, data = y, FUN = "sum") 
+  colnames(y)[2] = "y"
 
-  # And exclude unbanded birds
-  # perm <- perm[!perm$new.id2=="NA" & !perm$new.id2=="unbanded adult female" & 
-  #                     !perm$new.id2=="unbanded adult male" & !perm$new.id2=="unbanded juvenile" & 
-  #                     !perm$new.id2=="unbanded juvenile female" & !perm$new.id2=="unbanded juvenile male" &
-  #                     !perm$new.id2=="unbanded unknown female" & !perm$new.id2=="unbanded unknown male"  & 
-  #                     !perm$new.id2=="unknown adult female" & !perm$new.id2=="unknown adult male" & 
-  #                     !perm$new.id2=="unknown banded female" & !perm$new.id2=="unknown female" & 
-  #                     !perm$new.id2=="unknown grackle"  & !perm$new.id2=="unknown individual" & 
-  #                     !perm$new.id2=="unknown juvenile" & !perm$new.id2=="unknown juvenile female"  & 
-  #                     !perm$new.id2=="unknown juvenile male" & !perm$new.id2=="unknown male" & 
-  #                     !perm$new.id2=="unknown unbanded male",] 
-
-
-  #Create an edgelist, symmetrize the associations so all are in the same order and repeat pairs can be identified
-  perm$ID.1 = as.character(perm$ID.1)
-  perm$new.id2 = as.character(perm$new.id2)
-  for (j in 1:nrow(perm)) {
-    el.perm = perm[j, c("ID.1", "new.id2")]
-    el.perm = el.perm[,sort.list(el.perm)] #produces warning messages, but works
-    perm[j, "ID.1"] = el.perm[,1]
-    perm[j, "new.id2"] = el.perm[,2]
-    }
-  #For the half-weight index, calculate the number of times two birds are seen together (x)
-  perm$count = 1
-  x = aggregate(count ~ ID.1 + new.id2 + Site, data = perm, FUN = "sum")
-  colnames(x)[4]="x"
+  perm.el$count = 1
+  x = aggregate(count ~ ID.1 + ID.2, data = perm.el, FUN = "sum")
+  colnames(x)[3]="x"
 
   colnames(y)[1] = "ID.1" 
-  hwi.perm = merge(x,y, by = c("ID.1","Site"))
+  hwi.perm = merge(x,y, by = "ID.1")
   hwi.perm$Y.1 = hwi.perm$y - hwi.perm$x #the number of times bird 1 was seen without bird 2
-  hwi.perm = hwi.perm[,-5]
-  colnames(y)[1] = "new.id2"
-  hwi.perm = merge(hwi.perm,y, by = c("new.id2","Site"))
+  hwi.perm = hwi.perm[,-4] # no longer need y column
+  colnames(y)[1] = "ID.2"
+  hwi.perm = merge(hwi.perm,y, by = "ID.2")
   hwi.perm$Y.2 = hwi.perm$y - hwi.perm$x #the number of times bird 2 was seen without bird 1
-  hwi.perm = hwi.perm[,-6]
-  #data frame ready for half-weight index equation
-  ### Half-weight index is used to weight the edges in the network for the calculation of the social network metric "strength". The equation is:
-  hwi.perm$hwi = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x)
+  hwi.perm = hwi.perm[,-5]
+  # Now we can calculate the half-weight index to give each dyad an association weight
+  hwi.perm$weight = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x) 
   
-  ### Strength
-  el = hwi.perm[,c(1,3,7)] # only want ID1, ID2 and hwi
-  el = graph_from_data_frame(el, directed = F)
-  mat = as_adjacency_matrix(el, attr = "hwi", names = T)
-  el = as.matrix(mat) #symmetrical matrix
-  tmp = data.frame(rowSums(el)) #strength
-  tmp2 = data.frame("ID" = names(tmp),
-                    i=tmp)
-  strength.perm = merge(strength.perm,tmp2, by = "ID", all = T)
-            #merge(strength.perm,tmp2[,2], by = 'ID', all = T)
-            #cbind(strength.perm, tmp[match(rownames(strength.perm), rownames(tmp))])
-            #
-            #tmp2[,2]
-  }
+  
+## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
+ permAZgr = graph_from_data_frame(hwi.perm, directed = F)  
+ perm.strength = strength(permAZgr,vids = V(permAZgr))
+ perm.strength = data.frame(perm.strength)
+ perm.strength$ID = row.names(perm.strength)
+ perm.degree = igraph::degree(permAZgr)
+ perm.degree = data.frame(perm.degree)
+ perm.degree$ID = row.names(perm.degree)
+ 
+## Add data from permutation iteration to output dataframe
+ out.strength = merge(out.strength,perm.strength, by = "ID")
+ out.degree = merge(out.degree, perm.degree, by = "ID")
+}
+
+# started at 2:32pm, ended around 3:40pm
+write.csv(out.strength,"g_flexforaging_data_AZpermStrength.csv")
+write.csv(out.degree,"g_flexforaging_data_AZpermDegree.csv")
+
+### These data contain all individuals present in the focal follows. Will need to restrict the dataframes to the grackles that had at least 2 focal follows:
+out.strength2 = out.strength[which(out.strength$ID == "Adobo" | out.strength$ID == "Burrito" | out.strength$ID == "Chilaquile" | out.strength$ID == "Chalupa" | out.strength$ID == "Diablo" | out.strength$ID == "Fideo" | out.strength$ID == "Taco" | out.strength$ID == "Taquito" |  out.strength$ID == "Yuca"),]
+
+out.degree2 = out.degree[which(out.degree$ID == "Adobo" | out.degree$ID == "Burrito" | out.degree$ID == "Chilaquile" | out.degree$ID == "Chalupa" | out.degree$ID == "Diablo" | out.degree$ID == "Fideo" | out.degree$ID == "Taco" | out.degree$ID == "Taquito" |  out.degree$ID == "Yuca"),]
+ 
 
 
-ids = unique(c(perm$new.id2,perm$ID.1))
+obs.hwi = read.csv("hwiValues.csv")
+el.az = obs.hwi[which(obs.hwi$Site == "AZ"),c(2,4,8)] # only want ID1, ID2 and hwi; separate sites
+colnames(el.az)[3] = "weight"
+grAZ = graph_from_data_frame(el.az, directed = F) # data need to be a class "igraph"
+obs.strength = strength(grAZ,vids = V(grAZ))
+obs.degree = igraph::degree(grAZ)
+#perm.az = permute(el.az,sample(vcount(el.az))) # creates 1 permuted graph
+perm.az = rewire(grAZ,each_edge(prob=1))
+perm.strength = strength(perm.az,vids = V(perm.az))
+
+
+## CA ##
+el.ca = obs.hwi[which(obs.hwi$Site == "CA"),c(2,4,8)]
 
 
 
+mat.az = as_adjacency_matrix(perm.az, attr = "hwi", names = T)
+mat.az = as.matrix(mat.az) #symmetrical matrix
+
+obs.strength = data.frame("ID" = names(rowSums(el)),
+                          "obs.strength" = rowSums(el)) # strength values for each individual from actual data
 
 
 ```
