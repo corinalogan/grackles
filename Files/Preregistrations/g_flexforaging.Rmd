@@ -4265,6 +4265,7 @@ ids = unique(c(AZel$ID.1,AZel$ID.2)) #57
 
 out.strength = data.frame("ID" = ids)
 out.degree = data.frame("ID" = ids)
+max.bond = data.frame("ID" = ids)
 for(i in 1:10000){
  # Make a network graph from what we have (an edgelist)
     TotgrAZ = graph_from_data_frame(AZel, directed = F) # All associations in data (i.e., the associations have not been aggregated to create the hwi for each dyad. This is needed for the edge permutations to create random networks. Data need to be a class "igraph" for the permutation function to work.
@@ -4307,6 +4308,14 @@ for(i in 1:10000){
   # Now we can calculate the half-weight index to give each dyad an association weight
   hwi.perm$weight = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x) 
   
+## Get max bond strength from half-weight index data frame
+  maxB1 = aggregate(weight ~ ID.1, data = hwi.perm, FUN = "max")
+  colnames(maxB1)[1] = "ID"
+  maxB2 = aggregate(weight ~ ID.2, data = hwi.perm, FUN = "max")
+  colnames(maxB2)[1] = "ID"
+  maxB = rbind(maxB1,maxB2)
+  maxB = aggregate(weight ~ ID, data = maxB, FUN = "sum")
+  max.bond = merge(max.bond,maxB,by = "ID")  
   
 ## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
  permAZgr = graph_from_data_frame(hwi.perm, directed = F)  
@@ -4325,6 +4334,7 @@ for(i in 1:10000){
 # started at 2:32pm, ended around 3:40pm
 write.csv(out.strength,"g_flexforaging_data_AZpermStrength.csv")
 write.csv(out.degree,"g_flexforaging_data_AZpermDegree.csv")
+write.csv(max.bond, "g_flexforaging_data_AZmaxBond.csv")
 
 ### These data contain all individuals present in the focal follows. Will need to restrict the dataframes to the grackles that had at least 2 focal follows:
 out.strength2 = out.strength[which(out.strength$ID == "Adobo" | out.strength$ID == "Burrito" | out.strength$ID == "Chilaquile" | out.strength$ID == "Chalupa" | out.strength$ID == "Diablo" | out.strength$ID == "Fideo" | out.strength$ID == "Taco" | out.strength$ID == "Taquito" |  out.strength$ID == "Yuca"),]
@@ -4342,7 +4352,8 @@ ids = unique(c(CAel$ID.1,CAel$ID.2)) #32
 
 out.strength = data.frame("ID" = ids)
 out.degree = data.frame("ID" = ids)
-for(i in 1:10){
+max.bond = data.frame("ID" = ids)
+for(i in 1:10000){
  # Make a network graph from what we have (an edgelist)
     TotgrCA = graph_from_data_frame(CAel, directed = F) # All associations in data (i.e., the associations have not been aggregated to create the hwi for each dyad. This is needed for the edge permutations to create random networks. Data need to be a class "igraph" for the permutation function to work.
  #permute the edges
@@ -4384,6 +4395,14 @@ for(i in 1:10){
   # Now we can calculate the half-weight index to give each dyad an association weight
   hwi.perm$weight = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x) 
   
+## Get max bond strength from half-weight index data frame
+  maxB1 = aggregate(weight ~ ID.1, data = hwi.perm, FUN = "max")
+  colnames(maxB1)[1] = "ID"
+  maxB2 = aggregate(weight ~ ID.2, data = hwi.perm, FUN = "max")
+  colnames(maxB2)[1] = "ID"
+  maxB = rbind(maxB1,maxB2)
+  maxB = aggregate(weight ~ ID, data = maxB, FUN = "sum")
+  max.bond = merge(max.bond,maxB,by = "ID")
   
 ## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
  permCAgr = graph_from_data_frame(hwi.perm, directed = F)  
@@ -4399,7 +4418,9 @@ for(i in 1:10){
  out.degree = merge(out.degree, perm.degree, by = "ID")
 }
 
-
+write.csv(out.strength,"g_flexforaging_data_CApermStrength.csv")
+write.csv(out.degree,"g_flexforaging_data_CApermDegree.csv")
+write.csv(max.bond, "g_flexforaging_data_CAmaxBond.csv")
 
 ### Observed strength and degree ###
 obs.hwi = read.csv("hwiValues.csv")
