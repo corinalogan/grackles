@@ -1195,6 +1195,170 @@ setwd(currentlocation)
 ```
 
 
+
+
+
+```{r multiple analyses per prediction, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+
+library(cmdstanr)
+library(rethinking)
+
+
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+options(mc.cores=4)
+
+
+
+actualresults<-c(rep(0,8),rep(1,9),rep(2,1))
+actuallower<-inv_logit(rnorm(18,mean=-3,sd=3))
+
+# The outcome is currently a probability. We need to translate this to the data we observed, which are counts relative to a total. For the simulations here, we reflect that the probabilities reflect how likely individuals are to eat any of the 22 food types. The total options of 22 appears the average across the variables which have a binomial distribution:
+outcome<-rbinom(9,22,0.7)
+predictor<-rnorm(9,mean=0,sd=1)
+dat_list<-list(outcome=outcome,
+               predictor=predictor)
+
+# We define the binomial model using the package rethinking 
+binomial_p <- ulam(
+  alist(
+    outcome ~ dbinom( 22 , p ) ,
+    logit(p) <- a+b*predictor,
+    a~dnorm(0,1),
+    b~dnorm(0,1)
+  ) , data=dat_list,cmdstan=T ,log_lik=T, chains=4,cores=4, control=list(adapt_delta=0.99))
+
+# We translate the model to stan code, and use cmdstan to create the compiled model
+write(stancode(binomial_p),file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+
+
+resultdistribution<-as.data.frame(matrix(ncol=4,nrow=100))
+colnames(resultdistribution)<-c("repetition","negative","non","positive")
+
+# We now run the iteration on a loop, going through the three different sample sizes and the three different effect sizes
+
+counter<-1
+
+for(repetition in 1:100){
+
+  currentresults<-rep(NA,18)
+  currentlower<-rep(NA,18)
+  
+  for(analyses in 1:18){
+    
+  outcome<-rbinom(9,22,0.7)
+  predictor<-rnorm(9,mean=0,sd=1)
+  dat_list<-list(outcome=outcome,
+                 predictor=predictor)
+      
+      fit <- mod$sample(
+        data = dat_list,
+        seed = 123,
+        chains = 1,
+        parallel_chains = 1,
+        refresh = 500
+      )
+  if(data.frame(fit$summary())[3,6]<0 & data.frame(fit$summary())[3,7]>0){currentresults[analyses]<- 1}
+  if(data.frame(fit$summary())[3,6]>0 & data.frame(fit$summary())[3,7]>0){currentresults[analyses]<- 2}
+  if(data.frame(fit$summary())[3,6]<0 & data.frame(fit$summary())[3,7]<0){currentresults[analyses]<- 0}
+      currentlower[analyses]<-   sum(data.frame(fit$draws())[,3]<0) / nrow(data.frame(fit$draws()))     
+  }
+  
+  
+  resultdistribution[repetition,1]<-counter
+  resultdistribution[repetition,2]<-sum(currentresults==0)
+  resultdistribution[repetition,3]<-sum(currentresults==1)
+  resultdistribution[repetition,4]<-sum(currentresults==2)
+  
+  dat_an<-list(
+    results=c(actualresults,currentresults),
+    identity=c(rep(1,18),rep(2,18))
+  )
+  
+  m1_an <- ulam(
+    alist(
+      results ~ dbinom( 2 , p ) ,
+      logit(p) <- a[identity] ,
+      a[identity] ~ normal( 0 , 1 )
+    ) , data=dat_an,cmdstan=T ,log_lik=T, chains=1,cores=4)
+  
+  posterior<-extract.samples(m1_an)
+  contrast<-posterior$a[,2]-posterior$a[,1]
+ifelse(repetition==1,combinedcontrast<-contrast,combinedcontrast<-c(combinedcontrast,contrast))  
+
+
+dat_lower<-list(
+  lowerzero=c(actuallower,currentlower),
+  identity=c(rep(1,18),rep(2,18))
+)
+
+m1_lower <- ulam(
+  alist(
+    lowerzero ~ dnorm( mu , sigma ) ,
+    logit(mu) <- a[identity] ,
+    a[identity] ~ normal( 0 , 1 ),
+    sigma <- s[identity],
+    s[identity]~dexp(1)
+  ) , data=dat_lower,cmdstan=T ,log_lik=T, chains=1,cores=4)
+
+posterior<-extract.samples(m1_lower)
+contrast_lower<-posterior$a[,2]-posterior$a[,1]
+ifelse(repetition==1,combinedcontrastlower<-contrast_lower,combinedcontrastlower<-c(combinedcontrastlower,contrast_lower))  
+
+
+
+counter<-counter+1
+
+}
+    # We remove the used version of the stan model so we always refer to the up-to-date compiled file
+    fn<-"myowntrial"
+    file.remove(fn)
+  
+
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+
+# Check whether the number of negative/null/positive results out of the 18 analyses differs between the actual observed and the simulated
+# The results shows that we have more negative results than expected (the simulated ones have higher values)
+precis(combinedcontrast)
+
+#                  mean   sd  5.5% 94.5% histogram
+# combinedcontrast 0.76 0.49 -0.01  1.54 ▁▁▁▅▇▅▁▁▁
+
+# We can check how many negative/null/positive results we see on average in 18 analyses with this sample size
+apply(resultdistribution,2,mean)
+
+# negative  zero         positive 
+# 0.89      16.23       0.88
+
+# for the more precis comparison, check whether the distribution of thee 18 values of the proportion of posterior samples smaller than zero differs in the actual analyses compared to the simulated ones. Here it shows clearly that our results are very different from what we would expect by chance if there is no effect.
+precis(combinedcontrastlower)
+
+#  mean  sd 5.5% 94.5%       histogram
+# combinedcontrastlower 1.42 0.6 0.49  2.41 ▁▁▁▁▃▇▇▂▁▁▁▁▁▁▁
+
+
+
+
+hist(inv_logit(rnorm(1000,mean=0,sd=3)))
+
+
+actual<-inv_logit(rnorm(18,mean=0,sd=2))
+current<-inv_logit(rnorm(18,mean=-3,sd=3))
+
+
+sum((inv_logit(rnorm(1000,mean=0,sd=2)))<0.06)
+sum((inv_logit(rnorm(1000,mean=-3,sd=3)))<0.06)
+
+
+```
+
+
 # Results {-}
 
 ## P1: FLexibility and foraging behavior 
