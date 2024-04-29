@@ -4119,9 +4119,9 @@ for(i in 1:10000){
     }
 ## Data manipulations for Half-weight index
  #count number of times each focal bird is seen individually (y)
-  tmp2 = data.frame(perm[,3]) #ID.1
+  tmp2 = data.frame(perm.el[,1]) #ID.1
   colnames(tmp2) = "ID"
-  tmp3 = data.frame(perm[,4]) #ID.2 
+  tmp3 = data.frame(perm.el[,2]) #ID.2 
   colnames(tmp3) = "ID"
   y = rbind(tmp2, tmp3)
   y$count = 1
@@ -4169,27 +4169,81 @@ out.degree2 = out.degree[which(out.degree$ID == "Adobo" | out.degree$ID == "Burr
  
 
 
+## CA ##
+colnames(ffCA_nbs)[2] = "ID.1"
+colnames(ffCA_nbs)[5] = "ID.2"
+CAel = ffCA_nbs[,c(2,5)]
+ids = unique(c(CAel$ID.1,CAel$ID.2)) #32
+
+
+out.strength = data.frame("ID" = ids)
+out.degree = data.frame("ID" = ids)
+for(i in 1:10){
+ # Make a network graph from what we have (an edgelist)
+    TotgrCA = graph_from_data_frame(CAel, directed = F) # All associations in data (i.e., the associations have not been aggregated to create the hwi for each dyad. This is needed for the edge permutations to create random networks. Data need to be a class "igraph" for the permutation function to work.
+ #permute the edges
+    perm.ca = rewire(TotgrCA,each_edge(prob = 1)) #permute all edges
+
+    perm.el = igraph::as_data_frame(perm.ca, what = "edges") #turn from graph format back into edge list
+    colnames(perm.el)[1] = "ID.1"
+    colnames(perm.el)[2] = "ID.2"
+
+ #symmetrize the associations so they can be aggregated to calculate association strengths with half-weight index
+    for(j in 1:nrow(perm.el)){
+      tmp = sort(as.vector(as.matrix(perm.el[j, c('ID.1', 'ID.2')])))
+      perm.el[j, 'ID.1'] = tmp[1]
+      perm.el[j, 'ID.2'] = tmp[2]
+    }
+## Data manipulations for Half-weight index
+ #count number of times each focal bird is seen individually (y)
+  tmp2 = data.frame(perm.el[,1]) #ID.1
+  colnames(tmp2) = "ID"
+  tmp3 = data.frame(perm.el[,2]) #ID.2 
+  colnames(tmp3) = "ID"
+  y = rbind(tmp2, tmp3)
+  y$count = 1
+  y = aggregate(count ~ ID, data = y, FUN = "sum") 
+  colnames(y)[2] = "y"
+
+  perm.el$count = 1
+  x = aggregate(count ~ ID.1 + ID.2, data = perm.el, FUN = "sum")
+  colnames(x)[3]="x"
+
+  colnames(y)[1] = "ID.1" 
+  hwi.perm = merge(x,y, by = "ID.1")
+  hwi.perm$Y.1 = hwi.perm$y - hwi.perm$x #the number of times bird 1 was seen without bird 2
+  hwi.perm = hwi.perm[,-4] # no longer need y column
+  colnames(y)[1] = "ID.2"
+  hwi.perm = merge(hwi.perm,y, by = "ID.2")
+  hwi.perm$Y.2 = hwi.perm$y - hwi.perm$x #the number of times bird 2 was seen without bird 1
+  hwi.perm = hwi.perm[,-5]
+  # Now we can calculate the half-weight index to give each dyad an association weight
+  hwi.perm$weight = hwi.perm$x/(0.5*(hwi.perm$Y.1 + hwi.perm$Y.2)+hwi.perm$x) 
+  
+  
+## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
+ permCAgr = graph_from_data_frame(hwi.perm, directed = F)  
+ perm.strength = strength(permCAgr,vids = V(permCAgr))
+ perm.strength = data.frame(perm.strength)
+ perm.strength$ID = row.names(perm.strength)
+ perm.degree = igraph::degree(permCAgr)
+ perm.degree = data.frame(perm.degree)
+ perm.degree$ID = row.names(perm.degree)
+ 
+## Add data from permutation iteration to output dataframe
+ out.strength = merge(out.strength,perm.strength, by = "ID")
+ out.degree = merge(out.degree, perm.degree, by = "ID")
+}
+
+
+
+### Observed strength and degree ###
 obs.hwi = read.csv("hwiValues.csv")
 el.az = obs.hwi[which(obs.hwi$Site == "AZ"),c(2,4,8)] # only want ID1, ID2 and hwi; separate sites
 colnames(el.az)[3] = "weight"
 grAZ = graph_from_data_frame(el.az, directed = F) # data need to be a class "igraph"
 obs.strength = strength(grAZ,vids = V(grAZ))
 obs.degree = igraph::degree(grAZ)
-#perm.az = permute(el.az,sample(vcount(el.az))) # creates 1 permuted graph
-perm.az = rewire(grAZ,each_edge(prob=1))
-perm.strength = strength(perm.az,vids = V(perm.az))
-
-
-## CA ##
-el.ca = obs.hwi[which(obs.hwi$Site == "CA"),c(2,4,8)]
-
-
-
-mat.az = as_adjacency_matrix(perm.az, attr = "hwi", names = T)
-mat.az = as.matrix(mat.az) #symmetrical matrix
-
-obs.strength = data.frame("ID" = names(rowSums(el)),
-                          "obs.strength" = rowSums(el)) # strength values for each individual from actual data
 
 
 ```
