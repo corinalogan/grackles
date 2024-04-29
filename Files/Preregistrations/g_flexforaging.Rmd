@@ -1195,170 +1195,6 @@ setwd(currentlocation)
 ```
 
 
-
-
-
-```{r multiple analyses per prediction, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-
-library(cmdstanr)
-library(rethinking)
-
-
-currentlocation<-getwd()
-cmdstanlocation <- cmdstan_path()
-setwd(cmdstanlocation)
-options(mc.cores=4)
-
-
-
-actualresults<-c(rep(0,8),rep(1,9),rep(2,1))
-actuallower<-inv_logit(rnorm(18,mean=-3,sd=3))
-
-# The outcome is currently a probability. We need to translate this to the data we observed, which are counts relative to a total. For the simulations here, we reflect that the probabilities reflect how likely individuals are to eat any of the 22 food types. The total options of 22 appears the average across the variables which have a binomial distribution:
-outcome<-rbinom(9,22,0.7)
-predictor<-rnorm(9,mean=0,sd=1)
-dat_list<-list(outcome=outcome,
-               predictor=predictor)
-
-# We define the binomial model using the package rethinking 
-binomial_p <- ulam(
-  alist(
-    outcome ~ dbinom( 22 , p ) ,
-    logit(p) <- a+b*predictor,
-    a~dnorm(0,1),
-    b~dnorm(0,1)
-  ) , data=dat_list,cmdstan=T ,log_lik=T, chains=4,cores=4, control=list(adapt_delta=0.99))
-
-# We translate the model to stan code, and use cmdstan to create the compiled model
-write(stancode(binomial_p),file="myowntrial.stan")
-file <- file.path(cmdstan_path(), "myowntrial.stan")
-mod <- cmdstan_model(file)
-
-
-resultdistribution<-as.data.frame(matrix(ncol=4,nrow=100))
-colnames(resultdistribution)<-c("repetition","negative","non","positive")
-
-# We now run the iteration on a loop, going through the three different sample sizes and the three different effect sizes
-
-counter<-1
-
-for(repetition in 1:100){
-
-  currentresults<-rep(NA,18)
-  currentlower<-rep(NA,18)
-  
-  for(analyses in 1:18){
-    
-  outcome<-rbinom(9,22,0.7)
-  predictor<-rnorm(9,mean=0,sd=1)
-  dat_list<-list(outcome=outcome,
-                 predictor=predictor)
-      
-      fit <- mod$sample(
-        data = dat_list,
-        seed = 123,
-        chains = 1,
-        parallel_chains = 1,
-        refresh = 500
-      )
-  if(data.frame(fit$summary())[3,6]<0 & data.frame(fit$summary())[3,7]>0){currentresults[analyses]<- 1}
-  if(data.frame(fit$summary())[3,6]>0 & data.frame(fit$summary())[3,7]>0){currentresults[analyses]<- 2}
-  if(data.frame(fit$summary())[3,6]<0 & data.frame(fit$summary())[3,7]<0){currentresults[analyses]<- 0}
-      currentlower[analyses]<-   sum(data.frame(fit$draws())[,3]<0) / nrow(data.frame(fit$draws()))     
-  }
-  
-  
-  resultdistribution[repetition,1]<-counter
-  resultdistribution[repetition,2]<-sum(currentresults==0)
-  resultdistribution[repetition,3]<-sum(currentresults==1)
-  resultdistribution[repetition,4]<-sum(currentresults==2)
-  
-  dat_an<-list(
-    results=c(actualresults,currentresults),
-    identity=c(rep(1,18),rep(2,18))
-  )
-  
-  m1_an <- ulam(
-    alist(
-      results ~ dbinom( 2 , p ) ,
-      logit(p) <- a[identity] ,
-      a[identity] ~ normal( 0 , 1 )
-    ) , data=dat_an,cmdstan=T ,log_lik=T, chains=1,cores=4)
-  
-  posterior<-extract.samples(m1_an)
-  contrast<-posterior$a[,2]-posterior$a[,1]
-ifelse(repetition==1,combinedcontrast<-contrast,combinedcontrast<-c(combinedcontrast,contrast))  
-
-
-dat_lower<-list(
-  lowerzero=c(actuallower,currentlower),
-  identity=c(rep(1,18),rep(2,18))
-)
-
-m1_lower <- ulam(
-  alist(
-    lowerzero ~ dnorm( mu , sigma ) ,
-    logit(mu) <- a[identity] ,
-    a[identity] ~ normal( 0 , 1 ),
-    sigma <- s[identity],
-    s[identity]~dexp(1)
-  ) , data=dat_lower,cmdstan=T ,log_lik=T, chains=1,cores=4)
-
-posterior<-extract.samples(m1_lower)
-contrast_lower<-posterior$a[,2]-posterior$a[,1]
-ifelse(repetition==1,combinedcontrastlower<-contrast_lower,combinedcontrastlower<-c(combinedcontrastlower,contrast_lower))  
-
-
-
-counter<-counter+1
-
-}
-    # We remove the used version of the stan model so we always refer to the up-to-date compiled file
-    fn<-"myowntrial"
-    file.remove(fn)
-  
-
-
-# Reset your working directory to what it was before we ran the model
-setwd(currentlocation)
-
-
-# Check whether the number of negative/null/positive results out of the 18 analyses differs between the actual observed and the simulated
-# The results shows that we have more negative results than expected (the simulated ones have higher values)
-precis(combinedcontrast)
-
-#                  mean   sd  5.5% 94.5% histogram
-# combinedcontrast 0.76 0.49 -0.01  1.54 ▁▁▁▅▇▅▁▁▁
-
-# We can check how many negative/null/positive results we see on average in 18 analyses with this sample size
-apply(resultdistribution,2,mean)
-
-# negative  zero         positive 
-# 0.89      16.23       0.88
-
-# for the more precis comparison, check whether the distribution of thee 18 values of the proportion of posterior samples smaller than zero differs in the actual analyses compared to the simulated ones. Here it shows clearly that our results are very different from what we would expect by chance if there is no effect.
-precis(combinedcontrastlower)
-
-#  mean  sd 5.5% 94.5%       histogram
-# combinedcontrastlower 1.42 0.6 0.49  2.41 ▁▁▁▁▃▇▇▂▁▁▁▁▁▁▁
-
-
-
-
-hist(inv_logit(rnorm(1000,mean=0,sd=3)))
-
-
-actual<-inv_logit(rnorm(18,mean=0,sd=2))
-current<-inv_logit(rnorm(18,mean=-3,sd=3))
-
-
-sum((inv_logit(rnorm(1000,mean=0,sd=2)))<0.06)
-sum((inv_logit(rnorm(1000,mean=-3,sd=3)))<0.06)
-
-
-```
-
-
 # Results {-}
 
 ## P1: FLexibility and foraging behavior 
@@ -5280,6 +5116,158 @@ plot_grid(mp, ml, fp, fl, align='h', ncol=2, labels=c('A','B','C','D'), label_si
 
 
 # DISCUSSION
+
+We found support for eight negative and one positive relationship, and nine instances of no strong relationship between flexibility (reversal 1) and the **proportion of the diet that was human food**, and negative or no relationships with **distance to a human food source** or **number of human food sources** within their home range depending on the sex of the bird and the flexibility measure used. Because of this mixed support, we conducted an unregistered analysis to evaluate whether, overall, the prediction was supported or not and, if so, in which direction. Overall, this indicates that human foods are not disproportionately used by the more flexible individuals, but more by the less flexible individuals, which is counter to our primary prediction. We thought that the more flexible individuals would use more human foods because they might stay near their parent’s home range or move around to seek out new opportunities. We found support for both of these scenarios: individuals in the Arizona population did not disperse very far [@sevchik2021dispersal], and individuals in the California population moved large distances across daily and annual time periods [@mccune2020spaceuse in prep.]. Despite this, flexibility did not seem to be related to human foods and their sources, potentially because grackle home ranges encompass many different types of food resources. Because this species is highly associated with human modified landscapes, we predicted they would likely rely on human foods as part of the reason for this association. However, an alternative possibility is that this species’ shift toward using more urban and arid environments [@summers2023xpop] might not be due to grackles relying more heavily on human foods, but rather urban water sources. Grackles eat a variety of natural foods (e.g., insects, worms, fruit), which are present in urban and non-urban habitats. The water available in an urban area via fountains, sprinklers, human-made ponds, lakes, and waterways can provide a stark contrast to the surrounding natural areas, which might be dominated by deserts (as in both grackle populations), forests, or agriculture (as in the California population).
+
+```{r multipleanalysesperprediction, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### In prediction 3, there were 18 analyses with 8 being negative, 1 positive, and 9 no relationship. What should we conclude overall? This analysis will tell us by randomly simulating 18 analyses where there was no effect. If we observe in the simulated 18 analyses that sometimes results can be positive and negative, it can tell us the likely distribution of positive/negative/null results to expect. We compare the expected versus the observed distribution of positive/negative/null results to determine whether the observed distribution could occur if there was no effect or if it could only occur if there is an actual effect, which is so small that we don't consistently detect it.
+
+library(cmdstanr)
+library(rethinking)
+
+# Tell the computer where to access cmdstan
+currentlocation<-getwd()
+cmdstanlocation <- cmdstan_path()
+setwd(cmdstanlocation)
+options(mc.cores=4)
+
+# Observed outcome across 18 analyses in Prediction 3
+actualresults<-c(rep(0,8),rep(1,9),rep(2,1)) #whether result was negative (8 times 0), null (9 times 1), or positive (1 times 2)
+actuallower<-c(0.9998, 0.9939, 0.9933, 0.9908, 0.9841, 0.9761, 0.9556, 0.9581,
+               0.9098, 0.8959, 0.8691, 0.8412, 0.7329, 0.7324, 0.6690, 0.6232, 0.6012,
+               0.0464) #proportion of posterior that is smaller than 0. We estimate these based on the observed distribution of the 89% compatability intervals: the first 8 values represent the results from the analyses with negative relationships, almost all of their posterior estimates of the distribution are below zero (above the upper 89%CI span of 0.9450), the next 9 values represent the results from the analyses with no relationship where the posterior spans both sides of zero, and the last value represents the analysis with the positive result where almost all of the posterior estimate is larger than zero and therefore almost none is smaller than zero (below the lower 89%CI span of 0.055)
+
+# SIMULATION OF NO EFFECT. The outcome is currently a probability. We need to translate this to the data we observed, which are counts relative to a total. For the simulations here, we reflect that the probabilities reflect how likely individuals are to eat any of the 22 food types in these binomial models
+outcome<-rbinom(9,22,0.7) #9=sample size, 22 food types, 0.7 probability of eating a particular food
+predictor<-rnorm(9,mean=0,sd=1) #9=sample size, mean of 0 standardizes the predictor
+dat_list<-list(outcome=outcome,
+               predictor=predictor)
+
+# We define the binomial model using the package rethinking 
+binomial_p <- ulam(
+  alist(
+    outcome ~ dbinom( 22 , p ) ,
+    logit(p) <- a + b*predictor,
+    a~dnorm(0,1),
+    b~dnorm(0,1)
+  ) , data=dat_list,cmdstan=T ,log_lik=T, chains=4,cores=4, control=list(adapt_delta=0.99))
+
+# We translate the model to stan code, and use cmdstan to create the compiled model to make it run more quickly
+write(stancode(binomial_p),file="myowntrial.stan")
+file <- file.path(cmdstan_path(), "myowntrial.stan")
+mod <- cmdstan_model(file)
+
+# Save the simulated outcomes. We perform 18 analyses 100 times. For each of the repetitions, we score how many of the 18 analyses show a negative/positive/null relationship
+resultdistribution<-as.data.frame(matrix(ncol=4,nrow=100))
+colnames(resultdistribution)<-c("repetition","negative","non","positive")
+
+# We now run the iteration on a loop. First simulating data with no effect 18 times and assessing the outcome of the model assessing the relationship. Next we combine the results from a run of 18 analyses and compare them to the observed 18 results. So there are 100 comparisons in total
+counter<-1
+
+for(repetition in 1:100){
+
+  currentresults<-rep(NA,18)
+  currentlower<-rep(NA,18)
+  
+  for(analyses in 1:18){
+    
+  outcome<-rbinom(9,22,0.7)
+  predictor<-rnorm(9,mean=0,sd=1)
+  dat_list<-list(outcome=outcome,
+                 predictor=predictor)
+      
+      fit <- mod$sample(
+        data = dat_list,
+        seed = 123,
+        chains = 1,
+        parallel_chains = 1,
+        refresh = 500
+      )
+ #If the 89% compatibility interval is all negative, score as 0, if all positive, score as 2, if it includes zero, score as 1
+  if(data.frame(fit$summary())[3,6]<0 & data.frame(fit$summary())[3,7]>0){currentresults[analyses]<- 1}
+  if(data.frame(fit$summary())[3,6]>0 & data.frame(fit$summary())[3,7]>0){currentresults[analyses]<- 2}
+  if(data.frame(fit$summary())[3,6]<0 & data.frame(fit$summary())[3,7]<0){currentresults[analyses]<- 0}
+      currentlower[analyses]<-   sum(data.frame(fit$draws())[,3]<0) / nrow(data.frame(fit$draws()))     
+  }
+  
+  resultdistribution[repetition,1]<-counter
+  resultdistribution[repetition,2]<-sum(currentresults==0)
+  resultdistribution[repetition,3]<-sum(currentresults==1)
+  resultdistribution[repetition,4]<-sum(currentresults==2)
+  
+  #MODEL 1: Run model to compare observed distribution of positive/negative/null results to the simulated distribution in the current repetition
+  dat_an<-list(
+    results=c(actualresults,currentresults),
+    identity=c(rep(1,18),rep(2,18))
+  )
+  
+  m1_an <- ulam(
+    alist(
+      results ~ dbinom( 2 , p ) ,
+      logit(p) <- a[identity] ,
+      a[identity] ~ normal( 0 , 1 )
+    ) , data=dat_an,cmdstan=T ,log_lik=T, chains=1,cores=4)
+  
+  #Extract posterior and run a contrast to compare the simulated vs actual distributions
+  posterior<-extract.samples(m1_an)
+  contrast<-posterior$a[,2]-posterior$a[,1]
+ifelse(repetition==1,combinedcontrast<-contrast,combinedcontrast<-c(combinedcontrast,contrast))  
+
+#MODEL 2: Run a model that provides the same comparison between actual and simulated analyses, but with a different output measure: compare observed values of percentage of posterior smaller than zero to the current simulated percentages
+dat_lower<-list(
+  lowerzero=c(actuallower,currentlower),
+  identity=c(rep(1,18),rep(2,18))
+)
+
+m1_lower <- ulam(
+  alist(
+    lowerzero ~ dnorm( mu , sigma ) ,
+    logit(mu) <- a[identity] ,
+    a[identity] ~ normal( 0 , 1 ),
+    sigma <- s[identity],
+    s[identity]~dexp(1)
+  ) , data=dat_lower,cmdstan=T ,log_lik=T, chains=1,cores=4)
+
+#Extract posterior and run a contrast to compare the simulated vs actual distributions
+posterior<-extract.samples(m1_lower)
+contrast_lower<-posterior$a[,2]-posterior$a[,1]
+ifelse(repetition==1,combinedcontrastlower<-contrast_lower,combinedcontrastlower<-c(combinedcontrastlower,contrast_lower))  
+
+counter<-counter+1
+}
+
+# We remove the used version of the stan model so we always refer to the up-to-date compiled file
+fn<-"myowntrial"
+file.remove(fn)
+
+# Reset your working directory to what it was before we ran the model
+setwd(currentlocation)
+
+# MODEL 1: Check whether the number of negative/null/positive results out of the 18 analyses differs between the actual observed and the simulated
+# The results show that the simulated analyses tend to have higher values (more null and positive relationships), but the CI crosses zero
+precis(combinedcontrast)
+#                  mean   sd  5.5% 94.5% histogram
+# combinedcontrast 0.76 0.49 -0.01  1.54 ▁▁▁▅▇▅▁▁▁
+
+# We can check how many negative/null/positive results we see on average in 18 analyses with this sample size: approx 1 negative, 1 positive, and 16 null rather than the 8, 1, and 9 we found.
+apply(resultdistribution,2,mean)
+# negative  zero         positive 
+# 0.89      16.23       0.88
+
+# MODEL 2: for the more precise comparison, check whether the distribution of the 18 values of the proportion of posterior samples smaller than zero differs in the actual analyses compared to the simulated ones. Here it shows clearly that our results are different from what we would expect by chance if there is no effect. In the actual results, the 8 negative relationships have almost all of their posterior estimates below zero, for the 9 null relationships, about half of the posterior is smaller than zero, and for the 1 positive relationship, almost none of the posterior is smaller than zero
+precis(combinedcontrastlower)
+#                       mean  sd 5.5% 94.5%       histogram
+# combinedcontrastlower 1.42 0.6 0.49  2.41 ▁▁▁▁▃▇▇▂▁▁▁▁▁▁▁
+#the two distributions (actual results vs simulated results) are different from each other because the mean is shifted as indicated by the CI not crossing zero
+
+# Showing how the proportion of the posterior smaller than zero links to the observed relationships
+hist(inv_logit(rnorm(1000,mean=0,sd=3))) #if there is no effect, there will be an equal number of few large (>0.945) and small (<0.055) proportions
+hist(inv_logit(rnorm(1000,mean=3,sd=3))) #if there is an effect, there will be a large number of large (>0.945) and very few small (<0.055) proportions
+
+sum((inv_logit(rnorm(18,mean=0,sd=2)))<0.055) #the proportion that is below the 89% CI cut off if there is no effect
+sum((inv_logit(rnorm(18,mean=3,sd=3)))<0.055) #the proportion that is below the 89% CI cut off if there is an effect
+```
+
 
 Human population density varies within and between the grackle populations: it is the highest and lowest at the Woodland trap sites, which are different from each other and from Tempe. This indicates that the environments that individuals on the edge experience do not differ systematically in human population density.
 
