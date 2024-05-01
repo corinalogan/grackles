@@ -3495,7 +3495,7 @@ degree = aggregate(degree ~ ID, data = degree, FUN = "sum")
 
 # because there were many unbanded or unknown birds seen in association with the focal bird during focal follows,
 # it is possible that banded-banded bird associations only do not give an accurate degree estimate.
-# So, we also calculate degree including the unbanded and unknown grackles seen in association with focal grackles during follows
+# So, we also calculate degree including the unbanded and unknown grackles seen in association with focal grackles during follows (unknown is counted once within a follow and counts again in the next follow)
 
 els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
 # the original edgelist that includes only 1 association between bird pairs. For UB or UNK grackles, this assumes that if they are seen together on different days, then it is a different UB or UNK grackle
@@ -3506,7 +3506,7 @@ els.nb$ID.1 = as.character(els.nb$ID.1)
 els.nb$ID.2 = as.character(els.nb$ID.2)
 for (i in 1:nrow(els.nb)) {
   tmp = els.nb[i, c("ID.1", "ID.2")]
-  tmp = tmp[,sort.list(tmp)] #produces warning messages, but works
+  tmp = tmp[,sort.list(as.character(tmp))] #produces warning messages, but works
   els.nb[i, "ID.1"] = tmp[,1]
   els.nb[i, "ID.2"] = tmp[,2]
 }
