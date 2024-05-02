@@ -3438,7 +3438,8 @@ colnames(y)[3] = "y"
 
 #For the half-weight index we also need the number of times two banded birds are seen together (x). 
 #Filter for Focal birds that went through flexibility assays and had the minimum number of focal follows (at least 2 in non-breeding season) from data frame of affiliative, non-breeding season associations. 
-els.nb = els.nb[which(els.nb$FocalBirdID == "Adobo" | els.nb$FocalBirdID == "Burrito" | els.nb$FocalBirdID == "Chilaquile" | els.nb$FocalBirdID == "Chalupa" | els.nb$FocalBirdID == "Diablo" | els.nb$FocalBirdID == "Fideo" | els.nb$FocalBirdID == "Taco" | els.nb$FocalBirdID == "Taquito" |  els.nb$FocalBirdID == "Yuca" | els.nb$FocalBirdID == "Tembleque" | els.nb$FocalBirdID == "Polvorones" | els.nb$FocalBirdID == "Camote" | els.nb$FocalBirdID == "Dulce de Leche" | els.nb$FocalBirdID == "Zapote Negro" | els.nb$FocalBirdID == "Cuervo" | els.nb$FocalBirdID == "Xunub" | els.nb$FocalBirdID == "Galandra" | els.nb$FocalBirdID == "Kel" | els.nb$FocalBirdID == "Kau" | els.nb$FocalBirdID == "Cutuy" | els.nb$FocalBirdID == "Tzanatl Preciosa" | els.nb$FocalBirdID == "Pina"),]
+els.nb = els.nb[which(els.nb$FocalBirdID == "Adobo" | els.nb$FocalBirdID == "Burrito" | els.nb$FocalBirdID == "Chilaquile" | els.nb$FocalBirdID == "Chalupa" | els.nb$FocalBirdID == "Diablo" | els.nb$FocalBirdID == "Fideo" | els.nb$FocalBirdID == "Taco" | els.nb$FocalBirdID == "Taquito" |  els.nb$FocalBirdID == "Yuca" | els.nb$FocalBirdID == "Tembleque" | els.nb$FocalBirdID == "Polvorones" | els.nb$FocalBirdID == "Camote" | els.nb$FocalBirdID == "Dulce de Leche" | els.nb$FocalBirdID == "Zapote Negro" | els.nb$FocalBirdID == "Cuervo" | els.nb$FocalBirdID == "Xunub" | els.nb$FocalBirdID == "Galandra" | els.nb$FocalBirdID == "Kel" | els.nb$FocalBirdID == "Kau" | els.nb$FocalBirdID == "Cutuy" | els.nb$FocalBirdID == "Tzanatl Preciosa" | els.nb$FocalBirdID == "Pina" |
+                        els.nb$NonFocalBirdID == "Adobo" | els.nb$NonFocalBirdID == "Burrito" | els.nb$NonFocalBirdID == "Chilaquile" | els.nb$NonFocalBirdID == "Chalupa" | els.nb$NonFocalBirdID == "Diablo" | els.nb$NonFocalBirdID == "Fideo" | els.nb$NonFocalBirdID == "Taco" | els.nb$NonFocalBirdID == "Taquito" |  els.nb$NonFocalBirdID == "Yuca" | els.nb$NonFocalBirdID == "Tembleque" | els.nb$NonFocalBirdID == "Polvorones" | els.nb$NonFocalBirdID == "Camote" | els.nb$NonFocalBirdID == "Dulce de Leche" | els.nb$NonFocalBirdID == "Zapote Negro" | els.nb$NonFocalBirdID == "Cuervo" | els.nb$NonFocalBirdID == "Xunub" | els.nb$NonFocalBirdID == "Galandra" | els.nb$NonFocalBirdID == "Kel" | els.nb$NonFocalBirdID == "Kau" | els.nb$NonFocalBirdID == "Cutuy" | els.nb$NonFocalBirdID == "Tzanatl Preciosa" | els.nb$NonFocalBirdID == "Pina"),]
 
 #Exclude unbanded birds
 els.nb2 <- els.nb[!els.nb$NonFocalBirdID=="NA" & !els.nb$NonFocalBirdID=="unbanded adult female" & !els.nb$NonFocalBirdID=="unbanded adult male" & !els.nb$NonFocalBirdID=="unbanded juvenile" & !els.nb$NonFocalBirdID=="unbanded juvenile female" & !els.nb$NonFocalBirdID=="unbanded juvenile male" & !els.nb$NonFocalBirdID=="unbanded unknown female" & !els.nb$NonFocalBirdID=="unbanded unknown male"  & !els.nb$NonFocalBirdID=="unknown adult female" & !els.nb$NonFocalBirdID=="unknown adult male" & !els.nb$NonFocalBirdID=="unknown banded female" & !els.nb$NonFocalBirdID=="unknown female" & !els.nb$NonFocalBirdID=="unknown grackle"  & !els.nb$NonFocalBirdID=="unknown individual" & !els.nb$NonFocalBirdID=="unknown juvenile" & !els.nb$NonFocalBirdID=="unknown juvenile female"  & !els.nb$NonFocalBirdID=="unknown juvenile male" & !els.nb$NonFocalBirdID=="unknown male" & !els.nb$NonFocalBirdID=="unknown unbanded male",] 
@@ -3480,48 +3481,130 @@ write.csv(hwis, "hwiValues.csv")
 
 ###### NOTE FROM KELSEY (25 Apr 2024): I am not seeing the error you're talking about, where there are separate entries for Taco/Adobo with different numbers. In hwis, which is considered and undirected edgelist and not a symmetrical matrix, there should only be one row per pair. From the undirected edgelist you can create a symmetrical matrix. However, Dieter's code yields different hwi values, but I don't really understand what it is doing well enough to say why. One possibility is that Dieter's calculation of the number of times birds were seen apart does not include times the focal bird was seen with unbanded/unknown individuals because he creates the list of possible association from the banded birds only?
 
+## Get max bond strength from half-weight index data frame
+maxB1 = aggregate(hwi ~ ID.1, data = hwis, FUN = "max")
+colnames(maxB1)[1] = "ID"
+maxB2 = aggregate(hwi ~ ID.2, data = hwis, FUN = "max")
+colnames(maxB2)[1] = "ID"
+maxB = rbind(maxB1,maxB2)
+maxB = aggregate(hwi ~ ID, data = maxB, FUN = "max")
 
-### Calculate Degree
-# for degree, we want to count the number of associations of banded birds that had at least 2 focal follows in the non-breeding season
-# in undirected networks like ours, this includes associations when it was not the focal bird of the focal follow.
-# So, we use the symmetrized hwis dataframe to see number of associations each grackle had, excluding UBs & UNKs
-id1 = hwis[3]
-colnames(id1) = "ID"
-id2 = hwis[1]
-colnames(id2) = "ID"
-degree = rbind(id1,id2)
-degree$degree = 1
-degree = aggregate(degree ~ ID, data = degree, FUN = "sum")
+### Strength & Degree ###
+el.az = hwis[which(hwis$Site == "AZ"),c(1,3,7)] # only want ID1, ID2 and hwi; separate sites
+colnames(el.az)[3] = "weight"
+grAZ = graph_from_data_frame(el.az, directed = F) # data need to be a class "igraph"
+obs.strength = strength(grAZ,vids = V(grAZ))
+obs.degree = igraph::degree(grAZ)
+el.ca = hwis[which(hwis$Site == "CA"),c(1,3,7)] # only want ID1, ID2 and hwi; separate sites
+colnames(el.ca)[3] = "weight"
+grCA = graph_from_data_frame(el.ca, directed = F) # data need to be a class "igraph"
+obs.strength = strength(grCA,vids = V(grCA))
+obs.degree = igraph::degree(grCA)
 
+### Alternative Degree measures ###
 # because there were many unbanded or unknown birds seen in association with the focal bird during focal follows,
 # it is possible that banded-banded bird associations only do not give an accurate degree estimate.
-# So, we also calculate degree including the unbanded and unknown grackles seen in association with focal grackles during follows (unknown is counted once within a follow and counts again in the next follow)
+# So, we also calculate degree including the unbanded and unknown grackles seen in association with focal grackles during follows (unknown is counted once within a follow and counts again in the next follow as a unique individual)
 
 els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
 # the original edgelist that includes only 1 association between bird pairs. For UB or UNK grackles, this assumes that if they are seen together on different days, then it is a different UB or UNK grackle
 
+#### uniquely identify each category of UB/UNK bird ####
+ubf = els.nb[which(els.nb$NonFocalBirdID == "unbanded adult female"),]
+ubf$num = factor(1:nrow(ubf))
+ubf$newID2 = do.call(paste0, ubf[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ubf,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp"),all = T)
+
+ubjf = els.nb[which(els.nb$NonFocalBirdID == "unbanded juvenile female"),]
+ubjf$num = factor(1:nrow(ubjf))
+ubjf$newID2 = do.call(paste0, ubjf[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ubjf,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+ubuf = els.nb[which(els.nb$NonFocalBirdID == "unbanded unknown female"),]
+ubuf$num = factor(1:nrow(ubuf))
+ubuf$newID2 = do.call(paste0, ubuf[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ubuf,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+uf = els.nb[which(els.nb$NonFocalBirdID == "unknown female"),]
+uf$num = factor(1:nrow(uf))
+uf$newID2 = do.call(paste0, uf[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,uf,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+uaf = els.nb[which(els.nb$NonFocalBirdID == "unknown adult female"),]
+uaf$num = factor(1:nrow(uaf))
+uaf$newID2 = do.call(paste0, uaf[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,uaf,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+ubm = els.nb[which(els.nb$NonFocalBirdID == "unbanded adult male"),]
+ubm$num = factor(1:nrow(ubm))
+ubm$newID2 = do.call(paste0, ubm[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ubm,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+ubjm = els.nb[which(els.nb$NonFocalBirdID == "unbanded juvenile male"),]
+ubjm$num = factor(1:nrow(ubjm))
+ubjm$newID2 = do.call(paste0, ubjm[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ubjm,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+um = els.nb[which(els.nb$NonFocalBirdID == "unknown male"),]
+um$num = factor(1:nrow(um))
+um$newID2 = do.call(paste0, um[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,um,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+uam = els.nb[which(els.nb$NonFocalBirdID == "unknown adult male"),]
+uam$num = factor(1:nrow(uam))
+uam$newID2 = do.call(paste0, uam[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,uam,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+ubj = els.nb[which(els.nb$NonFocalBirdID == "unbanded juvenile"),]
+ubj$num = factor(1:nrow(ubj))
+ubj$newID2 = do.call(paste0, ubj[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ubj,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+uj = els.nb[which(els.nb$NonFocalBirdID == "unknown juvenile"),]
+uj$num = factor(1:nrow(uj))
+uj$newID2 = do.call(paste0, uj[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,uj,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+ujm = els.nb[which(els.nb$NonFocalBirdID == "unknown juvenile male"),]
+ujm$num = factor(1:nrow(ujm))
+ujm$newID2 = do.call(paste0, ujm[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ujm,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+ug = els.nb[which(els.nb$NonFocalBirdID == "unknown grackle"),]
+ug$num = factor(1:nrow(ug))
+ug$newID2 = do.call(paste0, ug[c("NonFocalBirdID", "num")])
+els.nb = merge(els.nb,ug,by = c("Date","FocalBirdID","NonFocalBirdID","Site","TimeStamp","num","newID2"),all = T) #creating some duplicates I will get rid of later
+
+els.nb$newID2[which(els.nb$NonFocalBirdID=="unbanded unknown male")]<-"unbanded unknown male1"
+els.tot1 = els.nb[-which(is.na(els.nb$newID2) & grep("^un",els.nb$NonFocalBirdID,perl=T,ignore.case =F)),] 
+els.tot2 = els.nb[-which(grepl("^un",els.nb$NonFocalBirdID,perl=T,ignore.case =F)),]
+els.tot2$newID2 = els.tot2$NonFocalBirdID
+els.tot = rbind(els.tot1, els.tot2) # edgelist with unique identifiers for unbanded or unknown individuals
+els.tot = els.tot[,c(2,4,7)]
+
+
 #since these are undirected associations, symmetrize the associations so all are in the same order and repeat pairs can be identified
-colnames(els.nb)[c(2,3)]=c("ID.1","ID.2")
-els.nb$ID.1 = as.character(els.nb$ID.1)
-els.nb$ID.2 = as.character(els.nb$ID.2)
-for (i in 1:nrow(els.nb)) {
-  tmp = els.nb[i, c("ID.1", "ID.2")]
-  tmp = tmp[,sort.list(as.character(tmp))] #produces warning messages, but works
-  els.nb[i, "ID.1"] = tmp[,1]
-  els.nb[i, "ID.2"] = tmp[,2]
+colnames(els.tot)[c(1,3)]=c("ID.1","ID.2")
+els.tot$ID.1 = as.character(els.tot$ID.1)
+els.tot$ID.2 = as.character(els.tot$ID.2)
+for (i in 1:nrow(els.tot)) {
+  tmp = els.tot[i, c("ID.1", "ID.2")]
+  tmp = tmp[,sort.list(as.character(tmp))] 
+  els.tot[i, "ID.1"] = tmp[,1]
+  els.tot[i, "ID.2"] = tmp[,2]
 }
 
-id1 = els.nb[2]
+id1 = els.tot[1]
 colnames(id1) = "ID"
-id2 = els.nb[3]
+id2 = els.tot[3]
 colnames(id2) = "ID"
 degree2 = rbind(id1,id2)
 degree2$degree = 1
 degree2 = aggregate(degree ~ ID, data = degree2, FUN = "sum")
 
 #Combining degree with general data sheet that will be used for analyses
-#colnames(degree) = c("BirdID","Degree")
-#g = merge(g, degree, by = "BirdID", all = T)
+#colnames(degree2) = c("BirdID","Degree")
+#g = merge(g, degree2, by = "BirdID", all = T)
 
 ### We also said we would calculate a degree-like variable using the group size from the scan sample at the end of the focal follow because there were so few banded associations that group size could be a replacement variable with more data. It is column "Group size" at data_flexforaging > tab: Social. This is in the preregistration (Analysis plan > P4), but not exactly clear what we were planning on doing with it. Can add an analysis that uses this variable instead of degree. But does the current degree variable at the general data sheet already use group size?
 
@@ -4045,7 +4128,7 @@ for(i in 1:10000){
   maxB2 = aggregate(weight ~ ID.2, data = hwi.perm, FUN = "max")
   colnames(maxB2)[1] = "ID"
   maxB = rbind(maxB1,maxB2)
-  maxB = aggregate(weight ~ ID, data = maxB, FUN = "sum")
+  maxB = aggregate(weight ~ ID, data = maxB, FUN = "max")
   max.bond = merge(max.bond,maxB,by = "ID")  
   
 ## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
@@ -4162,6 +4245,12 @@ colnames(el.az)[3] = "weight"
 grAZ = graph_from_data_frame(el.az, directed = F) # data need to be a class "igraph"
 obs.strength = strength(grAZ,vids = V(grAZ))
 obs.degree = igraph::degree(grAZ)
+
+el.ca = obs.hwi[which(obs.hwi$Site == "CA"),c(2,4,8)] # only want ID1, ID2 and hwi; separate sites
+colnames(el.ca)[3] = "weight"
+grCA = graph_from_data_frame(el.ca, directed = F) # data need to be a class "igraph"
+obs.strength = strength(grCA,vids = V(grCA))
+obs.degree = igraph::degree(grCA)
 
 
 ```
