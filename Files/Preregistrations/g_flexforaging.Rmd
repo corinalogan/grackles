@@ -4044,57 +4044,38 @@ par(op)
 
 **Figure.** Scatterplots showing the lack of relationship between the Shannon Diversity Index with $\phi$ and $\lambda$ for both sexes.
 
-```{r p4 permutation tests, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p4 permutations, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 # Because social network metrics are not independent, we randomly permute the associations among individuals and re-run the models to test if the effect of flexibility on the social network metrics is greater than that seen at random association levels.
 # To generate random associations, we need the original edgelist, before it has been aggregated for calculations of hwi. In this edgelist we can randomize which grackles are seen together, then re-calculate hwi and the social network metrics, degree, strength and max bond strength.
-#load social association data
-ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
-ff <- data.frame(ff)
-#Exlude aggressive assocations
-ff1aff <- subset(ff, ff$BehavType == "affiliative")
+#load social association data in the form of an edgelist. This is only nonbreeding season data.
+el <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/edgelist_uniqueUB.csv"), header=T, sep=",", stringsAsFactors=F)
 
-# Only want non-breeding season data
-# separate Sites because breeding started earlier in AZ
-ff_AZ = ff1aff[which(ff1aff$Site == "AZ"),]
-ff_AZ$Date = as.Date(ff_AZ$Date, format = "%Y-%m-%d")
-ffAZ_nbs = ff_AZ[which(ff_AZ$Date < "2019-03-08" | c(ff_AZ$Date > "2019-08-31" & ff_AZ$Date < "2020-03-08")),] # nonbreeding season = 1 Sept 2019 - 8 Mar 2020
-ffAZ_nbs$Season = "NBS"
-#now repeat in CA
-ff_CA = ff1aff[which(ff1aff$Site == "CA"),]
-ff_CA$Date = as.Date(ff_CA$Date, format = "%Y-%m-%d")
-ffCA_nbs = ff_CA[which(ff_CA$Date > "2021-08-31" & ff_CA$Date < "2022-03-30"),] # nonbreeding season = 1 Sept 2021 - 29 Mar 2022
-ffCA_nbs$Season = "NBS"
-
-
-## AZ first ##
 library(igraph)
 library(sna)
-### igraph function "permute" to permute the vertices (bird IDs) in a graph
+### igraph function "rewire" to permute the vertices (bird IDs) in a graph
 
-colnames(ffAZ_nbs)[2] = "ID.1"
-colnames(ffAZ_nbs)[5] = "ID.2"
-AZel = ffAZ_nbs[-which(is.na(ffAZ_nbs$ID.2)),c(2,5)]
-ids = unique(c(AZel$ID.1,AZel$ID.2)) #57
-
-
+## AZ first ##
+AZel = el[which(el$Site == "AZ"),-c(1,3)] #only AZ rows, remove extra columns
+ids = unique(c(AZel$ID.1,AZel$ID.2)) #248 including uniquely identified UBs/UNKs
 out.strength = data.frame("ID" = ids)
 out.degree = data.frame("ID" = ids)
 max.bond = data.frame("ID" = ids)
-for(i in 1:10000){
+
+for(i in 1:10){
  # Make a network graph from what we have (an edgelist)
     TotgrAZ = graph_from_data_frame(AZel, directed = F) # All associations in data (i.e., the associations have not been aggregated to create the hwi for each dyad. This is needed for the edge permutations to create random networks. Data need to be a class "igraph" for the permutation function to work.
  #permute the edges
     perm.az = rewire(TotgrAZ,each_edge(prob = 1)) #permute all edges
-
     perm.el = igraph::as_data_frame(perm.az, what = "edges") #turn from graph format back into edge list
     colnames(perm.el)[1] = "ID.1"
     colnames(perm.el)[2] = "ID.2"
 
  #symmetrize the associations so they can be aggregated to calculate association strengths with half-weight index
-    for(j in 1:nrow(perm.el)){
-      tmp = sort(as.vector(as.matrix(perm.el[j, c('ID.1', 'ID.2')])))
-      perm.el[j, 'ID.1'] = tmp[1]
-      perm.el[j, 'ID.2'] = tmp[2]
+    for (i in 1:nrow(perm.el)) {
+      tmp = perm.el[i, c("ID.1", "ID.2")]
+      tmp = tmp[,sort.list(as.character(tmp))] 
+      perm.el[i, "ID.1"] = tmp[,1]
+      perm.el[i, "ID.2"] = tmp[,2]
     }
 ## Data manipulations for Half-weight index
  #count number of times each focal bird is seen individually (y)
@@ -4129,7 +4110,7 @@ for(i in 1:10000){
   colnames(maxB2)[1] = "ID"
   maxB = rbind(maxB1,maxB2)
   maxB = aggregate(weight ~ ID, data = maxB, FUN = "max")
-  max.bond = merge(max.bond,maxB,by = "ID")  
+  max.bond = merge(max.bond,maxB,by = "ID",all = T)  
   
 ## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
  permAZgr = graph_from_data_frame(hwi.perm, directed = F)  
@@ -4141,8 +4122,8 @@ for(i in 1:10000){
  perm.degree$ID = row.names(perm.degree)
  
 ## Add data from permutation iteration to output dataframe
- out.strength = merge(out.strength,perm.strength, by = "ID")
- out.degree = merge(out.degree, perm.degree, by = "ID")
+ out.strength = merge(out.strength,perm.strength, by = "ID",all = T)
+ out.degree = merge(out.degree, perm.degree, by = "ID",all = T)
 }
 
 # started at 6:02pm, ended around 7:09pm
@@ -4150,38 +4131,29 @@ write.csv(out.strength,"g_flexforaging_data_AZpermStrength.csv")
 write.csv(out.degree,"g_flexforaging_data_AZpermDegree.csv")
 write.csv(max.bond, "g_flexforaging_data_AZmaxBond.csv")
 
-### These data contain all individuals present in the focal follows. Will need to restrict the dataframes to the grackles that had at least 2 focal follows:
-out.strength2 = out.strength[which(out.strength$ID == "Adobo" | out.strength$ID == "Burrito" | out.strength$ID == "Chilaquile" | out.strength$ID == "Chalupa" | out.strength$ID == "Diablo" | out.strength$ID == "Fideo" | out.strength$ID == "Taco" | out.strength$ID == "Taquito" |  out.strength$ID == "Yuca"),]
-
-out.degree2 = out.degree[which(out.degree$ID == "Adobo" | out.degree$ID == "Burrito" | out.degree$ID == "Chilaquile" | out.degree$ID == "Chalupa" | out.degree$ID == "Diablo" | out.degree$ID == "Fideo" | out.degree$ID == "Taco" | out.degree$ID == "Taquito" |  out.degree$ID == "Yuca"),]
- 
-
 
 ## CA ##
-colnames(ffCA_nbs)[2] = "ID.1"
-colnames(ffCA_nbs)[5] = "ID.2"
-CAel = ffCA_nbs[,c(2,5)]
-ids = unique(c(CAel$ID.1,CAel$ID.2)) #32
-
+CAel = el[which(el$Site == "CA"),-c(1,3)] #only AZ rows, remove extra columns
+ids = unique(c(CAel$ID.1,CAel$ID.2)) #218 including uniquely identified UBs/UNKs
 
 CAout.strength = data.frame("ID" = ids)
 CAout.degree = data.frame("ID" = ids)
 CAmax.bond = data.frame("ID" = ids)
-for(i in 1:10000){
+for(i in 1:10){
  # Make a network graph from what we have (an edgelist)
     TotgrCA = graph_from_data_frame(CAel, directed = F) # All associations in data (i.e., the associations have not been aggregated to create the hwi for each dyad. This is needed for the edge permutations to create random networks. Data need to be a class "igraph" for the permutation function to work.
  #permute the edges
     perm.ca = rewire(TotgrCA,each_edge(prob = 1)) #permute all edges
-
     perm.el = igraph::as_data_frame(perm.ca, what = "edges") #turn from graph format back into edge list
     colnames(perm.el)[1] = "ID.1"
     colnames(perm.el)[2] = "ID.2"
 
  #symmetrize the associations so they can be aggregated to calculate association strengths with half-weight index
-    for(j in 1:nrow(perm.el)){
-      tmp = sort(as.vector(as.matrix(perm.el[j, c('ID.1', 'ID.2')])))
-      perm.el[j, 'ID.1'] = tmp[1]
-      perm.el[j, 'ID.2'] = tmp[2]
+    for (i in 1:nrow(perm.el)) {
+      tmp = perm.el[i, c("ID.1", "ID.2")]
+      tmp = tmp[,sort.list(as.character(tmp))] 
+      perm.el[i, "ID.1"] = tmp[,1]
+      perm.el[i, "ID.2"] = tmp[,2]
     }
 ## Data manipulations for Half-weight index
  #count number of times each focal bird is seen individually (y)
@@ -4216,7 +4188,7 @@ for(i in 1:10000){
   colnames(maxB2)[1] = "ID"
   maxB = rbind(maxB1,maxB2)
   maxB = aggregate(weight ~ ID, data = maxB, FUN = "sum")
-  CAmax.bond = merge(max.bond,maxB,by = "ID")
+  CAmax.bond = merge(max.bond,maxB,by = "ID",all = T)
   
 ## Turn permuted data back into network graph with hwi weighting the edges for calculations of strength, etc
  permCAgr = graph_from_data_frame(hwi.perm, directed = F)  
@@ -4228,8 +4200,8 @@ for(i in 1:10000){
  perm.degree$ID = row.names(perm.degree)
  
 ## Add data from permutation iteration to output dataframe
- CAout.strength = merge(out.strength,perm.strength, by = "ID")
- CAout.degree = merge(out.degree, perm.degree, by = "ID")
+ CAout.strength = merge(out.strength,perm.strength, by = "ID",all = T)
+ CAout.degree = merge(out.degree, perm.degree, by = "ID", all = T)
 }
 
 
@@ -4238,20 +4210,8 @@ write.csv(CAout.strength,"g_flexforaging_data_CApermStrength.csv")
 write.csv(CAout.degree,"g_flexforaging_data_CApermDegree.csv")
 write.csv(CAmax.bond, "g_flexforaging_data_CAmaxBond.csv")
 
-### Observed strength and degree ###
-obs.hwi = read.csv("hwiValues.csv")
-el.az = obs.hwi[which(obs.hwi$Site == "AZ"),c(2,4,8)] # only want ID1, ID2 and hwi; separate sites
-colnames(el.az)[3] = "weight"
-grAZ = graph_from_data_frame(el.az, directed = F) # data need to be a class "igraph"
-obs.strength = strength(grAZ,vids = V(grAZ))
-obs.degree = igraph::degree(grAZ)
 
-el.ca = obs.hwi[which(obs.hwi$Site == "CA"),c(2,4,8)] # only want ID1, ID2 and hwi; separate sites
-colnames(el.ca)[3] = "weight"
-grCA = graph_from_data_frame(el.ca, directed = F) # data need to be a class "igraph"
-obs.strength = strength(grCA,vids = V(grCA))
-obs.degree = igraph::degree(grCA)
-
+### These data contain all individuals present in the focal follows. Will need to restrict the data frames used in the models to the grackles that had at least 2 focal follows
 
 ```
 
