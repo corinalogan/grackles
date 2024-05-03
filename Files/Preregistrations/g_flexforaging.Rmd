@@ -21,19 +21,19 @@ author:
 date: '`r Sys.Date()`'
 always_allow_html: yes
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  bookdown::pdf_document2:
+    keep_tex: true
+  number_sections: TRUE
+  fig_caption: TRUE
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
-  bookdown::pdf_document2:
-    keep_tex: true
-  number_sections: TRUE
-  fig_caption: TRUE
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
 bibliography: MyLibrary.bib
 biblio-style: authoryear
 csl: Peer-Community-Journal-PCI.csl
@@ -51,8 +51,6 @@ preamble: >
   \usepackage{amsmath} #NOTE: to make this yaml work, run install.packages("rticles")
 base_format: rticles::amsmath
 #SUBMITTING TO PCJ: use the google doc template (not the .tex file bc would have to attach all dependent files) and trim the bib to only those articles cited (see r code chunk "setup"). Follow the template and instructions
-##If not sure that the formatting is perfect, then a odt or word file is easier to handle for PCJ. With xpopbehaviorhabitatq1 (google doc to .odt and they worked only from the odt bc they had to make so many changes), most changes PCJ had to do were subsections and sub-subsections formatting, spaces after normal text, removing empty lines, format of legend of figures and legends of tables, format of tables, and avoiding big empty spaces along the article by playing with the dimensions of figures and tables. The rest was ok. 
-##PCJ says "The google doc is ok to use if there is not much corrections to do on our side after we receive it. In other words, if we received a very well formatted google doc, it's perfect. If we have to work extensively on it, it's a waste of time compared to a latex, word or odt because there is no automatic formatting in google doc."
 ##.bib file: For proper formatting of species names in the refs, wrap with {\emph{(Columbia livia)}} so it will be properly capitalized and in italics (https://stackoverflow.com/questions/62176912/references-in-rmarkdown-use-title-capitalization-as-is-in-the-bib-file)
 ---
 
@@ -142,7 +140,7 @@ This is one of the first studies planned for our long-term research on the role 
 
 # Introduction {-}
 
-## HYPOTHESES
+## Hypotheses
 
 ### H1: [Behavioral flexibility](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) [see @mikhalevich_is_2017 for a detailed definition] is related to foraging behavior (measured with focal follows using this [ethogram](https://docs.google.com/spreadsheets/d/1N8wsA3geaRGlMjRxYTRpdG2i5oCXNGq9zBlTnj02Gho/edit?usp=sharing)) in wild individuals (after their release from the aviaries). We measure flexibility in aviaries using two paradigms: reversal learning [where grackles must learn to prefer one of two options that contain food and then reverse this preference] and switching between options on a multi-access box (where grackles must learn to switch to a new option, out of four available options, when an option becomes non-functional). We expect this species to be behaviorally flexible because they are fast at reversal learning [@logan2016behavioral], they often encounter human-made "puzzle boxes" in the wild as they attempt to open packaging to access food when digging through garbage cans and eating at outdoor cafes, and they may track resources across time and space. Foraging behavior is considered central to the rapid geographic range expansion of this species and it is thought that they have been so successful by following human urban and agricultural corridors [@wehtje2003range; @peer2011invasion]. Therefore, as humans continue to modify landscapes, this increases the amount of suitable grackle habitat.
 
@@ -200,7 +198,7 @@ Great-tailed grackles (n > 200) were caught in the wild at three field sites acr
 
 ## Open data
 
-The data, scripts, and code are available at the Knowledge Network for Biocomplexity's data repository [@logan2023flexforagingdata].
+The data, scripts, and code are available at the Knowledge Network for Biocomplexity's data repository [@logan2024flexforagingdata].
 
 
 ## Dependent variables
@@ -263,7 +261,7 @@ Flexibility 1 (as above)
 
 
 
-## ANALYSIS PLAN
+## Analyses
 
 We did not exclude any data. When missing data occurred, the existing data for that individual was included in the analyses for the tests they completed. Analyses were conducted in R [current version `r getRversion()`; @rcoreteam], using several R packages: @kableextra, @stargazer, @hadfield2010mcmcglmm, @mumin, @rethinking2020, @rstan, @formatr, @rstudioapi, @rcpp, @ggplot2, knitr [@xie2018knitr; @xie2017dynamic; @xie2013knitr], @dplyr, @cmdstanr, posterior [@burkner2020posterior], cowplot [@wilkecowplot], bayesplot [@gabry2019visualization], irr [@gamer2012package], psych [@revelle2014psych; @psych], @reactable, DHARMa [@hartig2019dharma], lme4 [@lme4; @bates2012lme4]. When there was more than one experimenter within a test, experimenter was added as a random effect to account for potential differences between experimenters in conducting the tests. When there are no differences between models including or excluding experimenter as a random effect, then we use the model without this random effect for simplicity. We analyzed data for ffales and males separately because each sex has a distinct natural history.
 
@@ -271,7 +269,7 @@ We did not exclude any data. When missing data occurred, the existing data for t
 
 ### Calculating the independent variable Flexibility 4 (phis and lambdas)
 
-We used the phis and lambdas from each bird's initial discrimination plus first reversal (for the CA birds and AZ control birds) or the last two reversals (for the AZ manipulated birds). We calculated the phis and lambdas using the model and code from @lukas2022flexmanip, and entered these into the data sheets used for the analyses in the results section.
+We used the phis and lambdas from each bird's initial discrimination plus first reversal (for the CA birds and AZ control birds) or the last two reversals (for the AZ manipulated birds). We calculated the phis and lambdas using the model and code from @lukas2024flexmanip, and entered these into the data sheets used for the analyses in the results section.
 
 ```{r phislambdas, eval=FALSE}
 ### Code below copied from Lukas et al. 2022. Using OBSERVED (not simulated) data from GTGR in Woodland/Sacramento and Tempe
@@ -817,7 +815,7 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 ```
 
 
-```{r poweranalyses, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r poweranalyses, eval=FALSE, echo=F}
 ######## Power simulations for flexforaging
 
 # Load the relevant libraries
@@ -1214,7 +1212,7 @@ Figure 3. Scatterplots for females (top row) and males (bottom row) showing the 
 
  - **Deviation from the plan:** we added the independent variable, total seconds of observation time, to account for the different amounts of observation time with regard to the number of foods eaten and foraging techniques used per individual.
 
-```{r p1foodsanalysis, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p1foodsanalysis, eval=FALSE}
 library(rethinking)
 library(rstan)
 library(cmdstanr)
@@ -1582,7 +1580,7 @@ par(op)
 
 **Figure.** Scatterplots for females (top row) and males (bottom row) showing the relationship between the number of different food types eaten per second and phi (left column) or lambda (right column). Larger diameter circles indicate a larger phi or lambda.
 
-```{r p1alt2calories, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p1alt2calories, eval=FALSE}
 library(rethinking)
 library(dplyr)
 
@@ -1755,7 +1753,7 @@ In this dataset, there are 8 manipulated birds and 10 control birds who have 1-8
 
 Using the **binomial model** to determine, of the known food types and foraging techniques, how many are used, we find that flexibility manipulated individuals take an average of 1.8 more food types and use an average of 1.3 more foraging techniques than control individuals because the compatibility interval did not cross zero (food types: mean=-1.82, sd=0.74, 89% compatibility interval=-3.03 - -0.64; techniques: mean=-1.31, sd=0.80, 89% compatibility interval=-2.62 - -0.02; Figure). Not all birds were followed for the same amount of time and our expectation is that the number of food types and foraging techniques increases with increasing observation time. Therefore, we use the model to predict the number of food types and foraging techniques used if all birds were observed for the maximum amount of time. The model predicts that manipulated birds have an average of 8.9 food types and 5.8 techniques, and control birds an average of 5.4 food types and 4.3 techniques. These differences of 3.5 (food types) and 1.5 (techniques) are higher than the differences we observe with our dataset (1.8 and 1.3, respectively) because most birds were not observed for the maximum period of time. The manipulated birds have a 1.9 (food types) and 1.6 (techniques) higher likelihood of using any of the 22 food types or 10 foraging techniques than the control birds, regardless of the amount of observation time.
 
-```{r p2manipvsctrl, eval=T, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2manipvsctrl, eval=F}
 ### NUMBER OF FOOD TYPES AND FORAGING TECHNIQUES for flexibility manipulated vs control birds
 library(rethinking)
 c1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -2108,7 +2106,7 @@ where $switches_{i}$ is the number of times individual, i, changed foraging tech
 
 We find that the manipulated birds on average have a 1.9 times higher probability to switch to a different food type (mean=1.93, sd=0.31, 89% compatibility interval=1.44 - 2.38), and a 1.7 times higher probability to switch to a different foraging technique (mean=1.69, sd=0.33, 89% compatibility interval=1.19 - 2.21) compared to control birds (\ref{fig:p2manipunregistered}). The manipulated birds have an average probability of switching among food types of 16% per minute and among techniques of 11% per minute, whereas control birds on average switch food types with a probability of 8% per minute and foraging techniques with a probability of 7% per minute.
 
-```{r p2manipunregistered, eval=T, out.width="10cm",fig.align = "center", fig.cap="The probability of switching among food types (A) and foraging techniques (B) per minute for the control and manipulated birds. The small circles are the data points per individual and the large circles are the estimated means with their 89% compatibility intervals represented by the vertical lines."}
+```{r p2manipunregistered, eval=F}
 ### NUMBER OF FOOD TYPES for flexibility manipulated vs control birds - did manipulated switch more?
 library(rethinking)
 library(dplyr)
@@ -2499,7 +2497,7 @@ par(op)
 
 In addition to the manipulated birds switching between food types more often than control birds, in an additional unregistered analysis, we explored whether it was also likely that the manipulated birds used more food types in part because they ate more often than control birds. We found that manipulated birds were observed to forage more frequently per minute than control birds (contrast: mean=0.18, sd=0.03, 89%CI=0.13-0.24). The difference in food types arises because control and manipulated birds feed on slightly different food types with manipulated birds having more food types that only they eat. Nevertheless, even after accounting for the total number of food events, the manipulated birds still switch  among food types more often than control birds (contrast: mean=-0.04, sd=0.03, 89%CI=-0.09-0.00). For foraging technique switches, after accounting for the number of feeding events, the manipulated birds have higher switch rates per minute, but the differences are not reliable with our small sample size as indicated by the compatibility interval crossing zero (contrast: mean=-0.02, sd=0.02, 89%CI=-0.04-0.01).
 
-```{r p2manipvsctrlsuppfeedingrate, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2manipvsctrlsuppfeedingrate, eval=FALSE}
 library(dplyr)
 library(tidyr)
 ### NUMBER OF FEEDING EVENTS for flexibility manipulated vs control birds 
@@ -2597,7 +2595,7 @@ lines(predevents_control_seq ~  seq(from=0,to=9000,length=10),col=1)
 lines(predevents_manipulated_seq ~  seq(from=0,to=9000,length=10),col=2)
 ```
 
-```{r p2manipvsctrlsuppswitching, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2manipvsctrlsuppswitching, eval=FALSE}
 ### NUMBER OF FOOD TYPE SWITCHES for flexibility manipulated vs control birds - did manipulated switch more?
 library(rethinking)
 library(dplyr)
@@ -3341,7 +3339,7 @@ Figure 9. Illustration of the social networks for the Arizona (gray, left) and C
 
 
 
-```{r p4pt1socialnetwork, eval=T}
+```{r p4pt1socialnetwork, eval=F}
 ### Create social network graph figure from ALL associations between banded birds ###
 #Load social data
 ff <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_social.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -4147,7 +4145,7 @@ par(op)
 
 **Figure.** Scatterplots showing the lack of relationship between the Shannon Diversity Index with $\phi$ and $\lambda$ for both sexes.
 
-```{r p4 permutations, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p4 permutations, eval=FALSE}
 # Because social network metrics are not independent, we randomly permute the associations among individuals and re-run the models to test if the effect of flexibility on the social network metrics is greater than that seen at random association levels.
 # To generate random associations, we need the original edgelist, before it has been aggregated for calculations of hwi. In this edgelist we can randomize which grackles are seen together, then re-calculate hwi and the social network metrics, degree, strength and max bond strength.
 #load social association data in the form of an edgelist. This is only nonbreeding season data.
@@ -4322,7 +4320,7 @@ for(i in 1:10000){
 
 **Analysis:** Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 130,000 iterations with a thinning interval of 10, a burnin of 30,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary to meet this criterion. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
-```{r p5, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p5, eval=FALSE}
 library(rethinking)
 p5 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
 p% <- data.frame(p5)
@@ -5178,7 +5176,7 @@ plot_grid(mp, ml, fp, fl, align='h', ncol=2, labels=c('A','B','C','D'), label_si
 
 We found support for eight negative and one positive relationship, and nine instances of no strong relationship between flexibility (reversal 1) and the **proportion of the diet that was human food**, and negative or no relationships with **distance to a human food source** or **number of human food sources** within their home range depending on the sex of the bird and the flexibility measure used. Because of this mixed support, we conducted an unregistered analysis to evaluate whether, overall, the prediction was supported or not and, if so, in which direction. Overall, this indicates that human foods are not disproportionately used by the more flexible individuals, but more by the less flexible individuals, which is counter to our primary prediction. We thought that the more flexible individuals would use more human foods because they might stay near their parent’s home range or move around to seek out new opportunities. We found support for both of these scenarios: individuals in the Arizona population did not disperse very far [@sevchik2021dispersal], and individuals in the California population moved large distances across daily and annual time periods [@mccune2020spaceuse in prep.]. Despite this, flexibility did not seem to be related to human foods and their sources, potentially because grackle home ranges encompass many different types of food resources. Because this species is highly associated with human modified landscapes, we predicted they would likely rely on human foods as part of the reason for this association. However, an alternative possibility is that this species’ shift toward using more urban and arid environments [@summers2023xpop] might not be due to grackles relying more heavily on human foods, but rather urban water sources. Grackles eat a variety of natural foods (e.g., insects, worms, fruit), which are present in urban and non-urban habitats. The water available in an urban area via fountains, sprinklers, human-made ponds, lakes, and waterways can provide a stark contrast to the surrounding natural areas, which might be dominated by deserts (as in both grackle populations), forests, or agriculture (as in the California population).
 
-```{r multipleanalysesperprediction, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r multipleanalysesperprediction, eval=FALSE}
 ### In prediction 3, there were 18 analyses with 8 being negative, 1 positive, and 9 no relationship. What should we conclude overall? This analysis will tell us by randomly simulating 18 analyses where there was no effect. If we observe in the simulated 18 analyses that sometimes results can be positive and negative, it can tell us the likely distribution of positive/negative/null results to expect. We compare the expected versus the observed distribution of positive/negative/null results to determine whether the observed distribution could occur if there was no effect or if it could only occur if there is an actual effect, which is so small that we don't consistently detect it.
 
 library(cmdstanr)
@@ -5382,7 +5380,7 @@ To be able to conduct focal follows [methods as in @altmann1974observational], a
 
 Bergeron was the first person to conduct focal follows, therefore she trained McCune and Folsom until they passed interobserver reliability (on 10 June 2019) for each of the 6 variables listed in the preregistration. In March 2021, Rolls passed interobserver reliability (training with McCune) in the California population.
 
-```{r ior, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r ior, eval=FALSE}
 # Inter/intra-rater reliability using Cohen's kappa when the variable is categorical (scale=1+) or intra-class correlation coefficient when the variable is continuous (Mandrekar 2011 J Thoracic Oncology 6(1):6-7 https://doi.org/10.1097/JTO.0b013e318200f983)
 
 # Intra-class correlation / reliability coefficient / the
@@ -5498,7 +5496,7 @@ Microhabitat: Cohen's unweighted kappa = 1.00
 
 Group size = 1.00
 
-```{r iorrolls, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r iorrolls, eval=FALSE}
 #Cohen's kappa for CLR=Christa Rolls' recoded data vs the original transcribed data
 library(psych) #Cohen's kappa package
 
@@ -5532,18 +5530,18 @@ We found that these models came to the same conclusion that manipulated birds at
 
 **Table SM2.1.** Contrasts showing that, for each food type and each foraging technique as well as across food types and foraging techniques, whether manipulated birds are more likely to use them than control birds.
 
-```{r p2manipvsctrlsupp1table, eval=T, warning=FALSE, results='asis', include=TRUE}
+```{r p2manipvsctrlsupp1table, eval=T}
 library(kableExtra)
 library(dplyr)
 smtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_table_sm_p2.csv"), header=T, sep=",", stringsAsFactors=F)
 smtable <- data.frame(smtable)
-colnames(sumtable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
+colnames(smtable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
-knitr::kable(sumtable) %>%
+knitr::kable(smtable) %>%
 kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 6)
 ```
 
-```{r p2manipvsctrlsupp1, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r p2manipvsctrlsupp1, eval=FALSE}
 library(dplyr)
 library(tidyr)
 ### NUMBER OF FOOD TYPES for flexibility manipulated vs control birds using Richard McElreath's vocalization Poisson model that accounts for undersampling (didn't observe all of the food types an individual eats) and for the baseline levels of each food type in the population (https://github.com/rmcelreath/cg_vocal_repertoires/blob/main/model_ulam_covariates.r)
@@ -5892,6 +5890,9 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 
 **Table SM4.** Ethogram used for the great-tailed grackle focal follow research. For state behaviors, if the bird pauses the behavior for up to 10 sec, keep the state going. If it pauses for >10 sec, end the state.
 
+![](g_flexforaging_ethogram1.png){width=50%}
+![](g_flexforaging_ethogram2.png){width=50%}
+![](g_flexforaging_ethogram3.png){width=50%}
 
 
 # REFERENCES
