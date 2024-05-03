@@ -4418,6 +4418,47 @@ for(i in 1:10000){
 
 ### These data contain all individuals present in the focal follows. Will need to restrict the data frames used in the models to the grackles that had at least 2 focal follows
 
+
+# Check whether actual social network data differs from permuted data
+
+# First load the actual data
+
+b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+b1 <- data.frame(b1)
+
+
+# Load permuted data for the analyses. We go through the different variables one by one, and check them separately for each of the two populations
+
+# Maximum bond strength Woodland California
+ca_maxbond_permuted<-read.table(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_CApermmaxBond.csv"), header=T, sep=",", stringsAsFactors=F)
+
+ca_maxbond_permuted<-ca_maxbond_permuted[ca_maxbond_permuted$ID %in% b1$BirdID,]
+
+bCA<-b1[b1$BirdID %in% ca_maxbond_permuted$ID,]
+ca_maxbond_actual<-bCA$MaxBondStrength
+
+ca_maxbond_permuted<-ca_maxbond_permuted[,3:10002]
+ca_maxbond_permuted_forcomparison<-as.numeric(unlist(ca_maxbond_permuted))
+ca_maxbond_permuted_forcomparison<-ca_maxbond_permuted_forcomparison[is.na(ca_maxbond_permuted_forcomparison)==F]
+
+ca_maxbond_actual_forcomparison<-ca_maxbond_actual[is.na(ca_maxbond_actual)==F]
+ca_maxbond_permuted_forcomparison<-ca_maxbond_permuted_forcomparison[1:94197]
+
+dat_ca_maxbond<-list(values=c(ca_maxbond_permuted_forcomparison,rep(ca_maxbond_actual_forcomparison,5541)),origin=c(rep(1,5541*17),rep(2,5541*17)))
+                     
+                     
+permmodel <- ulam( alist(
+  values ~ dnorm(mu,sigma), 
+  mu <- a[origin],
+  a[origin]~dnorm(0,0.1),
+  sigma~dexp(1)
+) , data=dat_ca_maxbond, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+post<-extract.samples(permmodel)
+contrast<-post$a[,2]-post$a[,1]
+precis(contrast)
+
+# The contrast shows that the permutation does not simply redistribute values across individuals, but that, likely because. of the uncertainty around unbanded birds, the permuted networks are fundamentally different from those observed among the banded birds. It appears that in the permutations the total number of interactions involving banded birds are systematically lower than in the observed data. Accordingly, all social network measures in the permutations do not reflect the underlying structure of the actual network.
+
 ```
 
 ## P5: Flexibility and immigration
