@@ -4063,63 +4063,163 @@ mdemout <- precis( mdem , depth=2 )
 
 ### RELATEDNESS: Relatedness for the strongest bond (measured following the protocol in Thrasher et al. (2018) to estimate pairwise relatedness between all individuals based on the extent of sharing of genetic variants as determined by ddRADseq)
 
-#remove the birds who don't have data in all variables
-re <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["MaxBondPartner"]))) 
+library(related) # see https://github.com/timothyfrasier/related?tab=readme-ov-file
 
-#Load the data sheet that has the relatedness data
-# relatedness <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_relatedness.csv"), header=T, sep=",", stringsAsFactors=F)
-#Link the two data sheets
-re$maxbondrelatedness<-NA
-for(i in 1:nrow(re)){
-re[i,]$maxbondrelatedness<-relatedness[which(rownames(relatedness)==re[i,]$BirdID),which(colnames(relatedness)==re[i,]$MaxBondPartner)]
-}
+# Load genotype data for California grackles
+wo_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Tempe.txt")
+
+# Load genotype data for Arizona Grackles
+az_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_AZgrackle_genepop_Woodland.txt")
+
+
+#Analysis 1: 
+#Calculate pairwise relatedness, here choosing the relatedness method developed by Wang, Queller & Goodknight, Lynch & Li
+wo_outfile<-coancestry(wo_input$gdata,wang=1,quellergt=1,lynchli=1)
+az_outfile<-coancestry(az_input$gdata,wang=1,quellergt=1,lynchli=1)
+
+#extract the relevant information from the file
+wo_pairwise_r<-wo_outfile$relatedness
+az_pairwise_r<-az_outfile$relatedness
+
+# Calculate for each individuals their pairwise relatedness to all other members of the group, first for the California grackles
+wo_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(wo_pairwise_r),ncol=ncol(wo_pairwise_r)))
+colnames(wo_completerelatedness)<-colnames(wo_pairwise_r)
+wo_completerelatedness$pair.no<-c(wo_pairwise_r$pair.no,wo_pairwise_r$pair.no)
+wo_completerelatedness$ind1.id<-c(wo_pairwise_r$ind1.id,wo_pairwise_r$ind2.id)
+wo_completerelatedness$ind2.id<-c(wo_pairwise_r$ind2.id,wo_pairwise_r$ind1.id)
+wo_completerelatedness$group<-c(wo_pairwise_r$group,wo_pairwise_r$group)
+wo_completerelatedness$trioml<-c(wo_pairwise_r$trioml,wo_pairwise_r$trioml)
+wo_completerelatedness$wang<-c(wo_pairwise_r$wang,wo_pairwise_r$wang)
+wo_completerelatedness$lynchli<-c(wo_pairwise_r$lynchli,wo_pairwise_r$lynchli)
+wo_completerelatedness$lynchrd<-c(wo_pairwise_r$lynchrd,wo_pairwise_r$lynchrd)
+wo_completerelatedness$ritland<-c(wo_pairwise_r$ritland,wo_pairwise_r$ritland)
+wo_completerelatedness$quellergt<-c(wo_pairwise_r$quellergt,wo_pairwise_r$quellergt)
+wo_completerelatedness$dyadml<-c(wo_pairwise_r$dyadml,wo_pairwise_r$dyadml)
+
+
+# Calculate for each individuals their pairwise relatedness to all other members of the group, now for the Arizona grackles
+az_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(az_pairwise_r),ncol=ncol(az_pairwise_r)))
+colnames(az_completerelatedness)<-colnames(az_pairwise_r)
+az_completerelatedness$pair.no<-c(az_pairwise_r$pair.no,az_pairwise_r$pair.no)
+az_completerelatedness$ind1.id<-c(az_pairwise_r$ind1.id,az_pairwise_r$ind2.id)
+az_completerelatedness$ind2.id<-c(az_pairwise_r$ind2.id,az_pairwise_r$ind1.id)
+az_completerelatedness$group<-c(az_pairwise_r$group,az_pairwise_r$group)
+az_completerelatedness$trioml<-c(az_pairwise_r$trioml,az_pairwise_r$trioml)
+az_completerelatedness$wang<-c(az_pairwise_r$wang,az_pairwise_r$wang)
+az_completerelatedness$lynchli<-c(az_pairwise_r$lynchli,az_pairwise_r$lynchli)
+az_completerelatedness$lynchrd<-c(az_pairwise_r$lynchrd,az_pairwise_r$lynchrd)
+az_completerelatedness$ritland<-c(az_pairwise_r$ritland,az_pairwise_r$ritland)
+az_completerelatedness$quellergt<-c(az_pairwise_r$quellergt,az_pairwise_r$quellergt)
+az_completerelatedness$dyadml<-c(az_pairwise_r$dyadml,az_pairwise_r$dyadml
+
+
+################################################################################################################################
+
+# Link to additional data - 
+
+# prepare the average relatedness data to match the names to the identifiers
+wo_individualrelatedness$ind1.id<-gsub("-","",wo_individualrelatedness$ind1.id)
+az_individualrelatedness$ind1.id<-gsub("-","",az_individualrelatedness$ind1.id)
+
+individualrelatedness<-rbind(wo_individualrelatedness,az_individualrelatedness)
+
+# Load data sheet that links information on identifiers to their names
+idinfo <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpop_flexforaging_individualinfoforrelatedness.csv"), header=T, sep=",", stringsAsFactors=F)
+
+idinfo$BirdID<-gsub("-","",idinfo$BirdID)
+birdnames<-as.data.frame(matrix(ncol=2,nrow=nrow(idinfo)))
+colnames(birdnames)<-c("ind1.id","BirdID")
+birdnames$ind1.id<-idinfo$BirdID
+birdnames$BirdID<-idinfo$Name
+
+completerelatedness<-rbind(wo_completerelatedness,az_completerelatedness)
+completerelatedness$ind1.id<-gsub("-","",completerelatedness$ind1.id)
+completerelatedness$ind2.id<-gsub("-","",completerelatedness$ind2.id)
+
+completerelatedness<-left_join(completerelatedness,birdnames,by="ind1.id")
+colnames(birdnames)<-c("ind2.id","BirdIDpartner")
+completerelatedness<-left_join(completerelatedness,birdnames,by="ind2.id")
+
+completerelatedness[completerelatedness$BirdID %in% "Akxi",]$BirdID <- "Ak'xi"
+completerelatedness[completerelatedness$BirdID %in% "Tzanatl preciosa",]$BirdID <- "Tzanatl Preciosa"
+completerelatedness[completerelatedness$BirdID %in% "Molé",]$BirdID <- "Mole"
+completerelatedness[completerelatedness$BirdID %in% "Piña",]$BirdID <- "Pina"
+completerelatedness[completerelatedness$BirdIDpartner %in% "Akxi",]$BirdIDpartner <- "Ak'xi"
+completerelatedness[completerelatedness$BirdIDpartner %in% "Tzanatl preciosa",]$BirdIDpartner <- "Tzanatl Preciosa"
+completerelatedness[completerelatedness$BirdIDpartner %in% "Molé",]$BirdIDpartner <- "Mole"
+completerelatedness[completerelatedness$BirdIDpartner %in% "Piña",]$BirdIDpartner <- "Pina"
+
+
+pairwiserelatedness<-as.data.frame(matrix(ncol=3,nrow=nrow(completerelatedness)))
+colnames(pairwiserelatedness)<-c("BirdID","MaxBondPartner","relatednessmaxbond")
+pairwiserelatedness$BirdID<-c(completerelatedness$BirdID)
+pairwiserelatedness$MaxBondPartner<-c(completerelatedness$BirdIDpartner)
+pairwiserelatedness$relatednessmaxbond<-c(completerelatedness$quellergt)
+pairwiserelatedness$partners<-unite(data=pairwiserelatedness,col=partners,BirdID,MaxBondPartner,sep=",")
+
+pairwiserelatedness<-pairwiserelatedness %>% unite("partners",BirdID:MaxBondPartner,remove=FALSE)
+pairwiserelatedness<-pairwiserelatedness[,c(1,4)]
+
+b3<-b2 %>% unite("partners",BirdID,MaxBondPartner,remove=FALSE)
+
+b3<-left_join(b3,pairwiserelatedness,by="partners")
 
 #distribution: even though relatedness is between 0 and 1 (the proportion of alleles you share), it is a continuous variable so the binomial doesn't work. Use normal distribution
 
-#PHI and LAMBDA
+# Is there an association between flexibility and relatedness with the maximum bond partner?
+
+# We keep females and males combined here
+library(rethinking)
+
+b4<-b3[is.na(b3$relatednessmaxbond)==F,]
+
+#PHI AND LAMBDA model
+mrmb <- list(relatedness = b4$relatednessmaxbond,
+            phi = standardize(b4$Phi),
+            lambda = standardize(b4$Lambda)
+)
+set.seed(1109)
+mrmbmodel <- ulam( alist(
+  relatedness ~dnorm(mu,sigma),
+  mu <- a + bp*phi + bl*lambda,
+  a~dnorm(0,0.1), #relatedness values are centered on zero
+  c(bp,bl)~dnorm(0,1),
+  sigma~dexp(1)
+) , data=mrmb, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mrmbout <- precis( mrmbmodel , depth=2 )
+# mean   sd  5.5% 94.5% n_eff Rhat4
+# a     -0.01 0.02 -0.04  0.01  1923  1.00
+# bl    -0.01 0.02 -0.04  0.02  1293  1.00
+# bp     0.01 0.02 -0.03  0.04  1369  1.00
+# sigma  0.07 0.01  0.05  0.10  1034  1.01
+#No relationship between phi or lambda and the relatedness of an individual to the partner they have their maximum bond with
+
+
+#LATENCY model
 #remove the birds who don't have data in all variables
-rem <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["maxbondrelatedness"]))) 
+mrmblat <- subset(b4,!(is.na(b4["MABavgLatencySwitch"])) ) 
+mrmblat2 <- mrmblat[!mrmblat$MABavgLatencySwitch=="-",]
+mrmblat2$MABavgLatencySwitch <- as.numeric(mrmblat2$MABavgLatencySwitch)
 
-mr <- list(maxbondrelatedness = rem$maxbondrelatedness,
-            phi = standardize(rem$Phi),
-            lambda = standardize(rem$Lambda),
-            rank = standardize(rem$DomRank)
-              )
-set.seed(1439)
-mrmodel <- ulam( alist(
-       maxbondrelatedness ~dnorm(mu,sigma),
-       mu <- a + bp*phi + bl*lambda + br*rank,
-       a~dnorm(0.1,1), #maxbondstrength values are close to 0.1
-       c(bp,bl,br)~dnorm(0,1),
-       sigma~dexp(1)
-    ) , data=mr, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+mrmblatd <- list(relatedness = mrmblat2$relatednessmaxbond,
+                latency = standardize(mrmblat2$MABavgLatencySwitch)
+)
+set.seed(1111)
+mrmblatmodel <- ulam( alist(
+  relatedness ~ dnorm(mu,sigma), 
+  mu <- a + bl*latency,
+  a~dnorm(0,0.1), #relatedness values are centered on zero
+  bl~dnorm(0,1),
+  sigma~dexp(1)
+) , data=mrmblatd, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-mrout <- precis( mrmodel , depth=2 )
-#
-#Flexible individuals are/are not more/less likely related to their main bonded partner
-
-
-#LATENCY
-#remove the birds who don't have data in all variables
-relat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["maxbondrelatedness"]))) 
-relat2 <- relat[!relat$MABavgLatencySwitch=="-",]
-relat2$MABavgLatencySwitch <- as.numeric(relat2$MABavgLatencySwitch)
-
-mr <- list(maxbondrelatedness = re$maxbondrelatedness,
-            latency = standardize(re$MABavgLatencySwitch),
-            rank = standardize(re$DomRank)
-              )
-set.seed(1440)
-mrmodel <- ulam( alist(
-        maxbondrelatedness ~ dbinom(1,p), 
-        logit(p) <- a + blat*latency + br*rank, 
-        a ~ dnorm(-2,1), #maxbondrelatedness values are close to 0.1 and logit(0.1)=-2 
-        c(blat,br)~dnorm(0,1)
-    ) , data=mr, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-mrout <- precis( mrmodel , depth=2 )
-#
-#Flexible individuals are/are not more/less likely related to their main bonded partner
+mrmblatout <- precis( mrmblatmodel , depth=2 )
+# mean   sd  5.5% 94.5% n_eff Rhat4
+# a     -0.02 0.02 -0.05  0.01  1517     1
+# bl    -0.01 0.02 -0.05  0.02  1204     1
+# sigma  0.07 0.02  0.05  0.10  1431     1
+#No relationship between latency and relatedness with maximum bond partner
 ```
 
 ```{r p4figterritory, eval=T}
@@ -4326,92 +4426,154 @@ for(i in 1:10000){
 
 ```{r p5, eval=FALSE}
 library(rethinking)
-p5 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-p% <- data.frame(p5)
+library(related) # see https://github.com/timothyfrasier/related?tab=readme-ov-file
 
-# remove NAs
-p5 <- subset(p5,!(is.na(p5["ProbImmigrant"])))
-p5 <- subset(p5,!(is.na(p5["Phi"])))
-p5 <- subset(p5,!(is.na(p5["Lambda"])))
+# Load genotype data for California grackles
+wo_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Tempe.txt")
 
-#Separate the sexes
-f5 <- p5[p5$Sex=="F",]
-m5 <- p5[p5$Sex=="M",]
-
-#Summary
-f5$BirdID <- as.factor(f5$BirdID)
-#length(levels(f8$BirdID)) # females
-m5$BirdID <- as.factor(m5$BirdID)
-#length(levels(m8$BirdID)) # males
-
-# RUN THE MODEL on the actual data (similar to J.Q4 in ManyIndividuals: line 1024)
-# MALES, phi. Set up data sheet for model
-datm5 <- list(follows = m5$Probimmigrant, 
-            phi = standardize(m5$Phi),
-            lambda = standardize(m5$Lambda)
-              )
-
-# Run the models for PHI and LAMBDA
-set.seed(27)
-m5phi <- ulam( alist(
-        follows ~ dbinom(1,p),
-        logit(p) <- a + b*phi , #microhabitat=random variable
-        a ~ dnorm(0,1) #mean=0 bc response variable is standardized
-    ) , data=datm5 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-outputm5p <- precis( m5phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
-
-set.seed(28)
-m5lambda <- ulam( alist(
-        follows ~ dbinom(1,p),
-        logit(p) <- a + b*lambda , 
-        a ~ dnorm(0,1) #mean=0 bc response variable is standardized
-    ) , data=datm5 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-outputm5l <- precis( m5lambda , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
+# Load genotype data for Arizona Grackles
+az_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_AZgrackle_genepop_Woodland.txt")
 
 
-# FEMALES, phi. Set up data sheet for model
-datf5 <- list(follows = f5$Probimmigrant, 
-            phi = standardize(f5$Phi),
-            lambda = standardize(f5$Lambda)
-              )
-set.seed(29)
-f5phi <- ulam( alist(
-        follows ~ dbinom(1,p),
-        logit(p) <- a + b*phi , #microhabitat=random variable
-        a ~ dnorm(0,1) #mean=0 bc response variable is standardized
-    ) , data=dat5 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+#Analysis 1: 
+#Calculate pairwise relatedness, here choosing the relatedness method developed by Wang, Queller & Goodknight, Lynch & Li
+wo_outfile<-coancestry(wo_input$gdata,wang=1,quellergt=1,lynchli=1)
+az_outfile<-coancestry(az_input$gdata,wang=1,quellergt=1,lynchli=1)
 
-outputm5p <- precis( f5phi , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
+#extract the relevant information from the file
+wo_pairwise_r<-wo_outfile$relatedness
+az_pairwise_r<-az_outfile$relatedness
 
-set.seed(30)
-f5lambda <- ulam( alist(
-        follows ~ dbinom(1,p),
-        logit(p) <- a + b*lambda , 
-        a ~ dnorm(0,1) #mean=0 bc response variable is standardized
-    ) , data=dat5 , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+# Calculate for each individuals their pairwise relatedness to all other members of the group, first for the California grackles
+wo_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(wo_pairwise_r),ncol=ncol(wo_pairwise_r)))
+colnames(wo_completerelatedness)<-colnames(wo_pairwise_r)
+wo_completerelatedness$pair.no<-c(wo_pairwise_r$pair.no,wo_pairwise_r$pair.no)
+wo_completerelatedness$ind1.id<-c(wo_pairwise_r$ind1.id,wo_pairwise_r$ind2.id)
+wo_completerelatedness$ind2.id<-c(wo_pairwise_r$ind2.id,wo_pairwise_r$ind1.id)
+wo_completerelatedness$group<-c(wo_pairwise_r$group,wo_pairwise_r$group)
+wo_completerelatedness$trioml<-c(wo_pairwise_r$trioml,wo_pairwise_r$trioml)
+wo_completerelatedness$wang<-c(wo_pairwise_r$wang,wo_pairwise_r$wang)
+wo_completerelatedness$lynchli<-c(wo_pairwise_r$lynchli,wo_pairwise_r$lynchli)
+wo_completerelatedness$lynchrd<-c(wo_pairwise_r$lynchrd,wo_pairwise_r$lynchrd)
+wo_completerelatedness$ritland<-c(wo_pairwise_r$ritland,wo_pairwise_r$ritland)
+wo_completerelatedness$quellergt<-c(wo_pairwise_r$quellergt,wo_pairwise_r$quellergt)
+wo_completerelatedness$dyadml<-c(wo_pairwise_r$dyadml,wo_pairwise_r$dyadml)
 
-outputf5l <- precis( f5lambda , depth=2 ) #look at the b values (the slopes) and whether the interval crosses zero to 
+# We choose the relatedness estimator by Queller & Goodknight because we noticed in previous analyses that this estimator is least affected by the missing data
+wo_individualrelatedness<-wo_completerelatedness %>% group_by(ind1.id) %>% summarise(average_r=mean(quellergt))
+wo_individualrelatedness<-as.data.frame(wo_individualrelatedness)
+
+# Calculate for each individuals their pairwise relatedness to all other members of the group, now for the Arizona grackles
+az_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(az_pairwise_r),ncol=ncol(az_pairwise_r)))
+colnames(az_completerelatedness)<-colnames(az_pairwise_r)
+az_completerelatedness$pair.no<-c(az_pairwise_r$pair.no,az_pairwise_r$pair.no)
+az_completerelatedness$ind1.id<-c(az_pairwise_r$ind1.id,az_pairwise_r$ind2.id)
+az_completerelatedness$ind2.id<-c(az_pairwise_r$ind2.id,az_pairwise_r$ind1.id)
+az_completerelatedness$group<-c(az_pairwise_r$group,az_pairwise_r$group)
+az_completerelatedness$trioml<-c(az_pairwise_r$trioml,az_pairwise_r$trioml)
+az_completerelatedness$wang<-c(az_pairwise_r$wang,az_pairwise_r$wang)
+az_completerelatedness$lynchli<-c(az_pairwise_r$lynchli,az_pairwise_r$lynchli)
+az_completerelatedness$lynchrd<-c(az_pairwise_r$lynchrd,az_pairwise_r$lynchrd)
+az_completerelatedness$ritland<-c(az_pairwise_r$ritland,az_pairwise_r$ritland)
+az_completerelatedness$quellergt<-c(az_pairwise_r$quellergt,az_pairwise_r$quellergt)
+az_completerelatedness$dyadml<-c(az_pairwise_r$dyadml,az_pairwise_r$dyadml)
+
+az_individualrelatedness<-az_completerelatedness %>% group_by(ind1.id) %>% summarise(average_r=mean(quellergt))
+az_individualrelatedness<-as.data.frame(az_individualrelatedness)
 
 
-# Run the models for LATENCY
+################################################################################################################################
+
+# Link to additional data - 
+
+# prepare the average relatedness data to match the names to the identifiers
+wo_individualrelatedness$ind1.id<-gsub("-","",wo_individualrelatedness$ind1.id)
+az_individualrelatedness$ind1.id<-gsub("-","",az_individualrelatedness$ind1.id)
+
+individualrelatedness<-rbind(wo_individualrelatedness,az_individualrelatedness)
+
+# Load data sheet that links information on identifiers to their names
+idinfo <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpop_flexforaging_individualinfoforrelatedness.csv"), header=T, sep=",", stringsAsFactors=F)
+
+idinfo$BirdID<-gsub("-","",idinfo$BirdID)
+birdnames<-as.data.frame(matrix(ncol=2,nrow=nrow(idinfo)))
+colnames(birdnames)<-c("ind1.id","BirdID")
+birdnames$ind1.id<-idinfo$BirdID
+birdnames$BirdID<-idinfo$Name
+
+individualrelatedness<-left_join(individualrelatedness,birdnames,by="ind1.id")
+
+# Correct name spelling to match with general data sheet
+individualrelatedness[individualrelatedness$BirdID %in% "Akxi",]$BirdID <- "Ak'xi"
+individualrelatedness[individualrelatedness$BirdID %in% "Tzanatl preciosa",]$BirdID <- "Tzanatl Preciosa"
+individualrelatedness[individualrelatedness$BirdID %in% "Molé",]$BirdID <- "Mole"
+individualrelatedness[individualrelatedness$BirdID %in% "Piña",]$BirdID <- "Pina"
+
+# Join information on average relatedness with general data sheet
+
+b1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
+b1 <- data.frame(b1)
+
+
+b2<-left_join(b1,individualrelatedness,by="BirdID")
 
 
 
+################################################################################################################################
 
-#GLMM 
-#females
-f1 <- MCMCglmm(ImmigrantProbability ~ Phi + Lambda, random=~Population, family="poisson", data=fem, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f1)
-#autocorr(f1$Sol) #Did fixed effects converge?
-#autocorr(f1$VCV) #Did random effects converge?
+# Is there an association between flexibility and the probability that individual is an immigrant (measured as average relatedness to other individuals in population)
 
-#males
-f2 <- MCMCglmm(ImmigrantProbability ~ Phi + Lambda, random=~Population, family="poisson", data=mal, verbose=F, prior=prior, nitt=130000, thin=10, burnin=30000)
-summary(f2)
-#autocorr(f2$Sol) #Did fixed effects converge?
-#autocorr(f2$VCV) #Did random effects converge?
+# We keep females and males combined here
+
+#PHI AND LAMBDA model
+mim <- list(immigration = b2$average_r,
+            phi = standardize(b2$Phi),
+            lambda = standardize(b2$Lambda)
+)
+set.seed(1109)
+mimmodel <- ulam( alist(
+  immigration ~dnorm(mu,sigma),
+  mu <- a + bp*phi + bl*lambda,
+  a~dnorm(0,0.1), #relatedness values are centered on zero
+  c(bp,bl)~dnorm(0,1),
+  sigma~dexp(1)
+) , data=mim, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mimout <- precis( mimmodel , depth=2 )
+# mean   sd  5.5% 94.5% n_eff Rhat4
+# a     -0.02 0.01 -0.04  0.00  2195     1
+# bl     0.01 0.01 -0.01  0.03  1452     1
+# bp     0.01 0.01 -0.01  0.03  1543     1
+# sigma  0.07 0.01  0.06  0.09  1657     1
+#No relationship between phi or lambda and how closely individuals are related to others in the group
+
+
+#LATENCY model
+#remove the birds who don't have data in all variables
+mimlat <- subset(b2,!(is.na(b2["MABavgLatencySwitch"])) ) 
+mimlat2 <- mimlat[!mimlat$MABavgLatencySwitch=="-",]
+mimlat$MABavgLatencySwitch <- as.numeric(mimlat$MABavgLatencySwitch)
+
+mimlatd <- list(immigration = mimlat$average_r,
+            latency = standardize(mimlat$MABavgLatencySwitch)
+)
+set.seed(1110)
+mimlatmodel <- ulam( alist(
+  immigration ~ dnorm(mu,sigma), 
+  mu <- a + bl*latency,
+  a~dnorm(0,0.1), #relatedness values are centered on zero
+  bl~dnorm(0,1),
+  sigma~dexp(1)
+) , data=mimlatd, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+mimlatout <- precis( mimlatmodel , depth=2 )
+# mean   sd  5.5% 94.5% n_eff Rhat4
+# a     -0.01 0.01 -0.03  0.01  1828     1
+# bl     0.01 0.01 -0.02  0.03  1284     1
+# sigma  0.07 0.01  0.05  0.09  1445     1
+#No relationship between latency and how closely individuals are related to others in the group
+
+
 ```
 
 
