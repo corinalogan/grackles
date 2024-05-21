@@ -3540,7 +3540,7 @@ obs.degree = igraph::degree(grCA)
 els.nb = aggregate(TimeStamp ~ Date + FocalBirdID + NonFocalBirdID + Site, data = ffs, FUN = "max") 
 # the original edgelist that includes only 1 association between bird pairs. For UB or UNK grackles, this assumes that if they are seen together on different days, then it is a different UB or UNK grackle
 
-#### uniquely identify each category of UB/UNK bird ####
+## uniquely identify each category of UB/UNK bird ##
 ubf = els.nb[which(els.nb$NonFocalBirdID == "unbanded adult female"),]
 ubf$num = factor(1:nrow(ubf))
 ubf$newID2 = do.call(paste0, ubf[c("NonFocalBirdID", "num")])
@@ -3675,7 +3675,7 @@ g <- data.frame(g)
 
 #remove the birds who don't have data in all variables
 max <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
-#length(unique(max$BirdID)) #22 grackles: 15 males, 7 females
+#length(unique(max$BirdID)) #19 grackles: 13 males, 6 females
 
 #determine the distribution: normal even though the variable ranges from 0 to 1, but it is on a continuous scale, therefore binomial doesn't work bc it is not binary with a proportion that can be broken up into number of X/number of X+Y
 #hist(max$MaxBond)
@@ -3698,12 +3698,12 @@ mbfmodel <- ulam( alist(
 
 mbfout <- precis( mbfmodel , depth=2 )
 #   mean   sd  5.5% 94.5% rhat ess_bulk
-# a      0.11 0.02  0.08  0.13 1.01  1521.30
-# br     0.01 0.02 -0.01  0.04 1.01  1826.06
-# bl    -0.03 0.02 -0.06  0.00 1.00  1467.19
-# bp     0.00 0.02 -0.03  0.03 1.00  1382.59
-# sigma  0.08 0.01  0.06  0.10 1.00  1305.30
-#No relationship between phi and max bond strength, lower lambda (more flexible) had higher maxbondstrength
+# a      0.12 0.02  0.10  0.15    1  1364.66
+# br     0.02 0.02 -0.01  0.05    1  1523.24
+# bl    -0.02 0.02 -0.05  0.01    1  1286.87
+# bp     0.00 0.02 -0.03  0.03    1  1325.14
+# sigma  0.07 0.01  0.05  0.09    1  1074.54
+#No relationship between phi/lambda and max bond strength
 
 
 #LATENCY model
@@ -3711,7 +3711,7 @@ mbfout <- precis( mbfmodel , depth=2 )
 mlat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["MaxBondStrength"]))) 
 mlat2 <- mlat[!mlat$MABavgLatencySwitch=="-",]
 mlat2$MABavgLatencySwitch <- as.numeric(mlat2$MABavgLatencySwitch)
-#length(unique(mlat2$BirdID)) #19 grackles: 13 males, 6 females
+#length(unique(mlat2$BirdID)) #16 grackles: 11 males, 5 females
 
 mbm <- list(maxbond = mlat2$MaxBondStrength,
             latency = standardize(mlat2$MABavgLatencySwitch),
@@ -3726,10 +3726,10 @@ mbmmodel <- ulam( alist(
     ) , data=mbm, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 mbmout <- precis( mbmmodel , depth=2 )
-#    mean   sd  5.5% 94.5% rhat ess_bulk
-# a    -3.24 0.77 -4.52 -2.04    1  1457.40
-# br    0.10 0.74 -1.00  1.33    1  1776.76
-# blat -0.16 0.72 -1.38  0.92    1  1956.76
+#       mean   sd  5.5% 94.5% rhat ess_bulk
+# a    -3.12 0.73 -4.39 -2.01    1  1877.62
+# br    0.11 0.73 -1.01  1.33    1  1834.77
+# blat -0.01 0.70 -1.12  1.10    1  1600.36
 #No relationship between latency and max bond strength
 
 
@@ -3739,7 +3739,7 @@ mbmout <- precis( mbmmodel , depth=2 )
 
 #remove the birds who don't have data in all variables
 st <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Strength"]))) 
-#length(unique(st$BirdID)) #22 grackles: 15 males, 7 females
+length(unique(st$BirdID)) #19 grackles: 13 males, 6 females
 
 #determine the distribution: binomial bc variable ranges from 0 to 1
 #hist(max$MaxBond)
@@ -3762,12 +3762,12 @@ sfm <-ulam( alist(
     ) , data=sf , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 sfmout <- precis( sfm , depth=2 )
-#     mean   sd  5.5% 94.5% rhat ess_bulk
-# a      0.24 0.05  0.16  0.32    1  1602.47
-# br     0.03 0.05 -0.05  0.11    1  2121.44
-# bl    -0.02 0.06 -0.12  0.08    1  1467.68
-# bp    -0.01 0.06 -0.11  0.08    1  1383.51
-# sigma  0.22 0.04  0.17  0.29    1  1547.04
+#        mean   sd  5.5% 94.5% rhat ess_bulk
+# a      0.28 0.05  0.20  0.36    1  1253.70
+# br     0.05 0.05 -0.04  0.13    1  1238.00
+# bl     0.01 0.06 -0.08  0.12    1  1197.23
+# bp    -0.01 0.06 -0.10  0.09    1  1359.52
+# sigma  0.21 0.04  0.15  0.28    1  1071.15
 #No relationship between phi or lambda and strength
 
 
@@ -3776,7 +3776,7 @@ sfmout <- precis( sfm , depth=2 )
 slat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["Strength"]))) 
 slat2 <- slat[!slat$MABavgLatencySwitch=="-",]
 slat2$MABavgLatencySwitch <- as.numeric(slat2$MABavgLatencySwitch)
-#length(unique(slat2$BirdID)) #19 grackles: 13 males, 6 females
+#length(unique(slat2$BirdID)) #16 grackles: 11 males, 5 females
 
 sm <- list(
   strength = slat2$Strength,
@@ -3795,10 +3795,10 @@ smm <-ulam( alist(
 
 smmout <- precis( smm , depth=2 )
 #       mean   sd  5.5% 94.5% rhat ess_bulk
-# a      0.24 0.05  0.17  0.32 1.01  1599.55
-# br     0.06 0.05 -0.02  0.13 1.00  1702.29
-# blat  -0.10 0.05 -0.18 -0.02 1.00  1569.02
-# sigma  0.20 0.04  0.15  0.27 1.00  1577.36
+# a      0.29 0.05  0.22  0.36 1.00  1924.60
+# br     0.05 0.05 -0.02  0.13 1.01  1895.24
+# blat  -0.10 0.05 -0.17 -0.02 1.00  1958.70
+# sigma  0.18 0.04  0.13  0.25 1.00  1486.59
 #The more flexible individuals (faster to switch) had stronger strengths
 
 
@@ -3810,7 +3810,7 @@ smmout <- precis( smm , depth=2 )
 # DEGREE - BANDED TO BANDED interactions ONLY
 #remove the birds who don't have data in all variables
 de <- subset(g,!(is.na(g["Phi"])) & !(is.na(g["DomRank"])) & !(is.na(g["Degree_bb"]))) 
-#length(unique(de$BirdID)) #22 grackles: 15 males, 7 females
+#length(unique(de$BirdID)) #19 grackles: 13 males, 6 females
 
 #determine the distribution: binomial bc variable ranges from 0 to 1
 #hist(max$MaxBond)
@@ -3843,7 +3843,7 @@ fdemout <- precis( fdem , depth=2 )
 delat <- subset(g,!(is.na(g["MABavgLatencySwitch"])) & !(is.na(g["DomRank"])) & !(is.na(g["Degree_bb"]))) 
 delat2 <- delat[!delat$MABavgLatencySwitch=="-",]
 delat2$MABavgLatencySwitch <- as.numeric(delat2$MABavgLatencySwitch)
-#length(unique(delat2$BirdID)) #19 grackles: 13 males, 6 females
+#length(unique(delat2$BirdID)) #16 grackles: 11 males, 5 females
 
 mde <- list(degree = delat2$Degree_bb,
               latency = standardize(delat2$MABavgLatencySwitch),
@@ -3857,11 +3857,11 @@ mdem <- ulam(
         c(blat,br)~dnorm(0,1)
   ),data=mde, log_lik=TRUE, chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 mdemout <- precis( mdem , depth=2 )
-#  mean   sd  5.5% 94.5% rhat ess_bulk
-# a     0.86 0.15  0.62  1.09    1  1413.45
-# br    0.09 0.15 -0.15  0.35    1  2001.51
-# blat -0.36 0.20 -0.69 -0.05    1  1404.59
-#More flexible (lower latency) have higher degree_bb
+#      mean   sd  5.5% 94.5% rhat ess_bulk
+# a     1.05 0.14  0.82  1.27    1  1745.76
+# br    0.09 0.16 -0.16  0.37    1  1885.69
+# blat -0.10 0.16 -0.36  0.14    1  1854.72
+#No relationship between flexibility and degree_bb
 
 
 
@@ -4113,9 +4113,9 @@ az_completerelatedness$quellergt<-c(az_pairwise_r$quellergt,az_pairwise_r$quelle
 az_completerelatedness$dyadml<-c(az_pairwise_r$dyadml,az_pairwise_r$dyadml
 
 
-################################################################################################################################
 
-# Link to additional data - 
+
+## Link to additional data ##
 
 # prepare the average relatedness data to match the names to the identifiers
 wo_individualrelatedness$ind1.id<-gsub("-","",wo_individualrelatedness$ind1.id)
