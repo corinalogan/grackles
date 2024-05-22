@@ -1,57 +1,52 @@
 ---
-title: Behavioral flexibility is related to foraging, but not social or habitat use behaviors in a species that is rapidly expanding its range
-author: 
+title: Behavioral flexibility is related to foraging, but not social or habitat use
+  behaviors in a species that is rapidly expanding its range
+author:
 - '[Logan CJ](http://CorinaLogan.com)^1^*'
 - '[Lukas D](http://dieterlukas.mystrikingly.com)^1^*'
-- 'Blackwell A^2^'
-- 'Bergeron L^3^'
-- 'Edrisi M^2^'
-- 'Folsom M^1^'
-- 'Geng X^4^'
-- 'Hardy K^4^'
-- 'He X^4^'
-- 'Johnson-Ulrich Z^3^'
-- 'LeGrande-Rolls C^1^'
-- 'Marfori Z^1^'
-- 'MacPherson M^3^'
-- 'Rowney C^1^'
-- 'Sevchik A^5^'
-- 'Smith C^2^'
+- He X^4^
+- "LeGrande-Rolls C^1^"
+- Marfori Z^1^
+- MacPherson M^3^
+- Rowney C^1^
+- Smith C^2^
 - '[McCune KB](https://www.kelseymccune.com)^3^'
-date: '`r Sys.Date()`'
-always_allow_html: yes
+date: "`r Sys.Date()`"
 output:
   pdf_document:
-    keep_tex: yes
+    keep_tex: true
     latex_engine: xelatex
   bookdown::pdf_document2:
     keep_tex: true
-  number_sections: TRUE
-  fig_caption: TRUE
-  html_document: 
+  number_sections: true
+  fig_caption: true
+  html_document:
     toc: true
     toc_depth: 4
-    toc_float: 
+    toc_float:
       collapsed: false
-    code_folding: hide 
+    code_folding: hide
+  word_document:
+    toc: true
+    toc_depth: '4'
+always_allow_html: true
 bibliography: MyLibrary.bib
 biblio-style: authoryear
-csl: Peer-Community-Journal-PCI.csl
+csl: "Peer-Community-Journal-PCI.csl"
 caption-side: bottom
 urlcolor: blue
 header-includes:
-  - \usepackage[left]{lineno}
-  - \linenumbers
-  - \usepackage{fancyhdr}
-  - \usepackage{pdflscape}
-  - \newcommand{\blandscape}{\begin{landscape}}
-  - \newcommand{\elandscape}{\end{landscape}}
-  #- \usepackage{longtable} #set longtable = TRUE in kable() to have a long table break over multiple pages https://bookdown.org/yihui/bookdown/tables.html
-preamble: >
+- \usepackage[left]{lineno}
+- \linenumbers
+- \usepackage{tabularx} #for xtable
+- \usepackage{longtable} #for xtable
+- \usepackage{fancyhdr}
+- \usepackage{pdflscape}
+- \newcommand{\blandscape}{\begin{landscape}}
+- \newcommand{\elandscape}{\end{landscape}}
+preamble: |
   \usepackage{amsmath} #NOTE: to make this yaml work, run install.packages("rticles")
 base_format: rticles::amsmath
-#SUBMITTING TO PCJ: use the google doc template (not the .tex file bc would have to attach all dependent files) and trim the bib to only those articles cited (see r code chunk "cleanbib"). Follow the template and instructions
-##.bib file: For proper formatting of species names in the refs, wrap with {\emph{(Columbia livia)}} so it will be properly capitalized and in italics (https://stackoverflow.com/questions/62176912/references-in-rmarkdown-use-title-capitalization-as-is-in-the-bib-file)
 ---
 
 ```{r, include=FALSE}
@@ -67,6 +62,8 @@ knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE)
 knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F) 
 #sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
 #set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
+
+options(xtable.comment = FALSE) #makes it so a note about how the table was printed doesn't show up in the pdf
 ```
 
 ```{r cleanbib, include=FALSE, eval=F}
@@ -130,7 +127,7 @@ df2bib(df_filtered, file = "g_flexforaging_refs.bib", append = FALSE)
 
 **This is the post-study manuscript of the preregistration that was pre-study peer reviewed and received an In Principle Recommendation on 6 Aug 2019 by:**
 
-Julia Astegiano and Esther Sebastián Gonzalez (2019) Understanding geographic range expansions in human-dominated landscapes: does behavioral flexibility modulate flexibility in foraging and social behavior? *Peer Community in Ecology*, 100026. [10.24072/pci.ecology.100026](https://doi.org/10.24072/pci.ecology.100026). Reviewers: Pizza Ka Yee Chow and Esther Sebastián González
+Julia Astegiano and Esther Sebastián González (2019) Understanding geographic range expansions in human-dominated landscapes: does behavioral flexibility modulate flexibility in foraging and social behavior? *Peer Community in Ecology*, 100026. [10.24072/pci.ecology.100026](https://doi.org/10.24072/pci.ecology.100026). Reviewers: Pizza Ka Yee Chow and Esther Sebastián González
 
 **Preregistration:** [html](http://corinalogan.com/Preregistrations/g_flexforaging.html), [pdf](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexforagingPassedPreStudyPeerReviewOn6Aug2019.pdf), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_flexforaging.Rmd)
 
@@ -809,13 +806,23 @@ where $follows_{i}$ is the proportion of focal follows that were recorded in a p
 
 
 ```{r powertable, eval=T}
-library(kableExtra)
 pt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_table_power.csv"), header=F, sep=",", stringsAsFactors=F)
 pt <- data.frame(pt)
 colnames(pt) <- c("Model type","Sample size","Effect size","Avg slope / avg contrast","Proportion of iterations that cross zero")
 
-knitr::kable(pt) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+ptable <- xtable(pt)
+align(ptable) <- "|X|X|X|X|X|X|"
+print(ptable, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", latex.environments = "center", hline.after = c(-1,0,9,12,21))
+
+library(stargazer) #Citation: Hlavac, Marek (2022). stargazer: Well-Formatted Regression and Summary Statistics Tables. R package version 5.2.3. https://CRAN.R-project.org/package=stargazer 
+
+library(pander)
+#pander(pt) #breaks the table across columns, so not super helpful
+
+library(kableExtra)
+#knitr::kable(pt) %>%
+#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 
@@ -1197,16 +1204,18 @@ setwd(currentlocation)
 
 # Results {-}
 
-![](g_flexforaging_fig_resultssummary.png){width=50%}
+![](g_flexforaging_fig_resultssummary.png){width=100%}
+
 Figure 1. Summary of all results. Pluses and minuses are relative to FLEXIBILITY and not the specific relationship between $\lambda$ or $\phi$ or latency, therefore a + means that the more flexible individuals, for example, use more food types, etc. We adopted this interpretation because a lower $\lambda$ and latency means that the individual is more flexible, while a higher $\phi$ means they are more flexible, which make the interpretation more confusing.
 
 
 ## P1: FLexibility and foraging behavior 
 
-![](g_flexforaging_fig_p1type.png){width=50%}
+![](g_flexforaging_fig_p1type.png){width=75%}
+
 Figure 2. Scatterplots for females (top row) and males (bottom row) showing the relationship between the number of different food types taken and flexibility: $\phi$ (left column), $\lambda$ (middle column), and the switching latencies on the multiaccess box (right column).
 
-![](g_flexforaging_fig_p1tech.png){width=50%}
+![](g_flexforaging_fig_p1tech.png){width=75%}
 
 Figure 3. Scatterplots for females (top row) and males (bottom row) showing the relationship between the number of different foraging techniques used and flexibility: $\phi$ (left column), $\lambda$ (middle column), and the switching latencies on the multiaccess box (right column).
 
@@ -1745,10 +1754,12 @@ Prediction: If there is a negative correlation between flexibility and the numbe
 
 ## P2: Flexibility manipulation and foraging behavior 
 
-![](g_flexforaging_fig_p2.png){width=50%}
+![](g_flexforaging_fig_p2.png){width=75%}
+
 Figure 4. The relationship between the number of food types eaten (A) or foraging techniques used (B) and observation time (number of seconds) for the manipulated (triangle points with red shading and a solid line) and control (circle points with blue shading and a dashed line) individuals.
 
-![](g_flexforaging_fig_p2switch.png){width=50%}
+![](g_flexforaging_fig_p2switch.png){width=100%}
+
 Figure 5. The probability of switching among food types (A) and foraging techniques (B) per minute for the control and manipulated birds. The small circles are the data points per individual and the large circles are the estimated means with their 89% compatibility intervals represented by the vertical lines.
 
 
@@ -2108,7 +2119,7 @@ logit($p$) ~ $\alpha_{i}$[$treatment$] *[model]*,
 
 where $switches_{i}$ is the number of times individual, i, changed foraging techniques across all of their focal follows, $totaltime_{i}$ is the number of seconds individual, i, was observed across all of its focal follows, $p$ is the probability of switching to a different technique per second, and $\alpha_{i}$ is the intercept (one per level of $treatment$: control and manipulated). Note that the model is the same when analyzing the number of food types eaten for each individual, $foodswitches_{i}$, which replaces $switches_{i}$ in the above model.
 
-We find that the manipulated birds on average have a 1.9 times higher probability to switch to a different food type (mean=1.93, sd=0.31, 89% compatibility interval=1.44 - 2.38), and a 1.7 times higher probability to switch to a different foraging technique (mean=1.69, sd=0.33, 89% compatibility interval=1.19 - 2.21) compared to control birds (\ref{fig:p2manipunregistered}). The manipulated birds have an average probability of switching among food types of 16% per minute and among techniques of 11% per minute, whereas control birds on average switch food types with a probability of 8% per minute and foraging techniques with a probability of 7% per minute.
+We find that the manipulated birds on average have a 1.9 times higher probability to switch to a different food type (mean=1.93, sd=0.31, 89% compatibility interval=1.44 - 2.38), and a 1.7 times higher probability to switch to a different foraging technique (mean=1.69, sd=0.33, 89% compatibility interval=1.19 - 2.21) compared to control birds (). The manipulated birds have an average probability of switching among food types of 16% per minute and among techniques of 11% per minute, whereas control birds on average switch food types with a probability of 8% per minute and foraging techniques with a probability of 7% per minute.
 
 ```{r p2manipunregistered, eval=F}
 ### NUMBER OF FOOD TYPES for flexibility manipulated vs control birds - did manipulated switch more?
@@ -2719,14 +2730,16 @@ contrast_sw <- precis( diffsw )
 
 ## P3: flexible = more human foods
 
-![](g_flexforaging_fig_p3foodsources.png){width=50%}
+![](g_flexforaging_fig_p3foodsources.png){width=75%}
 
 Figure 6. Proportion of human food sources inside a bird’s home range and its association with A) $\lambda$ (standardized so it is centered on zero) from the reversal learning experiment and B) the latency to switch options on the multiaccess box in females (blue triangles) and males (black circles).
 
-![](g_flexforaging_fig_p3distance.png){width=50%}
+![](g_flexforaging_fig_p3distance.png){width=60%}
+
 Figure 7. Distance (log meters) to a human food source and its association with $\lambda$ (standardized so it is centered on zero) in females (blue triangles), but not males (black circles).
 
-![](g_flexforaging_fig_p3number.png){width=50%}
+![](g_flexforaging_fig_p3number.png){width=75%}
+
 Figure 8. The number of human food sources inside the home range and its association with A) $\phi$ and B) $\lambda$ (standardized so they are centered on zero) in females (blue triangles) and males (black circles).
 and edges in the plot does not represent geographic distance.
 
@@ -3337,7 +3350,7 @@ par(op)
 ## P4: Flexibility and social bonds
 
 
-![](g_flexforaging_fig_p4network.png){width=50%}
+![](g_flexforaging_fig_p4network.png){width=100%}
 
 Figure 9. Illustration of the social networks for the Arizona (gray, left) and California (blue, bottom right) grackles. Each circle (node) represents an individual and the thickness of the line (edge) connecting two nodes is the strength of the social association, calculated using the half-weight index. The arrangement of nodes 
 
@@ -4241,9 +4254,9 @@ dat <- list(ter = te$PercentTerritoryShared, #range=0-1.54 so standardizing cent
               )
 
 # the figure
-op <- par(mfrow=c(2,1), mar=c(5.9,4.9,2,0.9))
-plot(dat$ter ~ dat$phi , pch=1 , col="black" , xlab="Phi (std)" , ylab="Percent territory shared" , xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
-plot(dat$ter ~ dat$lambda , pch=1 , col="black" , xlab="Lambda (std)" , ylab="Percent territory shared", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+op <- par(mfrow=c(1,2), mar=c(5.9,4.9,2,0.9))
+plot(dat$ter ~ dat$phi , pch=1 , col="black" , xlab=expression(phi, "(std)") , ylab="Percent territory shared" , xlim=c(-2.5,2.5), cex.lab=1, cex.axis=1, cex=1)
+plot(dat$ter ~ dat$lambda , pch=1 , col="black" , xlab=expression(lambda, "(std)"), ylab="", xlim=c(-2.5,2.5), cex.lab=1, cex.axis=1, cex=1)
 par(op)
 ```
 
@@ -4620,23 +4633,23 @@ mimlatout <- precis( mimlatmodel , depth=2 )
 
 ## P6: flexible = wider range of habitats
 
-![](g_flexforaging_fig_p6sdi.png){width=50%}
-
-Figure 10. Scatterplots showing the lack of relationship between the Shannon DIversity Index (microhabitat diversity) and $\phi$ (learning rate of attraction) and $\lambda$ (rate of deviating from learned attractions) for both sexes. Variables are standardized (std), meaning that the mean is centered on zero.
-
-
 The Shannon Diversity Index does not have a strong relationship with either flexibility component, phi or lambda, for either sex as indicated by the low means and the compatibility interval crossing zero (Table X). As such, prediction 6 (the more flexible individuals have a higher diversity index) and prediction 6 alternative (the more flexible individuals have a low diversity index indicating that they are specialists) are not supported.
 
 **Table.** Model output showing that phi and lambda did not have a strong relationship with the Shannon Diversity Index for either sex as indicated by the slopes. n_eff is the effective sample size and Rhat4 is an indicator of model convergence (1.00 is ideal).
 
 ```{r resltsp6table, eval=T}
-library(kableExtra)
 t6 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep6.csv"), header=F, sep=",", stringsAsFactors=F)
 t6 <- data.frame(t6)
 colnames(t6) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)","n_eff","Rhat4")
 
-knitr::kable(t6) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+p6table <- xtable(t6)
+align(p6table) <- "|l|l|X|X|X|X|X|X|"
+print(p6table, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", floating = TRUE, latex.environments = "center")
+
+library(kableExtra)
+#knitr::kable(t6) %>%
+#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 ```{r p6, eval=F}
@@ -5015,14 +5028,16 @@ daf <- list(div = standardize(f8$ShannonDiversityIndex), #range=0-1.54 so standa
 
 # the figure
 op <- par(mfrow=c(2,2), mar=c(5.9,4.9,2,0.9))
-plot(daf$div ~ daf$phi , pch=1 , col="black" , xlab="Female: Phi (std)" , ylab="Shannon Diversity Index (std)" , xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
-plot(daf$div ~ daf$lambda , pch=1 , col="black" , xlab="Female: Lambda (std)" , ylab="", xlim=c(-2,2), cex.lab=2, cex.axis=2, cex=2 )
-plot(dat$div ~ dat$phi , pch=1 , col="black" , xlab="Male: Phi (std)" , ylab="Shannon Diversity Index (std)", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
-plot(dat$div ~ dat$lambda , pch=1 , col="black" , xlab="Male: Lambda (std)" , ylab="", xlim=c(-2.5,2.5), cex.lab=2, cex.axis=2, cex=2 )
+plot(daf$div ~ daf$phi , pch=1 , col="black" , xlab=expression("Female" ~ phi ~ "(std)") , ylab="Shannon Diversity Index" , xlim=c(-2.5,2.5), cex.lab=1, cex.axis=1, cex=1 )
+plot(daf$div ~ daf$lambda , pch=1 , col="black" , xlab=expression("Female" ~ lambda ~ "(std)") , ylab="", xlim=c(-2,2), cex.lab=1, cex.axis=1, cex=1 )
+plot(dat$div ~ dat$phi , pch=1 , col="black" , xlab=expression("Male" ~ phi ~ "(std)") , ylab="Shannon Diversity Index", xlim=c(-2.5,2.5), cex.lab=1, cex.axis=1, cex=1 )
+plot(dat$div ~ dat$lambda , pch=1 , col="black" , xlab=expression("Male" ~ lambda ~ "(std)") , ylab="", xlim=c(-2.5,2.5), cex.lab=1, cex.axis=1, cex=1 )
 par(op)
 ```
 
-**Figure.** Scatterplots showing the lack of relationship between the Shannon Diversity Index with $\phi$ and $\lambda$ for both sexes.
+**Figure.** Scatterplots showing the lack of relationship between the Shannon Diversity Index (standardized) with $\phi$ and $\lambda$ for both sexes.
+
+Figure 10. Scatterplots showing the lack of relationship between the Shannon Diversity Index  (standardized) (microhabitat diversity) and $\phi$ (learning rate of attraction) and $\lambda$ (rate of deviating from learned attractions) for both sexes. Variables are standardized (std), meaning that the mean is centered on zero.
 
 This species is primarily found within urbanized environments, however there are many different substrates within urban habitats that could provide a variety of food items. Since we are interested in the flexibility of grackle foraging behaviors within the urban habitat, we have focused our habitat diversity measures on the different substrates on which we are mostly likely to see individual variability in foraging behaviors and food types, if present.  For example, cement, cafe, and dumpster substrates are all likely to contain human-provided food (either because people leave food out for wild animals or wild animals are able to scrounge human foods), whereas grass, gravel, or other natural substrates such as trees likely contain non-human provided prey items including insects and small vertebrates. Using the Shannon diversity index to understand the evenness of substrate use within urban habitats has been recommended by others in the field of urban ecology [@alberti2001quantifying; @tews2004animal].
 
@@ -5033,13 +5048,18 @@ Human population density (population per square mile) is higher in Sacramento, C
 **Table.** Contrasts showing that the human population density at each trap site is different from the others.
 
 ```{r resltsp7table, eval=T}
-library(kableExtra)
 exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep7.csv"), header=F, sep=",", stringsAsFactors=F)
 exptable <- data.frame(exptable)
 colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
-knitr::kable(exptable) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+poptable <- xtable(exptable)
+align(poptable) <- "|l|X|X|X|X|X|"
+print(poptable, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", floating = TRUE, latex.environments = "center")
+
+library(kableExtra)
+#knitr::kable(exptable) %>%
+#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 ```{r p7, eval=FALSE}
@@ -5121,11 +5141,6 @@ precis( list( diff_p12=diff_p12 , diff_p13=diff_p13 , diff_p32=diff_p32 ) )
 ```
 
 ## P8: flexible = particular habitats
-
-![](g_flexforaging_fig_p8habitat.png){width=50%}
-
-Figure 11. Scatterplots for females (top row) and males (bottom row) showing the relationship between the proportion of follows in a particular microhabitat and $\phi$ (learning rate of attraction; left column) or $\lambda$ (rate of deviating from learned attractions; right column). Larger diameter circles indicate a larger $\phi$ or $\lambda$.
-
 
 **Analysis:** We examine the proportion of focal follows associated with each microhabitat per individual and relate this to their flexibility scores on their most recent reversal in the tube experiment. This allows us to see whether the more flexible individuals (faster to reverse) are associated with particular microhabitats more than the less flexible individuals.
 
@@ -5367,16 +5382,16 @@ ff8$Microhabitat <- as.factor(ff8$Microhabitat)
 mm8$Microhabitat <- as.factor(mm8$Microhabitat)
 
 # visualize
-mp <- ggplot() + geom_point(data=mm8,aes(x=Microhabitat, y=ProportionFollows, size=Phi), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "Proportion follows")
+mp <- ggplot() + geom_point(data=mm8,aes(x=Microhabitat, y=ProportionFollows, size=Phi), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "Prop. follows")
 ml <- ggplot() + geom_point(data=mm8,aes(x=Microhabitat, y=ProportionFollows, size=Lambda), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "")
-fp <- ggplot() + geom_point(data=ff8,aes(x=Microhabitat, y=ProportionFollows, size=Phi), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "Proportion follows")
+fp <- ggplot() + geom_point(data=ff8,aes(x=Microhabitat, y=ProportionFollows, size=Phi), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "Prop. follows")
 fl <- ggplot() + geom_point(data=ff8,aes(x=Microhabitat, y=ProportionFollows, size=Lambda), shape=1) + geom_jitter(width=0.5, height=0.1) + theme(axis.text.x = element_text(angle=90, vjust = 0.5)) + labs(x = "", y = "")
 
 theme_set(theme_cowplot(font_size=12))
-plot_grid(mp, ml, fp, fl, align='h', ncol=2, labels=c('A','B','C','D'), label_size=12)
+plot_grid(mp, ml, fp, fl, align='h', ncol=2) #labels=c('A','B','C','D'), label_size=12
 ```
 
-**Figure.** Scatterplots for females (top row) and males (bottom row) showing the relationship between the proportion of follows in a particular microhabitat and phi (left column) or lambda (right column). Larger diameter circles indicate a larger phi or lambda.
+Figure 11. Scatterplots for females (top row) and males (bottom row) showing the relationship between the proportion of follows in a particular microhabitat and $\phi$ (learning rate of attraction; left column) or $\lambda$ (rate of deviating from learned attractions; right column). Larger diameter circles indicate a larger $\phi$ or $\lambda$.
 
 
 # DISCUSSION
@@ -5738,14 +5753,18 @@ We found that these models came to the same conclusion that manipulated birds at
 **Table SM2.1.** Contrasts showing that, for each food type and each foraging technique as well as across food types and foraging techniques, whether manipulated birds are more likely to use them than control birds.
 
 ```{r p2manipvsctrlsupp1table, eval=T}
-library(kableExtra)
-library(dplyr)
 smtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_table_sm_p2.csv"), header=T, sep=",", stringsAsFactors=F)
 smtable <- data.frame(smtable)
 colnames(smtable) <- c("Food type/foraging technique","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
-knitr::kable(smtable) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+p2table <- xtable(smtable)
+align(p2table) <- "|l|X|X|X|X|X|"
+print(p2table, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", floating = TRUE, latex.environments = "center", hline.after = c(-1,0,14,15,25,26))
+
+library(kableExtra)
+#knitr::kable(smtable) %>%
+#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 ```{r p2manipvsctrlsupp1, eval=FALSE}
@@ -6084,22 +6103,30 @@ inv_logit(mean(precis(m0u_binary_hyper_tech,3,pars=c("a_mean"))[,1])+precis(m0u_
 **Table SM3.** Model output showing that $\phi$ (learning rate of attraction) and $\lambda$ (rate of deviating from learned attractions) did not have a strong relationship with the proportion of focal follows in a given microhabitat type for either sex as indicated by the slopes ($\beta$). n_eff is the effective sample size and Rhat4 is an indicator of model convergence (1.00 is ideal).
 
 ```{r resltsp8table, eval=T}
-library(kableExtra)
 t8 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_tablep8.csv"), header=F, sep=",", stringsAsFactors=F)
 t8 <- data.frame(t8)
-colnames(t8) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)","n_eff","Rhat4")
+colnames(t8) <- c("","Mean","Std dev","Lower 89% CI (5.5%)","Upper 89% CI (94.5%)","n_eff","Rhat4") #lower/upper 89 percentile compatibility interval
 
-knitr::kable(t8) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+p8table <- xtable(t8)
+align(p8table) <- "|l|l|l|l|l|l|l|l|"
+print(p8table, include.rownames = FALSE, tabular.environment = "longtable", floating=FALSE)
+
+library(kableExtra)
+#knitr::kable(t8) %>%
+#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
+
 
 # SUPPLEMENTARY MATERIAL 4: Ethogram
 
 **Table SM4.** Ethogram used for the great-tailed grackle focal follow research. For state behaviors, if the bird pauses the behavior for up to 10 sec, keep the state going. If it pauses for >10 sec, end the state.
 
-![](g_flexforaging_ethogram1.png){width=50%}
-![](g_flexforaging_ethogram2.png){width=50%}
-![](g_flexforaging_ethogram3.png){width=50%}
+![](g_flexforaging_ethogram1.png){width=75%}
+
+![](g_flexforaging_ethogram2.png){width=75%}
+
+![](g_flexforaging_ethogram3.png){width=75%}
 
 
 # REFERENCES
