@@ -182,6 +182,7 @@ See Table 2 for summary results for grackles in Woodland and Tempe, as well as s
 
 \blandscape
 **Table 2.** Summary data by bird for each of the variables measured. Population indicates where they were trapped (Sacramento is part of the Woodland population), bird is the bird’s name, sex indicates whether they are female (F) or male (M), learn speed is the number of trials to form the initial color preference, reversal speed is the number of trials to reverse the color preference (first reversal), $\phi$ and $\lambda$ are the two flexibility components (from the first reversal), MAB loci are the number of loci solved on the multiaccess box, MAB max is the maximum number of loci available to that bird, Exploration is the average number of seconds it took the bird to approach within 20 cm of the novel environment (note that 2701 s means the bird never approached), persistence is the proportion of reversal learning and multiaccess box trials the bird participated in, and flexibility manipulated indicates whether this was one of the 8 Tempe grackles who underwent the serial reversals to make them more flexible (Yes) or not (No). “X” indicates that this bird did not complete this experiment or that we cannot count the data for this experiment, and “-” indicates this bird was not given this experiment.
+
 ```{r resltssummarytable, eval=T, warning=FALSE, results='asis', include=TRUE}
 library(kableExtra)
 library(dplyr)
@@ -200,41 +201,21 @@ kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed
 ```
 \elandscape
 
-
-**Table 3.** Contrasts (indicated by "diff") between populations for the flexibility measure of reversal learning: $\phi$ and $\lambda$ (data from the first reversal).
-
-```{r resltsflextable, eval=T, warning=FALSE, results='asis', include=TRUE}
-library(kableExtra)
-flextable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitat_Table4.csv"), header=F, sep=",", stringsAsFactors=F)
-flextable <- data.frame(flextable)
-colnames(flextable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
-
-knitr::kable(flextable) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
-```
-
 The food type data set consisted of X individuals (6=manipulated, 7=control), and the foraging technique data set consisted of 12 individuals (n=5 manipulated, n=7 control) who had data that involved eating at least one food type
 
-```{r xpopfoodswitches, eval=T, out.width="10cm",fig.align = "center", fig.cap="The probability of switching among food types per minute for boat-tailed grackles and great-tailed grackles (Arizona and California). The small circles are the data points per individual and the large circles are the estimated means with their 89% compatibility intervals represented by the vertical lines."}
-### NUMBER OF FORAGING TECHNIQUES for flexibility manipulated vs control birds - did manipulated switch more?
+```{r xpopfoodswitches, eval=F, out.width="10cm",fig.align = "center", fig.cap="The probability of switching among food types per minute for boat-tailed grackles and great-tailed grackles (Arizona and California). The small circles are the data points per individual and the large circles are the estimated means with their 89% compatibility intervals represented by the vertical lines."}
+## Switching between food types: does one species have more switches and is thus more flexible?
 library(rethinking)
 library(dplyr)
-ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summary.csv"), header=T, sep=",", stringsAsFactors=F)
 ft <- data.frame(ft)
 
-# FYI across all populations...
 #How many different food types?
-#length(unique(ft$What)) #22
-#unique(ft$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken, peanut, mulch
-
-#How many different foraging techniques?
-#length(unique(ft$How)) # 13 - 1 (eat) - 1 (tolerated theft) = 11
-#unique(ft$How) #eat, gape, lift or nudge, stalk catch, flip, food share, break into pieces, dunk in water, tolerated theft, theft, dig, pick up, sweep
+#length(unique(ft$What)) #GTGR: 22
+#unique(ft$What) #GTGR: fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation, fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken, peanut, mulch
 
 
-### NUMBER OF FOOD TYPES for flexibility manipulated vs control birds - did manipulated switch more?
-
-#FOOD TYPES: count the number of food type switches during each focal
+#Count the number of food type switches during each focal
 #exclude NAs from the variables in this model
 fo <- subset(ft1, is.na(ft1$What) == FALSE)
 
@@ -270,18 +251,18 @@ ff1 <- data.frame(ff)
 #mean(c(5,2,3,7,2,3,3)) #3.6 focals per control bird
 
 
-# RUN the models
-dat_swfo <- list(foodswitches = fo4$totalfoodswitches,
+# RUN the model
+dat <- list(foodswitches = fo4$totalfoodswitches,
             totaltime = fo4$totaltime, 
-            site = as.integer(as.factor(fo4$Treatment)) #1=control, 2=manipulated
+            site = as.integer(as.factor(fo4$Site)) #1=control, 2=manipulated
               )
-swfo <- ulam( alist(
+fo <- ulam( alist(
         foodswitches ~ dbinom(totaltime,p),
         logit(p) <- a[site], #the intercept is the probability of observing any of the types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
-        a[treatment] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
-    ) , data=dat_swfo , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+        a[site] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
+    ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-output_swfo <- precis( swfo , depth=2 )
+output_fo <- precis( fo , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
 #a[1] -6.60 0.20 -6.94 -6.30  1321     1
 #a[2] -5.94 0.16 -6.20 -5.69  1358     1
@@ -317,78 +298,6 @@ HPDI(diffswfo) #Highest Posterior Density intervals, which are the same as is us
 #1.435329 2.382249 
 
 
-#TECHNIQUES: count the number of technique switches during each focal
-#exclude NAs from the variables in this model
-ft2 <- subset(ft1, is.na(ft1$How) == FALSE)
-ft2 <- ft2[!ft2$How=="eat",]
-
-ft2$TechSwitch<-NA
-ft2[1,]$TechSwitch<-0
-for(i in 2:nrow(ft2)){
-  ifelse(ft2[i,]$FocalID==ft2[i-1,]$FocalID & ft2[i,]$How !=ft2[i-1,]$How, ft2[i,]$TechSwitch<-1,ft2[i,]$TechSwitch<-0)
-}
-
-ft3 <- ft2 %>% group_by(BirdID,FocalID) %>% summarise(switchesperfocal=sum(TechSwitch),timeperfocal=mean(TotalTimeInView))
-ft4 <- ft3 %>% group_by(BirdID) %>% summarise(totalswitches=sum(switchesperfocal),totaltime=sum(timeperfocal))
-
-# link with general datasheet to identify which birds were manipulated
-c1 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_general.csv"), header=T, sep=",", stringsAsFactors=F)
-c1 <- data.frame(c1)
-#select only the AZ birds who were manipulated or control individuals in the flexibility experiment
-c1 <- c1[c1$Population=="AZ",]
-ca<- c1 %>% group_by(BirdID) %>% summarise (Treatment=unique(FlexibilityManipulated))
-
-ft5 <- left_join(ft4,ca,by="BirdID")
-ft5 <- subset(ft5, is.na(ft5$Treatment) == FALSE)
-#nrow(ft5) #NOTE: n=12 (5=manipulated, 7=control) birds because 6 dropped out due to not having any foraging events in their focals or not having any focals
-
-# RUN the models
-dat_sw <- list(switches = ft5$totalswitches,
-            totaltime = ft5$totaltime, 
-            site = as.integer(as.factor(ft5$Treatment)) #1=control, 2=manipulated
-              )
-sw <- ulam( alist(
-        switches ~ dbinom(totaltime,p), 
-        logit(p) <- a[site], #the intercept is the probability of observing any of the techs is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
-        a[treatment] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
-    ) , data=dat_sw , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
-
-output_sw <- precis( sw , depth=2 )
-#      mean   sd  5.5% 94.5% n_eff Rhat4
-#a[1] -6.83 0.28 -7.30 -6.41  1316     1
-#a[2] -6.29 0.19 -6.61 -5.98  1449     1
-
-#contrast to see if treatment groups differ
-postsw <- extract.samples(sw)
-diffsw <- inv_logit( postsw$a[,1]) - inv_logit( postsw$a[,2])
-contrast_sw <- precis( diffsw )
-#         mean   sd  5.5% 94.5%  histogram
-#diffsw    0  0    0     0   ▁▁▅▇▅▁▁
-
-#numbers are too small to distinguish, so check the actual intervals...
-#HPDI(diffsw) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
-#        |0.89         0.89| 
-#-1.488057e-03 -1.877975e-05 
-#does not cross zero so the groups differ: manipulated birds have higher probability of switching
-#mean(diffsw) #-0.000773443
-#sd(diffsw) #0.0004663716
-#mean(diffsw)*60 #-0.04640658
-
-# What is the probability that manipulated birds switch techniques per second or minute?
-#mean(inv_logit(postsw$a[,2])) #0.001888756/sec, 0.1133254/min
-
-# What is the probability that control birds switch techniques per second or minute?
-#mean(inv_logit(postsw$a[,1])) #0.001115313/sec, 0.0669188/min
-
-# How much more likely are the manipulated birds to switch?
-#mean(inv_logit(postsw$a[,2]))/mean(inv_logit(postsw$a[,1])) # 1.693476
-#sd(inv_logit(postsw$a[,2]))/mean(inv_logit(postsw$a[,1])) # 0.3263996
-#HPDI(inv_logit(postsw$a[,2]))/mean(inv_logit(postsw$a[,1]))
-#   |0.89    0.89| 
-#1.187837 2.211168 
-
-
-
 # VISUALIZE
 #make new variables of probability of switching per minute
 fo4$probswitchfo <- (fo4$totalfoodswitches/fo4$totaltime)*60
@@ -415,15 +324,12 @@ mtext("Manipulated",side=1,at=1.7,outer=FALSE,adj=0,font=1,cex=1,line=0.6)
 par(op)
 ```
 
+![](g_flexforaging_fig_p2switch.png){width=100%} 
 
-![](gxpopbehaviorhabitatFigflexcontrast.png){width=50%}
-
-**Figure 3.** Measures of flexibility from the first reversal of the reversal learning experiment: $\phi$ and $\lambda$ per individual in each population.  The black circles are the raw data from each bird, the blue triangles are the population means, and the blue lines are their 89% compatibility intervals.
-
+**Figure 5.** The probability of switching among food types per minute for great- and boat-tailed grackles. The small circles are the data points per individual and the large circles are the estimated means with their 89% compatibility intervals represented by the vertical lines.
 
 
 ## DISCUSSION
-
 
 It is possible that behavioral flexibility facilitated the increase of this species’ habitat breadth beyond marshes when humans started to modify the environment in central America thousands of years ago [@christensen2000fifteenth]. Great-tailed grackles are now almost exclusively associated with human modified environments [@selander1961analysis, @johnson2001great, @wehtje2003range], and when planning study sites, we initially wanted to compare forest versus urban grackle populations. However, we are unable to find a population that exclusively exists in forests (based on eBird.org data, Logan, pers. obs.). In another article produced from the same preregistration, @logan2020xpop, as the current article, we investigated the role of increased habitat availability in geographic range expansions by comparing rapidly expanding great-tailed grackles with their closest relative that is not rapidly expanding its range, boat-tailed grackles (*Q. major*) [@summers2023xpop]. We predicted that great-tailed grackles expanded their range because suitable habitat (i.e., human modified environments) increased (prediction 1 alternative 1 in the preregistration). Results showed that, between 1979 and 2019, great-tailed grackles increased their habitat breadth to include more urban, arid environments. In contrast, boat-tailed grackles moved into new suitable habitat that was made available by climate change. These results support the possibility that flexibility played a role in the ability to increase habitat breadth. We are currently conducting a behavioral flexibility experiment in boat-tailed grackles to determine whether they are less flexible than great-tailed grackles, which would further support the hypothesis that flexibility was involved in the great-tailed grackle rapid range expansion [in the same preregistration as the current study: @logan2020xpop]. Unfortunately, we discovered in our first boat-tailed grackle field season in 2022 that they do not do well in captivity. Consequently, we will not continue the aviary tests in this species. Therefore, we only have comparable data from the aviary tests for two (reversal), four (multiaccess box), and five (persistence and exploration) individuals. Although the boat-tailed grackle sample size is too small to arrive at robust conclusions, we analyze their data here to give an indication of useful directions for future research. We find that boat-tailed grackles have a **similar flexibility average** as both populations of great-tailed grackles; and boat-tailed grackles are **less innovative** and **less persistent** than both great-tailed grackle populations. Boat-tailed grackles are **less exploratory** than Tempe grackles, while having **similar levels of exploration** as Woodland grackles (see model outputs in Supplementary Material 4). This suggests that we might not find differences in flexibility between the two species. However, we are currently conducting reversal learning experiments in the wild in both species to determine whether this is a robust result [following the hypotheses in the preregistration at @logan2020xpop and methods and analyses in @logan2022manyindividuals].
 
