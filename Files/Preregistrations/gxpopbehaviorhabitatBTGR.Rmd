@@ -205,8 +205,12 @@ The food type data set consisted of X individuals (6=manipulated, 7=control), an
 
 ```{r xpopfoodswitches, eval=F}
 ## Switching between food types: does one species have more switches and is thus more flexible?
+#load packages
+library(dplyr)
+library(rethinking)
+
 #load data sheets
-ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summary.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summaryInProgress.csv"), header=T, sep=",", stringsAsFactors=F)
 ft <- data.frame(ft)
 
 wt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
@@ -214,6 +218,7 @@ wt <- data.frame(wt)
 
 #gt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 #gt <- data.frame(gt)
+
 
 ## HOW MANY DIFFERENT FOOD TYPES?
 # GTGR AZ
@@ -232,98 +237,93 @@ wt <- data.frame(wt)
 #length(unique(wt$FoodType)) #14
 #unique(wt$FoodType) #Insect,  *Cheese, Grains,  Worm, Unknown, Seed, Food crumbs, *Oil, Vegetation, Fruit, Fry, Peanut, Chicken. BTGR had cheese and oil, while GTGR didn't
 
-# COUNT food for BTGR for summary data sheet
-#exclude NAs
-wt$FoodType <- as.factor(wt$FoodType)
+
+# COUNTS for summary data sheet
+#Need the focal duration ONLY for those focals where a foraging event occurred. This will equalize the difference between the species where the GTGR were focalled for more than just foraging behavior, whereas the BTGR were only focalled for their foraging behavior (a focal couldn't start until the BTGR started foraging)
+#NOTE: many more AZ grackles are in this data set because they didn't need to have aviary tests, only focals
 #fo <- subset(wt, is.na(wt$FoodType) == FALSE) # doesn't work
 #fo <- subset(wt,!(is.na(wt["FoodType"]))) # doesn't work
 fo <- wt[!(is.na(wt$FoodType) | wt$FoodType==""), ] #https://www.tutorialspoint.com/how-to-subset-rows-that-do-not-contain-na-and-blank-in-one-of-the-columns-in-an-r-data-frame
+#length(fo$FoodType) #1177 foraging events
 
-# COUNT number of food types per BTGR bird (already have this data for GTGR from flexforaging)
-nt <- fo %>% group_by(BirdID) %>% summarise (Count=unique(FoodType))
-nt1 <- data.frame(nt) #sum BTGR by hand and enter into summary data sheet: NumFoodTypes. THEN calculate FoodTypesPerSec by NumFoodTypes/SumFocalTime
-
-# COUNT total number of food events per BTGR bird (already have this data for GTGR from flexforaging)
-ne <- fo %>% group_by(BirdID) %>% summarise (sum=n())
-ne1 <- data.frame(ne) #enter BTGR sums into summary data sheet: TotalFoodEvents
-
-
-# COUNT food type switches per bird across all of its follows
+# COUNT food type switches per bird across all of its follows: FoodSwitch
 fo$FoodSwitch<-NA
 fo[1,]$FoodSwitch<-0
 for(i in 2:nrow(fo)){
   ifelse(fo[i,]$FocalID==fo[i-1,]$FocalID & fo[i,]$FoodType !=fo[i-1,]$FoodType, fo[i,]$FoodSwitch<-1,fo[i,]$FoodSwitch<-0)
 }
-
-#Need the focal duration ONLY for those focals where a switch occurred. This will equalize the difference between the species where the GTGR were focalled for more than just foraging behavior, whereas the BTGR were only focalled for their foraging behavior (a focal couldn't start until the BTGR started foraging)
-s1 <- fo[!(is.na(fo$FoodSwitch) | fo$FoodSwitch==""), ] #remove NAs so only the focals with switches remain
-#length(s1$FoodSwitch) #1177
-s2 <- s1[s1$FoodSwitch > 0,]
-#length(s2$FoodSwitch) #306
-
-fo2 <- s2 %>% group_by(BirdID,FocalID) %>% summarise(foodswitchesperfocal=sum(FoodSwitch),timeperfocal=mean(TimeInViewThisFocalSec))
-fo3 <- fo2 %>% group_by(BirdID) %>% summarise(NumFoodSwitches=sum(foodswitchesperfocal),SumFocalTimeWSwitch=sum(timeperfocal))
-fo3 <- data.frame(fo3) 
-
-#add NumFoodSwitches and SumFocalTimeWSwitch columny to data_summary
-f1 <- full_join(fo3,ft,by="BirdID")
-write.csv(f1,"gxpopbehaviorhabitatBTGR_data_summarytest.csv") # it adds all of the birds with NAs to the sheet, how to fix this?
+#fo$FoodSwitch
 
 
-#Calculate food switches/bird/focal
-fo2 <- fo %>% group_by(BirdID,FocalID) %>% summarise(foodswitchesperfocal=sum(FoodSwitch))  
-fo2 <- data.frame(fo2)
+# COUNT number of food types per bird: NumFoodTypes
+#number food types per bird
+fo1 <- fo %>% group_by(BirdID) %>% reframe (NumFoodTypesPerBird=unique(FoodType))
+#sum number food types per bird
+fo2 <- fo1 %>% group_by(BirdID) %>% summarise (NumFoodTypes=n())
 
-#Calculate avg focals/bird/site
-fo2.1 <- fo %>% group_by(Site,BirdID) %>% summarise(sum=length(FocalID))  #not working yet
-fo2.1 <- data.frame(fo2.1)
-
-#Calculate total switches per bird and enter this data at the summary data sheet: NumFoodSwitches
-fo3 <- fo2 %>% group_by(BirdID) %>% summarise(totalfoodswitches=sum(foodswitchesperfocal)) 
-fo3 <- data.frame(fo3)
-
-# What is the average number of focals per bird? 5.4 BTGR (range: 2-11) (from data_xpop_btgr_feedersandfocals google sheet, tab: BirdSummary) 
-ff <- fo2 %>% group_by(BirdID,FocalID) %>% summarise (Count=n()) #Doesn't work yet, so just looked at fo2 and hand calculated
-ff1 <- data.frame(ff)
-##Total number of focals per bird in this dataset
-#Manipulated: Adobo=1, Burrito=7, Chalupa=3, Chilaquile=5, Diablo=2, Habanero=1.
-#mean(c(1,7,3,5,2,1)) #3.2 focals per manipulated bird
-#Control: Fideo=5, Mofongo=2, Queso=3, Taco=7, Tapa=2, Taquito=3, Tomatillo=3
-#mean(c(5,2,3,7,2,3,3)) #3.6 focals per control bird
+#add NumFoodTypes column to data_summary
+NumFoodTypes <- full_join(fo2,ft,by="BirdID")
+write.csv(fo2,"gxpopbehaviorhabitatBTGR_data_summaryNumFoodTypes.csv") 
 
 
+# COUNT total number of food events per bird: TotalFoodEvents
+fo3 <- fo %>% group_by(BirdID) %>% summarise (TotalFoodEvents=n())
+#add TotalFoodEvents column to data_summary
+TotalFoodEvents <- full_join(fo3,fo2,by="BirdID")
+write.csv(fo3,"gxpopbehaviorhabitatBTGR_data_summaryTotalFoodEvents.csv") 
 
-# Prepare data for the model
-# remove NAs - make sure the GTGR who did not eat food get excluded
-ft1 <- ft[!(is.na(ft$NumFoodSwitches) | ft$NumFoodSwitches==""), ] #9 NAs so 9 birds were removed
+
+#CALCULATE total focal time across only those focals that contained food events: SumFocalTimeWFood
+#number of seconds per focal
+fo4 <- fo %>% group_by(BirdID,FocalID) %>% summarise(foodswitchesperfocal=sum(FoodSwitch),timeperfocal=mean(TimeInViewThisFocalSec))
+#sum number of seconds per focal per bird
+fo5 <- fo4 %>% group_by(BirdID) %>% summarise(NumFoodSwitches=sum(foodswitchesperfocal),SumFocalTimeWFood=sum(timeperfocal))
+#add SumFocalTimeWFood column to data_summary
+SumFocalTimeWFood <- left_join(fo5,fo3,by="BirdID")
+write.csv(fo5,"gxpopbehaviorhabitatBTGR_data_summarySumFocalTimeWFood.csv") #upload the data sheet to calculate the next piece
+
+
+#CALCULATE FoodTypesPerSec using NumFoodTypes/SumFocalTimeWFood
+su <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summaryInProgress.csv"), header=T, sep=",", stringsAsFactors=F)
+su <- data.frame(su)
+su$FoodTypesPerSec <- su$NumFoodTypes/su$SumFocalTimeWFood #add FoodTypesPerSec column to data_summary by copying and pasting the output from su to the csv
+
+
+#CALCULATE avg focals/bird/site
+#5.4 BTGR (range: 2-11) (from data_xpop_btgr_feedersandfocals google sheet, tab: BirdSummary) 
+#number focals per bird
+af <- fo %>% group_by(BirdID,Site) %>% reframe(focalsperbird=unique(FocalID))
+#sum number focals per bird
+af1 <- af %>% group_by(BirdID,Site) %>% summarise (sumfocalsperbird=n())
+af2 <- af1 %>% group_by(Site) %>% summarise (sumfocalsperbirdpersite=mean()) #NOT WORKING YET
+
 
 # Sample size
-ft1$Site <- as.factor(ft1$Site)
-#length(ft1[ft1$Site=="AZ",]$Site) #13 GTGR AZ
-#length(ft1[ft1$Site=="CA",]$Site) #13 GTGR CA
-#length(ft1[ft1$Site=="BTGR",]$Site) #8 BTGR
+ft$Site <- as.factor(ft$Site)
+#length(ft[ft$Site=="AZ",]$Site) #54 GTGR AZ
+#length(ft[ft$Site=="CA",]$Site) #22 GTGR CA
+#length(ft[ft$Site=="BTGR",]$Site) #8 BTGR
 
 # Run model
-library(rethinking)
-library(dplyr)
-dat <- list(foodswitches = ft1$NumFoodSwitches,
-            totaltime = ft1$SumFocalTime, 
-            site = as.integer(as.factor(ft1$Site)) #Site 1=AZ, 2=BTGR, 3=CA
+dat <- list(foodswitches = ft$NumFoodSwitches,
+            totaltime = round(ft$SumFocalTimeWFood,0), 
+            site = as.integer(as.factor(ft$Site)) #Site 1=AZ, 2=BTGR, 3=CA
               )
+set.seed(1)
 switch <- ulam( alist(
         foodswitches ~ dbinom(totaltime,p),
-        logit(p) <- a[site], #the intercept is the probability of observing any of the types is different between groups, but this probability doesn't change over time (bc birds are observed only AFTER the manipulation is over). Include total observation time because this varied per focal (with a target max time of 10 min)
-        a[site] ~ dnorm(0,1) #each treatment gets its own intercept, mean=0 bc assume an average bird might show half of the total techs, so 0 on inverse logit = 50%
+        logit(p) <- a[site], #the intercept is the probability of observing any of the types is different between sites
+        a[site] ~ dnorm(0,1) #each site gets its own intercept, mean=0 bc assume an average bird might show half of the total types, so 0 on inverse logit = 50%
     ) , data=dat , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
 output_switch <- precis( switch , depth=2 )
 #      mean   sd  5.5% 94.5% n_eff Rhat4
-# a[1] -6.74 0.12 -6.93 -6.55 1.01  2111.00
-# a[2] -6.38 0.14 -6.61 -6.15 1.00  2017.36
-# a[3] -6.71 0.13 -6.92 -6.49 1.00  2050.76
+# a[1] -6.24 0.07 -6.35 -6.13    1  1821.89
+# a[2] -6.04 0.14 -6.26 -5.83    1  1911.45
+# a[3] -6.14 0.12 -6.34 -5.95    1  1931.23
 
 #means at each site on the regular scale
-#inv_logit(output_switch[,1]) #0.001184102 0.001700368 0.001223125
+inv_logit(output_switch[,1]) #0.001951270 0.002372567 0.002141173
 
 
 # CONTRASTS to see if Sites differ
@@ -338,73 +338,73 @@ contrast_swfo <- precis( diff )
 #numbers are too small to distinguish, so check the actual intervals...
 HPDI(diff) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
 #        |0.89         0.89| 
-#-9.76720e-04 to -8.41181e-05 
-#does not cross zero so the groups differ: BTGR have higher probability of switching than GTGR AZ
-#mean(diff) # -0.0005246724 per sec
-#sd(diff) # 0.0002791676 per sec
-#mean(diff)*60 # -0.03148034 per min
+#-0.0009906352  0.0001043139  
+#crosses zero so the groups do not differ
+mean(diff) # -0.0004387297 per sec
+sd(diff) # 0.0003468508 per sec
+mean(diff)*60 # -0.02632378 per min
 
 # How much more likely are the BTGR to switch than GTGR AZ?
-#mean(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,1])) # 1.440121
-#sd(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,1])) # 0.2002083
-#HPDI(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,1]))
+mean(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,1])) #  1.224324
+sd(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,1])) # 0.1658792
+HPDI(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,1]))
 #   |0.89    0.89| 
-#1.112472 1.757696 
+#0.9587506 1.4857393 
 
 
 ## GTGR CA - BTGR
 diffcb <- inv_logit( post$a[,3]) - inv_logit( post$a[,2])
 contrastcb <- precis( diffcb )
 #         mean   sd  5.5% 94.5%  histogram
-#diffcb    0  0    0     0 ▁▁▁▂▅▇▇▃▁▁▁
+#diffcb    0  0    0     0   ▁▁▃▇▃▁▁
 
 #numbers are too small to distinguish, so check the actual intervals...
-#HPDI(diffcb) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
+HPDI(diffcb) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
 #        |0.89         0.89| 
-#-0.0009137613  0.0000231731
+#-0.0009058925  0.0004301702
 #crosses zero so  groups do not differ: GTGR CA does not have higher probability of switching than BTGR
-#mean(diffcb) #-0.0004826716 per sec
-#sd(diffcb) # 0.0002938304 per sec
-#mean(diffcb)*60 # -0.0289603 per min
+mean(diffcb) # -0.0002370211 per sec
+sd(diffcb) # 0.0004195399 per sec
+mean(diffcb)*60 #  -0.01422127 per min
 
 # How much more likely are the GTGR CA to switch than BTGR?
-#mean(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,3])) # 1.391109
-#sd(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,3])) # 0.1933946
-#HPDI(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,3]))
+mean(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,3])) # 1.109859
+sd(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,3])) # 0.1503709
+HPDI(inv_logit(post$a[,2]))/mean(inv_logit(post$a[,3]))
 #   |0.89    0.89| 
-#1.074611 1.697876 
+#0.8691151 1.3468346 
 
 
 ## GTGR AZ - GTGR CA
 diffca <- inv_logit( post$a[,1]) - inv_logit( post$a[,3])
 contrastca <- precis( diffca )
 #         mean   sd  5.5% 94.5%  histogram
-#diffca    0  0    0     0  ▁▁▁▃▇▅▂▁
+#diffca    0  0    0     0 ▁▁▁▁▂▃▇▇▅▂▁▁▁
 
 #numbers are too small to distinguish, so check the actual intervals...
 HPDI(diffca) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
 #        |0.89         0.89| 
-#-0.0003572783  0.0003231871 
-#crosses zero so the groups di not differ: GTGR AZ and GTGR CA have similar probability of switching
-#mean(diffca) # -4.200077e-05 per sec
-#sd(diffca) # 0.0002145229 per sec
-#mean(diffca)*60 # -0.002520046 per min
+#-0.0007138369  0.0002496342
+#crosses zero so the groups do not differ: GTGR AZ and GTGR CA have similar probability of switching
+mean(diffca) # -0.0002017086 per sec
+sd(diffca) # 0.0003003185 per sec
+mean(diffca)*60 # -0.01210251 per min
 
 # How much more likely are the GTGR AZ to switch than GTGR CA?
-#mean(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1])) # 1.035232
-#sd(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1])) # 0.1382212
-#HPDI(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1]))
+mean(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1])) # 1.103134
+sd(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1])) # 0.1362928
+HPDI(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1]))
 #   |0.89    0.89| 
-#0.8138824 1.2438202
+#0.8896928 1.3200867 
 
 
 
 # VISUALIZE
 #make new variable of probability of switching per minute
-ft1$probswitch <- (ft1$NumFoodSwitches/ft1$SumFocalTime)*60 #Ak'xi in CA has a really high rate
+ft$probswitch <- (ft$NumFoodSwitches/ft$SumFocalTime)*60 #Ak'xi in CA has a really high rate
 
 op <- par(mfrow=c(1,1), mar=c(3,4.9,2,0.9))
-plot( as.integer(as.factor(ft1$Site))+rnorm(34,0,0.1) , ft1$probswitch , xlab="" , ylab="Probability of switching among food types / min" , ylim=c(0,1.3), xlim=c(0.6,3.5), xaxt="n")
+plot( as.integer(as.factor(ft$Site))+rnorm(34,0,0.1) , ft$probswitch , xlab="" , ylab="Probability of switching among food types / min" , ylim=c(0,1.3), xlim=c(0.6,3.5), xaxt="n")
 #AZ
 points(inv_logit(precis(switch,depth=2)[1,1])*60 ~ c(1.1),cex=2) #1,1 refers to the mean (column 1) in the precis output for site 1 (row 1)
 lines(c(inv_logit(precis(switch,depth=2)[1,3])*60,inv_logit(precis(switch,depth=2)[1,4])*60) ~ c(1.1,1.1)) #1,3 refers to the lower CI (column 3) in the precis output for site 1 (row 1) and 1,4 to the upper CI (column 4)
