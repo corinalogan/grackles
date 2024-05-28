@@ -178,65 +178,16 @@ After data collection started in November 2023, and after extensive work in tryi
 
 
 
-See Table 2 for summary results for grackles in Woodland and Tempe, as well as some data for boat-tailed grackles (population: BTGR), which we describe in the Discussion.
-
-\blandscape
-**Table 2.** Summary data by bird for each of the variables measured. Population indicates where they were trapped (Sacramento is part of the Woodland population), bird is the bird’s name, sex indicates whether they are female (F) or male (M), learn speed is the number of trials to form the initial color preference, reversal speed is the number of trials to reverse the color preference (first reversal), $\phi$ and $\lambda$ are the two flexibility components (from the first reversal), MAB loci are the number of loci solved on the multiaccess box, MAB max is the maximum number of loci available to that bird, Exploration is the average number of seconds it took the bird to approach within 20 cm of the novel environment (note that 2701 s means the bird never approached), persistence is the proportion of reversal learning and multiaccess box trials the bird participated in, and flexibility manipulated indicates whether this was one of the 8 Tempe grackles who underwent the serial reversals to make them more flexible (Yes) or not (No). “X” indicates that this bird did not complete this experiment or that we cannot count the data for this experiment, and “-” indicates this bird was not given this experiment.
-
-```{r resltssummarytable, eval=T, warning=FALSE, results='asis', include=TRUE}
-library(kableExtra)
-library(dplyr)
-sumtable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq1dataSummaryCAAZ.csv"), header=T, sep=",", stringsAsFactors=F)
-sumtable <- data.frame(sumtable)
-colnames(sumtable) <- c("Population","Batch","ID","Bird","Sex","Learn","Reverse","Phi","Lambda","MABloci","MABmax","Exploration","Persistence","Flexibilitymanipulated","Notes")
-
-# Only include certain columns
-sumtable <- select(sumtable,Population,Bird,Sex,Learn,Reverse,Phi,Lambda,MABloci,MABmax,Exploration,Persistence,Flexibilitymanipulated)
-
-# Rename columns for final table
-colnames(sumtable) <- c("Population","Bird","Sex","Learn speed","Reverse speed","Phi","Lambda","MAB loci","MAB max","Exploration","Persistence","Flexibility manipulated")
-
-knitr::kable(sumtable) %>%
-kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 6)
-```
-\elandscape
-
-The food type data set consisted of X individuals (6=manipulated, 7=control), and the foraging technique data set consisted of 12 individuals (n=5 manipulated, n=7 control) who had data that involved eating at least one food type
-
-```{r xpopfoodswitches, eval=F}
-## Switching between food types: does one species have more switches and is thus more flexible?
+```{r builddatasummarydatasheet, eval=F}
 #load packages
 library(dplyr)
-library(rethinking)
 
 #load data sheets
-ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summaryInProgress.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summary.csv"), header=T, sep=",", stringsAsFactors=F)
 ft <- data.frame(ft)
 
 wt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
 wt <- data.frame(wt)
-
-#gt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
-#gt <- data.frame(gt)
-
-
-## HOW MANY DIFFERENT FOOD TYPES?
-# GTGR AZ
-#gt$What <- as.factor(gt$What)
-#gt[gt$Population=="AZ",]$What
-#length(unique(gt[gt$Population=="AZ",]$What)) #20
-#unique(gt[gt$Population=="AZ",]$What) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation,  fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken. The CA pop didn't have lizard, worm, bird poop, candy, vomit, condiment, or carcass
-
-# GTGR CA
-#gt[gt$Population=="CA",]$What
-#length(unique(gt[gt$Population=="CA",]$What)) #15
-#unique(gt[gt$Population=="CA",]$What) #unknown, insect, grains, cat food, fry, soil,  rock, *peanut,  chicken,  vegetation, *mulch, food crumbs, misc. trash, seed, fruit. The AZ pop didn't have peanut or mulch
-
-# BTGR
-#wt$FoodType <- as.factor(wt$FoodType)
-#length(unique(wt$FoodType)) #14
-#unique(wt$FoodType) #Insect,  *Cheese, Grains,  Worm, Unknown, Seed, Food crumbs, *Oil, Vegetation, Fruit, Fry, Peanut, Chicken. BTGR had cheese and oil, while GTGR didn't
-
 
 # COUNTS for summary data sheet
 #Need the focal duration ONLY for those focals where a foraging event occurred. This will equalize the difference between the species where the GTGR were focalled for more than just foraging behavior, whereas the BTGR were only focalled for their foraging behavior (a focal couldn't start until the BTGR started foraging)
@@ -284,31 +235,62 @@ write.csv(fo5,"gxpopbehaviorhabitatBTGR_data_summarySumFocalTimeWFood.csv") #upl
 
 
 #CALCULATE FoodTypesPerSec using NumFoodTypes/SumFocalTimeWFood
-su <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summaryInProgress.csv"), header=T, sep=",", stringsAsFactors=F)
+su <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summary.csv"), header=T, sep=",", stringsAsFactors=F)
 su <- data.frame(su)
 su$FoodTypesPerSec <- su$NumFoodTypes/su$SumFocalTimeWFood #add FoodTypesPerSec column to data_summary by copying and pasting the output from su to the csv
+```
 
+```{r foodtypestats, eval=F}
+#GTGR data from flexforaging article (Logan et al. 2024). I added this data to the BTGR_data_foraging data sheet below
+gt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+gt <- data.frame(gt)
 
-#CALCULATE avg focals/bird/site
-#5.4 BTGR (range: 2-11) (from data_xpop_btgr_feedersandfocals google sheet, tab: BirdSummary) 
-#number focals per bird
-af <- fo %>% group_by(BirdID,Site) %>% reframe(focalsperbird=unique(FocalID))
-#sum number focals per bird
-af1 <- af %>% group_by(BirdID,Site) %>% summarise (sumfocalsperbird=n())
-af2 <- af1 %>% group_by(Site) %>% summarise (sumfocalsperbirdpersite=mean()) #NOT WORKING YET
+#load data sheet
+wt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_foraging.csv"), header=T, sep=",", stringsAsFactors=F)
+wt <- data.frame(wt)
 
+## HOW MANY DIFFERENT FOOD TYPES?
+wt$FoodType <- as.factor(wt$FoodType)
+levels(wt$FoodType)
+unique(wt$FoodType) #36 food types across all populations/species
+
+# GTGR AZ
+length(unique(wt[wt$Site=="AZ",]$FoodType)) #20
+unique(wt[wt$Site=="AZ",]$FoodType) #fry, lizard, unknown, grains, insect, rock, cat food, worm, seed, food crumbs, vegetation,  fruit, bird poop, candy, vomit, misc. trash, soil, condiment, carcass, chicken. The CA pop didn't have lizard, worm (BTGR did), bird poop, candy, vomit, condiment, or carcass
+
+# GTGR CA
+length(unique(wt[wt$Site=="CA",]$FoodType)) #15
+unique(wt[wt$Site=="CA",]$FoodType) #unknown, insect, grains, cat food, fry, soil,  rock, *peanut,  chicken,  vegetation, *mulch, food crumbs, misc. trash, seed, fruit. The AZ pop didn't have peanut or mulch, the BTGR population didn't have mulch
+
+# BTGR
+length(unique(wt[wt$Site=="BTGR",]$FoodType)) #14
+unique(wt[wt$Site=="BTGR",]$FoodType) #Insect,  *Cheese, Grains,  Worm, Unknown, Seed, Food crumbs, *Oil, Vegetation, Fruit, Fry, Peanut, Chicken. BTGR had cheese and oil, while GTGR didn't
+```
+
+```{r foodswitchresult, eval=F}
+## Switching between food types: does one species have more switches and is thus more flexible?
+#load packages
+library(rethinking)
+
+#load data sheet
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summary.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- data.frame(ft)
 
 # Sample size
 ft$Site <- as.factor(ft$Site)
-#length(ft[ft$Site=="AZ",]$Site) #54 GTGR AZ
-#length(ft[ft$Site=="CA",]$Site) #22 GTGR CA
-#length(ft[ft$Site=="BTGR",]$Site) #8 BTGR
+length(ft[ft$Site=="AZ",]$Site) #54 GTGR AZ
+length(ft[ft$Site=="CA",]$Site) #22 GTGR CA
+length(ft[ft$Site=="BTGR",]$Site) #8 BTGR
 
-# Run model
+
+## AVERAGE flexibility
+# Set up data
 dat <- list(foodswitches = ft$NumFoodSwitches,
             totaltime = round(ft$SumFocalTimeWFood,0), 
             site = as.integer(as.factor(ft$Site)) #Site 1=AZ, 2=BTGR, 3=CA
               )
+
+# Run model
 set.seed(1)
 switch <- ulam( alist(
         foodswitches ~ dbinom(totaltime,p),
@@ -341,7 +323,7 @@ HPDI(diff) #Highest Posterior Density intervals, which are the same as is used i
 #-0.0009906352  0.0001043139  
 #crosses zero so the groups do not differ
 mean(diff) # -0.0004387297 per sec
-sd(diff) # 0.0003468508 per sec
+sd(diff) # 0.0003468508 per se
 mean(diff)*60 # -0.02632378 per min
 
 # How much more likely are the BTGR to switch than GTGR AZ?
@@ -398,6 +380,88 @@ HPDI(inv_logit(post$a[,3]))/mean(inv_logit(post$a[,1]))
 #0.8896928 1.3200867 
 
 
+
+## VARIANCE in flexibility
+# Set up data
+datvar <- list(foodswitches = ft$NumFoodSwitches,
+            totaltime = round(ft$SumFocalTimeWFood,0), 
+            site = as.integer(as.factor(ft$Site)), #Site 1=AZ, 2=BTGR, 3=CA
+            individual = as.integer(as.factor(ft$BirdID))
+              )
+
+# Run model
+set.seed(2)
+switchvar <- ulam( alist(
+        foodswitches ~ dbinom(totaltime,p),
+        logit(p) <- a[site] + b[individual], #b[individual] is the component that measures variance 
+        a[site] ~ dnorm(0,1),
+        b[individual]~dnorm(0,sigma[site]),
+        sigma[site]~dexp(1)
+    ) , data=datvar , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+
+output_switchvar <- precis( switchvar , depth=2 )
+ 
+
+# CONTRASTS to see if Sites differ
+
+#extract posterior
+postvar <- extract.samples(switchvar)
+#set up data sheet so each site has its own column of sigma
+postvarab <- postvar$sigma
+postvarab<-as.data.frame(postvarab)
+
+## GTGR AZ - BTGR
+diffvarab <- postvarab[,1] - postvarab[,2]
+contrast_diffvarab <- precis( diffvarab )
+#         mean   sd  5.5% 94.5%  histogram
+#diffvarab -0.16 0.61 -1.23  0.61 ▁▁▁▁▁▁▃▇▇▂▁▁
+
+#numbers are too small to distinguish, so check the actual intervals...
+HPDI(diffvarab) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
+#        |0.89         0.89| 
+#-0.986370  0.761765
+#crosses zero so the groups do not differ
+mean(diffvarab) # -0.157407 per sec
+sd(diffvarab) # 0.6052781 per sec
+mean(diffvarab)*60 # -9.444421 per min
+
+
+## GTGR CA - BTGR
+diffvarcb <- postvarab[,3] - postvarab[,2]
+contrast_diffvarcb <- precis( diffvarcb )
+#         mean   sd  5.5% 94.5%  histogram
+#diffvarcb 0.13 0.73 -1.05  1.21 ▁▁▁▁▁▂▅▇▅▂▁▁▁
+
+#numbers are too small to distinguish, so check the actual intervals...
+HPDI(diffvarcb) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
+#        |0.89         0.89| 
+#-0.93879  1.27681 
+#crosses zero so  groups do not differ
+mean(diffvarcb) # 0.1294479 per sec
+sd(diffvarcb) # 0.7259996 per sec
+mean(diffvarcb)*60 # 7.766874 per min
+
+
+## GTGR AZ - GTGR CA
+diffvarac <- postvarab[,1] - postvarab[,3]
+contrast_diffvarac <- precis( diffvarac )
+#         mean   sd  5.5% 94.5%  histogram
+#diffca    0  0    0     0 ▁▁▁▁▂▃▇▇▅▂▁▁▁
+
+#numbers are too small to distinguish, so check the actual intervals...
+HPDI(diffvarac) #Highest Posterior Density intervals, which are the same as is used in the precis (described as compatibility intervals) because our samples are from the posterior distribution
+#        |0.89         0.89| 
+#-0.96900  0.36612
+#crosses zero so the groups do not differ: GTGR AZ and GTGR CA have similar probability of switching (CA has higher variances, like in xpopq1 so it is in the same direction even though now it isn't a strong difference)
+mean(diffvarac) #  -0.2868549 per sec
+sd(diffvarac) # 0.4482109 per sec
+mean(diffvarac)*60 # -17.21129 per min
+```
+
+```{r figure, eval=T}
+#load data sheet
+ft <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatBTGR_data_summary.csv"), header=T, sep=",", stringsAsFactors=F)
+ft <- data.frame(ft)
 
 # VISUALIZE
 #make new variable of probability of switching per minute
