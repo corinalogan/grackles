@@ -383,32 +383,31 @@ post <- extract.samples(switch)
 
 ## VARIANCE in flexibility
 # Set up data
-#datvar <- list(foodswitches = ft$NumFoodSwitches,
-            # totaltime = round(ft$SumFocalTimeWFood,0), 
-            # site = as.integer(as.factor(ft$Site)), #Site 1=AZ, 2=BTGR, 3=CA
-            # individual = as.integer(as.factor(ft$BirdID))
-            #   )
-
+datvar <- list(foodswitches = ft$NumFoodSwitches,
+             totaltime = round(ft$SumFocalTimeWFood,0), 
+             site = as.integer(as.factor(ft$Site)), #Site 1=AZ, 2=BTGR, 3=CA
+             individual = as.integer(as.factor(ft$BirdID)) )
 # Run model
-#set.seed(2)
-#switchvar <- ulam( alist(
-    #     foodswitches ~ dbinom(totaltime,p),
-    #     logit(p) <- a[site] + b[individual], #b[individual] is the component that measures variance 
-    #     a[site] ~ dnorm(0,1),
-    #     b[individual]~dnorm(0,sigma[site]),
-    #     sigma[site]~dexp(1)
-    # ) , data=datvar , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
+set.seed(2)
+switchvar <- ulam( alist(
+         foodswitches ~ dbinom(totaltime,p),
+         logit(p) <- a[site] + b[individual], #b[individual] is the component that measures variance 
+         a[site] ~ dnorm(0,1),
+         b[individual]~dnorm(0,sigma[site]),
+         sigma[site]~dexp(1)
+     ) , data=datvar , chains=4 , cores=4 , cmdstan = TRUE, control = list(adapt_delta = .95, force_recompile = TRUE))
 
-#output_switchvar <- precis( switchvar , depth=2 )
+output_switchvar <- precis( switchvar , depth=2 )
  
+#extract posterior
+postvar <- extract.samples(switchvar)
+
 
 # CONTRASTS to see if Sites differ
 
-#extract posterior
-#postvar <- extract.samples(switchvar)
 #set up data sheet so each site has its own column of sigma
-#postvarab <- postvar$sigma
-#postvarab<-as.data.frame(postvarab)
+postvarab <- postvar$sigma
+postvarab<-as.data.frame(postvarab)
 
 ## GTGR AZ - BTGR
 #diffvarab <- postvarab[,1] - postvarab[,2]
@@ -456,6 +455,54 @@ post <- extract.samples(switch)
 #mean(diffvarac) #  -0.2868549 per sec
 #sd(diffvarac) # 0.4482109 per sec
 #mean(diffvarac)*60 # -17.21129 per min
+
+
+# TRYING A DIFFERENT VARIANCE CONTRAST because intuitively from the figure, it looks like the BTGR should have a lower variance than either population of GTGR. However, after running this extra check, which produced the same results as the contrast above (no differences), it makes sense because smaller sample sizes have more uncertainty around where the model thinks the mean is. Larger sample sizes would help, but also using a direct response variable, like a count, rather than a rate would also help.
+#first, what is the variance per site of the raw data: food switches per min?
+#variance(ft[ft$Site=="BTGR",]$NumFoodSwitches / (ft[ft$Site=="BTGR",]$SumFocalTimeWFood/60))  #0.007276962
+#variance(ft[ft$Site=="AZ",]$NumFoodSwitches / (ft[ft$Site=="AZ",]$SumFocalTimeWFood/60)) #0.05998854
+#variance(ft[ft$Site=="CA",]$NumFoodSwitches / (ft[ft$Site=="CA",]$SumFocalTimeWFood/60)) #0.07327653
+
+# Variance is different, but means are similar
+#mean(ft[ft$Site=="BTGR",]$NumFoodSwitches / (ft[ft$Site=="BTGR",]$SumFocalTimeWFood/60)) #0.09622893
+#mean(ft[ft$Site=="AZ",]$NumFoodSwitches / (ft[ft$Site=="AZ",]$SumFocalTimeWFood/60)) #0.1150897
+#mean(ft[ft$Site=="CA",]$NumFoodSwitches / (ft[ft$Site=="CA",]$SumFocalTimeWFood/60)) #0.1373463
+
+#values per individual for b in the model
+#postvar$b
+
+#separate the values per site
+#see what row numbers each site is...
+#ft$Site
+#and manually separate them
+#residb <- postvar$b[,which(ft$Site=="BTGR")] #BTGR
+#resida <- postvar$b[,which(ft$Site=="AZ")] #AZ
+#residc <- postvar$b[,which(ft$Site=="CA")] #CA
+#Take the absolute value to indicate how far each individual's value is from the estimated mean of its population
+#residb<-abs(residb)
+#resida<-abs(resida)
+#residc<-abs(residc)
+
+# check whether BTGR individuals have less variance - which means their values are closer to the population mean - than Arizona individuals
+#for(i in 1:nrow(residb)){
+#  ifelse(i==1,contrast_varab<-mean(resida[i,])-mean(residb[i,]),contrast_varab<-c(contrast_varab,mean(resida[i,])-mean(residb[i,])))
+#}
+#precis(contrast_varab)
+#'data.frame': 2000 obs. of 1 variables:
+#                mean   sd 5.5% 94.5% histogram
+#contrast_varab -0.14 0.39 -0.8  0.39 ▁▁▁▁▂▇▅▁▁
+#No difference in variance between BTGR and AZ
+
+# check whether BTGR individuals have less variance - which means their values are closer to the population mean - than CA individuals
+#for(i in 1:nrow(residb)){
+#  ifelse(i==1,contrast_varcb<-mean(residc[i,])-mean(residb[i,]),contrast_varcb<-c(contrast_varcb,mean(residc[i,])-mean(residb[i,])))
+#}
+#precis(contrast_varcb)
+#'data.frame': 2000 obs. of 1 variables:
+#                mean   sd 5.5% 94.5% histogram
+#contrast_varcb 0.08 0.47 -0.69   0.8 ▁▁▁▂▅▇▂▁▁
+#No difference in variance between BTGR and CA
+
 
 
 
