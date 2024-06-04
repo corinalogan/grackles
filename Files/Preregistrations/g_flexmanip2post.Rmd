@@ -182,9 +182,9 @@ We used the version of the Bayesian model that was developed in @blaisdell2021mo
 
 Equation 1 (attraction and $\phi$): $A_{b,o,t+1}$=(1−$\phi_b$)$A_{b,o,t}$+$\phi_b$ $\pi_{b,o,t}$.
 
-Equation 1 estimates how the associations $A$ that individual $b$ forms between the two different options ($o$ $\epsilon$ {1, 2} and their expected rewards change from one trial to the next (time $t$+1) as a function of their previously formed associations $A_{b,o,t}$ (how preferable option $o$ is to grackle $b$ at time $t$) and recently experienced payoff $\pi$ (in our case, $\pi$ = 1 when they chose the correct option and received a reward in a given trial, and 0 when they chose the unrewarded option). The parameter $\phi_b$ modifies how much individual $b$ updates its associations based on its most recent experience. The higher the value of $\phi_b$, the faster the individual updates its associations, paying more attention to recent experiences, whereas when $\phi_b$ is lower, a grackle’s associations reflect averages across many trials. Association scores thus reflect the accumulated learning history up to this point. The association with the option that is not explored in a given trial remains unchanged. At the beginning of the experiment, we assume that individuals have the same low association between both options and rewards ($A_{b,1}$ = $A_{b,2}$ = 0.1).
+Equation 1 estimates how the associations $A$ that individual $b$ forms between the two different options ($o_{1}$ and $o_{2}$) and their expected rewards change from one trial to the next (time $t$+1) as a function of their previously formed associations $A_{b,o,t}$ (how preferable option $o$ is to grackle $b$ at time $t$) and recently experienced payoff $\pi$ (in our case, $\pi$ = 1 when they chose the correct option and received a reward in a given trial, and 0 when they chose the unrewarded option). The parameter $\phi_b$ modifies how much individual $b$ updates its associations based on its most recent experience. The higher the value of $\phi_b$, the faster the individual updates its associations, paying more attention to recent experiences, whereas when $\phi_b$ is lower, a grackle’s associations reflect averages across many trials. Association scores thus reflect the accumulated learning history up to this point. The association with the option that is not explored in a given trial remains unchanged. At the beginning of the experiment, we assume that individuals have the same low association between both options and rewards ($A_{b,1}$ = $A_{b,2}$ = 0.1).
  
-Equation 2 (choice and $\lambda$): $P_{b,o,t+1}$=$\displaystyle \frac{exp(\lambda_b A_{b,o,t})}{\sum_{i = 1}^{2} exp(\lambda_b A_{b,o,t})}$.
+Equation 2 (choice and $\lambda$): $P_{b,o,t+1}$=$\displaystyle \frac{exp(\lambda_b A_{b,o,t})}{\sum_{o = 1}^{2} exp(\lambda_b A_{b,o,t})}$.
 
 Equation 2 expresses the probability $P$ that an individual $b$ chooses option $o$ in the next trial, $t$+1, based on their learned associations of the two options with rewards. The parameter $\lambda_b$ represents the sensitivity of a given grackle $b$ to how different its associations to the two options are. As $\lambda_b$ gets larger, choices become more deterministic and individuals consistently choose the option with the higher association even if associations are very similar. As $\lambda_b$ gets smaller, choices become more exploratory, with individuals choosing randomly between the two options independently of their learned associations if $\lambda_b$ is 0. 
 
@@ -679,7 +679,7 @@ abline(a=0,b=1)
 
 We determined how the $\phi$ and $\lambda$ values that were assigned to the simulated individuals influenced their performance in the reversal learning trials, building a regression model to determine which of the two parameters had a more direct influence on the number of trials individuals needed to reach criterion. We assumed that the number of trials followed a Poisson distribution because the number of trials to reach criterion is a count that is bounded at smaller numbers (individuals need at least 20 trials to reach the criterion), with a log-linear link, because we expect there are diminishing influences of further increases in $\phi$ or $\lambda$. The model is as follows:
 
-$V_{b,0}$ ~ Poisson($\mu$), \
+$v_{b,0}$ ~ Poisson($\mu$), \
 log $\mu$ = $a$ + $b$ x $\phi$ + c x $\lambda$, \
 $a$ ~ Normal(4.5,1), \
 $b$ ~ Normal(0,1), \
@@ -1962,9 +1962,9 @@ $\phi$ or $\lambda$ ~ Normal( $\mu$ , $\sigma$ ), \
 $\mu$ = $a_{b}$ + $b_{b}$ x $reversal$, \ 
 [$a_{b}$,$b_{b}$] ~ **MVNormal**([e,f],S), \
 S = ($\delta_{b}$ ,0) Rho ($\delta_{b}$,0), \
-Rho ~ **LKJcorr**(2), \
-a ~ Normal(5,2), \
-b ~ Normal(-1,0.5), \
+$\rho$ ~ **LKJcorr**(2), \
+e ~ Normal(5,2), \
+f ~ Normal(-1,0.5), \
 $\delta_{b}$ ~ Exponential(1), \
 $\sigma$ ~ Exponential(1), \
 
