@@ -660,8 +660,8 @@ plot(firstsimulated_phi~simulatedphis,xlim=c(0,0.06),ylim=c(0,0.06),bty="n",cex=
 points(initialandreversal_phi~simulatedphis,col="#007477",pch=16,cex=2)
 abline(a=0,b=1,lty=2)
 legend(x="topleft", legend=c(pch16="Initial plus Reversal",pch18="Single Reversal"), pch=c(16,18), col=c("#007477","#00DADF"), box.lty=0, cex=1.2,pt.cex=1.4)
-mtext("Assigned association-updating rate φ",side=1,at=0.03,line=3,cex=1.5)
-mtext("Estimated association-updating rate φ",side=2,at=0.03,line=2.5,cex=1.5)
+mtext("Assigned association-updating rate Φ",side=1,at=0.03,line=3,cex=1.5)
+mtext("Estimated association-updating rate Φ",side=2,at=0.03,line=2.5,cex=1.5)
 mtext("1:1 line",side=1,at=0.055,line=-20)
 
 for(i in 1:30) {
@@ -809,7 +809,7 @@ precis(trials.phiandlambda,depth=2)
 # b -21.21 0.39 -21.84 -20.58  5904     1
 # c  -0.05 0.00  -0.06  -0.05  7955     1
 
-mu_1<- link( trials.phiandlambda, data=data.frame(phi=seq(from=0.01,to=0.07,length=17),lambda=rep(4,17) ) ) 
+mu_1<- link( trials.phiandlambda, data=data.frame(phi=seq(from=0.01,to=0.11,length=17),lambda=rep(4,17) ) ) 
 mu_1_mean <- apply( mu_1 , 2 , mean ) 
 mu_1_ci_simulated <- apply( mu_1 , 2 , PI , prob=0.97 ) 
 
@@ -844,7 +844,7 @@ summarysimulateddata_forplotting_alt<-summarysimulateddata_forplotting[order(sum
 summarysimulateddata_forplotting_alt$TrialsReversal<-as.integer(summarysimulateddata_forplotting_alt$TrialsReversal)
 
 ggplot(summarysimulateddata_forplotting_alt, aes(x=TrialsReversal, y=Value, fill=Predictor)) + 
-    geom_jitter(colour=summarysimulateddata_forplotting_alt$color,width=0.2,size=2)+xlab("Trials simulated individuals needed to reach criterion")+  ylab("<span style='font-size:20pt;font-weight:bold'>Assigned <b style='color:#007477'>φ</b> and <b style='color:#FF6A6A'>λ</b> (standardized) </span>")+
+    geom_jitter(colour=summarysimulateddata_forplotting_alt$color,width=0.2,size=2)+xlab("Trials simulated individuals needed to reach criterion")+  ylab("<span style='font-size:20pt;font-weight:bold'>Assigned <b style='color:#007477'>Φ</b> and <b style='color:#FF6A6A'>λ</b> (standardized) </span>")+
  theme_classic()+scale_x_continuous(name="Number of trials to reach criterion",breaks=1:8, labels=c("31-50","51-70","71-90","91-110","111-130","131-150","151-180","181-220"))+theme(axis.text.x = element_text(size = 14, colour ="black",hjust = 0.5,angle = 0)) + 
     theme(axis.title.x = element_text(size = 18, colour ="black", face = "bold",
                                       hjust = 0.5,
@@ -864,7 +864,7 @@ phi<-0.05
 lambda<-4.4
 
 initial_attraction_rewarded<-0.1
-initial_attraction_nonrewarded<-0.1
+initial_attraction_nonrewarded<-0.6
 
 trial20_attraction_rewarded<-NA
 trial20_attraction_nonrewarded<-NA
@@ -881,16 +881,26 @@ probability_choose_rewarded
 
 ####
 ### Plot for Figure 4
-phis_85percent<-c(0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10)
-lambda_85percent<-c(9.5,6.6,5.2,4.4,3.8,3.4,3.1,2.9,2.7)
-d<-matrix(data=c(phis_85percent,lambda_85percent),nrow=9,ncol=2)
+phis_85percent<-c(0.045,0.05,0.06,0.07,0.08,0.09,0.10)
+lambda_85percent<-c(10,7.3,4.5,3.4,2.9,2.6,2.4)
+
+
+d<-matrix(data=c(phis_85percent,lambda_85percent),nrow=7,ncol=2)
 d<-as.data.frame(d)
-colnames(d)<-c("Association-updating rate φ","Sensitivity to learned associations λ")
-spline_int <- as.data.frame(spline(d$`Association-updating rate φ`, d$`Sensitivity to learned associations λ`))
+colnames(d)<-c("Association-updating rate Φ","Sensitivity to learned associations λ")
+
+
+spline_int <- as.data.frame(spline(d$`Association-updating rate Φ`, d$`Sensitivity to learned associations λ`))
+
+
 
 ggplot(d) + 
-  geom_point(aes(x = `Association-updating rate φ`, y = `Sensitivity to learned associations λ`), size = 3) +
-  geom_line(data = spline_int, aes(x = x, y = y))+theme_classic() +theme(axis.text.x = element_text(size = 14, colour ="black",
+  geom_point(aes(x = `Association-updating rate Φ`, y = `Sensitivity to learned associations λ`), size = 3) +
+  geom_line(data = spline_int, aes(x = x, y = y))+geom_ribbon(data = spline_int,aes(x = x,
+                  ymin = y,
+                  ymax = y2),
+              fill = "gray",
+              alpha = 0.4)+theme_classic() +theme(axis.text.x = element_text(size = 14, colour ="black",
                                               hjust = 0.5,
                                               angle = 0)) + 
     theme(axis.title.x = element_text(size = 18, colour ="black", face = "bold",
@@ -905,16 +915,14 @@ ggplot(d) +
                                               angle = 90),axis.line.x = element_line(colour = 'black', linewidth = 1, linetype='solid'),
           axis.line.y = element_line(colour = 'black', linewidth = 1, linetype='solid'),panel.background = element_rect(fill = "white",
                                 colour = "white",
-                                size = 0.5, linetype = "solid"),
-  panel.grid.major.y = element_line(size = 0.5, linetype = 'dashed',
-                                colour = "grey85")) + theme(legend.title = element_text(size = 13))+
+                                size = 0.5, linetype = "solid")) + theme(legend.title = element_text(size = 13))+
   ylim(0.4,10)+xlim(0.004,0.10)+
-  annotate("text", x=0.035, y=1.5, label= "Unlikely to reach criterion in 40 trials",size=5)+
-  annotate("text", x=0.07, y=7, label= "Likely to reach criterion in 40 trials",size=5)+
+  annotate("text", x=0.025, y=1.5, label= "Unlikely to reach criterion in 50 trials",size=5)+
+  annotate("text", x=0.077, y=7, label= "Likely to reach criterion in 50 trials",size=5)+
   geom_point(aes(x=0.03, y=4.3), colour="#E69F00",size=4)+
   geom_point(aes(x=0.07, y=3.2), colour="#56B4E9",size=4)+
   annotate("text", x=0.03, y=3.8, label= "Grackles first",size=5,colour="#E69F00")+
-  annotate("text", x=0.07, y=2.7, label= "Grackles manipulated",size=5,colour="#56B4E9")
+  annotate("text", x=0.07, y=2.5, label= "Grackles manipulated",size=5,colour="#56B4E9")
 
 
 # Alternative where individuals experience a reversal, so their initial association is biased toward the option that is no longer rewarded. We can calculate how many random trials individuals will need to such that their association toward the now rewarded option is larger than their association to the previously rewarded option.
@@ -1472,7 +1480,7 @@ precis(trialsfirst.phiandlambda,depth=2)
 # c  -0.11 0.04  -0.17  -0.04  4419     1
 
 #Plot to assess fit of the model:
-mu_1<- link( trialsfirst.phiandlambda, data=data.frame(phi=seq(from=0.01,to=0.07,length=17),lambda=rep(4,17) ) ) 
+mu_1<- link( trialsfirst.phiandlambda, data=data.frame(phi=seq(from=0.01,to=0.11,length=17),lambda=rep(4,17) ) ) 
 mu_1_mean <- apply( mu_1 , 2 , mean ) 
 mu_1_ci <- apply( mu_1 , 2 , PI , prob=0.97 ) 
 
@@ -1589,14 +1597,14 @@ points(combinedreversaldata$TrialsFirstReversal~combinedreversaldata$beginningph
 
 
 ## Plot for Figure 6
-plot( NULL , xlim=c(0.01,0.07) , ylim=c(0,250) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
+plot( NULL , xlim=c(0.01,0.11) , ylim=c(0,250) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
 points(summarysimulateddata_ll$TrialsReversal~summarysimulateddata_ll$ThisBirdsPhi,col="#007477",pch=1,cex=1)
 points(combinedreversaldata$TrialsFirstReversal~combinedreversaldata$beginningphi,bg="#E69F00",pch=21,cex=2,col="black")
 legend(x=0.045,y=250,legend=c(pch1="Simulated individuals", pch1="Great-tailed grackles"), pch=c(1,16), col=c("#007477","#E69F00"), box.lty=0, cex=0.9,pt.cex=2)
-mtext("Association-updating rate φ", side=1,line=3,font=2,cex=1.5)
+mtext("Association-updating rate Φ", side=1,line=3,font=2,cex=1.5)
 mtext("Number of trials to reach criterion", side=2,line=2.5,font=2,cex=1.5)
-shade(mu_1_ci_simulated,seq(from=0.01,to=0.07,length=17), col=col.alpha("#007477",0.4))
-shade(mu_1_ci,seq(from=0.01,to=0.07,length=17), col=col.alpha("#E69F00",0.4))
+shade(mu_1_ci_simulated,seq(from=0.01,to=0.11,length=17), col=col.alpha("#007477",0.4))
+shade(mu_1_ci,seq(from=0.01,to=0.11,length=17), col=col.alpha("#E69F00",0.4))
 
 
 ### Assess role of phi and lambda on number of trials across both first and last reversal
@@ -1946,7 +1954,7 @@ lambdaplot<-dat_for_plotting_lambda %>%
 plot_grid(trialsplot,
           phiplot,
           lambdaplot,
-          labels = c('a) Number of trials to reach criterion','b) Association-updating rate φ','c) Sensitivity to learned associations λ'),
+          labels = c('a) Number of trials to reach criterion','b) Association-updating rate Φ','c) Sensitivity to learned associations λ'),
           label_x = 0.05,
           label_size	= 20,
           hjust = -0.05,
@@ -2765,7 +2773,7 @@ plot( NULL , ylim=c(0,1) , xlim=c(0,40) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab
 lines(probability_rewarded_phi06[2:36]~c(1:35),col="darkblue",lwd=8)
 lines(probability_rewarded_phi08[2:36]~c(1:35),col="lightblue",lwd=8)
 
-legend(x=10,y=0.25, legend=c(pch16="higher association-updating (φ = 0.09), lower sensitivity (λ = 3)", pch16="lower association-updating (φ = 0.06), higher sensitivity (λ = 4)"), pch=c(16,16), col=c("lightblue","darkblue"), box.lty=0, cex=0.9,pt.cex=1.4)
+legend(x=10,y=0.25, legend=c(pch16="higher association-updating (Φ = 0.09), lower sensitivity (λ = 3)", pch16="lower association-updating (Φ = 0.06), higher sensitivity (λ = 4)"), pch=c(16,16), col=c("lightblue","darkblue"), box.lty=0, cex=0.9,pt.cex=1.4)
 
 mtext("Subsequent trials in final reversal",side=1,line=2.5,cex=1.25)
 mtext("Probability individual chooses the rewarded option", side=2,line=2.5,cex=1.25)
@@ -3516,7 +3524,7 @@ points(plasticlocisolved~dat_loci_plastic_both$learningphi,col="red",pch=16,cex=
 
 mtext("b)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
-mtext("φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+mtext("Φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
 for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
   lines(y=c(plasticlocisolved[i],plasticlocisolved[i]),x=c(phi_samples_for_plotting_ranges_plastic[1,i],phi_samples_for_plotting_ranges_plastic[2,i]),col="red")
@@ -3613,7 +3621,7 @@ points(plasticlatency~dat_latency_plastic_both$learningphi,col="red",pch=16,cex=
 
 mtext("d)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
-mtext("φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
+mtext("Φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
 
 plasticlatencyquadratic_ci_1700<-plasticlatencyquadratic_ci
 plasticlatencyquadratic_ci_1700[plasticlatencyquadratic_ci_1700>1700]<-1700
