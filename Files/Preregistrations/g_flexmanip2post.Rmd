@@ -864,7 +864,7 @@ phi<-0.05
 lambda<-4.4
 
 initial_attraction_rewarded<-0.1
-initial_attraction_nonrewarded<-0.1
+initial_attraction_nonrewarded<-0.6
 
 trial20_attraction_rewarded<-NA
 trial20_attraction_nonrewarded<-NA
@@ -881,16 +881,26 @@ probability_choose_rewarded
 
 ####
 ### Plot for Figure 4
-phis_85percent<-c(0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.10)
-lambda_85percent<-c(9.5,6.6,5.2,4.4,3.8,3.4,3.1,2.9,2.7)
-d<-matrix(data=c(phis_85percent,lambda_85percent),nrow=9,ncol=2)
+phis_85percent<-c(0.045,0.05,0.06,0.07,0.08,0.09,0.10)
+lambda_85percent<-c(10,7.3,4.5,3.4,2.9,2.6,2.4)
+
+
+d<-matrix(data=c(phis_85percent,lambda_85percent),nrow=7,ncol=2)
 d<-as.data.frame(d)
 colnames(d)<-c("Association-updating rate φ","Sensitivity to learned associations λ")
+
+
 spline_int <- as.data.frame(spline(d$`Association-updating rate φ`, d$`Sensitivity to learned associations λ`))
+
+
 
 ggplot(d) + 
   geom_point(aes(x = `Association-updating rate φ`, y = `Sensitivity to learned associations λ`), size = 3) +
-  geom_line(data = spline_int, aes(x = x, y = y))+theme_classic() +theme(axis.text.x = element_text(size = 14, colour ="black",
+  geom_line(data = spline_int, aes(x = x, y = y))+geom_ribbon(data = spline_int,aes(x = x,
+                  ymin = y,
+                  ymax = y2),
+              fill = "gray",
+              alpha = 0.4)+theme_classic() +theme(axis.text.x = element_text(size = 14, colour ="black",
                                               hjust = 0.5,
                                               angle = 0)) + 
     theme(axis.title.x = element_text(size = 18, colour ="black", face = "bold",
@@ -905,16 +915,14 @@ ggplot(d) +
                                               angle = 90),axis.line.x = element_line(colour = 'black', linewidth = 1, linetype='solid'),
           axis.line.y = element_line(colour = 'black', linewidth = 1, linetype='solid'),panel.background = element_rect(fill = "white",
                                 colour = "white",
-                                size = 0.5, linetype = "solid"),
-  panel.grid.major.y = element_line(size = 0.5, linetype = 'dashed',
-                                colour = "grey85")) + theme(legend.title = element_text(size = 13))+
+                                size = 0.5, linetype = "solid")) + theme(legend.title = element_text(size = 13))+
   ylim(0.4,10)+xlim(0.004,0.10)+
-  annotate("text", x=0.035, y=1.5, label= "Unlikely to reach criterion in 40 trials",size=5)+
-  annotate("text", x=0.07, y=7, label= "Likely to reach criterion in 40 trials",size=5)+
+  annotate("text", x=0.025, y=1.5, label= "Unlikely to reach criterion in 50 trials",size=5)+
+  annotate("text", x=0.077, y=7, label= "Likely to reach criterion in 50 trials",size=5)+
   geom_point(aes(x=0.03, y=4.3), colour="#E69F00",size=4)+
   geom_point(aes(x=0.07, y=3.2), colour="#56B4E9",size=4)+
   annotate("text", x=0.03, y=3.8, label= "Grackles first",size=5,colour="#E69F00")+
-  annotate("text", x=0.07, y=2.7, label= "Grackles manipulated",size=5,colour="#56B4E9")
+  annotate("text", x=0.07, y=2.5, label= "Grackles manipulated",size=5,colour="#56B4E9")
 
 
 # Alternative where individuals experience a reversal, so their initial association is biased toward the option that is no longer rewarded. We can calculate how many random trials individuals will need to such that their association toward the now rewarded option is larger than their association to the previously rewarded option.
