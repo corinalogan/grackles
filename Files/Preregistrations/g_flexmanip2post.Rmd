@@ -36,6 +36,8 @@ header-includes:
   - \usepackage{pdflscape}
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
+  - \usepackage{amsmath}
+  - \usepackage{amssymb}
 ---
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip2post.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data](https://doi.org/10.5063/F1H41PWS)
@@ -176,7 +178,7 @@ Prediction 6: We predicted that grackles that are more flexible, those who have 
 
 # Methods
  
-## The Bayesian reinforcement learning model \
+## The Bayesian reinforcement learning model
  
 We used the version of the Bayesian model that was developed in @blaisdell2021more and modified in @logan2023xpoppcj (see their Analysis Plan > "Flexibility analysis" for model specifications and validation). This model uses data from every trial of reversal learning (rather than only using the total number of trials to pass criterion) and represents behavioral flexibility using two parameters: the association-updating rate ($\phi$) and the sensitivity to learned associations ($\lambda$). The model transforms the series of choices each grackle made based on two equations to estimate the most likely $\phi$ and $\lambda$ that generated the observed behavior. 
 
@@ -200,9 +202,10 @@ Equation 3a (dynamic association for the rewarded option): $A_{r,t+1}$  = ((1-$\
 
 Equation 3b (dynamic association for the non-rewarded option): $A_{n,t+1}$ = (1-$P_{t}$) x (1-$\phi$) x $A_{n,t}$ + $P_{t}$ + (1-$P_{t}$) x $A_{n,t}$.
 
+In equations 3a and 3b, the association with both the rewarded, $A_{r}$, and the non-rewarded, $A_{n}$, options change from time $t-1$ to time $t$ depending on the association updating rate $\phi$ and the probability, $P$, that the association was chosen at time $t$.
 
  
-### 1) Using simulations to determine whether the Bayesian serial reinforcement learning models have sufficient power to detect changes through the serial reversal learning experiment \
+## 1) Using simulations to determine whether the Bayesian serial reinforcement learning models have sufficient power to detect changes through the serial reversal learning experiment \
  
 We re-analyzed data we previously simulated for power analyses to estimate sample sizes for population comparisons [@logan2023xpoppcj]. In brief, we simulated 20 individuals each from 32 different populations (640 individuals). The $\phi$ and $\lambda$ values for each individual were drawn from a distribution representing that population, with different mean $\phi$ (8 different means) and mean $\lambda$ (4 different values) for each population (32 populations as the combination of each $\phi$ and $\lambda$). The range for $\phi$ and $\lambda$ values assigned to the artificial individuals in the simulations were based on the previous analysis of the single reversal data from grackles in a different population (Santa Barbara, California, USA, @blaisdell2021more) to reflect the likely expected behavior. Based on their assigned $\phi$ and $\lambda$ values, each individual was simulated to pass first through the initial association learning phase and, after they reached criterion (chose the correct option 17 out of the last 20 times), the rewarded option switched and simulated individuals went through the reversal learning phase until they again reached criterion. Each choice that each individual made was simulated consecutively, updating their internal associations with the two options based on their $\phi$ values and setting the probability of their next choice based on how their $\lambda$ value weighted their associations to the two options. We excluded simulated individuals from the further analyses if they did not reach criterion either during the initial association or the reversal within 300 trials, the maximum that was also set for the experiments with the grackles. 
 
@@ -211,17 +214,16 @@ We ran the Bayesian reinforcement learning model on these simulated data to unde
 To determine whether the Bayesian reinforcement learning model can accurately recover the simulated $\phi$ and $\lambda$ values from limited data, we applied the model first to only the choices from the initial association learning phase, next to only the choices from the first reversal learning phase, and finally from both phases combined. To estimate whether the Bayesian reinforcement learning model can recover the simulated $\phi$ and $\lambda$ values without bias from either of the single or from the combined datasets, we correlated the estimated values with the values individuals were initially assigned:
 
 $\phi_{b,0}$ or $\lambda_{b,0}$ ~ Normal($\mu$, $\sigma$), \
-$\mu$ = $a$ + $b$ x $\phi_{b,1}$ or $\lambda_{b,1}$, \
-$a$ ~ Normal(0,0.1), \
-$b$ ~ Normal(1,1), \
+$\mu$ = $\alpha$ + $\beta$ x $\phi_{b,1}$ or $\lambda_{b,1}$, \
+$\alpha$ ~ Normal(0,0.1), \
+$\beta$ ~ Normal(1,1), \
 $\sigma$ ~ Exponential(1),
 
-where a slope $b$ between the assigned ($\phi_{b,0}$ or $\lambda_{b,0}$) and estimated ($\phi_{b,1}$ or $\lambda_{b,1}$) values close to 1 would indicate that the estimated values matched the assigned values. 
+where a slope $\beta$ between the assigned ($\phi_{b,0}$ or $\lambda_{b,0}$) and estimated ($\phi_{b,1}$ or $\lambda_{b,1}$) values close to 1 would indicate that the estimated values matched the assigned values. 
 
 This, and all following statistical models, were implemented using functions of the package ‘rethinking’ [@mcelreath2020statistical] in R to estimate the association with stan. Following the social convention set in [@mcelreath2020statistical], we report the mean estimate and the 89% confidence interval from the posterior estimate from these models. For each model, we ran four chains with 10,000 iterations each (half of which were burn-in, and half samples for the posterior). We checked that the number of effective samples was sufficiently high and evenly distributed across parameters such that auto-correlation did not influence the estimates. We also confirmed that in all cases the Gelman-Rubin convergence diagnostic, Ȓ, was 1.01 or smaller indicating that the chains had converged on the final estimates [@gelman1995avoiding]. In all cases, we also linked the model inferences back to the distribution of the raw data to confirm that the estimated predictions matched the observed patterns.
 
 ```{r question1_possibilityinferringphiandlambdasimulations, eval=F}
-
 ####
 # Load previously simulated data from xpop
 ####
@@ -675,17 +677,17 @@ points(initialandreversal_lambda~simulatedlambdas,col="red")
 abline(a=0,b=1)
 ```
 
-### 2) Using simulations to determine whether variation in $\phi$ or in $\lambda$ has a stronger influence on the number of trials individuals might need to reach criterion in reversal learning experiments \
+## 2) Using simulations to determine whether variation in $\phi$ or in $\lambda$ has a stronger influence on the number of trials individuals might need to reach criterion in reversal learning experiments \
 
 We determined how the $\phi$ and $\lambda$ values that were assigned to the simulated individuals influenced their performance in the reversal learning trials, building a regression model to determine which of the two parameters had a more direct influence on the number of trials individuals needed to reach criterion. We assumed that the number of trials followed a Poisson distribution because the number of trials to reach criterion is a count that is bounded at smaller numbers (individuals need at least 20 trials to reach the criterion), with a log-linear link, because we expect there are diminishing influences of further increases in $\phi$ or $\lambda$. The model is as follows:
 
 $v_{b,0}$ ~ Poisson($\mu$), \
-log $\mu$ = $a$ + $b$ x $\phi$ + c x $\lambda$, \
-$a$ ~ Normal(4.5,1), \
-$b$ ~ Normal(0,1), \
-$c$ ~ Normal(0,1), \
+log $\mu$ = $\alpha$ + $\beta_{p}$ x $\phi$ + $\beta_{l}$ x $\lambda$, \
+$\alpha$ ~ Normal(4.5,1), \
+$\beta_{p}$ ~ Normal(0,1), \
+$\beta_{l}$ ~ Normal(0,1), \
 
-where the prior for the intercept $a$ was based on the average number of trials (90) grackles in Santa Barbara were observed to need to reach the criterion during the reversal (mean of 4.5 is equal to logarithm of 90, standard deviation set to 1 to constrain the estimate to the range observed across individuals). The priors for the relationships $b$ and $c$ with $\phi$ and $\lambda$ were centered on zero, indicating that, *a priori*, we do not bias it toward a relationship.
+where the prior for the intercept $\alpha$ was based on the average number of trials (90) grackles in Santa Barbara were observed to need to reach the criterion during the reversal (mean of 4.5 is equal to logarithm of 90, standard deviation set to 1 to constrain the estimate to the range observed across individuals). The priors for the relationships $\beta_{p}$ and $\beta_{l}$ with $\phi$ and $\lambda$ were centered on zero, indicating that, *a priori*, we do not bias it toward a relationship.
 
 ```{r question2_phiversuslambdasimulateddata, eval=F}
 ####
@@ -1967,27 +1969,58 @@ plot_grid(trialsplot,
 For the subset of grackles that were part of the manipulated group, we calculated how much their $\phi$ and $\lambda$ changed from their first to their last reversal. The model is as follows:
 
 $\phi$ or $\lambda$ ~ Normal( $\mu$ , $\sigma$ ), \
-$\mu$ = $a_{b}$ + $b_{b}$ x $reversal$, \ 
-[$a_{b}$,$b_{b}$] ~ **MVNormal**([e,f],S), \
-S = ($\delta_{b}$ ,0) Rho ($\delta_{b}$,0), \
-$\rho$ ~ **LKJcorr**(2), \
+$\mu$ = $\alpha_{b}$ + $\beta_{b}$ x $reversal$, \ 
+
+[$\alpha_{b}$,$\beta_{b}$] ~ **MVNormal**([e,f],**S**), \
+**S** = ($\delta_{b}$ ,0) **P** ($\delta_{b}$,0), \
+**P** ~ **LKJcorr**(2), \
 e ~ Normal(5,2), \
 f ~ Normal(-1,0.5), \
 $\delta_{b}$ ~ Exponential(1), \
 $\sigma$ ~ Exponential(1), \
 
-where each grackle has two $\phi$ or $\lambda$ values, one from the beginning (‘reversal’ equals 1) and one from the end of the serial reversal experiment (‘reversal’ equals 2). We assume that there are individual differences that persist through the experiment (intercept $a_{bird}$) and that how much individuals change might also depend on their values at the beginning (multi-normal matrix correlation between the bird specific intercepts *a* and the bird specific changes between the reversals *b*).
 
-We also fit a model to assess whether how much individuals improved in the number of trials from their first to their last reversal was linked more to their change in $\phi$ or to their change in $\lambda$.
+\[
+\begin{bmatrix}
+\alpha_{b}\\
+\beta_{b}
+\end{bmatrix}
+\sim MVNormal\begin{pmatrix} \begin{bmatrix}
+\alpha\\
+\beta
+\end{bmatrix}
+, S
+\end{pmatrix}
+\]
 
-Improvement in number of trials ~ Normal($\mu$, $\sigma$) \
-$\mu$ = a + b * change in $\phi$ + c * change in $\lambda$ \  
-a ~ Normal(40, 10) \
-b ~ Normal(0, 10) \
-c ~ Normal(0, 10) \
-$\sigma$ ~ Exponential(1) \
+\[
+S = 
+\begin{pmatrix}
+\sigma_{\alpha} & 0\\
+0 & \sigma_{\beta}
+\end{pmatrix}
 
-where *Improvement in the number of trials* is the difference in the number of trials between the first and the last reversal and *change in* $\phi$ and *change in* $\lambda$ are the respective differences in these parameters between the beginning and the end of the serial reversal experiment.
+P 
+\begin{pmatrix}
+\sigma_{\alpha} & 0\\
+0 & \sigma_{\beta}
+\end{pmatrix}
+\]
+
+
+where each grackle has two $\phi$ or $\lambda$ values, one from the beginning ($reversal$ equals 1) and one from the end of the serial reversal experiment ($reversal$ equals 2). We assume that there are individual differences that persist through the experiment (intercept $\alpha_{b}$) and that how much individuals change might also depend on their values at the beginning (multi-normal matrix correlation between the bird specific intercepts $\alpha_{b}$ and the bird specific changes between the reversals $\beta_{b}$).
+
+We also fit a model to assess whether how much individuals improved in the number of trials from their first to their last reversal was linked more to their change in $\phi$ or to their change in $\lambda$. The model is as follows:
+
+$\Delta_{b}$ ~ Normal($\mu$, $\sigma$), \
+$\mu$ = $\alpha$ + $\beta_{dp}$ x $\Delta$$\phi_{b}$ + $\beta_{dl}$ x $\Delta$$\lambda_{b}$, \  
+
+$\alpha_{b}$ ~ Normal(40, 10), \
+$\beta_{dp}$ ~ Normal(0, 10), \
+$\beta_{dl}$ ~ Normal(0, 10), \
+$\sigma$ ~ Exponential(1), \
+
+where $\Delta_{b}$, the *improvement in the number of trials*, is the difference in the number of trials between the first and the last reversal and $\Delta$$\phi_{b}$ and $\Delta$$\lambda_{b}$ are the respective differences in these parameters between the beginning and the end of the serial reversal experiment.
 
 ```{r question4_improvementmanipulatedgrackles, eval=F}
 library(rethinking)
@@ -2330,36 +2363,38 @@ median(first20correct$Percentage20Correct) # 25%
 median(last20correct$Percentage20Correct) # 35%
 ```
 
-## 5) Calculating whether individual differences in $\phi$ and $\lambda$ persist throughout the serial reversal learning experiment and whether individuals differ in how much they change throughout the experiment \
+## 5) Calculating whether individual differences in $\phi$ and $\lambda$ persist throughout the serial reversal learning experiment and whether individuals differ in how much they change throughout the experiment
 
-We checked whether the $\phi$ or $\lambda$ values of individuals at the beginning (*first*) was associated with how much they changed (*change*, difference in values between beginning or end) or with the values they had at the end (*last*).
+We checked whether the $\phi$ or $\lambda$ values of individuals at the beginning (*first*) was associated with how much they changed (*change*, difference in values between beginning or end) or with the values they had at the end (*last*). The first part of the model is as follows:
 
-$\phi$ *change* or $\lambda$ *change* ~ Normal($\mu$ , $\sigma$) \
-        $\mu$ = a + b * $\phi$ *first* or $\lambda$ *first* \
-        a ~ Normal(0,1) \
-        b ~ Normal(0,1) \
-        $\sigma$ ~ Exponential(1) \
+$\Delta$$\phi_{b}$ or $\Delta$$\lambda_{b}$ ~ Normal($\mu$ , $\sigma$), \
+        $\mu_{b}$ = $\alpha$ + $\beta$ x $\phi_{b,0}$ or $\lambda_{b,0}$, \
+        $\alpha$ ~ Normal(0,1), \
+        $\beta$ ~ Normal(0,1), \
+        $\sigma$ ~ Exponential(1), \
 
+where $\phi_{b,0}$ and $\lambda_{b,0}$ are from the first reversal. The second part of the model is as follows:
 
-$\phi$ *last* or $\lambda$ *last* ~ Normal($\mu$ , $\sigma$) \ 
-        $\mu$ = a + b * $\phi$ *first* or $\lambda$ *first* \
-        a ~ Normal(0,1) \
-        b ~ Normal(0,1) \
-        $\sigma$ ~ Exponential(1)
+$\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu$ , $\sigma$), \ 
+        
+$\mu$ = $\alpha$ + $\beta$ x $\phi_{b,1}$ or $\lambda_{b,1}$, \
+$\alpha$ ~ Normal(0,1), \
+$\beta$ ~ Normal(0,1), \
+$\sigma$ ~ Exponential(1),
 
-In addition, we assessed whether grackles at the end show the potential trade-off between $\phi$ and $\lambda$ that could be expected in the serial reversal experiment. 
+where $\phi_{b,1}$ and $\lambda_{b,1}$ are from the last reversal.
 
-$\phi$ *last* ~ Normal($\mu$ , $\sigma$) \
-        $\mu$ = a + b * $\lambda$ *last* \
-        a ~ Normal(0,1) \
-        b ~ Normal(0,1) \
-        $\sigma$ ~ Exponential(1)
+In addition, we assessed whether grackles at the end show the potential trade-off between $\phi$ and $\lambda$ that could be expected in the serial reversal experiment. The model is as follows:
 
+$\phi_{b,1}$ ~ Normal($\mu$ , $\sigma$), \
+        $\mu$ = $\alpha$ + $\beta$ x $\lambda_{b,1}$, \
+        $\alpha$ ~ Normal(0,1), \
+        $\beta$ ~ Normal(0,1), \
+        $\sigma$ ~ Exponential(1),
 
+where 
 
 ```{r question5_individualvariationmanipulatedgrackles, eval=F}
-
-
 # How much the phi of individuals changes depends on where their phi was at the beginning
 dat_phi_improvement<-list(
   phichange = improvementdata$phiimprovement,
@@ -2730,7 +2765,6 @@ precis(mchangelambdaphi_correlated)
 phi<-0.06 # 0.06 vs 0.08
 lambda<-4 # 4 vs 3
 
-
 attraction_rewarded<-NA
 attraction_nonrewarded<-NA
 probability_rewarded<-NA
@@ -2746,10 +2780,8 @@ probability_rewarded[i+1]<-exp(attraction_rewarded[i]*lambda)/(exp(attraction_re
 
 probability_rewarded_phi06<-probability_rewarded
 
-
 phi<-0.087 # 0.06 vs 0.08
 lambda<-3 # 4 vs 3
-
 
 attraction_rewarded<-NA
 attraction_nonrewarded<-NA
@@ -2777,43 +2809,37 @@ legend(x=10,y=0.25, legend=c(pch16="higher association-updating (Φ = 0.09), low
 
 mtext("Subsequent trials in final reversal",side=1,line=2.5,cex=1.25)
 mtext("Probability individual chooses the rewarded option", side=2,line=2.5,cex=1.25)
-
-
 ```
 
-
-
-## 6) Linking $\phi$ and $\lambda$ from the observed serial reversal learning performances to the performance on the multi-access boxes \
+## 6) Linking $\phi$ and $\lambda$ from the observed serial reversal learning performances to the performance on the multi-access boxes
  
 After the individuals had completed the reversal learning experiment, they were provided access to two multi-access puzzle boxes, one made of wood and one made of plastic. The two boxes were designed with slight differences to explore how general the performance of the grackles was. The wooden box was made from a natural log, so was more representative of something the grackles might encounter in the wild. In addition, while both boxes had 4 possible ways (options) to access food, the four options on the wooden box were distinct compartments, each containing rewards, while the four options on the plastic box all led to the same reward. Grackles were tested sequentially on both boxes, where individuals could initially explore all options. After proficiency at an option was achieved (gaining food from this locus three times in a row), this option became non-functional by closing access to the option, and then the latency of the grackle to switch to attempting a different option was measured. If they again successfully solved another option, this second options was also made non-functional, and so on. The outcome measures for each individual with each box were the average latency it took to switch to a new option and the total number of options they successfully solved. For details see [@logan2023flexmanippcj].
  
 We modified the models in the original article [@logan2023flexmanippcj] that linked performance on the serial reversal learning tasks to performance on the multi-access boxes, replacing the previously used independent variable of number of trials needed to reach criterion in the last reversal with the estimated $\phi$ and $\lambda$ values from the last two reversals (manipulated grackles) or the initial discrimination and the first reversal (control grackles) (see below for explanation of these choices). With our expectation that $\phi$ and $\lambda$ could be negatively correlated , we realized that grackles might be using different strategies when facing a situation in which cues change: some grackles might quickly discard previous information and rely on what they recently experienced (high $\phi$ and low $\lambda$), or they might rely on earlier information and continue to explore other options (low $\phi$ and high $\lambda$). Accordingly, we assumed that there also might be non-linear, U-shaped relationships between $\phi$ and/or $\lambda$ and the performance on the multi-access box. 
 For the number of options solved, we fit a binomial model with a logit link:
 
-*options solved* ~ Binomial(4, p) \
-logit(p) ~ a + b * $\phi$ + c * $\phi$^2 + d * $\lambda$ + e * $\lambda$^2 \
-        a ~ dnorm(1, 1) \
-        b ~ dnorm(0, 1) \
-        c ~ dnorm(0, 1) \
-        d ~ dnorm(0, 1) \
-        e ~ dnorm(0, 1)
+$o_{b}$ ~ Binomial(4, $p$), \
+logit($p$) ~ $\alpha$ + $\beta_{p}$ x $\phi$ + $\beta_{p2}$ x $\phi^{2}$ + $\beta_{l}$ x $\lambda$ + $\beta_{l2}$ x $\lambda^{2}$, \
+        $\alpha$ ~ Normal(1, 1), \
+        $\beta_{p}$ ~ Normal(0, 1), \
+        $\beta_{p2}$ ~ Normal(0, 1), \
+        $\beta_{l}$ ~ Normal(0, 1), \
+        $\beta_{l2}$ ~ Normal(0, 1),
 
-where *options solved* is the number of options solved on the multi-access puzzle box, 4 is the total number of options, *p* is the probability of solving any one option across the whole experiment, *a* is the intercept, *b* is the expected linear amount of change in *options solved* for every one unit change in $\phi$ in the reversal learning experiments, *c* is the expected non-linear amount of change in *options solved* for every one unit change in $\phi$ squared, *d* the expected linear amount of change for changes in $\lambda$, and *e* the expected non-linear amount of change for changes in $\lambda$ squared.
+where $o_{b}$ is the number of options solved on the multi-access puzzle box, 4 is the total number of options, $p$ is the probability of solving any one option across the whole experiment, $\alpha$ is the intercept, $\beta_{p}$ is the expected linear amount of change in $o_{b}$ for every one unit change in $\phi$ in the reversal learning experiments, $\beta_{p2}$ is the expected non-linear amount of change in $o_{b}$ for every one unit change in $\phi^{2}$, $\beta_{l}$ the expected linear amount of change for changes in $\lambda$, and $\beta_{l2}$ is the expected non-linear amount of change for changes in $\lambda^{2}$.
  
-
 For the average latency to attempt a new option on the multi-access puzzle box as it relates to trials to reverse (both are measures of flexibility), we fit a Gamma-Poisson model with a log-link:
 
-latency ~ Gamma-Poisson($\mu_{i}$, $\sigma$)  \
-log($\mu_{i}$) ~ a + b * $\phi$ + c * $\phi$^2 + d * $\lambda$ + e * $\lambda$^2 \
-        a ~ dnorm(1, 1) \
-        b ~ dnorm(0, 1) \
-        c ~ dnorm(0, 1) \
-        d ~ dnorm(0, 1) \
-        e ~ dnorm(0, 1) \
-        $\sigma$ ~ Exponential(1)
+$n_{b}$ ~ Gamma-Poisson($m_{i}$, $s$),  \
+log($m_{i}$) ~ $\alpha$ + $\beta_{p}$ x $\phi$ + $\beta_{p2}$ x $\phi^{2}$ + $\beta_{l}$ x $\lambda$ + $\beta_{l2}$ x $\lambda^{2}$, \
+        $\alpha$ ~ Normal(1, 1), \
+        $\beta_{p}$ ~ Normal(0, 1), \
+        $\beta_{p2}$ ~ Normal(0, 1), \
+        $\beta_{l}$ ~ Normal(0, 1), \
+        $\beta_{l2}$ ~ Normal(0, 1),
+        $s$ ~ Exponential(1),
 
-latency is the average latency to attempt a new option on the multi-access box, $\mu_{i}$ is the rate (probability of attempting an option in each second) per grackles (and we take the log of it to make sure it is always positive; grackles with a higher rate have a smaller latency), $\sigma$ is the dispersion of the rates across grackles, *a* is the intercept, *b* is the expected linear amount of change in latency for every one unit change in $\phi$ , *c* is the expected non-linear amount of change in latency for every one unit change in $\phi$ squared, *d* the expected linear amount of change for changes in $\lambda$, and *e* the expected non-linear amount of change for changes in $\lambda$ squared.
-
+where $n_{b}$ is the average latency to attempt a new option on the multi-access box, $m_{i}$ is the rate (probability of attempting an option in each second) per grackle (grackles with a higher rate have a smaller latency), $s$ is the dispersion of the rates across grackles, $\alpha$ is the intercept, $\beta_{p}$ is the expected linear amount of change in latency for every one unit change in $\phi$, $\beta_{p2}$ is the expected non-linear amount of change in latency for every one unit change in $\phi^{2}$, $\beta_{l}$ the expected linear amount of change for changes in $\lambda$, and $\beta_{l2}$ the expected non-linear amount of change for changes in $\lambda^{2}$.
 
 ```{r posthocMABplasticLatency, eval=F}
 library(rstan)
@@ -2829,7 +2855,6 @@ library(ggplot2)
 ### Now we can link the phi and lambda values we extracted for each bird to the various parameters that measure their performance on the multi-access boxes
 
 # First, we link it to the latency to switch loci on the plastic multi-access box
-
 d3 <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_datasummary.csv"), header=F, sep=",", stringsAsFactors=F)
 
 d3 <- data.frame(d3)
@@ -2863,7 +2888,6 @@ birdnames<-unique(combinedreversaldata$Bird)
 
 
 # Load the samples from the posterior of the phi and lambda estimates
-
 posteriorsamples_initialandreversal_phi<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedPhiBeginning_PosteriorSamples.csv"), header=T, sep=",", stringsAsFactors=F)
 posteriorsamples_initialandreversal_phi<-posteriorsamples_initialandreversal_phi[,2:22]
 
@@ -2877,7 +2901,6 @@ colnames(posteriorsamples_lastreversal_lambda)<-eachbirdslearningparameters[is.n
 posteriorsamples_lastreversal_phi<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_ReversalLearning_EstimatedPhiEnd_PosteriorSamples.csv"), header=T, sep=",", stringsAsFactors=F)
 posteriorsamples_lastreversal_phi<-posteriorsamples_lastreversal_phi[,2:9]
 colnames(posteriorsamples_lastreversal_phi)<-eachbirdslearningparameters[is.na(eachbirdslearningparameters$manipulatedlambda)==F,]$Bird
-
 
 
 # MODEL latency plastic: 
@@ -2935,9 +2958,6 @@ plasticlatencyquadratic<- link( mplat1alternative12, data=data.frame(learningphi
 plasticlatencyquadratic_mean <- apply( plasticlatencyquadratic , 2 , mean ) 
 plasticlatencyquadratic_ci <- apply( plasticlatencyquadratic , 2 , PI , prob=0.97 )        
         
-        
-            
-      
             
       # Model with the sampled phi and lambda values from the posterior as predictors
       
@@ -2969,7 +2989,6 @@ file <- file.path(cmdstan_path(), "myowntrial.stan")
 mod <- cmdstan_model(file)
 options(mc.cores=4)
 
-
 for(i in 1:4000){
 
   dl_phi2 <- list(learningphi = standardize(as.numeric(philatencyplastic_phi[i,])), 
@@ -2977,7 +2996,6 @@ for(i in 1:4000){
               latency = as.integer(inputdata_philatencyplastic$AverageLatencyAttemptNewLocusMABplastic)
                  )
    
-  
 # RUN the model
 fit <- mod$sample(
   data = dl_phi2,
@@ -2986,7 +3004,6 @@ fit <- mod$sample(
   parallel_chains = 4,
   refresh = 500
 )
-
 
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
 drawsarray<-fit$draws()
@@ -3006,32 +3023,12 @@ setwd(currentlocation)
 
 write.csv(precis(combinedposterior_mplat),file="plasticlatency.csv")
 
-
-
-
       
 
 ### Latency to solve loci on the plastic multi-access box associated with lambda & phi squared, mainly phi squared
-
-
-
-
-
-
-
-
-
-
-
-
-
-      
-      
-      
  
 # MODEL latency wooden: 
 # Second, we link the latency to attempt a new locus on the wooden multi-access box to phi and lambda
-
 
 # Keep only birds who finished the task
 
@@ -3051,7 +3048,6 @@ write.csv(precis(combinedposterior_mplat),file="plasticlatency.csv")
         
         # Based on last reversal
 # n=11
-      
         dl_lambda_phi <- list(learninglambda = standardize(as.numeric(inputdata_philatencywooden$lastlambda)), 
                               learningphi = standardize(as.numeric(inputdata_philatencywooden$lastphi)), 
                    latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden), 
@@ -3070,7 +3066,6 @@ write.csv(precis(combinedposterior_mplat),file="plasticlatency.csv")
           ), data = dl_lambda_phi, chains=4, log_lik = TRUE, messages = FALSE)
         
         precis(mwood1alternative3,depth=2)
-        
 #      mean   sd  5.5% 94.5% n_eff Rhat4
 # a    5.23 0.46  4.48  5.92   786  1.00
 # b   -0.62 0.50 -1.46  0.14   765  1.00
@@ -3081,13 +3076,9 @@ write.csv(precis(combinedposterior_mplat),file="plasticlatency.csv")
         
  
 # Model with the sampled phi and lambda values from the posterior as predictors
-      
-
-
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
 setwd(cmdstanlocation)
-
 
   dl_phi2 <- list(learningphi = standardize(as.numeric(philatencywooden_phi[1,])), 
                       learninglambda = standardize(as.numeric(philatencywooden_lambda[1,])), 
@@ -3111,15 +3102,12 @@ file <- file.path(cmdstan_path(), "myowntrial.stan")
 mod <- cmdstan_model(file)
 options(mc.cores=4)
 
-
 for(i in 1:4000){
-
   dl_phi2 <- list(learningphi = standardize(as.numeric(philatencywooden_phi[i,])), 
                       learninglambda = standardize(as.numeric(philatencywooden_lambda[i,])), 
               latency = as.integer(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden)
                  )
    
-  
 # RUN the model
 fit <- mod$sample(
   data = dl_phi2,
@@ -3129,7 +3117,6 @@ fit <- mod$sample(
   refresh = 500
 )
 
-
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
 drawsarray<-fit$draws()
 drawsdataframe<-as_draws_df(drawsarray)
@@ -3138,7 +3125,6 @@ drawsdataframe<-data.frame(drawsdataframe)
 ifelse(i == 1,combinedposterior_mwlat<-as.data.frame(drawsdataframe),combinedposterior_mwlat<-rbind(combinedposterior_mwlat,drawsdataframe))
 
 print(c("finished",i))
-
 }
 
 # Remove the stan command line file we created for this particular model from your computer
@@ -3147,26 +3133,11 @@ file.remove(fn)
 
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
-
 write.csv(precis(combinedposterior_mwlat),file="woodenlatency.csv")
-
-
-
-
-
-
-
-
-
         
         
 ### Latency to solve loci on the wooden multi-access box not associated with lambda & phi 
         
-        
-        
-        
-        
-
 # MODEL loci plastic: 
 # Third, we link the number of loci sovled on the plastic multi-access box to phi (updating of attraction scores in the last reversal)
 
@@ -3177,10 +3148,8 @@ write.csv(precis(combinedposterior_mwlat),file="woodenlatency.csv")
         
         # Remove NAs
         inputdata_philociplastic <- subset(inputdata_philociplastic,!(is.na(inputdata_philociplastic["TotalLociSolvedMABplastic"])) & !(is.na(inputdata_philociplastic["TrialsLastReversal"])))
-        
-        # n=15
+            # n=15
     
-        
         dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
                     learningphi = standardize(as.numeric(inputdata_philociplastic$lastphi)),
                     learninglambda = standardize(as.numeric(inputdata_philociplastic$lastlambda))
@@ -3198,7 +3167,6 @@ write.csv(precis(combinedposterior_mwlat),file="woodenlatency.csv")
         ) , data=dat_loci_plastic_both , chains=4 )
         
         precis(m5plasticloci,depth=2)       
-
 #    mean   sd  5.5% 94.5% n_eff Rhat4
 # a -0.33 0.35 -0.86  0.23  1370     1
 # b  0.03 0.26 -0.38  0.43  1603     1
@@ -3210,10 +3178,7 @@ plasticlociquadratic<- link( m5plasticloci, data=data.frame(learningphi=rep(0,17
 plasticlociquadratic_mean <- apply( plasticlociquadratic , 2 , mean ) 
 plasticlociquadratic_ci <- apply( plasticlociquadratic , 2 , PI , prob=0.97 )              
         
-
-        
  # For these birds, get their last reversal from the posterior samples: for control birds, from the posteriorsamples_initialandreversal files, for manipulated birds from the posteriorsamples_lastreversal files
-      
       controlbirds_lambda<-posteriorsamples_initialandreversal_lambda[,inputdata_philociplastic[inputdata_philociplastic$ReversalsToPass=="Control",]$Bird]
       manipulatedbirds_lambda<-posteriorsamples_lastreversal_lambda[,inputdata_philociplastic[inputdata_philociplastic$ReversalsToPass!="Control",]$Bird]
       lociplastic_lambda<-cbind(controlbirds_lambda,manipulatedbirds_lambda)
@@ -3226,11 +3191,9 @@ plasticlociquadratic_ci <- apply( plasticlociquadratic , 2 , PI , prob=0.97 )
         
         
 # Model with the sampled phi and lambda values from the posterior as predictors
-
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
 setwd(cmdstanlocation)
-
 
          dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
                     learningphi = standardize(as.numeric(lociplastic_phi[1,])),
@@ -3253,14 +3216,12 @@ file <- file.path(cmdstan_path(), "myowntrial.stan")
 mod <- cmdstan_model(file)
 options(mc.cores=4)
 
-
 for(i in 1:4000){
 
          dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$TotalLociSolvedMABplastic),
                     learningphi = standardize(as.numeric(lociplastic_phi[i,])),
                     learninglambda = standardize(as.numeric(lociplastic_lambda[i,]))
                       )
-   
   
 # RUN the model
 fit <- mod$sample(
@@ -3271,7 +3232,6 @@ fit <- mod$sample(
   refresh = 500
 )
 
-
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
 drawsarray<-fit$draws()
 drawsdataframe<-as_draws_df(drawsarray)
@@ -3280,7 +3240,6 @@ drawsdataframe<-data.frame(drawsdataframe)
 ifelse(i == 1,combinedposterior_mploci<-as.data.frame(drawsdataframe),combinedposterior_mploci<-rbind(combinedposterior_mploci,drawsdataframe))
 
 print(c("finished",i))
-
 }
 
 # Remove the stan command line file we created for this particular model from your computer
@@ -3289,33 +3248,21 @@ file.remove(fn)
 
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
-
 write.csv(precis(combinedposterior_mploci),file="plasticloci.csv")
-
-
-
-
-
-
 
 
                    
 ### Number of solved loci on the plastic multi-access box associated with lambda squared
 
-        
-        
 # MODEL loci wooden: 
 # Fourth, we link the number of loci solved on the wooden multi-access box to phi (updating of attraction scores in the last reversal)
-
-        inputdata_philociwooden<-combinedreversaldata[is.na(combinedreversaldata$TotalLociSolvedMABwooden)==FALSE,]
+      inputdata_philociwooden<-combinedreversaldata[is.na(combinedreversaldata$TotalLociSolvedMABwooden)==FALSE,]
         
         # Remove NAs
         inputdata_philociwooden <- subset(inputdata_philociwooden,!(is.na(inputdata_philociwooden["TotalLociSolvedMABwooden"])) & !(is.na(inputdata_philociwooden["TrialsLastReversal"])))
-        
-        # n=12
+          # n=12
         
 # repeating with a quadratic function to reflect U-shaped relationship
-   
         dat_loci_wooden_both_quadratic <- list(
           locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
           learningphi = (standardize(as.numeric(inputdata_philociwooden$lastphi))),
@@ -3345,11 +3292,9 @@ woodenlociquadratic_mean <- apply( woodenlociquadratic , 2 , mean )
 woodenlociquadratic_ci <- apply( woodenlociquadratic , 2 , PI , prob=0.97 )        
         
         
-        
 # Model with the sampled phi and lambda values from the posterior as predictors
 
 # For these birds, get their last reversal from the posterior samples: for control birds, from the posteriorsamples_initialandreversal files, for manipulated birds from the posteriorsamples_lastreversal files
-      
       controlbirds_lambda<-posteriorsamples_initialandreversal_lambda[,inputdata_philociwooden[inputdata_philociwooden$ReversalsToPass=="Control",]$Bird]
       manipulatedbirds_lambda<-posteriorsamples_lastreversal_lambda[,inputdata_philociwooden[inputdata_philociwooden$ReversalsToPass!="Control",]$Bird]
       lociwooden_lambda<-cbind(controlbirds_lambda,manipulatedbirds_lambda)
@@ -3362,12 +3307,9 @@ woodenlociquadratic_ci <- apply( woodenlociquadratic , 2 , PI , prob=0.97 )
         
      
 ### Number of solved loci on the wooden multi-access box associated with lambda squared        
-
-
 currentlocation<-getwd()
 cmdstanlocation <- cmdstan_path()
 setwd(cmdstanlocation)
-
 
          dat_loci_wooden_both_quadratic <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
                     learningphi = standardize(as.numeric(lociwooden_phi[1,])),
@@ -3390,7 +3332,6 @@ file <- file.path(cmdstan_path(), "myowntrial.stan")
 mod <- cmdstan_model(file)
 options(mc.cores=4)
 
-
 for(i in 1:4000){
 
          dat_loci_wooden_both_quadratic <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
@@ -3398,7 +3339,6 @@ for(i in 1:4000){
                     learninglambda = standardize(as.numeric(lociwooden_lambda[i,]))
                       )
    
-  
 # RUN the model
 fit <- mod$sample(
   data = dat_loci_wooden_both_quadratic,
@@ -3408,7 +3348,6 @@ fit <- mod$sample(
   refresh = 500
 )
 
-
 # Show the 90% compatibility intervals for the association between latency to switch loci on the plastic multi-access box and lambda and phi, and the interaction between lambda and phi from the reinforcement learning model
 drawsarray<-fit$draws()
 drawsdataframe<-as_draws_df(drawsarray)
@@ -3417,7 +3356,6 @@ drawsdataframe<-data.frame(drawsdataframe)
 ifelse(i == 1,combinedposterior_mwloci<-as.data.frame(drawsdataframe),combinedposterior_mwloci<-rbind(combinedposterior_mwloci,drawsdataframe))
 
 print(c("finished",i))
-
 }
 
 # Remove the stan command line file we created for this particular model from your computer
@@ -3426,20 +3364,10 @@ file.remove(fn)
 
 # Reset your working directory to what it was before we ran the model
 setwd(currentlocation)
-
 write.csv(precis(combinedposterior_mwloci),file="woodenloci.csv")
 
-
-
-
-
-
-       
         
-        
-        
-#  Plot for Figure 8
-
+####  Plot for Figure 8
 dat_loci_wooden_both <- list(locisolved = as.numeric(inputdata_philociwooden$TotalLociSolvedMABwooden),
             learningphi = (standardize(as.numeric(inputdata_philociwooden$lastphi))),
             learninglambda = (standardize(as.numeric(inputdata_philociwooden$lastlambda)))
@@ -3449,7 +3377,6 @@ dat_loci_plastic_both <- list(locisolved = as.numeric(inputdata_philociplastic$T
             learningphi = (standardize(as.numeric(inputdata_philociplastic$lastphi))),
             learninglambda = (standardize(as.numeric(inputdata_philociplastic$lastlambda)))
               )
-
 
 phi_samples_for_plotting<-posteriorsamples_initialandreversal_phi
 for(i in 1:8){
@@ -3479,32 +3406,22 @@ lambda_samples_for_plotting_ranges_wooden<-(lambda_samples_for_plotting_ranges_w
 lambda_samples_for_plotting_ranges_plastic<-lambda_samples_for_plotting_ranges[,inputdata_philociplastic$Bird]
 lambda_samples_for_plotting_ranges_plastic<-(lambda_samples_for_plotting_ranges_plastic-3.733967)/0.8262337
 
-
-
 offset_plastic<-rnorm(ncol(lambda_samples_for_plotting_ranges_plastic),mean=0.1,sd=0.05)
 offset_wooden<-rnorm(ncol(lambda_samples_for_plotting_ranges_wooden),mean=-0.1,sd=0.05)
 
 plasticlocisolved<-dat_loci_plastic_both$locisolved+offset_plastic
 woodenlocisolved<-dat_loci_wooden_both$locisolved+offset_wooden
 
-
-
 par(mfrow=c(2,2))
-
 plot( NULL , xlim=c(-2.5,2.5) , ylim=c(-0.25,4.5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-
 points(woodenlocisolved~dat_loci_wooden_both$learninglambda,col="black",pch=16,cex=2)
 points(plasticlocisolved~dat_loci_plastic_both$learninglambda,col="red",pch=16,cex=2)
-
 #legend(x="bottomleft", legend=c(pch16="Wooden MAB", pch16="Plastic MAB"), pch=c(16,16), col=c("black","red"), box.lty=0, cex=0.7,pt.cex=1.7)
-
 mtext("a)", side=3,line=0,font=2,at=-2.8,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
 mtext("λ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
-
 shade(woodenlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("black",0.4))
 shade(plasticlociquadratic_ci*4,seq(from=-2, to=+2,length=17),col=col.alpha("red",0.4))
-
 
 for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
   lines(y=c(plasticlocisolved[i],plasticlocisolved[i]),x=c(lambda_samples_for_plotting_ranges_plastic[1,i],lambda_samples_for_plotting_ranges_plastic[2,i]),col="red")
@@ -3514,14 +3431,9 @@ for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
   lines(y=c(woodenlocisolved[i],woodenlocisolved[i]),x=c(lambda_samples_for_plotting_ranges_wooden[1,i],lambda_samples_for_plotting_ranges_wooden[2,i]),col="black")
 }
 
-
-
-
 plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,5) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-
 points(woodenlocisolved~dat_loci_wooden_both$learningphi,col="black",pch=16,cex=2)
 points(plasticlocisolved~dat_loci_plastic_both$learningphi,col="red",pch=16,cex=2)
-
 mtext("b)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Number of loci solved" , side=2,font=2,cex=1.5,line=2.4)
 mtext("Φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
@@ -3535,9 +3447,6 @@ for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
 }
 
 
-
-
-
 dat_latency_wooden_both <- list(latency = as.numeric(inputdata_philatencywooden$AverageLatencyAttemptNewLocusMABwooden),
             learningphi = (standardize(as.numeric(inputdata_philatencywooden$lastphi))),
             learninglambda = (standardize(as.numeric(inputdata_philatencywooden$lastlambda)))
@@ -3547,7 +3456,6 @@ dat_latency_plastic_both <- list(latency = as.numeric(inputdata_philatencyplasti
             learningphi = (standardize(as.numeric(inputdata_philatencyplastic$lastphi))),
             learninglambda = (standardize(as.numeric(inputdata_philatencyplastic$lastlambda)))
               )
-
 
 phi_samples_for_plotting<-posteriorsamples_initialandreversal_phi
 for(i in 1:8){
@@ -3577,8 +3485,6 @@ lambda_samples_for_plotting_ranges_wooden<-(lambda_samples_for_plotting_ranges_w
 lambda_samples_for_plotting_ranges_plastic<-lambda_samples_for_plotting_ranges[,inputdata_philatencyplastic$Bird]
 lambda_samples_for_plotting_ranges_plastic<-(lambda_samples_for_plotting_ranges_plastic-3.704481)/1.090913
 
-
-
 offset_plastic<-rnorm(nrow(inputdata_philatencyplastic),mean=0.1,sd=0.05)
 offset_wooden<-rnorm(nrow(inputdata_philatencywooden),mean=-0.1,sd=0.05)
 
@@ -3586,20 +3492,14 @@ plasticlatency<-dat_latency_plastic_both$latency+offset_plastic
 woodenlatency<-dat_latency_wooden_both$latency+offset_wooden
 
 
-
 plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-
 points(woodenlatency~dat_latency_wooden_both$learninglambda,col="black",pch=16,cex=2)
 points(plasticlatency~standardize(dat_latency_plastic_both$learninglambda),col="red",pch=16,cex=2)
-
 legend(x=c(0.75,2.25),y=c(1300,1900), legend=c(pch16="", pch16=""), pch=c(16,16), col=c("white","white"), box.lty=1, cex=0.8,pt.cex=1.7,text.font=2,xpd=TRUE)
-
 points(x=0.85,y=1775,col="black",pch=16,cex=2)
 points(x=0.85,y=1500,col="red",pch=16,cex=2)
 text(x=1.5,y=1775,labels="Wooden MAB",font=2,cex=1.5)
 text(x=1.45,y=1500,labels="Plastic MAB",font=2,cex=1.5)
-
-
 mtext("c)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
 mtext("λ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
@@ -3613,16 +3513,12 @@ for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
 }
 
 
-
 plot( NULL , xlim=c(-2.1,2.1) , ylim=c(0,1800) , cex=2,cex.lab=1.5,font=2 ,bty="n",ylab="",xlab="" )
-
 points(woodenlatency~dat_latency_wooden_both$learningphi,col="black",pch=16,cex=2)
 points(plasticlatency~dat_latency_plastic_both$learningphi,col="red",pch=16,cex=2)
-
 mtext("d)", side=3,line=0,font=2,at=-2.3,cex=1.7)
 mtext("Latency to attempt new locus" , side=2,font=2,cex=1.5,line=2.4)
 mtext("Φ from last reversal (standardized)",side=1,font=2,cex=1.5,line=3)
-
 plasticlatencyquadratic_ci_1700<-plasticlatencyquadratic_ci
 plasticlatencyquadratic_ci_1700[plasticlatencyquadratic_ci_1700>1700]<-1700
 shade(plasticlatencyquadratic_ci_1700,seq(from=-2, to=+2,length=17),col=col.alpha("red",0.4))
@@ -3634,61 +3530,48 @@ for(i in 1:ncol(lambda_samples_for_plotting_ranges_plastic)){
 for(i in 1:ncol(lambda_samples_for_plotting_ranges_wooden)){
   lines(y=c(woodenlatency[i],woodenlatency[i]),x=c(phi_samples_for_plotting_ranges_wooden[1,i],phi_samples_for_plotting_ranges_wooden[2,i]),col="black")
 }
-
-
-
-
-
-
 ```
-
-
 
 \newpage
 
 # Results
 
-## 1) Power of the Bayesian reinforcement learning model to detect short-term changes in the association-updating rate $\phi$ and the sensitivity to learned associations $\lambda$ \
+## 1) Power of the Bayesian reinforcement learning model to detect short-term changes in the association-updating rate $\phi$ and the sensitivity to learned associations $\lambda$
  
-Applying the Bayesian reinforcement learning model to simulated data from only a single phase (initial association or first reversal) revealed that, while the model recovered the differences among individuals, the estimated $\phi$ and $\lambda$ values did not match those the individuals had been assigned (Figure 2 shows the relationship between the assigned and estimated $\phi$ values when estimated from only the first reversal as an illustration). We realized that $\phi$ and $\lambda$ values were consistently shifted,with the Bayesian estimation adjusting both parameters towards the mean and away from extreme values. Simulated individuals who were assigned large $\lambda$ values were estimated to have a smaller $\lambda$ values but in turn estimated to have $\phi$ values such that they would reach criterion in a similar number of trials because while the model assumed that they were more exploratory the model also assumed that they updated their associations more quickly. Similarly, individuals with large assigned $\phi$ values were estimated to have smaller $\phi$ values, but in turn were estimated to have larger $\lambda$ values than those $\lambda$ they were assigned. Because the estimation from a single reversal did not accurately recover large values for either parameter, both the estimated $\phi$ values (slope of the correlation between the estimated and the assigned $\phi$ +0.15, confidence interval +0.06 to +0.23, n=626 simulated individuals) and the estimated $\lambda$ values (slope of the correlation between the estimated and the assigned $\lambda$ +0.58, confidence interval +0.48 to +0.68, n=626 simulated individuals) were underestimates of the assigned values. In addition, this shift means that, even though simulated individuals were assigned $\phi$ and $\lambda$ values randomly from across all possible combinations, the estimated values showed a strong positive correlation as the model had to make up the shifts in estimates of one parameter through shifting the estimate of the other parameter (slope of the correlation between the estimated $\lambda$ and estimated $\phi$ values +505, confidence interval +435 to +570, n=626 simulated individuals).
+Applying the Bayesian reinforcement learning model to simulated data from only a single phase (initial association or first reversal) revealed that, while the model recovered the differences among individuals, the estimated $\phi$ and $\lambda$ values did not match those the individuals had been assigned (Figure 2 shows the relationship between the assigned and estimated $\phi$ values when estimated from only the first reversal as an illustration). We realized that $\phi$ and $\lambda$ values were consistently shifted,with the Bayesian estimation adjusting both parameters towards the mean and away from extreme values. Simulated individuals who were assigned large $\lambda$ values were estimated to have a smaller $\lambda$ values but in turn estimated to have $\phi$ values such that they would reach criterion in a similar number of trials because while the model assumed that they were more exploratory the model also assumed that they updated their associations more quickly. Similarly, individuals with large assigned $\phi$ values were estimated to have smaller $\phi$ values, but in turn were estimated to have larger $\lambda$ values than those $\lambda$ they were assigned. Because the estimation from a single reversal did not accurately recover large values for either parameter, both the estimated $\phi$ values (slope of the correlation between the estimated and the assigned $\phi$: +0.15, confidence interval +0.06 to +0.23, n=626 simulated individuals) and the estimated $\lambda$ values (slope of the correlation between the estimated and the assigned $\lambda$: +0.58, confidence interval +0.48 to +0.68, n=626 simulated individuals) were underestimates of the assigned values. In addition, this shift means that, even though simulated individuals were assigned $\phi$ and $\lambda$ values randomly from across all possible combinations, the estimated values showed a strong positive correlation as the model had to make up the shifts in estimates of one parameter through shifting the estimate of the other parameter (slope of the correlation between the estimated $\lambda$ and estimated $\phi$ values: +505, confidence interval +435 to +570, n=626 simulated individuals).
 
-In contrast, when we combined data from across the initial discrimination learning and the first reversal, the model accurately recovered the $\phi$ and $\lambda$ values that the simulated individuals had been assigned (slope of the correlation between the estimated and the assigned $\phi$ +0.96, confidence interval +0.70 to +1.21, n=626 simulated individuals; slope of the correlation between the estimated and the assigned $\lambda$ +0.98, confidence interval +0.92 to +1.05, n=626 simulated individuals) (Figure 2). While different combinations of $\phi$ and $\lambda$ could potentially explain the series of choices during a single phase (initial discrimination and single reversal), these different combinations lead to different assumptions about how an individual would behave right after a reversal when the reward is switched to the alternative option, making it possible to infer the assigned value when combining behavioral choices from two phases (initial learning plus first reversal, or two subsequent reversals).
-
+In contrast, when we combined data from across the initial discrimination learning and the first reversal, the model accurately recovered the $\phi$ and $\lambda$ values that the simulated individuals had been assigned (slope of the correlation between the estimated and the assigned $\phi$: +0.96, confidence interval +0.70 to +1.21, n=626 simulated individuals; slope of the correlation between the estimated and the assigned $\lambda$: +0.98, confidence interval +0.92 to +1.05, n=626 simulated individuals) (Figure 2). While different combinations of $\phi$ and $\lambda$ could potentially explain the series of choices during a single phase (initial discrimination and single reversal), these different combinations lead to different assumptions about how an individual would behave right after a reversal when the reward is switched to the alternative option, making it possible to infer the assigned value when combining behavioral choices from two phases (initial learning plus first reversal, or two subsequent reversals).
  
 ![](g_flexmanip_post2_simulation.png)
 
 **Figure 2:** The $\phi$ values estimated by the model based on the choices made by 30 of the simulated individuals (y-axis) versus the $\phi$ values assigned to them (x-axis). Individuals were assigned a range of $\phi$ values, their choices were simulated and these values were used to back-estimate the $\phi$. When $\phi$ was estimated based on the choices made only during the first reversal, the estimates were consistently lower than the assigned values, particularly for large $\phi$ values (lightblue squares). However, when $\phi$ was estimated based on the choices made during the initial association and the first reversal, the estimates were close to the assigned values (darkgreen circles). Patterns are similar for the relationship between the estimated and assigned $\lambda$ values, and when $\phi$ and $\lambda$ are estimated only from the trials during the initial association learning. Lines around the points indicate the confidence intervals of the estimated values.
 
  
-## 2) Predicted role of $\phi$ and $\lambda$ on performance in the serial reversal learning task based on simulations \
+## 2) Predicted role of $\phi$ and $\lambda$ on performance in the serial reversal learning task based on simulations
 
 In terms of the influence of the two parameters $\phi$ and $\lambda$ on the number of trials grackles needed to reverse a color preference, the $\phi$ values assigned to simulated individuals had a stronger influence than the $\lambda$ values (estimated association of number of trials with standardized values of $\phi$: -0.23, confidence interval: -0.24 to -0.23; with standardized values of $\lambda$: -0.17, confidence interval: -0.18 to -0.16, n = 626 simulated individuals). In line with the prediction, there was a linear negative relationship between $\phi$ and the number of trials to reverse, with simulated individuals needing fewer trials the more they updated their association based on their most recent experience. There also was, as predicted, an overall negative relationship between $\lambda$ and the number of trials to reverse. Individuals generally needed few trials to reach the criterion if they were assigned a high $\lambda$ value because they acted even on small differences in their learned associations. However, while individuals with small $\lambda$ values can show large numbers of 150 or more trials to reach criterion because they are not sensitive to the differences in their learned associations, individuals with small $\lambda$ values can also reach the criterion in small numbers of trials if they simultaneously quickly update their association because of their high $\phi$ values (Figure 3). 
 
- 
 ![](g_flexmanip_figsimulationsphilambda.png)
  
 **Figure 3.** In the simulations, the $\phi$ values assigned to individuals (green) had a larger influence on the number of trials these individuals needed to reverse than their $\lambda$ values (red). In general, individuals needed fewer trials to reverse if they had larger $\phi$ and $\lambda$ values. However, relatively small $\lambda$ values could be found across the range of reversal performances, whereas there was a more clear distinction with $\phi$ values (shaded lines represent confidence intervals of the estimated relationship for these data). $\phi$ and The to reach criterion are grouped into discrete blocks for easier illustration, but the analyses were performed on the raw values for each individual.
 
 We performed an analytical assessment of this likely trade-off between the association updating rate $\phi$ and the sensitivity to the learned associations $\lambda$ to identify the range of values we could expect in the serial reversal learning experiment. We assigned an hypothetical individual one of nine potential $\phi$ values in the range of 0.02 to 0.10 (steps differ by 0.01), assumed that this individual initially had the same association of the reward with both of the options (associations of 0.10 for light gray and 0.10 for dark gray), and assumed that this individual would choose each options 10 times during its first 20 trials. We calculated the associations to both options after the first 20 trials given the respective $\phi$ (e.g. with a $\phi$ of 0.10, the association with the rewarded option increases to 0.69 while the association with the unrewarded option declines to 0.03). Based on the differences in the two associations, we estimated the $\lambda$ value necessary for individuals to choose the rewarded option 85% in the next 20 trials (to reach the criterion of choosing the rewarded option in 17 out of 20 trials). We detected a clear negative, and exponential, trade-off between the necessary $\phi$ and $\lambda$ values to reach the criterion (Figure 4): individuals with the highest $\phi$ value of 0.10 only need a $\lambda$ of 2.7 to reach the criterion, whereas individuals with a $\phi$ value of 0.02 need a $\lambda$ of 9.5. This trade-off, where individuals can reach criterion during a reversal in few trials by either quickly updating their associations or by being highly sensitive to even small differences in their learned associations, means that in the serial reversal learning experiment individuals are expected to choose a strategy from across this range, and that doing so means they can also react to the sudden reversals in the reward location. In the serial reversal learning experiments, individuals will be able to reach the criterion more quickly during subsequent trials if they have, as predicted, a high $\phi$ and a low $\lambda$ value. First, even if individuals were to choose randomly during the first trials after a reversal, individuals with a low $\phi$ need exponentially more trials to reverse their bias in associations between the two options. If an individual after one reversal has an association to the no longer rewarded option of 0.70 and to the now rewarded option of 0.10, with a $\phi$ of 0.02 it will take 48 random trials until their association to the now rewarded options is higher than their association to the no longer rewarded option. In contrast, with a $\phi$ of 0.08 it will only take them 10 trials. Second, individuals with a high $\lambda$ value will keep on choosing the previously rewarded option in almost all of their trials until this switch in associations occurs, further delaying the learning of the new associations. Individuals that have an association of 0.70 with the no longer rewarded option and 0.10 with the now rewarded option will choose the now rewarded option in 14% of cases if their $\lambda$ is only 3, but only in 0.8% of cases if their $\lambda$ is 8. 
 
-
 ![](g_flexmanip_post2_philambdatoreachcriterion.png)
 
 **Figure 4.** Individuals are more likely to reach the criterion of choosing the correct option 17 out of 20 times during the reversal trials if they update their associations quickly (high $\phi$) and/or are sensitive to even small differences in their learned associations (high $\lambda$), because, during a reversal, recent information accurately predicts where the reward can be found. The figure shows this trade-off of individuals needing either high $\phi$ or high $\lambda$ values to reach the criterion in a hypothetical situation where all individuals reach the criterion in 40 trials. This also means that if an individual has, for example, a high $\phi$, their $\lambda$ value becomes less important for reaching the criterion quickly. In this example, individuals with a $\phi$ of 0.10 will reach the criterion in 40 trials if their $\lambda$ is at least 3.3. The figure also shows the median $\phi$ and $\lambda$ values estimated for the grackles during their first reversal (yellow) when they needed about 70 trials to reach criterion and for the manipulated individuals during their last reversal (blue) when they did needed about 40 trials to reach criterion. During the manipulation, grackles increased their $\phi$ to become efficient at gaining the reward and reaching the criterion, despite the concordant decline in $\lambda$.
 
 
-## 3) Observed role of $\phi$ and $\lambda$ on performance of grackles in the reversal learning task \
-For the grackles, we estimated $\phi$ and $\lambda$ after the first reversal for all individuals, and additionally after the final reversal for the individuals who experienced the serial reversal learning experiment. The findings from the simulated data indicated that $\lambda$ and $\phi$ can only be estimated accurately when calculated across at least one switch. In the simulation, we could combine the performance of individuals during the initial learning with the first reversal to estimate the parameters because the behavior during those two phases in the simulations was determined in the same way by the $\phi$ and $\lambda$ values that individuals were assigned. We determined that we can also combine the first two phases for the grackles, because we found that the performance of the great-tailed grackles during the initial learning and the first reversal learning is correlated, with grackles needing about 28 trials more to reach criterion during the first reversal than they needed during the initial association learning (estimate of the association between number of trials in initial learning and first reversal +1.61, confidence interval +1.53 to +1.69, n=19 grackles). Therefore, we estimated $\phi$ and $\lambda$ for the great-tailed grackles based on their performance in the initial discrimination plus first reversal, and for the manipulated grackles additionally based on their performance in the final two reversals. The inferred $\phi$ values for the grackles in Arizona range between 0.01 and 0.10, and the $\lambda$ values between 2.1 and 6.5 (Figure 5). 
+## 3) Observed role of $\phi$ and $\lambda$ on performance of grackles in the reversal learning task
 
+For the grackles, we estimated $\phi$ and $\lambda$ after the first reversal for all individuals, and additionally after the final reversal for the individuals who experienced the serial reversal learning experiment. The findings from the simulated data indicated that $\lambda$ and $\phi$ can only be estimated accurately when calculated across at least one switch. In the simulation, we could combine the performance of individuals during the initial learning with the first reversal to estimate the parameters because the behavior during those two phases in the simulations was determined in the same way by the $\phi$ and $\lambda$ values that individuals were assigned. We determined that we can also combine the first two phases for the grackles, because we found that the performance of the great-tailed grackles during the initial learning and the first reversal learning is correlated, with grackles needing about 28 trials more to reach criterion during the first reversal than they needed during the initial association learning (estimate of the association between number of trials in initial learning and first reversal +1.61, confidence interval +1.53 to +1.69, n=19 grackles). Therefore, we estimated $\phi$ and $\lambda$ for the great-tailed grackles based on their performance in the initial discrimination plus first reversal, and for the manipulated grackles additionally based on their performance in the final two reversals. The inferred $\phi$ values for the grackles in Arizona range between 0.01 and 0.10, and the $\lambda$ values between 2.1 and 6.5 (Figure 5). 
  
 \newpage
  
 ![](g_flexmanip_figchangemanipulatedbirds.png)
 **Figure 5.** Comparisons of the different measures of ability in the reversal task for each of the 19 great-tailed grackles. The figure shows a) the number of trials to pass criterion for the first reversal (orange; all grackles) and the last reversal (blue; only manipulated grackles); b) the $\phi$ values reflecting the rate of updating associations with the two options inferred from the initial discrimination and first reversal (orange; all grackles) and from the last two reversals (blue; manipulated grackles); and c) the $\lambda$ values reflecting the sensitivity to the learned associations inferred from the initial discrimination and first reversal (orange; all grackles) and from the last two reversals (blue; manipulated grackles). Individual grackles have the same position along the x-axis in all three panels. Grackles that needed fewer trials to reverse their preference generally had higher $\phi$ values, whereas $\lambda$ appeared unrelated to the number of trials grackles needed during the first reversal. For the manipulated grackles, their $\phi$ values changed more consistently than their $\lambda$ values, and the $\phi$ values of the manipulated individuals were generally higher than those observed in the control individuals, while their $\lambda$ values remained within the range observed in the control group.
  
- 
 For the 19 grackles that finished the initial learning and the first reversal, only their $\phi$, but not their $\lambda$, predicted the number of trials they needed to reach criterion during their first reversal (mean estimate of correlation between number of trials and: standardized $\phi$: -20.69, confidence interval -26.17 to -15.13; standardized $\lambda$: -0.22, confidence interval -5.66 to 5.26, n=19 grackles)(Figure 6). A grackle with a 0.01 higher $\phi$ than another individual needed about 10 fewer trials to reach the criterion. The slope between $\phi$ and the number of trials for the grackles was essentially identical to that observed in the simulations (-21.21 vs -20.48, Figure 6). The number of trials grackles needed to reach the criterion given their $\phi$ values fell right into the range observed in the relationship between the $\phi$ and the number of trials observed among the simulated individuals (Figure 6) Even though the 8 manipulated grackles also appeared to need slightly fewer trials to reach criterion in their final two reversals if they had a higher $\phi$, the limited variation in the number of trials and in $\phi$ and $\lambda$ values among individuals means that there is no clear association (mean estimate of correlation between number of trials and: standardized $\phi$: -7.38, confidence interval -15.97 to 1.28; standardized $\lambda$: -4.00, 89% confidence interval 12.53 to 4.61, n=8 grackles).
-
 
 ![](g_flexmpanippost_figtrialsvsphi.png)
 
@@ -3696,45 +3579,46 @@ For the 19 grackles that finished the initial learning and the first reversal, o
  
 
 ## 4) Changes in $\phi$ and $\lambda$ through the serial reversal learning task
-\
-Great-tailed grackles who experienced the serial reversal learning manipulation reduced the number of trials they needed to reach the criterion from an average of 75 to an average of 40 (estimate of change in number of trials -30.02, confidence interval -36.05 to -24.16, n=8 grackles). For the manipulated grackles, the estimated $\phi$ values more than doubled from 0.03 in their initial discrimination and first reversal (which is identical to the average observed among the control grackles who did not experience the manipulation) to 0.07 in their last two reversals (estimate of expected average change: +0.03, confidence interval +0.02 to +0.05, n=8). The $\lambda$ values of the manipulated grackles went slightly down from 4.2 (again, identical to control grackles) to 3.2 ( estimate of average change: -1.07, confidence interval -1.63 to -0.56, n=8 grackles) (Figure 5). The values we observed after the manipulation in the last reversal for the number of trials to reverse, as well as the $\phi$ and $\lambda$ values estimated from the last reversal, all fall within the range of variation we observed among the control grackles in their first and only reversal (Figure 5). This means that the manipulation did not push grackles to new levels, but changed them within the boundaries of their natural abilities observed in the population.  
+
+Great-tailed grackles who experienced the serial reversal learning manipulation reduced the number of trials they needed to reach the criterion from an average of 75 to an average of 40 (estimate of change in number of trials -30.02, confidence interval -36.05 to -24.16, n=8 grackles). For the manipulated grackles, the estimated $\phi$ values more than doubled from 0.03 in their initial discrimination and first reversal (which is identical to the average observed among the control grackles who did not experience the manipulation) to 0.07 in their last two reversals (estimate of expected average change: +0.03, confidence interval +0.02 to +0.05, n=8). The $\lambda$ values of the manipulated grackles went slightly down from 4.2 (again, identical to control grackles) to 3.2 (estimate of average change: -1.07, confidence interval -1.63 to -0.56, n=8 grackles) (Figure 5). The values we observed after the manipulation in the last reversal for the number of trials to reverse, as well as the $\phi$ and $\lambda$ values estimated from the last reversal, all fall within the range of variation we observed among the control grackles in their first and only reversal (Figure 5). This means that the manipulation did not push grackles to new levels, but changed them within the boundaries of their natural abilities observed in the population.  
+
 As predicted, the increase in $\phi$ during the manipulation fits with the outcome from the simulations: larger $\phi$ values were associated with fewer trials to reverse. The improvement the grackles showed in the number of trials they needed to reach the criterion from the first to the last reversal matched the changes in their $\phi$ values (confidence interval +1.54 to +14.22, n=8 grackles). The improvement did not match the change in their $\lambda$ values (confidence interval -4.66 to 9.46, n=8 grackles), because, as predicted, the grackles in the manipulation showed a decreased $\lambda$ in their last reversal. This decrease in $\lambda$ meant that grackles quickly found the rewarded option after a switch in which option was rewarded. In their first reversal grackles chose the newly rewarded option in 25% of the first 20 trials, in their final reversal the manipulated grackles chose correctly in 35% of the first 20 trials. Despite their low $\lambda$ values, manipulated grackles still chose the rewarded option consistently because the increase in $\phi$ compensated for this reduced sensitivity (Figure 4; also see below). 
 
 
-## 5) Individual consistency in the serial reversal learning task  \
-While we had previously found that differences among grackles in whether they needed many or few trials persisted through the manipulation, we did not find similar consistency in either $\phi$ or $\lambda$. We found a negative correlation between the $\phi$ estimated from an individual's performance in the first reversal and how much their $\phi$ changed toward the value for their performance in the last reversal (-0.84, confidence interval -1.14 to -0.52, n=8 grackles) such that individuals ended up with similar $\phi$ values to each other at the end of the manipulation and their beginning and end $\phi$ values were not correlated (-0.21, confidence interval -1.55 to 1.35, n=8 grackles). Similarly, individuals who started with a high $\lambda$ changed more than individuals who already had lower a $\lambda$ during the first reversal (-0.44, confidence interval -0.76 to -0.10, n=8 grackles) and these changes were not consistent such that individual differences in $\lambda$ did not remain through the serial reversal learning task (+0.17confidence interval -0.67 to +0.97, n=8 grackles). 
+## 5) Individual consistency in the serial reversal learning task 
+While we had previously found that differences among grackles in whether they needed many or few trials persisted through the manipulation, we did not find similar consistency in either $\phi$ or $\lambda$. We found a negative correlation between the $\phi$ estimated from an individual's performance in the first reversal and how much their $\phi$ changed toward the value for their performance in the last reversal (-0.84, confidence interval -1.14 to -0.52, n=8 grackles) such that individuals ended up with similar $\phi$ values to each other at the end of the manipulation and their beginning and end $\phi$ values were not correlated (-0.21, confidence interval -1.55 to 1.35, n=8 grackles). Similarly, individuals who started with a high $\lambda$ changed more than individuals who already had lower a $\lambda$ during the first reversal (-0.44, confidence interval -0.76 to -0.10, n=8 grackles) and these changes were not consistent such that individual differences in $\lambda$ did not remain through the serial reversal learning task (+0.17 confidence interval -0.67 to +0.97, n=8 grackles). 
+
 Individuals appeared to use different adjustments to their strategies to improve their performance through the manipulation. There was a negative correlation between an individual’s $\phi$ and $\lambda$ after their last reversal (-0.39, 89% confidence interval: -0.72 to -0.06, n=8 grackles), indicating that they ended up with different strategies from along the range of potential solutions. Some individuals quickly learn the new reward structure after a switch, but continue to explore the alternative option even after they have learned the new associations (high association-updating rate and low sensitivity to learned associations). Other individuals take longer to learn that the reward has switched but once they have reversed their associations they rarely choose the unrewarded option (Figure 7). Together, this suggests that all individuals improved by the same extent through the manipulation such that the differences in their performances persisted, but they ended up with different strategies for how to quickly reach the criterion after a reversal by either having a high association updating rate or a low sensitivity to their learned associations.
  
 \newpage
- ![](g_flexmanip_post_figstrategiesmanipulated.png)
+
+![](g_flexmanip_post_figstrategiesmanipulated.png)
  
 **Figure 7.** Predicted performance curves of individuals with different $\phi$ and $\lambda$ values at the end of the serial reversal learning experiment based on the analytical formulas. We observed that, among the grackles who completed the serial reversal learning experiment, there was a negative correlation between their $\phi$ and $\lambda$, indicating that individuals used slightly different strategies to reach the criterion (choosing the rewarded option in 85% or more of trials) at equally few number of trials after the reward switched (when they had chosen the now rewarded option in 15% or less of trials). Individuals with a higher $\phi$ and lower $\lambda$ (light blue line) quickly learn the new associations, but continue to explore the unrewarded option even after they have learned the association, leading to a curve with a more gradual increase throughout the trials. Individuals with a lower $\phi$ and higher $\lambda$ (dark blue line) take longer to switch their associations, but once they do, they only rarely choose the non-rewarded option, leading to a more S-shaped curve where the initial increase in probability is lower and a more rapid rise later.
 
-## 6) Association between $\phi$ and $\lambda$ with performance on the multi-access boxes \
+## 6) Association between $\phi$ and $\lambda$ with performance on the multi-access boxes
 
-We previously found that three measures of performance in the two multi-access puzzle boxes (number of options solved for both the wooden and the plastic multi-access puzzle box, latency to solve a new option on the plastic multi-access puzzle box) were correlated with the number of trials grackles needed to reach the criterion in the color tube reversal. We find that these measures also correlate with the underlying flexibility parameters $\phi$ and $\lambda$. In particular, the number of options solved on both the plastic and the wooden multi-access puzzle boxes had a U-shaped association with the $\lambda$ values individuals had at the end in their last reversal (estimate of association between number of options solved on plastic box and: $\phi$ = +0.03, confidence interval -0.38 to +0.43; squared $\phi$ = -0.16, confidence interval -0.59 to +0.28; $lambda = +0.17, confidence interval -0.27 to +0.61; squared $\lambda$ = +0.59, confidence interval +0.18 to +1.02; n=15 grackles; estimate of association between number of options solved on wooden box and: $\phi$ = -0.08, confidence interval -0.62 to +0.47; $\phi$ squared = +0.43, confidence interval -0.08 to +0.97; $\lambda$ = +0.03, confidence interval -0.50 to +0.59; squared $\lambda$ = +0.63, confidence interval +0.12 to +1.19; n=12 grackles). Grackles who had either particularly low or particularly high sensitivities to their previously learned associations were more likely to solve all four options than grackles with intermediate values of $\lambda$ (Figure 8). For the latency to attempt a new option on the plastic box there was also a U-shaped association, but with $\phi$ (estimate of association between latency to attempt new option on plastic box and: $\phi$ = -0.66, confidence interval -1.30 to +0.0.06; squared $\phi$ = +0.58, confidence interval -0.06 to +1.30; $lambda = +0.14, confidence interval -0.45 to +0.70; squared $\lambda$ = +1.09, confidence interval +0.28 to +1.87; n=11 grackles; estimate of association between latency to attempt new option on wooden box and: $\phi$ = -0.62, confidence interval -1.46 to +0.14; $\phi$ squared = +0.39, confidence interval -0.47 to +1.26; $\lambda$ = +0.13, confidence interval -0.66 to +0.86; squared $\lambda$ = +0.32, confidence interval -0.62 to +1.35; n=11 grackles). Grackles with either particularly high or particularly low rates of updating their associations took longer to attempt a new option than grackles with intermediate values of $\phi$ (Figure 8). 
- 
+We previously found that three measures of performance in the two multi-access puzzle boxes (number of options solved for both the wooden and the plastic multi-access puzzle box, latency to solve a new option on the plastic multi-access puzzle box) were correlated with the number of trials grackles needed to reach the criterion in the color tube reversal. We find that these measures also correlate with the underlying flexibility parameters $\phi$ and $\lambda$. In particular, the number of options solved on both the plastic and the wooden multi-access puzzle boxes had a U-shaped association with the $\lambda$ values individuals had at the end in their last reversal (estimate of association between number of options solved on plastic box and $\phi$: +0.03, confidence interval -0.38 to +0.43; $\phi^{2}$: -0.16, confidence interval -0.59 to +0.28; $lambda$: +0.17, confidence interval -0.27 to +0.61; $\lambda^{2}$: +0.59, confidence interval +0.18 to +1.02; n=15 grackles; estimate of association between number of options solved on wooden box and $\phi$: -0.08, confidence interval -0.62 to +0.47; $\phi^{2}$: +0.43, confidence interval -0.08 to +0.97; $\lambda$: +0.03, confidence interval -0.50 to +0.59; $\lambda^{2}$: +0.63, confidence interval +0.12 to +1.19; n=12 grackles). Grackles who had either particularly low or particularly high sensitivities to their previously learned associations were more likely to solve all four options than grackles with intermediate values of $\lambda$ (Figure 8). For the latency to attempt a new option on the plastic box there was also a U-shaped association, but with $\phi$ (estimate of association between latency to attempt new option on plastic box and $\phi$: -0.66, confidence interval -1.30 to +0.0.06; $\phi^{2}$: +0.58, confidence interval -0.06 to +1.30; $lambda$: +0.14, confidence interval -0.45 to +0.70; $\lambda^{2}$: +1.09, confidence interval +0.28 to +1.87; n=11 grackles; estimate of association between latency to attempt new option on wooden box and $\phi$: -0.62, confidence interval -1.46 to +0.14; $\phi^{2}$: +0.39, confidence interval -0.47 to +1.26; $\lambda$: +0.13, confidence interval -0.66 to +0.86; $\lambda^{2}$: +0.32, confidence interval -0.62 to +1.35; n=11 grackles). Grackles with either particularly high or particularly low rates of updating their associations took longer to attempt a new option than grackles with intermediate values of $\phi$ (Figure 8). 
 
 ![](gflexmanip_fig_MAB_philambda.png)
 
- 
 **Figure 8.** Relationships between $\phi$ and $\lambda$ from the last reversal and performance on the wooden (black dots) and plastic (red dots) multi-access puzzle boxes. Grackles with intermediate $\lambda$ values in their last reversal (a) were less likely to solve all four options on both boxes than grackles with either high or low $\lambda$ values. Grackles with intermediate $\phi$ values have a shorter latency to attempt a new option on the plastic box (d). There are no clear relationships between $\phi$ and the number of options solved on either box (b), $\lambda$ and the latency to attempt an option on either box (c), or (d) $\phi$ and the latency to attempt a new option on the wooden box. The $\phi$ and $\lambda$ values change slightly between the top and bottom rows because the sample differs between boxes, and values were standardized for each plot. 
  
 \newpage
 
 # Discussion
 
-Our analyses indicate that applying a more mechanistic model to understand the behavior of great-tailed grackles in a serial reversal learning experiment can provide additional insights into the potential components of behavioral flexibility and their dynamic changes. First, the simulations showed that the Bayesian reinforcement learning model accurately captures variation in the behavior of individuals in the serial reversal learning experiment and that the two key parameters $\phi$, the association-updating rate, and $\lambda$, the sensitivity to learned associations, can be reliably inferred if we combine at least two association learning periods across a switch in the rewarded options. This provides the opportunity to also infer whether and how individuals who experience the serial reversal learning experiment dynamically change their behavioral flexibility. Second, in line with our prediction, the simulations indicate that higher $\phi$ and lower $\lambda$ mean that individuals should reach the reversal learning criterion in fewer trials. However, we observe that for a single reversal $\phi$ is more important and that $\lambda$ simply sets a threshold on the number of trials individuals need to consistently choose the rewarded option. Third, post-hoc analyses of grackle serial reversal learning data revealed that, contrary to our prediction but in line with the simulation results, $\phi$ but not $\lambda$ explained more of the interindividual variation in how many trials individuals needed to reach criterion during a reversal. Fourth, matching these observations, we found that the primary component of flexibility that was manipulated during the serial reversal experiments was $\phi$, which more than doubled between the first and last reversals, whereas $\lambda$ slightly declined, as expected based on the simulations. Fifth, while individual differences in performance persist across the manipulation, the underlying changes in $\phi$ and $\lambda$ are not predictable based on their initial values. Grackles appear to use different strategies to improve their performance during the serial reversal experiment, with some individuals showing more changes in their association-updating rate but less in their sensitivity to learned associations, while others show the opposite, leading to a negative correlation between the inferred $\phi$ and $\lambda$ values among the individuals at the end of the serial reversal learning experiment.. Finally, these different strategies to improve their behavioral flexibility that individuals revealed in the serial reversal learning experiment subsequently also influenced their behavior in a different experimental test of behavioral flexibility. Grackles with intermediate values of $\lambda$ (and $phi$) solved fewer options on both multi-access puzzle boxes than grackles with either high or low $\lambda$ (and low or high $\phi$), and grackles with intermediate values of $\phi$ have shorter latencies to attempt a new option. Accordingly, the grackles appeared to react to the predictability of the associations and the frequent switches of the reward location that they experienced during the serial reversal learning experiment to adjust their behavioral flexibility. 
+Our analyses indicate that applying a more mechanistic model to understand the behavior of great-tailed grackles in a serial reversal learning experiment can provide additional insights into the potential components of behavioral flexibility and their dynamic changes. First, the simulations showed that the Bayesian reinforcement learning model accurately captures variation in the behavior of individuals in the serial reversal learning experiment and that the two key parameters $\phi$, the association-updating rate, and $\lambda$, the sensitivity to learned associations, can be reliably inferred if we combine at least two association learning periods across a switch in the rewarded options. This provides the opportunity to also infer whether and how individuals who experience the serial reversal learning experiment dynamically change their behavioral flexibility. Second, in line with our prediction, the simulations indicate that higher $\phi$ and lower $\lambda$ mean that individuals should reach the reversal learning criterion in fewer trials. However, we observe that for a single reversal $\phi$ is more important and that $\lambda$ simply sets a threshold on the number of trials individuals need to consistently choose the rewarded option. Third, post-hoc analyses of grackle serial reversal learning data revealed that, contrary to our prediction but in line with the simulation results, $\phi$ but not $\lambda$ explained more of the interindividual variation in how many trials individuals needed to reach criterion during a reversal. Fourth, matching these observations, we found that the primary component of flexibility that was manipulated during the serial reversal experiments was $\phi$, which more than doubled between the first and last reversals, whereas $\lambda$ slightly declined, as expected based on the simulations. Fifth, while individual differences in performance persist across the manipulation, the underlying changes in $\phi$ and $\lambda$ are not predictable based on their initial values. Grackles appear to use different strategies to improve their performance during the serial reversal experiment, with some individuals showing more changes in their association-updating rate but less in their sensitivity to learned associations, while others show the opposite, leading to a negative correlation between the inferred $\phi$ and $\lambda$ values among the individuals at the end of the serial reversal learning experiment. Finally, these different strategies to improve their behavioral flexibility that individuals revealed in the serial reversal learning experiment subsequently also influenced their behavior in a different experimental test of behavioral flexibility. Grackles with intermediate values of $\lambda$ (and $\phi$) solved fewer options on both multi-access puzzle boxes than grackles with either high or low $\lambda$ (and low or high $\phi$), and grackles with intermediate values of $\phi$ have shorter latencies to attempt a new option. Accordingly, the grackles appeared to react to the predictability of the associations and the frequent switches of the reward location that they experienced during the serial reversal learning experiment to adjust their behavioral flexibility. 
  
-Previous analyses of reversal learning performance in wild-caught animals have often focused on summaries of the choices individuals make [e.g. @bond2007serial], setting criteria to define success and how much individuals sample or explore the different options versus acquire or exploit the reward [e.g. @federspiel2017adjusting]. These approaches are more descriptive, making it difficult to link the differences to specific processes and to predict how variation in behavior might transfer to other tasks. While there have been attempts to identify potential rules that individuals might learn during serial reversal learning [@spence1936nature; @warren1965primate; @warren1965comparative; @le2023mixtures], these rules were often about abstract switches to extreme strategies (e.g. win-stay / lose-shift) and therefore could not account for the full variation in the behavior. In contrast, the Bayesian reinforcement learning model with its two parameters of the association-updating rate and the sensitivity to learned associations has a clear theoretical foundation and appears to be sufficient to accurately represent the behavior of grackles in the serial reversal experiment. The previously described rules, including dramatic shifts in strategies, can be recovered with the dynamic Bayesian reinforcement learning model, including the different ‘learning curves’ that we observe among individuals (e.g. @gallistel2004learning). Applying the Bayesian reinforcement model to (serial) reversal learning experiments can provide several benefits to our understanding of behavioral flexibility. First, it highlights the key pieces of information that individuals likely pay attention to when adjusting their behavior. This provides ways to also link their performances and inferred cognitive abilities to how they experience and react to their natural environments. In particular, literature on foraging behavior that focuses on the likely trade-offs between the exploration versus exploitation of different options has a similar focus on gaining information (exploration) versus decision making (exploitation) [@kramer1991exploration; @berger2014exploration; @addicott2017primer]. Having a mechanistic model for the behavioral choices can also help to design better and alternative experiments. Simulating the likely behavioral choices of individuals can help to decide how to track the progress of individuals and when to switch rewards [@logan2023flexmanippcj]. Deciding on which external conditions might matter most to a given group of individuals can help to determine which parameters to vary and can help to adapt the model further. For example, it has been extended to allow for unpredictability in the association between the cue and the reward [@gershman2018deconstructing; @danwitz2022parameter] or to assume that experiencing a reward will update the association more than not experiencing a reward [@metha2020separating]. Our advance here was to make the model dynamic to determine how individuals adjust their behavior during the serial reversal learning experiment.
+Previous analyses of reversal learning performance in wild-caught animals have often focused on summaries of the choices individuals make [e.g. @bond2007serial], setting criteria to define success and how much individuals sample or explore the different options versus acquire or exploit the reward [e.g. @federspiel2017adjusting]. These approaches are more descriptive, making it difficult to link the differences to specific processes and to predict how variation in behavior might transfer to other tasks. While there have been attempts to identify potential rules that individuals might learn during serial reversal learning [@spence1936nature; @warren1965primate; @warren1965comparative; @le2023mixtures], these rules were often about abstract switches to extreme strategies (e.g. win-stay / lose-shift) and therefore could not account for the full variation in the behavior. In contrast, the Bayesian reinforcement learning model with its two parameters of the association-updating rate and the sensitivity to learned associations has a clear theoretical foundation and appears to be sufficient to accurately represent the behavior of grackles in the serial reversal experiment. The previously described rules, including dramatic shifts in strategies, can be recovered with the dynamic Bayesian reinforcement learning model, including the different ‘learning curves’ that we observe among individuals [e.g. @gallistel2004learning]. Applying the Bayesian reinforcement model to (serial) reversal learning experiments can provide several benefits to our understanding of behavioral flexibility. First, it highlights the key pieces of information that individuals likely pay attention to when adjusting their behavior. This provides ways to also link their performances and inferred cognitive abilities to how they experience and react to their natural environments. In particular, literature on foraging behavior that focuses on the likely trade-offs between the exploration versus exploitation of different options has a similar focus on gaining information (exploration) versus decision making (exploitation) [@kramer1991exploration; @berger2014exploration; @addicott2017primer]. Having a mechanistic model for the behavioral choices can also help to design better and alternative experiments. Simulating the likely behavioral choices of individuals can help to decide how to track the progress of individuals and when to switch rewards [@logan2023flexmanippcj]. Deciding on which external conditions might matter most to a given group of individuals can help to determine which parameters to vary and can help to adapt the model further. For example, it has been extended to allow for unpredictability in the association between the cue and the reward [@gershman2018deconstructing; @danwitz2022parameter] or to assume that experiencing a reward will update the association more than not experiencing a reward [@metha2020separating]. Our advance here was to make the model dynamic to determine how individuals adjust their behavior during the serial reversal learning experiment.
 
-The dynamic model shows that behavioral flexibility in the grackles is not a fixed trait, but individuals can change their flexibility in response to their experiences. Grackles coming into the experiment already had different strategies, suggesting that they had different experiences of how predictable cues are and how frequently their environment changes. In general, the association-updating rate $\phi$ appears to explain more of the variation in how many trials individuals need to reach the criterion of consistently choosing the rewarded option during a single phase. The importance of the association-updating rate for the performance of the grackles in the reversal learning experiment matches what has been reported for squirrel monkeys [@bari2022reinforcement]. In contrast, the sensitivity to learned associations $\lambda$ appears to set a threshold on the performance during a single phase, but appears more important as the rewards switch more frequently. In the serial reversal learning experiments, we observed an initial decline in performance, with most grackles needing more trials in the second and third reversal compared to the first, before improving and reaching the criterion in 50 trials or less [@logan2023flexmanippcj]. This initial increase likely reflects that grackles need to distinguish between the absence of a reward at the previously rewarded location reflects stochastic variation in the association between the cue and the reward or an actual switch in reward structure. In a stochastic environment, individuals can gain more reward if they do not update their associations quickly, but stick with an option that previously gave them high rewards [@woo2023mechanisms]. In their natural environment, most cues are presumably not perfect such that their initial expectation might be that the particular tube just did not have a reward that time, but should still provide rewards frequently, thus explaining their initial decline in performance. Only after several switches is there sufficient information for the grackles to infer that the cues are highly reliable and the switches are relatively frequent. This is when they show the increase in their association-updating rate $\phi$, which on average doubled across individuals, changing more for individuals who started off with lower $\phi$ values. IGrackles also changed their sensitivity to the learned associations during the manipulation, in line with the prediction that they benefit from being open to exploring the alternative option when the reward structure frequently switches.
+The dynamic model shows that behavioral flexibility in the grackles is not a fixed trait, but individuals can change their flexibility in response to their experiences. Grackles coming into the experiment already had different strategies, suggesting that they had different experiences of how predictable cues are and how frequently their environment changes. In general, the association-updating rate $\phi$ appears to explain more of the variation in how many trials individuals need to reach the criterion of consistently choosing the rewarded option during a single phase. The importance of the association-updating rate for the performance of the grackles in the reversal learning experiment matches what has been reported for squirrel monkeys [@bari2022reinforcement]. In contrast, the sensitivity to learned associations $\lambda$ appears to set a threshold on the performance during a single phase, but appears more important as the rewards switch more frequently. In the serial reversal learning experiments, we observed an initial decline in performance, with most grackles needing more trials in the second and third reversal compared to the first, before improving and reaching the criterion in 50 trials or less [@logan2023flexmanippcj]. This initial increase likely reflects that grackles need to distinguish between the absence of a reward at the previously rewarded location reflects stochastic variation in the association between the cue and the reward or an actual switch in reward structure. In a stochastic environment, individuals can gain more reward if they do not update their associations quickly, but stick with an option that previously gave them high rewards [@woo2023mechanisms]. In their natural environment, most cues are presumably not perfect such that their initial expectation might be that the particular tube just did not have a reward that time, but should still provide rewards frequently, thus explaining their initial decline in performance. Only after several switches is there sufficient information for the grackles to infer that the cues are highly reliable and the switches are relatively frequent. This is when they show the increase in their association-updating rate $\phi$, which on average doubled across individuals, changing more for individuals who started off with lower $\phi$ values. Grackles also changed their sensitivity to the learned associations during the manipulation, in line with the prediction that they benefit from being open to exploring the alternative option when the reward structure frequently switches.
 
-Most animals that have been tested in serial reversal learning experiments thus far show improvements throughout the consecutive reversals, suggesting that most species can adapt their behavioral flexibility in response to the predictability and stability of their environments (e.g. @warren1962reversal; @komischke2002successive; @bond2007serial; @strang2014serial; @chow2015serial; @cauchoix2017cognition; @erdsack2022serial; @degrande2022domestic]. For the grackles, the manipulation pushed individuals to levels that were already observed in some individuals at the beginning of the experiment, meaning that the change within the experiment is within the natural range of abilities also observed in the wild. While there were individual differences in how individuals performed [@mccune2023flexmanippeerj], all individuals changed depending on their experiences. Among the manipulated grackles, who all quickly switched to consistently gain the reward, we observed different strategies. On the one side, there are grackles who change gradually throughout an association phase, already choosing the newly rewarded option at the beginning but continuing to explore the alternative non-rewarded option throughout. These are the individuals with a high association-updating rate and low sensitivity to learned associations. On the other side are grackles who take longer to choose the newly rewarded option after a switch, but once they discover which option is rewarded, quickly reverse their preference. These are the individuals with low association-updating rates and high sensitivities to learned associations. With the variables we measured here, we could not predict which strategies ended up with after the manipulation. We observed additional strategies with different combinations of $\phi$ and $\lambda$ across the grackles during their first reversal, but these are not efficient in the serial reversal learning experiment and instead are more suited to unpredictable and less frequently changing environments. How frequently and how quickly individuals change their behavioral flexibility in their natural environments is unclear. Individual differences might persist if their different behavioral flexibility leads them to continue to experience their environment differently. For the grackles, we have some indication that after releasing them back to their original environments, differences in behavioral flexibility between the manipulated and control individuals persisted for at least several months, with individuals who had changed their $\phi$ and $\lambda$ appearing to switch more frequently between food types and foraging techniques [@logan2019flexforaging, results are in prep.]. 
+Most animals that have been tested in serial reversal learning experiments thus far show improvements throughout the consecutive reversals, suggesting that most species can adapt their behavioral flexibility in response to the predictability and stability of their environments [e.g. @warren1962reversal; @komischke2002successive; @bond2007serial; @strang2014serial; @chow2015serial; @cauchoix2017cognition; @erdsack2022serial; @degrande2022domestic]. For the grackles, the manipulation pushed individuals to levels that were already observed in some individuals at the beginning of the experiment, meaning that the change within the experiment is within the natural range of abilities also observed in the wild. While there were individual differences in how individuals performed [@mccune2023flexmanippeerj], all individuals changed depending on their experiences. Among the manipulated grackles, who all quickly switched to consistently gain the reward, we observed different strategies. On the one side, there are grackles who change gradually throughout an association phase, already choosing the newly rewarded option at the beginning but continuing to explore the alternative non-rewarded option throughout. These are the individuals with a high association-updating rate and low sensitivity to learned associations. On the other side are grackles who take longer to choose the newly rewarded option after a switch, but once they discover which option is rewarded, quickly reverse their preference. These are the individuals with low association-updating rates and high sensitivities to learned associations. With the variables we measured here, we could not predict which strategies ended up with after the manipulation. We observed additional strategies with different combinations of $\phi$ and $\lambda$ across the grackles during their first reversal, but these are not efficient in the serial reversal learning experiment and instead are more suited to unpredictable and less frequently changing environments. How frequently and how quickly individuals change their behavioral flexibility in their natural environments is unclear. Individual differences might persist if their different behavioral flexibility leads them to continue to experience their environment differently. For the grackles, we have some indication that after releasing them back to their original environments, differences in behavioral flexibility between the manipulated and control individuals persisted for at least several months, with individuals who had changed their $\phi$ and $\lambda$ appearing to switch more frequently between food types and foraging techniques [@logan2024flexfor]. 
 
 The analyses linking $\phi$ and $\lambda$ to the performance on the multi-access boxes show that the different strategies grackles ended up with to improve their performance during the serial reversal learning experiment subsequently appeared to influence how they solved the multi-access box. The negative correlation between $\phi$ and $\lambda$ prompted us to explore whether the relationship between these two variables and the performance on the multi-access boxes could be non-linear. We detected U-shaped relationships between $\phi$ and $\lambda$ and how individuals performed on the multi-access puzzle boxes. First, grackles with intermediate $\phi$ values showed shorter latencies to attempt a new option. This could reflect that grackles with high $\phi$ values take longer because they formed very strong associations with the previously rewarded option, while grackles with small $\phi$ values take longer because they do not update their associations even though the first option is no longer rewarded or because they do not explore as much because of their small $\lambda$. Second, we found that grackles with intermediate values of $\lambda$ solved fewer options. This could indicate that grackles with a small $\lambda$ are more likely to explore new options while grackles with a large $\lambda$, and low $\phi$ are less likely to return to an option that is no longer rewarded. Given that there was also a positive correlation between the number of options solved and the latency to attempt a new options, there might be a trade-off, where grackles with extreme $\phi$ and $\lambda$ values solve more options, but need more time, whereas grackles with intermediate values have shorter latencies, but solve fewer options. We are limited though in our interpretation by the small sample sizes. More detailed studies would be needed in order to fully understand how the association-updating rate and the sensitivity to learned associations might shape performance on the multi-access puzzle boxes. In addition, it is also possible that performance on the multi-access boxes relies on other cognitive abilities in which individuals may differ. For example, we previously found that grackles who are faster to complete an inhibition task, where they had to learn to not react to a cue in order to wait for a trial in which a different cue could result in gaining a a reward, were slower to switch options on the boxes [@logan2021inhibition]. As such, variation in self control may affect performance on flexibility and innovation tasks by decreasing exploratory behaviors. However, all these analyses are exploratory and based on a small sample, so these interpretations are speculative and further investigation is needed to understand how potential cognitive abilities shape performance on such tasks.
  
-Overall, these findings indicate the potential benefits of applying more mechanistic models to psychological experiments. Inferring the cognitive processes potentially underlying behavior can allow us to make clearer predictions about how the performance in one experiment might translate to other paradigms and to behavior in the wild. For the serial reversal learning paradigm, we could expect that the previously observed differences in whether performance links with performance in other experiments like innovation or inhibition [e.g. positively in gray squirrels: @chow2016practice, negatively in Indian mynas: @griffin2013tracking, and positively, negatively, or not at all depending on the trait in great-tailed grackles: @logan2016behavioral and this article] could be linked to differences in whether the association-updating rate or the sensitivity to learned associations plays a larger role in the reversal performance in a given species and in particular for the other trait. The advanced capabilities of reflecting behavioral choices directly in a Bayesian framework offers an opportunity for the field of comparative cognition to implement more informed assessments of cognitive abilities and the factors shaping them. 
+Overall, these findings indicate the potential benefits of applying more mechanistic models to psychological experiments. Inferring the cognitive processes potentially underlying behavior can allow us to make clearer predictions about how the performance in one experiment might translate to other paradigms and to behavior in the wild. For the serial reversal learning paradigm, we could expect that the previously observed differences in whether performance links with performance in other experiments like innovation or inhibition. For example, they correlate positively in gray squirrels [@chow2016practice], negatively in Indian mynas [@griffin2013tracking], and positively, negatively, or not at all depending on the trait in great-tailed grackles [@logan2016behavioral and this article]. This variation could be linked to differences in whether the association-updating rate or the sensitivity to learned associations plays a larger role in the reversal performance in a given species and, in particular, for the other trait. The advanced capabilities of reflecting behavioral choices directly in a Bayesian framework offers an opportunity for the field of comparative cognition to implement more informed assessments of cognitive abilities and the factors shaping them. 
 
 \newpage
  
