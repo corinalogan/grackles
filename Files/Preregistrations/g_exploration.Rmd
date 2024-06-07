@@ -738,9 +738,10 @@ overdisp_fun(d1) # both overdispersed, use zero-inflated negative binomial model
 # C1 = cat, C2 = pigeon, C3 = hawk
 
 library(remotes)
-#install_github("nyiuab/NBZIMM", force=T, build_vignettes=F)
+install_github("nyiuab/NBZIMM", force=T, build_vignettes=F)
 library(NBZIMM)
-d3 = glmm.zinb(fixed = round(DurationOnGround) ~ Condition + FlexGroup, random = ~1|BirdID, data = bol)
+d3 = glmm.zinb(fixed = round(DurationOnGround) ~ Condition + FlexGroup, random = ~1|BirdID, data = bol, niter = 50)
+summary(d3)
 # response to C2 is different from C1 (ß = -0.80, p = 0) - significantly less time on the ground with the cat than the pigeon
 # C3 is NOT different from C1 (ß = -0.14, p = 0.52) - no difference in time on the ground between the cat and the hawk
 # reorder factor levels to get difference between C2 & C3
@@ -762,6 +763,7 @@ summary(d3)
 bol$binDur = ifelse(bol$DurationOnGround >0, 1, 0)
 bol$Condition <- factor(bol$Condition, labels = c("Pigeon","Hawk","Cat"))
 
+library(rptR)
 rptC1 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Cat"),], datatype = "Binary", nboot = 1000, npermut = 200)
 # R = 0.18, p = 0.215, CI = 0-0.96
 rptC3 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200)
@@ -773,6 +775,7 @@ rptBoth = rpt(binDur ~ Condition + FlexGroup + (1|BirdID), grname = "BirdID", da
 ## Boldness is NOT repeatable ##
 
 # easier to see individual inconsistency with DurationOnGround than the 0/1 variable we used in the analysis where the lines lie on top of each other
+library(ggplot2)
 ggplot(bol[-which(bol$Condition == "Pigeon"),]) +
   geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
   geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, size = 0.7)) + 
@@ -791,7 +794,7 @@ ggplot(bol[-which(bol$Condition == "Pigeon"),]) +
 ## DATA CHECKING FOR MCMC GLMM
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(binDur ~ FlexGroup + (1|bol$BirdID), family=binomial, data=bol[-which(bol$Condition == "Pigeon")], na.action = na.omit), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glmer(bol$binDur ~ FlexGroup + (1|bol$BirdID), family=binomial, data=bol[-which(bol$Condition == "Pigeon")], na.action = na.omit), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 # flat distribution
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
@@ -815,8 +818,8 @@ autocorr(bold$VCV) #Did random effects converge? (<0.1)? yes
 #Therefore, because MCMCglmm can easily calculate repeatability on the latent scale, there is no need to transform this back to the observed scale.
 
 repeata <- bold$VCV[,"BirdID"]/(bold$VCV[,"BirdID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) # 0.01
-var(repeata) # 0.003
+mean(repeata) # 0.13
+var(repeata) # 0.08
 posterior.mode(repeata) # << -0.01
 HPDinterval(repeata, 0.95) # 0 - 0.06
 # R = 0.01 (CI: 0, 0.06)
@@ -829,7 +832,7 @@ vf <- sapply(1:nrow(bold[["Sol"]]), function(i) {
 }) #estimates for each iteration of the MCMC
 
 repeataF <- (vf+bold$VCV[,"BirdID"])/(vf+bold$VCV[,"BirdID"]+bold$VCV[,"units"]) #latent scale adjusted + data scale
-mean(repeataF) # 0.01
+mean(repeataF) # 0.49
 posterior.mode(repeataF) 
 HPDinterval(repeataF, 0.95) # 0 - 0.06
 # get almost exact same results with rptR (R = 0.03, CI = 0-0.23, p = 0.27)
