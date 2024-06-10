@@ -29,15 +29,17 @@ bibliography: MyLibrary.bib
 csl: Peer-Community-Journal-PCI.csl
 #https://raw.githubusercontent.com/citation-style-language/styles/master/apa.csl
 urlcolor: blue
+classoption: fleqn #allows equations in asmath to be aligned left on the PDF page
 header-includes:
   - \usepackage[left]{lineno}
   - \linenumbers
   - \usepackage{fancyhdr}
-  - \usepackage{pdflscape}
+  - \usepackage{pdflscape} #allows you to call landscape for certain pages using the commands on the next 2 lines
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
-  - \usepackage{amsmath}
-  - \usepackage{amssymb}
+  - \usepackage{mathtools} #for equations, but maybe not needed because asmath is there
+  - \usepackage{amsmath} #for equations
+  - \usepackage{amssymb} #for Greek symbols in equations
 ---
 
 Open... ![](logoOpenAccess.png){width=5%} access ![](logoOpenCode.png){width=5%} [code](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_flexmanip2post.Rmd) ![](logoOpenPeerReview.png){width=5%} peer review ![](logoOpenData.png){width=5%} [data](https://doi.org/10.5063/F1H41PWS)
@@ -211,8 +213,8 @@ We ran the Bayesian reinforcement learning model on these simulated data to unde
 
 To determine whether the Bayesian reinforcement learning model can accurately recover the simulated $\phi$ and $\lambda$ values from limited data, we applied the model first to only the choices from the initial association learning phase, next to only the choices from the first reversal learning phase, and finally from both phases combined. To estimate whether the Bayesian reinforcement learning model can recover the simulated $\phi$ and $\lambda$ values without bias from either of the single or from the combined datasets, we correlated the estimated values with the values individuals were initially assigned:
 
-$\phi_{b,0}$ or $\lambda_{b,0}$ ~ Normal($\mu$, $\sigma$), \
-$\mu$ = $\alpha$ + $\beta$ x $\phi_{b,1}$ or $\lambda_{b,1}$, \
+$\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu$_{b}, $\sigma$), \
+$\mu_{b}$ = $\alpha$ + $\beta$ x $\phi_{b,0}$ or $\lambda_{b,0}$, \
 $\alpha$ ~ Normal(0,0.1), \
 $\beta$ ~ Normal(1,1), \
 $\sigma$ ~ Exponential(1),
@@ -679,8 +681,8 @@ abline(a=0,b=1)
 
 We determined how the $\phi$ and $\lambda$ values that were assigned to the simulated individuals influenced their performance in the reversal learning trials, building a regression model to determine which of the two parameters had a more direct influence on the number of trials individuals needed to reach criterion. We assumed that the number of trials followed a Poisson distribution because the number of trials to reach criterion is a count that is bounded at smaller numbers (individuals need at least 20 trials to reach the criterion), with a log-linear link, because we expect there are diminishing influences of further increases in $\phi$ or $\lambda$. The model is as follows:
 
-$v_{b,0}$ ~ Poisson($\mu$), \
-log $\mu$ = $\alpha$ + $\beta_{1}$ x $\phi$ + $\beta_{2}$ x $\lambda$, \
+$v_{b}$ ~ Poisson($\mu$), \
+log $\mu$ = $\alpha$ + $\beta_{1}$ x $\phi_{b}$ + $\beta_{2}$ x $\lambda_{b}$, \
 $\alpha$ ~ Normal(4.5,1), \
 $\beta_{1}$ ~ Normal(0,1), \
 $\beta_{2}$ ~ Normal(0,1), \
@@ -1957,10 +1959,11 @@ plot_grid(trialsplot,
 
 For the subset of grackles that were part of the serial reversal group, we calculated how much their $\phi$ and $\lambda$ changed from their first to their last reversal. The model is as follows:
 
-$\phi$ or $\lambda$ ~ Normal( $\mu$ , $\sigma$ ), \
-$\mu$ = $\alpha_{b}$ + $\beta_{b}$ x $reversal$, \ 
+$\phi_{b,r}$ or $\lambda_{b,r}$ ~ Normal( $\mu_{b}$ , $\sigma$ ), \
+$\mu_{b}$ = $\alpha_{b}$ + $\beta_{b}$ x $reversal$, \ 
 
 \[
+\begin{aligned}
 \begin{bmatrix}
 \alpha_{b}\\
 \beta_{b}
@@ -1970,21 +1973,23 @@ $\mu$ = $\alpha_{b}$ + $\beta_{b}$ x $reversal$, \
 \beta
 \end{bmatrix}
 , S
-\end{pmatrix}
+\end{pmatrix},
+\end{aligned}
 \]
-\[ 
-S = 
+\[
+\begin{aligned}
+S =
 \begin{pmatrix}
   \sigma_{\alpha} & 0\\
   0 & \sigma_{\beta}
 \end{pmatrix}
-P 
+P
 \begin{pmatrix}
   \sigma_{\alpha} & 0\\
   0 & \sigma_{\beta}
-\end{pmatrix}
+\end{pmatrix},
+\end{aligned}
 \]
-
 *P* ~ **LKJcorr**(2), \
 $\alpha$ ~ Normal(5,2), \
 $\beta$ ~ Normal(-1,0.5), \
@@ -1995,8 +2000,8 @@ where each grackle has two $\phi$ or $\lambda$ values, one from the beginning ($
 
 We also fit a model to assess whether how much individuals improved in the number of trials from their first to their last reversal was linked more to their change in $\phi$ or to their change in $\lambda$. The model is as follows:
 
-$\Delta_{b}$ ~ Normal($\mu$, $\sigma$), \
-$\mu$ = $\alpha$ + $\beta_{1}$ x $\Delta$$\phi_{b}$ + $\beta_{2}$ x $\Delta$$\lambda_{b}$, \  
+$\Delta$$v_{b}$ ~ Normal($\mu_{b}$, $\sigma$), \
+$\mu_{b}$ = $\alpha$ + $\beta_{1}$ x $\Delta$$\phi_{b}$ + $\beta_{2}$ x $\Delta$$\lambda_{b}$, \  
 
 $\alpha_{b}$ ~ Normal(40, 10), \
 $\beta_{1}$ ~ Normal(0, 10), \
@@ -2350,7 +2355,7 @@ median(last20correct$Percentage20Correct) # 35%
 
 We checked whether the $\phi$ or $\lambda$ values of individuals at the beginning (*first*) was associated with how much they changed (*change*, difference in values between beginning or end) or with the values they had at the end (*last*). The first part of the model is as follows:
 
-$\Delta$$\phi_{b}$ or $\Delta$$\lambda_{b}$ ~ Normal($\mu$ , $\sigma$), \
+$\Delta$$\phi_{b}$ or $\Delta$$\lambda_{b}$ ~ Normal($\mu_{b}$ , $\sigma$), \
         $\mu_{b}$ = $\alpha$ + $\beta$ x $\phi_{b,0}$ or $\lambda_{b,0}$, \
         $\alpha$ ~ Normal(0,1), \
         $\beta$ ~ Normal(0,1), \
@@ -2358,9 +2363,9 @@ $\Delta$$\phi_{b}$ or $\Delta$$\lambda_{b}$ ~ Normal($\mu$ , $\sigma$), \
 
 where $\phi_{b,0}$ and $\lambda_{b,0}$ are from the first reversal. The second part of the model is as follows:
 
-$\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu$ , $\sigma$), \ 
+$\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu_{b}$ , $\sigma$), \ 
         
-$\mu$ = $\alpha$ + $\beta$ x $\phi_{b,1}$ or $\lambda_{b,1}$, \
+$\mu_{b}$ = $\alpha$ + $\beta$ x $\phi_{b,0}$ or $\lambda_{b,0}$, \
 $\alpha$ ~ Normal(0,1), \
 $\beta$ ~ Normal(0,1), \
 $\sigma$ ~ Exponential(1),
@@ -2369,8 +2374,8 @@ where $\phi_{b,1}$ and $\lambda_{b,1}$ are from the last reversal.
 
 In addition, we assessed whether grackles at the end show the potential trade-off between $\phi$ and $\lambda$ that could be expected in the serial reversal experiment. The model is as follows:
 
-$\phi_{b,1}$ ~ Normal($\mu$ , $\sigma$), \
-        $\mu$ = $\alpha$ + $\beta$ x $\lambda_{b,1}$, \
+$\phi_{b,1}$ ~ Normal($\mu_{b}$ , $\sigma$), \
+        $\mu_{b}$ = $\alpha$ + $\beta$ x $\lambda_{b,1}$, \
         $\alpha$ ~ Normal(0,1), \
         $\beta$ ~ Normal(0,1), \
         $\sigma$ ~ Exponential(1),
