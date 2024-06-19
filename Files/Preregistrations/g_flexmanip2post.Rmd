@@ -187,13 +187,13 @@ For question 6, we additionally used data from an experiment the grackles partic
 For both the simulated and the observed grackle data, we used the Bayesian reinforcement learning model to estimate for each individual their $\phi$ and $\lambda$ values based on their choices they made during the reversal learning experiments. The estimated $\phi$ and $\lambda$ values were then used as outcome/predictor variables in the statistical models we built to assess the six questions. We used the version of the Bayesian model that was developed in @blaisdell2021causal and modified in @logan2023xpoppcj (see their Analysis Plan > "Flexibility analysis" for model specifications and validation). This model uses data from every trial of reversal learning (rather than only using the total number of trials to pass criterion) and represents behavioral flexibility using two parameters: the association-updating rate ($\phi$) and the sensitivity to learned associations ($\lambda$). The model transforms the series of choices each grackle made based on two equations to estimate the most likely $\phi$ and $\lambda$ that generated the observed behavior. 
 
 
-Equation 1 (attraction and $\phi$): $A_{b,o,t+1}$=(1−$\phi_b$)$A_{b,o,t}$+$\phi_b$ $\pi_{b,o,t}$.
+Equation 1 (learning and $\phi$): $A_{b,o,t+1}$=(1−$\phi_b$)$A_{b,o,t}$+$\phi_b$ $\pi_{b,o,t}$.
 
-Equation 1 estimates how the associations $A$ that individual $b$ forms between the two different options ($o$ equals 1 or 2) and their expected rewards change from one trial to the next (time $t$+1) as a function of their previously formed associations $A_{b,o,t}$ (how preferable option $o$ is to grackle $b$ at time $t$) and recently experienced payoff $\pi$ (in our case, $\pi$ = 1 when they chose the correct option and received a reward in a given trial, and 0 when they chose the unrewarded option). The parameter $\phi_b$ modifies how much individual $b$ updates its associations based on its most recent experience. The higher the value of $\phi_b$, the faster the individual updates its associations, paying more attention to recent experiences, whereas when $\phi_b$ is lower, a grackle’s associations reflect averages across many trials. Association scores thus reflect the accumulated learning history up to this point. The association with the option that is not explored in a given trial remains unchanged. At the beginning of the experiment, we assume that individuals have the same low association between both options and rewards ($A_{b,1}$ = $A_{b,2}$ = 0.1).
+Equation 1 estimates how the associations $A$ that individual $b$ forms between the two different options ($o$ equals 1 or 2) and their expected rewards change from one trial to the next (trial $t$+1) as a function of their previously formed associations $A_{b,o,t}$ (how preferable option $o$ is to grackle $b$ at time $t$) and recently experienced payoff $\pi$ (in our case, $\pi$ = 1 when they chose the correct option and received a reward in a given trial, and 0 when they chose the unrewarded option). The parameter $\phi_b$ modifies how much individual $b$ updates its associations based on its most recent experience. The higher the value of $\phi_b$, the faster the individual updates its associations, paying more attention to recent experiences, whereas when $\phi_b$ is lower, a grackle’s associations reflect averages across many trials. Association scores thus reflect the accumulated learning history up to this point. The association with the option that is not explored in a given trial remains unchanged. At the beginning of the experiment, we assume that individuals have the same low association between both options and rewards ($A_{b,1,0}$ = $A_{b,2,0}$ = 0.1).
  
-Equation 2 (choice and $\lambda$): $P_{b,o,t+1}$=$\displaystyle \frac{exp(\lambda_b A_{b,o,t})}{\sum_{o = 1}^{2} exp(\lambda_b A_{b,o,t})}$.
+Equation 2 (choice and $\lambda$): $P_{b,o,t}$=$\displaystyle \frac{exp(\lambda_b A_{b,o,t})}{\sum_{o = 1}^{2} exp(\lambda_b A_{b,o,t})}$.
 
-Equation 2 is a normalized exponential (softmax) function to convert the learned associations of the two options with rewards into the probability $P$ that an individual $*b*$ chooses one of the two options $o_{i}$ in the next trial, $t$+1. The parameter $λ_{b}$ represents the sensitivity of a given grackle $b$ to how different its associations to the two options are. As $λ_{b}$ gets larger, choices become more deterministic and individuals consistently choose the option with the higher association even if associations are very similar. As $λ_{b}$ gets smaller, choices become more exploratory, with individuals choosing randomly between the two options independently of their learned associations if $λ_{b}$ is 0. 
+Equation 2 is a normalized exponential (softmax) function to convert the learned associations of the two options with rewards into the probability $P$ that an individual $b$ chooses one of the two options $o$ in the current trial, $t$. The parameter $λ_{b}$ represents the sensitivity of a given grackle $b$ to how different its associations to the two options are. As $λ_{b}$ gets larger, choices become more deterministic and individuals consistently choose the option with the higher association even if associations are very similar. As $λ_{b}$ gets smaller, choices become more exploratory, with individuals choosing randomly between the two options independently of their learned associations if $λ_{b}$ is 0. 
  
 We implemented the Bayesian reinforcement learning model in the statistical language Stan [@stan2019stan], calling the model and analyzing its output in *R* (version `r getRversion()`) [@rcoreteam]. The model takes the full series of choices individuals make (which of the two options did they choose, which option was rewarded, did they make the correct choice) across all their trials to find the $\phi$ and $\lambda$ values that best fit these choices given the two equations: which option individuals chose was estimated with a categorical distribution with the probability *P* as estimated from equation 2 for each of the two options (categories), before updating the associations using equation 1. The model was fit across all choices, with individual $\phi$ and $\lambda$ values estimated as varying effects. In the model, $\phi$ is estimated on the logit-scale to reflect that it is a proportion (only can take values between 0 and 1), and $\lambda$ is estimated on the log-scale to reflect that values have to be positive (there is no upper bound). We set the priors for $\phi$ and $\lambda$ to come from a normal distribution with a mean of zero and a standard deviation of one. We set the initial associations with both options for all individuals at the beginning of the experiment to 0.1 to indicate that they do not have an initial preference for either option but are likely to be somewhat curious about exploring the tubes because they underwent habituation with a differently colored tube (see below). For estimations at the end of the serial reversal learning experiment, we set the association with the option that was rewarded before the switch to 0.7 and to the option that was previously not rewarded to 0.1. Note that when applying equation 1 in the context of the reversal learning experiment as most commonly used, where there are only rewards (positive association) or no rewards (zero association) but no punishment (negative association), associations can never reach zero because they change proportionally.
 
@@ -209,7 +209,7 @@ We ran the Bayesian reinforcement learning model on the simulated data to unders
 
 To determine whether the Bayesian reinforcement learning model can accurately recover the simulated $\phi$ and $\lambda$ values from limited data, we applied the model first to only the choices from the initial association learning phase, next to only the choices from the first reversal learning phase, and finally from both phases combined. To estimate whether the Bayesian reinforcement learning model can recover the simulated $\phi$ and $\lambda$ values without bias from either of the single or from the combined datasets, we correlated the estimated values with the values individuals were initially assigned:
 
-$\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu$_{b}, $\sigma$), \
+$\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu_{b}$, $\sigma$), \
 $\mu_{b}$ = $\alpha$ + $\beta$ x $\phi_{b,0}$ or $\lambda_{b,0}$, \
 $\alpha$ ~ Normal(0,0.1), \
 $\beta$ ~ Normal(1,1), \
@@ -217,7 +217,7 @@ $\sigma$ ~ Exponential(1),
 
 where the values estimated for each bird, indexed by $b$, from the simulated behavior ($\phi_{b,1}$ or $\lambda_{b,1}$) are assumed to come from a normal distribution with a mean that can vary for each bird, $mu_{b}$, and overall variance $sigma$. The mean for each bird is constructed from an overall intercept, $\alpha$, and the change in expectation $\beta$ depending on the values assigned to each bird at the beginning of the simulation ($\phi_{b,0}$ or $\lambda_{b,0}$)  The combination of $\alpha$ close to 0 and of $\beta$ close to 1 would indicate that the estimated values matched the assigned values. 
 
-This, and all following statistical models, were implemented using functions of the package ‘rethinking’ [@rethinking2020] in R to estimate the association with stan. Following the social convention set in [@rethinking2020], we report the mean estimate and the 89% compatibility interval from the posterior estimate from these models. For each model, we ran four chains with 10,000 iterations each (half of which were burn-in, and half samples for the posterior). We checked that the number of effective samples was sufficiently high and evenly distributed across all estimated variables such that auto-correlation did not influence the estimates. We also confirmed that in all cases the Gelman-Rubin convergence diagnostic, Ȓ, was 1.01 or smaller indicating that the chains had converged on the final estimates [@gelman1995avoiding]. In all cases, we also linked the model inferences back to the distribution of the raw data to confirm that the estimated predictions matched the observed patterns.
+This, and all following statistical models, were implemented using functions of the package ‘rethinking’ [@rethinking2020] in R to estimate the association with stan. Following the social convention set in [@rethinking2020], we report the mean estimate and the 89% compatibility interval from the posterior estimate from these models. For each model, we ran four chains with 10,000 iterations each (half of which were burn-in, and half samples for the posterior). We checked that the number of effective samples was sufficiently high and evenly distributed across all estimated variables such that auto-correlation did not influence the estimates. We also confirmed that in all cases the Gelman-Rubin convergence diagnostic, $\hat{R}$, was 1.01 or smaller indicating that the chains had converged on the final estimates [@gelman1995avoiding]. In all cases, we also linked the model inferences back to the distribution of the raw data to confirm that the estimated predictions matched the observed patterns.
 
 
 ```{r question1_possibilityinferringphiandlambdasimulations, eval=F}
@@ -720,11 +720,11 @@ where the number of trials each simulated bird needed during their reversal, $v_
 
 We used the equations that link $\phi$ and $\lambda$ to the associations and choices analytically to more directly make predictions about the values that individuals would need to reach the passing criterion in fewer trials during the serial reversal learning experiment. To derive the learning curves for individuals with different $\phi$ and $\lambda$, we incorporated the dynamic aspect of change over time by inserting the probabilities of choosing either the rewarded or the non-rewarded option from time $t$-1 as the likelihood for the changes in associations at time $t$. 
 
-Equation 3a (dynamic association for the rewarded option): $A_{r,t+1}$  = ((1-$\phi$) x $A_{r,t}$ + $\phi$ x $Reward$) x $P_{t}$ + (1-$P_{t}$) x $A_{r,t}$.
+Equation 3a (dynamic association for the rewarded option): $A_{r,t+1}$  = ((1-$\phi$) x $A_{r,t}$ + $\phi$ x $\pi$) x $P_{t}$ + (1-$P_{t}$) x $A_{r,t}$.
 
 Equation 3b (dynamic association for the non-rewarded option): $A_{n,t+1}$ = (1-$P_{t}$) x (1-$\phi$) x $A_{n,t}$ + $P_{t}$ + (1-$P_{t}$) x $A_{n,t}$.
 
-In equations 3a and 3b, the association with both the rewarded, Ar, and the non-rewarded, An, options change from time $t$-1 to time $t$ depending on the association updating rate $\phi$ and the probability, $P$, that the association was chosen at time $t$. The proportion $P$ is calculated using equation 2. We used these equations to explore which combinations of $\phi$ and $\lambda$ would lead to an individual choosing the rewarded option above the passing criterion within 40 trials after a switch in the rewarded option. We assumed a serial reversal, and therefore set the initial associations after the presumed switch to 0.2 for the now rewarded option (previously unrewarded, so low association) and to 0.8 for the now unrewarded option (previously rewarded, so high association). These associations were observed in the simulations at the end of the reversal learning. For a given combination of $\phi$ and $\lambda$, we first used equation 2 to calculate the probability that an individual would choose the rewarded option during this first trial after the switch (where the remaining probability reflects the individual choosing the non-rewarded option), before using equations 3a and 3b to update the associations. We then repeated the calculations of the probabilities and the updates of the associations 50 times to determine whether individuals with a given combination of $\phi$ and $\lambda$ would reach the passing criterion within either 50 (or training criterion) or 40 trials (the average observed among the trained grackles). For $\phi$ ranging between 0.02 and 0.10, we manually explored which $\lambda$ would be needed such that an individual would choose the rewarded option with more than 50% probability at trial 31 (or 21) and with more than 85% probability at trial 50 (or 40), to match the passing criterion of 17 out of the last 20 trials correct. 
+In equations 3a and 3b, the association with both the rewarded, $A_{r}$, and the non-rewarded, $A_{n}$, options change from time $t$-1 to time $t$ depending on the association updating rate $\phi$ and the probability, $P$, that the association was chosen at time $t$. The proportion $P$ is calculated using equation 2. The reward $\pi$ is set to 1. We used these equations to explore which combinations of $\phi$ and $\lambda$ would lead to an individual choosing the rewarded option above the passing criterion within 40 trials after a switch in the rewarded option. We assumed a serial reversal, and therefore set the initial associations after the presumed switch to 0.2 for the now rewarded option (previously unrewarded, so low association) and to 0.8 for the now unrewarded option (previously rewarded, so high association). These associations were observed in the simulations at the end of the reversal learning. For a given combination of $\phi$ and $\lambda$, we first used equation 2 to calculate the probability that an individual would choose the rewarded option during this first trial after the switch (where the remaining probability reflects the individual choosing the non-rewarded option), before using equations 3a and 3b to update the associations. We then repeated the calculations of the probabilities and the updates of the associations 50 times to determine whether individuals with a given combination of $\phi$ and $\lambda$ would reach the passing criterion within either 50 (or training criterion) or 40 trials (the average observed among the trained grackles). For $\phi$ ranging between 0.02 and 0.10, we manually explored which $\lambda$ would be needed such that an individual would choose the rewarded option with more than 50% probability at trial 31 (or 21) and with more than 85% probability at trial 50 (or 40), to match the passing criterion of 17 out of the last 20 trials correct. 
 
 
 ```{r question2_phiversuslambdasimulateddata, eval=F}
@@ -928,8 +928,8 @@ lambda<-6.3 # 4 vs 3
 attraction_rewarded<-NA
 attraction_nonrewarded<-NA
 probability_rewarded<-NA
-attraction_rewarded[1]<-0.2 # adjust depending on phi
-attraction_nonrewarded[1]<-0.85 # adjust depending on phi 
+attraction_rewarded[1]<-0.1 # adjust depending on phi
+attraction_nonrewarded[1]<-0.7 # adjust depending on phi 
 probability_rewarded[1]<-exp(attraction_rewarded*lambda)/(exp(attraction_rewarded*lambda)+exp(attraction_nonrewarded*lambda))
 
 for(i in 1:50){
@@ -1024,11 +1024,11 @@ We fit the Bayesian reinforcement learning model to the data of both the control
 
 We determined how the $\phi$ and $\lambda$ values influenced the number of trials individuals needed during a reversal, building a regression model to determine which of the two parameters had a more direct influence on the number of trials individuals needed to reach criterion. We fit this model to the data from the simulated individuals (assigned $\phi$ and $\lambda$ with the number of trials needed during the single reversal), as well as to the data from the grackles (estimated $\phi$ and $\lambda$ values with the number of trials needed to reach criterion, during the first reversal and during the final reversal for the trained grackles). We assumed that the number of trials followed a Poisson distribution because the number of trials to reach criterion is a count that is bounded at smaller numbers (individuals need at least 20 trials to reach the criterion), with a log-linear link, because we expect there are diminishing influences of further increases in $\phi$ or $\lambda$. The model is as follows:
 
-$v_{b}$ ~ Poisson(mu),
-log mu = $\alpha$ + $\beta_{1}$ x $\phi_{b}$ + $\beta_{2}$ x $\lambda_{b}$,
-$\alpha$ ~ Normal(4.5,1),
-$\beta_{1}$ ~ Normal(0,1),
-$\beta_{2}$ ~ Normal(0,1),
+$v_{b}$ ~ Poisson($\mu$), \
+log $\mu$ = $\alpha$ + $\beta_{1}$ x $\phi_{b}$ + $\beta_{2}$ x $\lambda_{b}$, \
+$\alpha$ ~ Normal(4.5,1), \
+$\beta_{1}$ ~ Normal(0,1), \
+$\beta_{2}$ ~ Normal(0,1), \
 
 where the number of trials each simulated bird needed during their reversal, $v_{b}$, was linked with separate slopes to both the $\phi$ and $\lambda$ assigned to each bird. The mean of the prior distribution for the intercept $alpha$ was based on the average number of trials (90) grackles in Santa Barbara were observed to need to reach the criterion during the reversal (mean of 4.5 is equal to logarithm of 90, standard deviation set to 1 to constrain the estimate to the range observed across individuals). The priors for the relationships $\beta_{1}$ and $\beta_{2}$ with $\phi$ and $\lambda$ were centered on zero, indicating that, *a priori*, we do not bias it toward a relationship.
 
@@ -2032,7 +2032,7 @@ plot_grid(trialsplot,
 For the subset of grackles that were part of the serial reversal group, we calculated how much their $\phi$ and $\lambda$ changed from their first to their last reversal. The model is as follows:
 
 $\phi_{b,r}$ or $\lambda_{b,r}$ ~ Normal( $\mu_{b}$ , $\sigma$ ), \
-$\mu_{b}$ = $\alpha_{b}$ + $\beta_{b}$ x $reversal$, \ 
+$\mu_{b}$ = $\alpha_{b}$ + $\beta_{b}$ x $r$, \ 
 
 \[
 \begin{aligned}
@@ -2055,23 +2055,23 @@ S =
   \sigma_{\alpha} & 0\\
   0 & \sigma_{\beta}
 \end{pmatrix}
-P
+Z
 \begin{pmatrix}
   \sigma_{\alpha} & 0\\
   0 & \sigma_{\beta}
 \end{pmatrix},
 \end{aligned}
 \]
-*P* ~ **LKJcorr**(2), \
+$Z$ ~ LKJcorr(2), \
 $\alpha$ ~ Normal(5,2), \
 $\beta$ ~ Normal(-1,0.5), \
 $\delta_{b}$ ~ Exponential(1), \
 $\sigma$ ~ Exponential(1), \
 
-where each grackle $b$ has two $\phi$ or $\lambda$ values, one from the beginning (r equals 1) and one from the end of the serial reversal experiment (r equals 2). We assume that there are individual differences that persist through the experiment (intercept $\alpha_{b}$), and that how much individuals change from the first to the last $reversal$, estimated by $\beta_{b}$, might also depend on their values at the beginning. Each bird has an intercept and slope with a prior distribution defined by the two-dimensional Gaussian distribution ($MVNormal$) with means e and f and covariance matrix *S*. The covariance matrix *S* is factored into separate standard deviations $\delta_{b} and a correlation matrix **P**. The prior for the correlation matrix is set to come from the Lewandowski-Kurowicka-Joe (LKJcorr) distribution, and is set to be weakly informative and skeptical of extreme correlations near -1 or 1.
+where each grackle $b$ has two $\phi$ or $\lambda$ values, one from the beginning ($r$ equals 1) and one from the end of the serial reversal experiment ($r$ equals 2). We assume that there are individual differences that persist through the experiment (intercept $\alpha_{b}$), and that how much individuals change from the first to the last $r$, estimated by $\beta_{b}$, might also depend on their values at the beginning. Each bird has an intercept and slope with a prior distribution defined by the two dimensional Gaussian distribution ($MVNormal$) with means $\sigma_{\alpha}$ and $\sigma_{\beta}$ and covariance matrix $S$. The covariance matrix $S$ is factored into separate standard deviations $\delta_{b}$ and a correlation matrix $Z$. The prior for the correlation matrix is set to come from the Lewandowski-Kurowicka-Joe ($LKJcorr$) distribution, and is set to be weakly informative and skeptical of extreme correlations near -1 or 1.
 
 
-We also fit a model to assess whether how much individuals improved in the number of trials from their first to their last reversal was linked more to their change in $\phi$ or to their change in $\lambda$. The model is as follows:
+We also fit a model to assess how much individual improvement in the number of trials from their first to their last reversal was linked more to their change in $\phi$ or to their change in $\lambda$. The model is as follows:
 
 $\Delta$$v_{b}$ ~ Normal($\mu_{b}$, $\sigma$), \
 $\mu_{b}$ = $\alpha$ + $\beta_{1}$ x $\Delta$$\phi_{b}$ + $\beta_{2}$ x $\Delta$$\lambda_{b}$, \  
@@ -2081,7 +2081,7 @@ $\beta_{1}$ ~ Normal(0, 10), \
 $\beta_{2}$ ~ Normal(0, 10), \
 $\sigma$ ~ Exponential(1), \
 
-where $\Delta$$v_{b}$, improvement in the number of trials, is the difference in the number of trials between the first and the last reversal and $\Delta$$\phi_{b}$ and $\Delta$$\lambda_{b}$ are the respective differences in these parameters between the beginning and the end of the serial reversal experiment. The remaining factors in the model are as defined above.
+where $\Delta$$v_{b}$, improvement in the number of trials, is the difference in the number of trials between the first and the last reversal, and $\Delta$$\phi_{b}$ and $\Delta$$\lambda_{b}$ are the respective differences in these parameters between the beginning and the end of the serial reversal experiment. The remaining factors in the model are as defined above.
 
 ```{r question4_improvementmanipulatedgrackles, eval=F}
 library(rethinking)
@@ -2439,7 +2439,6 @@ where $\Delta$$\phi_{b}$ and $\Delta$$\lambda_{b}$ are the changes in these valu
 We also checked whether the $\phi$ or $\lambda$ values of grackles at the beginning were associated with the values they had at the end:
 
 $\phi_{b,1}$ or $\lambda_{b,1}$ ~ Normal($\mu_{b}$ , $\sigma$), \ 
-        
 $\mu_{b}$ = $\alpha$ + $\beta$ x $\phi_{b,0}$ or $\lambda_{b,0}$, \
 $\alpha$ ~ Normal(0,1), \
 $\beta$ ~ Normal(0,1), \
@@ -2835,8 +2834,8 @@ lambda<-4 # 4 vs 3
 attraction_rewarded<-NA
 attraction_nonrewarded<-NA
 probability_rewarded<-NA
-attraction_rewarded[1]<-0.2 
-attraction_nonrewarded[1]<-0.8 
+attraction_rewarded[1]<-0.1 
+attraction_nonrewarded[1]<-0.7 
 probability_rewarded[1]<-exp(attraction_rewarded*lambda)/(exp(attraction_rewarded*lambda)+exp(attraction_nonrewarded*lambda))
 
 for(i in 1:40){
@@ -2853,8 +2852,8 @@ lambda<-3 # 4 vs 3
 attraction_rewarded<-NA
 attraction_nonrewarded<-NA
 probability_rewarded<-NA
-attraction_rewarded[1]<-0.2 
-attraction_nonrewarded[1]<-0.8
+attraction_rewarded[1]<-0.1 
+attraction_nonrewarded[1]<-0.7
 probability_rewarded[1]<-exp(attraction_rewarded*lambda)/(exp(attraction_rewarded*lambda)+exp(attraction_nonrewarded*lambda))
 
 for(i in 1:40){
@@ -2890,20 +2889,20 @@ logit($p$) ~ $\alpha$ + $\beta_{1}$ x $\phi$ + $\beta_{2}$ x $\phi^{2}$ + $\beta
         $\beta_{3}$ ~ Normal(0, 1), \
         $\beta_{4}$ ~ Normal(0, 1),
 
-where $o_{b}$ is the number of options solved on the multi-option puzzle box, 4 is the total number of options on the multi-option puzzle box, $p$ is the probability of solving any one option across the whole experiment, α is the intercept, $\beta_{1}$ is the expected linear amount of change in $o_{b}$ for every one unit change in $\phi$ in the reversal learning experiments, $\beta_{2}$ is the expected non-linear amount of change in $o_{b}$ for every one unit change in $\phi^{2}$, $\beta_{3}$ the expected linear amount of change for changes in $\lambda$, and $\beta_{4}$ is the expected non-linear amount of change for changes in $\lambda^{2}$.
+where $o_{b}$ is the number of options solved on the multi-option puzzle box, 4 is the total number of options on the multi-option puzzle box, $p$ is the probability of solving any one option across the whole experiment, $\alpha$ is the intercept, $\beta_{1}$ is the expected linear amount of change in $p$ for every one unit change in $\phi$ in the reversal learning experiments, $\beta_{2}$ is the expected non-linear amount of change in $p$ for every one unit change in $\phi^{2}$, $\beta_{3}$ the expected linear amount of change for changes in $\lambda$, and $\beta_{4}$ is the expected non-linear amount of change for changes in $\lambda^{2}$.
  
 For the average latency to attempt a new option on the multi-access puzzle box as it relates to trials to reverse (both are measures of flexibility), we fit a Gamma-Poisson model with a log-link:
 
-$n_{b}$ ~ Gamma-Poisson($m_{i}$, $s$),  \
-log($m_{i}$) ~ $\alpha$ + $\beta_{1}$ x $\phi$ + $\beta_{2}$ x $\phi^{2}$ + $\beta_{3}$ x $\lambda$ + $\beta_{4}$ x $\lambda^{2}$, \
+$n_{b}$ ~ Gamma-Poisson($m_{b}$, $s$),  \
+log($m_{b}$) ~ $\alpha$ + $\beta_{1}$ x $\phi$ + $\beta_{2}$ x $\phi^{2}$ + $\beta_{3}$ x $\lambda$ + $\beta_{4}$ x $\lambda^{2}$, \
         $\alpha$ ~ Normal(1, 1), \
         $\beta_{1}$ ~ Normal(0, 1), \
         $\beta_{2}$ ~ Normal(0, 1), \
         $\beta_{3}$ ~ Normal(0, 1), \
-        $\beta_{4}$ ~ Normal(0, 1),
+        $\beta_{4}$ ~ Normal(0, 1), \
         $s$ ~ Exponential(1),
 
-where $n_{b}$ is the average latency, counted in number of seconds, to attempt a new option on the multi-access box, $m_{i}$  is the rate of each grackle (if they have rate of acquiring seconds, they have a longer latency), $s$ controls the variance (larger values mean the overall distribution is more like a pure Poisson process in which all grackles have the same rate), $\alpha$ is the intercept, $\beta_{1}$ is the expected linear amount of change in latency for every one unit change in $\phi$, $\beta_{2}$ is the expected non-linear amount of change in latency for every one unit change in $\phi^{2}$, $\beta_{3}$ the expected linear amount of change for changes in $\lambda$, and $\beta_{4}$ is the expected non-linear amount of change for changes in $\lambda^{2}$.
+where $n_{b}$ is the average latency, counted in number of seconds, to attempt a new option on the multi-access box, $m_{b}$  is the rate of each grackle (if they have rate of acquiring seconds, they have a longer latency), $s$ controls the variance (larger values mean the overall distribution is more like a pure Poisson process in which all grackles have the same rate), $\alpha$ is the intercept, $\beta_{1}$ is the expected linear amount of change in latency for every one unit change in $\phi$, $\beta_{2}$ is the expected non-linear amount of change in latency for every one unit change in $\phi^{2}$, $\beta_{3}$ the expected linear amount of change for changes in $\lambda$, and $\beta_{4}$ is the expected non-linear amount of change for changes in $\lambda^{2}$.
 
 ```{r posthocMABplasticLatency, eval=F}
 library(rstan)
