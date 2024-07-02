@@ -741,12 +741,13 @@ library(remotes)
 install_github("nyiuab/NBZIMM", force=T, build_vignettes=F)
 library(NBZIMM)
 d3 = glmm.zinb(fixed = round(DurationOnGround) ~ Condition + FlexGroup, random = ~1|BirdID, data = bol, niter = 50)
-summary(d3)
+d3
 # response to C2 is different from C1 (ß = -0.80, p = 0) - significantly less time on the ground with the cat than the pigeon
 # C3 is NOT different from C1 (ß = -0.14, p = 0.52) - no difference in time on the ground between the cat and the hawk
 # reorder factor levels to get difference between C2 & C3
 bol$Condition = factor(bol$Condition, levels=c('C2', 'C3', 'C1'))
 d3 = glmm.zinb(fixed = round(DurationOnGround) ~ Condition + FlexGroup, random = ~1|BirdID, data = bol)
+d3
 # response to C2 is different from C3 (ß = -0.95, p = 0) - significantly less time on the ground with the hawk than the pigeon
 
 ### So, our control condition (known non-threat) worked and C1 & C3 seem to be perceived as threatening. Now only model repeatability of the response to threatening objects (C1 & C3) ###
@@ -850,54 +851,90 @@ HPDinterval(repeata, 0.95) # 0 - 0.06
 
 ```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #Persistence
-per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_AZ_aviaryExpMotPers.csv", header=T, sep=",", stringsAsFactors=F) 
-colnames(per)[16] <- "NoTouches" # simplify column name from "SumTotalTouchesAcrossAllVideos"
+per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
+
+per = per[-which(is.na(per$Condition)),] #remove individual that did not complete reversal
+per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
+unique(per$BirdID) #18 individuals
+table(per$Condition,per$BirdID) #10 control, 8 manipulated individuals
+per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(NoTouches ~ Test * Condition + (1|ID), family=poisson, data=per), n=250)
-simulationOutput$scaledResiduals 
-testDispersion(simulationOutput) 
-testZeroInflation(simulationOutput) 
-testUniformity(simulationOutput) 
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + (1|BirdID), data=per), n=250)
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) #not overdispersed
+testZeroInflation(simulationOutput) #yes, zero inflated  
+testUniformity(simulationOutput) #not heteroscedastic
 plot(simulationOutput) 
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #can't get this code to work yet
+
+
+#for repeatability, cannot use zero-inflated model, so use binomial model.
+#similar to our measure of boldness, these data look binary - only 17% of the data are numbers other than 0 or 51 (the ceiling value). 38% of data are zeros, 56% are 51s.
+
+per$binTouches = ifelse(per$SumTouches > 0, 1,0)
+simulationOutput <- simulateResiduals(fittedModel = glmer(binTouches ~ Test + Condition + TotTime + (1|BirdID), family=binomial, data=per), n=250)
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) #yes, under-dispersed
+testZeroInflation(simulationOutput) #not zero inflated  
+testUniformity(simulationOutput) #not heteroscedastic
+plot(simulationOutput) 
+
 
 #REPEATABILITY
 #GLMM
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-pers <- MCMCglmm(NoTouches ~ Test*Condition, random=~ID, family="poisson", data=per, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(pers)
-#autocorr(pers$Sol) #Did fixed effects converge?
-#autocorr(pers$VCV) #Did random effects converge?
+#prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+prior1 = list(R=list(R1=list(V=1, nu=1),
+                     R2=list(V=1, nu=1),
+                     R3=list(V=1, nu=1)),
+              G=list(G1=list(V=1, nu=0)))
+pers1 <- MCMCglmm(SumTouches ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
+                 data=per, verbose=F, prior=prior1, nitt=33000000, thin=8000, burnin=30000)
+# no difference between control and manipulated groups, no effect of trial time
+autocorr(pers$Sol) #Did fixed effects converge?
+autocorr(pers$VCV) #Did random effects converge?
+plot(pers1)
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
-
-repeata <- pers$VCV[,"ID"]/(pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) 
+repeata <- pers1$VCV[,"BirdID"]/(pers1$VCV[,"BirdID"]+pers1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # R=0.26
 var(repeata) 
 posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) 
+HPDinterval(repeata, 0.95) # 0 - 0.46  
 
-# Repeatability on the data/observed scale (accounting for fixed effects)
-#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
-vf <- sapply(1:nrow(pers[["Sol"]]), function(i) {
-   var(predict(pers, it=i))  
-}) #estimates for each iteration of the MCMC
+## Unregistered analysis
+# checking repeatability with rptR
+rPer = rpt(log(SumTouches+1) ~ Test + TotTime + Condition + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian", data = per,
+           nboot = 1000, npermut = 500)
+rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
+# We get the same results
 
-repeataF <- (vf+pers$VCV[,"ID"])/(vf+pers$VCV[,"ID"]+pers$VCV[,"units"]) #latent scale adjusted + data scale
-posterior.mode(repeataF) 
-HPDinterval(repeataF, 0.95)
 
-# Now compare with the raw repeatability: null model
-persraw <- MCMCglmm(NoTouches ~ 1, random=~ID, family="poisson", data=per, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
-summary(persraw)
+### Plotting
+maxTouch = aggregate(SumTouches ~ BirdID, data = per, FUN = "max")
+colnames(maxTouch)[2] = "MaxTouch"
+per2 = merge(per, maxTouch, by = "BirdID",all = T)
+per2$BirdID = as.factor(as.character(per2$BirdID))
+per2$TouchRate = per2$SumTouches/per2$TotTime
 
-repeataraw <- persraw$VCV[,"ID"]/(persraw$VCV[,"ID"]+persraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-posterior.mode(repeata)
-HPDinterval(repeata, 0.95) 
+library(ggplot2)
+ggplot(per2,aes(x=reorder(BirdID,maxTouch),y=TouchRate,shape=Test,color=BirdID)) +
+  geom_point(size = 6, stroke = 2, alpha = 0.75, position = position_dodge(width = 0.35)) +
+  labs(x = "Bird", y = "Number of touches per time") + 
+  theme_bw() +
+  theme(legend.key.size = unit(2, 'lines')) +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        legend.title=element_text(size=20)) +
+  ggtitle("Persistence") +
+  scale_shape_manual(values = c(15, 16, 3, 4, 5, 7, 17)) +
+  scale_colour_discrete(guide = "none")
+
+
 ```
 
 ```{r repeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
