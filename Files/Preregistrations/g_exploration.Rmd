@@ -918,6 +918,11 @@ colnames(maxTouch)[2] = "MaxTouch"
 per2 = merge(per, maxTouch, by = "BirdID",all = T)
 per2$BirdID = as.factor(as.character(per2$BirdID))
 per2$TouchRate = per2$SumTouches/per2$TotTime
+per2 = per2[-which(per2$Test == "MABlogNFun" | per2$Test == "MABplasNFun"),] #no difference between number of functional or nonfunctional touches, so remove nonfunctional touches for the plot.
+per2$Test = factor(per2$Test, levels = c("Boldness","Environment","Object",
+                                         "MABlogFun","MABplasFun"),
+                   labels = c("Boldness objects", "Exploration environment", "Exploration object",
+                              "MAB wooden", "MAB plastic"))
 
 library(ggplot2)
 ggplot(per2,aes(x=reorder(BirdID,maxTouch),y=TouchRate,shape=Test,color=BirdID)) +
@@ -929,9 +934,10 @@ ggplot(per2,aes(x=reorder(BirdID,maxTouch),y=TouchRate,shape=Test,color=BirdID))
         axis.text.y = element_text(size = 14),
         axis.title = element_text(size = 20),
         plot.title = element_text(size = 26),
-        legend.title=element_text(size=20)) +
+        legend.title=element_text(size=20),
+        legend.text = element_text(size=14)) +
   ggtitle("Persistence") +
-  scale_shape_manual(values = c(15, 16, 3, 4, 5, 7, 17)) +
+  scale_shape_manual(values = c(15, 16, 17, 3, 4)) +
   scale_colour_discrete(guide = "none")
 
 
