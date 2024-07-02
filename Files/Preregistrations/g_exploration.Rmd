@@ -870,18 +870,6 @@ testUniformity(simulationOutput) #not heteroscedastic
 plot(simulationOutput) 
 
 
-#for repeatability, cannot use zero-inflated model, so use binomial model.
-#similar to our measure of boldness, these data look binary - only 17% of the data are numbers other than 0 or 51 (the ceiling value). 38% of data are zeros, 56% are 51s.
-
-per$binTouches = ifelse(per$SumTouches > 0, 1,0)
-simulationOutput <- simulateResiduals(fittedModel = glmer(binTouches ~ Test + Condition + TotTime + (1|BirdID), family=binomial, data=per), n=250)
-plot(simulationOutput$scaledResiduals) 
-testDispersion(simulationOutput) #yes, under-dispersed
-testZeroInflation(simulationOutput) #not zero inflated  
-testUniformity(simulationOutput) #not heteroscedastic
-plot(simulationOutput) 
-
-
 #REPEATABILITY
 #GLMM
 library(MCMCglmm)
@@ -890,19 +878,19 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0)))
-pers1 <- MCMCglmm(SumTouches ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
+pers1 <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
                  data=per, verbose=F, prior=prior1, nitt=33000000, thin=8000, burnin=30000)
 # no difference between control and manipulated groups, no effect of trial time
-autocorr(pers$Sol) #Did fixed effects converge?
-autocorr(pers$VCV) #Did random effects converge?
+autocorr(pers1$Sol) #Did fixed effects converge?
+autocorr(pers1$VCV) #Did random effects converge?
 plot(pers1)
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 repeata <- pers1$VCV[,"BirdID"]/(pers1$VCV[,"BirdID"]+pers1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) # R=0.26
+mean(repeata) # R=0.27
 var(repeata) 
 posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) # 0 - 0.46  
+HPDinterval(repeata, 0.95) # 0.05 - 0.53  
 
 ## Unregistered analysis
 # checking repeatability with rptR
