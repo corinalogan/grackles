@@ -1285,6 +1285,10 @@ library(lme4)
 # FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
 # We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), TouchesPerTime (Persistence), & NoMotorActions
 # We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
+
+
+#####--------Prepare the exploration, persistence and motor diversity data---------##### 
+
 flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
 colnames(flexcompr)[2]<- "Name"
 
@@ -1314,9 +1318,18 @@ flexpers = merge(flexpers, flexID, by = c("Name","BirdID"))
 flexpers$c.phi = scale(flexpers$lastphi, center = T, scale = T)
 flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
 
-motAvg = aggregate(TotalMot ~ Name + BirdID, data = per, FUN = "mean")
+mot = per[which(per$Test == "MABlogFun" | per$Test == "MABplasFun"),] # only interested in motor diversity when attempting to solve the multiaccess boxes. Functional and non-functional rows have the same motor diversity number
+motAvg = aggregate(TotalMot ~ Name + BirdID, data = mot, FUN = "mean")
+motAvg = merge(motAvg, timeAvg, by = c("Name","BirdID"), all = T)
+flexmot = merge(motAvg, flexcompr, by = "Name",all = T)
+flexmot = merge(flexmot, flexID, by = c("Name","BirdID"))
+flexmot = flexmot[-which(is.na(flexmot$TotalMot)),] # 2 birds did not receive MAB tests
+# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexmot$c.phi = scale(flexmot$lastphi, center = T, scale = T)
+flexmot$c.lambda = scale(flexmot$lastlambda, center = T, scale = T)
 
 
+#####--------Exploration of a novel environment as a function of flexibility---------##### 
 
 ## FlexExplore Model 1: TotalDurationNear.20cm 
 simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), family=poisson, data=FE1), n=250) #250 simulations, but if want higher precision change n>1000
@@ -1384,6 +1397,8 @@ summary(expl2) # Effective sample sizes and post.mean look good.
 # no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.11) or lambda (ß = -0.05, p = 0.86)
 
 
+#####--------Persistence with novel apparatuses as a function of flexibility---------##### 
+
 ## FlexPersist Model 3: Touches Per Time 
 simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpers), n=850) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) 
@@ -1417,35 +1432,42 @@ freqPers = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(
 summary(freqPers)
 
 
+#####--------Diversity of motor actions on the multiaccess boxes as a function of flexibility---------##### 
 
-
-## FlexExplore Model 4: NoMotorActions 
-simulationOutput <- simulateResiduals(fittedModel = glmer(NoMotorActions ~ lastphi + lastlambda + (1|Batch), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+## FlexExplore Model 4: Number of Motor Actions 
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(TotalMot) ~ c.phi + c.lambda + (1|Batch), family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over- or under-dispersed
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput) 
 
 # ANALYSIS 4
-#GLMM - dependent variable = NoMotorActions
+#GLMM - dependent variable = Number of Motor Actions on MAB (TotalMot)
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl4 <- MCMCglmm(NoMotorActions ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl4 <- MCMCglmm(log(TotalMot) ~ c.phi + c.lambda, random=~Batch, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
 autocorr(expl4$Sol) #Did fixed effects converge?
 autocorr(expl4$VCV) #Did random effects converge?
+plot(expl4)
 summary(expl4)
 
+
+
+#####-------Summary table--------#####
+
+library(modelsummary)
+library(kableExtra)
+library(gt)
 
 m <- list(
    "Duration Near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=FE1,  family="poisson"),
    "Latency to Land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2),
-   "Number of touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family="poisson", data=flexpers))
-library(modelsummary)
-library(kableExtra)
-library(gt)
-cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that the persistence (number of touches to the novel apparatuses per time) was significantly related to phi."
+   "Diversity of motor actions" = glmer(log(TotalMot) ~ c.phi + c.lambda + (1|Batch), family="gaussian", data=flexmot),
+   "Number of touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime),
+                                        family="poisson",data=flexpers))
+
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of touches to the novel apparatuses per time) was significantly related to phi."
 tab2 = modelsummary(m,
                     output = "gt",
                     fmt = 2,
@@ -1459,10 +1481,11 @@ tab2 = modelsummary(m,
 tab2 %>%
   tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
                locations = cells_body(rows = c(2,3), columns = 1)) %>%
-
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = 13,rows = 2)) %>%
   tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
-
 
 
 ```
