@@ -862,7 +862,7 @@ per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + (1|BirdID), data=per), n=250)
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), data=per), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) #not overdispersed
 testZeroInflation(simulationOutput) #yes, zero inflated  
@@ -1283,11 +1283,12 @@ library(DHARMa)
 library(lme4)
 # boldness and novel object exploration were not repeatable and few grackles entered the tent in the explore environment assay so we did not include a measure for latency to enter the tent or number of sections explored. We removed those independent variables.
 # FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
-# We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), MultiaccessTouchesPerTime, & NoMotorActions
+# We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), TouchesPerTime (Persistence), & NoMotorActions
 # We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
 flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
 colnames(flexcompr)[2]<- "Name"
-flexexplore = merge(exp2, flexcompr, by = "Name", all = T)
+
+flexexplore = merge(exp2, flexcompr, by = "Name", all = T) # exp2 is the exploration of the novel environment data from Chunk 5, above.
 flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
 flexexplore = merge(flexID[,c(1,4)],flexexplore, by = "Name",all = T)
 flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
@@ -1297,16 +1298,24 @@ flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
 
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
 FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
-
 FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
 
-MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==1,] 
-MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time==2,] 
-MultiaccessTouchesPerTime <- (MultiaccessTouchesPerTimeT1 + MultiaccessTouchesPerTimeT2)/2
+## Persistence and motor diversity 
+per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
+per = per[-which(is.na(per$SumTouches)),-3] #remove rows where individuals did not receive a test
+unique(per$BirdID) #19 individuals
+per$TouchRate = per$SumTouches/per$TotTime #account for trial time
+perAvg = aggregate(SumTouches ~ Name + BirdID, data = per, FUN = "mean")
+timeAvg = aggregate(TotTime ~ Name + BirdID, data = per, FUN = "mean")
+perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpers = merge(perAvg,flexcompr, by = "Name", all = T)
+flexpers = merge(flexpers, flexID, by = c("Name","BirdID"))
+# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexpers$c.phi = scale(flexpers$lastphi, center = T, scale = T)
+flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
 
-NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time==1,] 
-NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time==1,] 
-NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
+motAvg = aggregate(TotalMot ~ Name + BirdID, data = per, FUN = "mean")
+
 
 
 ## FlexExplore Model 1: TotalDurationNear.20cm 
@@ -1375,23 +1384,40 @@ summary(expl2) # Effective sample sizes and post.mean look good.
 # no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.11) or lambda (ß = -0.05, p = 0.86)
 
 
-## FlexExplore Model 3: MultiaccessTouchesPerTime 
-simulationOutput <- simulateResiduals(fittedModel = glmer(MultiaccessTouchesPerTime ~ lastphi + lastlambda + (1|Batch), family=gaussian, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+## FlexPersist Model 3: Touches Per Time 
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpers), n=850) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # not over- or under-dispersedd
+testZeroInflation(simulationOutput) # not zero-inflated
+testUniformity(simulationOutput) # not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
+
 
 # ANALYSIS 3
-#GLMM - dependent variable = MultiaccessTouchesPerTime
+#GLMM - dependent variable = Touches Per Time
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl3 <- MCMCglmm(MultiaccessTouchesPerTime ~ lastphi + lastlambda, random=~Batch, data=flexexplore,  family="gaussian", verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+#prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
+## To define an offset in MCMCglmm, Jarrod Hadfield recommends (https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines) the following:
+k<-4 # number of fixed effects, including intercept and offset
+prior<-list(B=list(V=diag(k)*1e8, mu=rep(0,k)),
+R=list(V=1, nu=0),
+G=list(G1=list(V=1, nu=0)))
+prior$mu[k]<-1 # assuming the offset term is last
+prior$B$V[k,k]<-1e-4
+
+expl3 <- MCMCglmm(round(SumTouches) ~ c.phi + c.lambda + log(TotTime), random=~Batch, data=flexpers, family="poisson", verbose=F, prior=prior, nitt=5000000, thin=5000, burnin=3000)
+### Getting an error that the prior specification contains the wrong number of elements.
 autocorr(expl3$Sol) #Did fixed effects converge?
 autocorr(expl3$VCV) #Did random effects converge?
+plot(expl3)
 summary(expl3)
+
+### Because of the error, and because poisson with an offset term is the appropriate way to model these data, we will proceed with the frequentist model.
+freqPers = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpers)
+summary(freqPers)
+
+
+
 
 ## FlexExplore Model 4: NoMotorActions 
 simulationOutput <- simulateResiduals(fittedModel = glmer(NoMotorActions ~ lastphi + lastlambda + (1|Batch), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
@@ -1414,22 +1440,31 @@ summary(expl4)
 
 m <- list(
    "Duration Near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=FE1,  family="poisson"),
-   "Latency to Land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2))
-
+   "Latency to Land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2),
+   "Number of touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family="poisson", data=flexpers))
 library(modelsummary)
 library(kableExtra)
 library(gt)
-modelsummary(m,
-             fmt = 2,
-             shape = term ~ model + statistic,
-             estimate = "estimate",
-             statistic = c("conf.int",
-                           "std.error",
-                           "p.value"),
-             coef_omit = "SD",
-             title = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land).",
-             notes = "'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales.",
-             gof_map = NA)
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that the persistence (number of touches to the novel apparatuses per time) was significantly related to phi."
+tab2 = modelsummary(m,
+                    output = "gt",
+                    fmt = 2,
+                    shape = term ~ model + statistic,
+                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
+                    statistic = c("std.error",
+                                  "p.value"),
+                    coef_omit = "SD",
+                    gof_omit = ".*",
+                    gof_map = NA)
+tab2 %>%
+  tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
+               locations = cells_body(rows = c(2,3), columns = 1)) %>%
+
+  tab_header(title = cap) %>%
+  opt_align_table_header(align = "left")
+
+
+
 ```
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
