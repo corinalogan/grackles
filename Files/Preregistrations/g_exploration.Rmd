@@ -862,7 +862,7 @@ per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), data=per), n=250)
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), data=perper[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) #not overdispersed
 testZeroInflation(simulationOutput) #yes, zero inflated  
@@ -878,15 +878,15 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0)))
-pers1 <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
-                 data=per, verbose=F, prior=prior1, nitt=33000000, thin=8000, burnin=30000)
+pers <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
+                 data=per, verbose=F, prior=prior1, nitt=330000, thin=100, burnin=30000)
 # no difference between control and manipulated groups, no effect of trial time
-autocorr(pers1$Sol) #Did fixed effects converge?
-autocorr(pers1$VCV) #Did random effects converge?
-plot(pers1)
+autocorr(pers$Sol) #Did fixed effects converge?
+autocorr(pers$VCV) #Did random effects converge?
+plot(pers)
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
-repeata <- pers1$VCV[,"BirdID"]/(pers1$VCV[,"BirdID"]+pers1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+repeata <- pers$VCV[,"BirdID"]/(pers$VCV[,"BirdID"]+pers$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) # R=0.27
 var(repeata) 
 posterior.mode(repeata) 
@@ -894,7 +894,8 @@ HPDinterval(repeata, 0.95) # 0.05 - 0.53
 
 ## Unregistered analysis
 # checking repeatability with rptR
-rPer = rpt(log(SumTouches+1) ~ Test + TotTime + Condition + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian", data = per,
+rPer = rpt(log(SumTouches+1) ~ Test + TotTime + Condition + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian", 
+           data = per,
            nboot = 1000, npermut = 500)
 rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
 # We get the same results
@@ -1292,6 +1293,7 @@ library(lme4)
 flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
 colnames(flexcompr)[2]<- "Name"
 
+## Exploration
 flexexplore = merge(exp2, flexcompr, by = "Name", all = T) # exp2 is the exploration of the novel environment data from Chunk 5, above.
 flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
 flexexplore = merge(flexID[,c(1,4)],flexexplore, by = "Name",all = T)
@@ -1299,18 +1301,21 @@ flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-particip
 # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
 flexexplore$c.phi = scale(flexexplore$lastphi, center = T, scale = T)
 flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
-
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
 FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
 FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
 
-## Persistence and motor diversity 
+## Persistence
 per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
 per = per[-which(is.na(per$SumTouches)),-3] #remove rows where individuals did not receive a test
 unique(per$BirdID) #19 individuals
 per$TouchRate = per$SumTouches/per$TotTime #account for trial time
-perAvg = aggregate(SumTouches ~ Name + BirdID, data = per, FUN = "mean")
-timeAvg = aggregate(TotTime ~ Name + BirdID, data = per, FUN = "mean")
+
+### separate functional (all novel apparatuses) and nonfunctional (only MAB) touches
+#### Functional first
+perFun = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
+perAvg = aggregate(SumTouches ~ Name + BirdID, data = perFun, FUN = "mean")
+timeAvg = aggregate(TotTime ~ Name + BirdID, data = perFun, FUN = "mean")
 perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
 flexpers = merge(perAvg,flexcompr, by = "Name", all = T)
 flexpers = merge(flexpers, flexID, by = c("Name","BirdID"))
@@ -1318,6 +1323,20 @@ flexpers = merge(flexpers, flexID, by = c("Name","BirdID"))
 flexpers$c.phi = scale(flexpers$lastphi, center = T, scale = T)
 flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
 
+#### Nonfunctional
+perNFun = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
+perNAvg = aggregate(SumTouches ~ Name + BirdID, data = perNFun, FUN = "mean")
+timeNAvg = aggregate(TotTime ~ Name + BirdID, data = perNFun, FUN = "mean")
+perNAvg = merge(perNAvg, timeNAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpersN = merge(perNAvg,flexcompr, by = "Name", all = T)
+flexpersN = merge(flexpersN, flexID, by = c("Name","BirdID"))
+# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexpersN$c.phi = scale(flexpersN$lastphi, center = T, scale = T)
+flexpersN$c.lambda = scale(flexpersN$lastlambda, center = T, scale = T)
+
+
+
+## Motor diversity
 mot = per[which(per$Test == "MABlogFun" | per$Test == "MABplasFun"),] # only interested in motor diversity when attempting to solve the multiaccess boxes. Functional and non-functional rows have the same motor diversity number
 motAvg = aggregate(TotalMot ~ Name + BirdID, data = mot, FUN = "mean")
 motAvg = merge(motAvg, timeAvg, by = c("Name","BirdID"), all = T)
@@ -1399,7 +1418,7 @@ summary(expl2) # Effective sample sizes and post.mean look good.
 
 #####--------Persistence with novel apparatuses as a function of flexibility---------##### 
 
-## FlexPersist Model 3: Touches Per Time 
+## FlexPersist Model 3: Functional Touches Per Time 
 simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpers), n=850) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # not over- or under-dispersedd
@@ -1409,7 +1428,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 
 
 # ANALYSIS 3
-#GLMM - dependent variable = Touches Per Time
+## GLMM - dependent variable = Functional Touches Per Time
 library(MCMCglmm)
 #prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
 ## To define an offset in MCMCglmm, Jarrod Hadfield recommends (https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines) the following:
@@ -1430,6 +1449,10 @@ summary(expl3)
 ### Because of the error, and because poisson with an offset term is the appropriate way to model these data, we will proceed with the frequentist model.
 freqPers = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpers)
 summary(freqPers)
+
+### Nonfunctional touches
+freqPersN = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpersN)
+summary(freqPersN)
 
 
 #####--------Diversity of motor actions on the multiaccess boxes as a function of flexibility---------##### 
