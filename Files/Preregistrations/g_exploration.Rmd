@@ -862,7 +862,7 @@ per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), data=perper[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]), n=250)
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), data=per, n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) #not overdispersed
 testZeroInflation(simulationOutput) #yes, zero inflated  
@@ -1484,13 +1484,15 @@ library(kableExtra)
 library(gt)
 
 m <- list(
-   "Duration Near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=FE1,  family="poisson"),
-   "Latency to Land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2),
+   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=FE1,  family="poisson"),
+   "Latency to land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2),
    "Diversity of motor actions" = glmer(log(TotalMot) ~ c.phi + c.lambda + (1|Batch), family="gaussian", data=flexmot),
-   "Number of touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime),
-                                        family="poisson",data=flexpers))
+   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime),
+                                        family="poisson",data=flexpers),
+   "Number of nonfunctional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime),
+                                        family="poisson",data=flexpersN))
 
-cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of touches to the novel apparatuses per time) was significantly related to phi."
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of functional or nonfunctional touches to the novel apparatuses per time) was significantly related to phi."
 tab2 = modelsummary(m,
                     output = "gt",
                     fmt = 2,
@@ -1506,7 +1508,7 @@ tab2 %>%
                locations = cells_body(rows = c(2,3), columns = 1)) %>%
   tab_style(
     style = cell_text(weight = "bold"),
-    locations = cells_body(columns = 13,rows = 2)) %>%
+    locations = cells_body(columns = c(13,16),rows = 2)) %>%
   tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 
@@ -1665,35 +1667,53 @@ Actual power                  	=	0,7047420
 This means that, with our sample size of 32, we have a 70% chance of detecting a medium (approximated at f^2=0.15 by @cohen1988statistical) to large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
 ```{r persist2, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-persist2 <- read.csv ("/Users/corina/GTGR/data/data_reverselatency.csv", header=T, sep=",", stringsAsFactors=F) 
+reverse <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv", header=T, sep=",", stringsAsFactors=F) 
+
+r1 = reverse[which(reverse$CorrectChoice == 1),c(4,6,8,11)]
+r2 = aggregate(Reversal ~ ID + Trial, data = r1, FUN = "max")
+r2$Trial = as.integer(r2$Trial)
+tmp1 = aggregate(Trial ~ ID + Reversal, data = r2, FUN = "min")
+tmp2 = aggregate(Reversal ~ ID, data = tmp1, FUN = "max")
+r3 = merge(tmp1,tmp2, by = c("ID","Reversal"))
+r3 = r3[-which(r3$Reversal == 0),]
+colnames(r3)[1] = "Name"
+
+batch = unique(reverse[,c(3,4)])
+colnames(batch)[2] = "Name"
+
+avgper = aggregate(TouchRate ~ Name, data = per[-which(per$Test == "MABlogNFun"|per$Test == "MABplasNFun"),], FUN = "mean")
+avgper$s.per = scale(avgper$TouchRate, center = T, scale = T)
+persist2 = merge(r3, avgper, by = "Name")
+persist2 = merge(persist2,batch, by = "Name")
+
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family=poisson, data=persist2), n=250) #250 simulations, but if want higher precision change n>1000
-simulationOutput$scaledResiduals #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(Trial+1) ~ s.per + (1|Batch), data=persist2), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # not over/under dispersed
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 #GLM
-p2 <- glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2)
-#summary(p2)
+p2 <- lmer(log(Trial+1) ~ s.per + (1|Batch), data=persist2)
+summary(p2)
 
 sp2 <- summary(p2)
 library(xtable)
-sp2.table <- xtable(sp2)
 library(knitr)
-kable(sp2.table, caption="Table 2: Model selection output.", format="html", digits=2)
+#kable(sp2, caption="Table 2: Model selection output.", format="html", digits=2)
 
 #Model Validation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2))
+base1 <- dredge(lmer(log(Trial+1) ~ s.per + (1|Batch), data=persist2))
 library(knitr)
 kable(base1, caption="Table 3: Model selection output.")
+# intercept only model is a better fit, so no evidence for a relationship between the two persistence variables.
+
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data [@burnham2003model]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package [@bates2012lme4]. If the best fitting model has a high Akaike weight (>0.89; [@burnham2003model]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the [base/test *- delete as appropriate*] model (Table 2).
