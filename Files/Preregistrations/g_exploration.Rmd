@@ -1381,7 +1381,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 #plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 
-# ANALYSIS 1
+# ANALYSIS 1: EXPLORATION Total duration near tent
 #GLMM - dependent variable = Total duration near tent - a lot of residual variation that is leading to convergence issues. Because in poisson the variance is constrained to 1, MCMCglmm looks for an observation-level residual term (random effect) to account for residual variance. We could also model this overdispersion with a negative binomial using glmer.nb, but there’s no comparable method in MCMCglmm. See: https://stat.ethz.ch/pipermail/r-sig-mixed-models/2019q2/027899.html
 
 library(MCMCglmm)
@@ -1397,7 +1397,7 @@ autocorr(expl1$VCV) #Did random effects converge? autocorrelation present so we 
 summary(expl1)
 # no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.49, p = 0.13) or lambda (ß = -0.27, p = 0.81).
 # however, post mean still indicates overdispersion (i.e. much greater than 1), and the effective sample size is much smaller than sample size (indicating there is still autocorrelation of samples)
-
+##
 
 
 ## FlexExplore Model 2: LatencyFirstLand
@@ -1421,7 +1421,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 # all n.s.
 #plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-# ANALYSIS 2
+# ANALYSIS 2: EXPLORATION LatencyFirstLand
 #GLMM - dependent variable = LatencyFirstLand
 library(MCMCglmm)
 prior2 = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) 
@@ -1528,8 +1528,6 @@ tab2 %>%
     locations = cells_body(columns = c(13,16),rows = 2)) %>%
   tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
-
-
 ```
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
