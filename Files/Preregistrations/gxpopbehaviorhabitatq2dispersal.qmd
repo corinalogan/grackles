@@ -156,6 +156,174 @@ $\mu$ \~ Normal(0,1) *\[*$\mu$ prior\]
 
 $\sigma$ \~ Uniform(0,1) *\[*$\sigma$ prior\]
 
+
+
+```{r relatedness calculation, include=FALSE, echo=FALSE}
+#Load the relevant packages
+library(related)
+library(tidyr)
+library(dplyr)
+library(vegan)
+library(geosphere)
+
+#Load the relevant data
+#SNP data, processed to be in correct format to calculate pairwise relatedness (output files saved for flexforaging article)
+wo_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Woodland.txt")
+
+az_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Tempe.txt")
+
+# Load additional information on individuals
+idinfo <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq2dispersal_individualinfoforrelatedness.csv"), header=T, sep=",", stringsAsFactors=F)
+
+# Exclude juveniles from the dataset, because they might not yet have dispersed
+adultids<-idinfo[idinfo$Age %in% "A",]
+
+wo_snpdata<-wo_input$gdata
+wo_snpdata$V1<-gsub("-","",wo_snpdata$V1)
+wo_snpdata<-wo_snpdata[wo_snpdata$V1 %in% adultids$BirdID,]
+
+az_snpdata<-az_input$gdata
+az_snpdata$V1<-gsub("A-","A",az_snpdata$V1)
+az_snpdata<-az_snpdata[az_snpdata$V1 %in% adultids$BirdID,]
+
+#Calculate pairwise relatedness, here choosing the relatedness method developed by Wang, Queller & Goodknight, Lynch & Li
+wo_outfile<-coancestry(wo_snpdata,wang=1,quellergt=1,lynchli=1)
+az_outfile<-coancestry(az_snpdata,wang=1,quellergt=1,lynchli=1)
+
+#extract the relevant information from the file
+wo_pairwise_r<-wo_outfile$relatedness
+az_pairwise_r<-az_outfile$relatedness
+
+# Calculate for each individuals their pairwise relatedness to all other members of the group
+wo_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(wo_pairwise_r),ncol=ncol(wo_pairwise_r)))
+colnames(wo_completerelatedness)<-colnames(wo_pairwise_r)
+wo_completerelatedness$pair.no<-c(wo_pairwise_r$pair.no,wo_pairwise_r$pair.no)
+wo_completerelatedness$ind1.id<-c(wo_pairwise_r$ind1.id,wo_pairwise_r$ind2.id)
+wo_completerelatedness$ind2.id<-c(wo_pairwise_r$ind2.id,wo_pairwise_r$ind1.id)
+wo_completerelatedness$group<-c(wo_pairwise_r$group,wo_pairwise_r$group)
+wo_completerelatedness$trioml<-c(wo_pairwise_r$trioml,wo_pairwise_r$trioml)
+wo_completerelatedness$wang<-c(wo_pairwise_r$wang,wo_pairwise_r$wang)
+wo_completerelatedness$lynchli<-c(wo_pairwise_r$lynchli,wo_pairwise_r$lynchli)
+wo_completerelatedness$lynchrd<-c(wo_pairwise_r$lynchrd,wo_pairwise_r$lynchrd)
+wo_completerelatedness$ritland<-c(wo_pairwise_r$ritland,wo_pairwise_r$ritland)
+wo_completerelatedness$quellergt<-c(wo_pairwise_r$quellergt,wo_pairwise_r$quellergt)
+wo_completerelatedness$dyadml<-c(wo_pairwise_r$dyadml,wo_pairwise_r$dyadml)
+
+
+
+az_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(az_pairwise_r),ncol=ncol(az_pairwise_r)))
+colnames(az_completerelatedness)<-colnames(az_pairwise_r)
+az_completerelatedness$pair.no<-c(az_pairwise_r$pair.no,az_pairwise_r$pair.no)
+az_completerelatedness$ind1.id<-c(az_pairwise_r$ind1.id,az_pairwise_r$ind2.id)
+az_completerelatedness$ind2.id<-c(az_pairwise_r$ind2.id,az_pairwise_r$ind1.id)
+az_completerelatedness$group<-c(az_pairwise_r$group,az_pairwise_r$group)
+az_completerelatedness$trioml<-c(az_pairwise_r$trioml,az_pairwise_r$trioml)
+az_completerelatedness$wang<-c(az_pairwise_r$wang,az_pairwise_r$wang)
+az_completerelatedness$lynchli<-c(az_pairwise_r$lynchli,az_pairwise_r$lynchli)
+az_completerelatedness$lynchrd<-c(az_pairwise_r$lynchrd,az_pairwise_r$lynchrd)
+az_completerelatedness$ritland<-c(az_pairwise_r$ritland,az_pairwise_r$ritland)
+az_completerelatedness$quellergt<-c(az_pairwise_r$quellergt,az_pairwise_r$quellergt)
+az_completerelatedness$dyadml<-c(az_pairwise_r$dyadml,az_pairwise_r$dyadml)
+
+# Check distribution of relatedness values
+hist(az_completerelatedness$wang)
+hist(wo_completerelatedness$wang)
+
+# Here, each pair occurs twice - exclude these.
+
+
+
+
+#identify which individuals are female and which are male
+females<-filter(adultids,Sex %in% "F",Age %in% "A")[,]$BirdID
+males<-filter(adultids,Sex %in% "M",Age %in% "A")[,]$BirdID
+
+#Calculate average of and variance in relatedness among all individuals, all females, and all males
+# First using the relatedness estimates based on the method by Wang
+mean(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
+mean(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
+mean(wo_completerelatedness$wang)
+
+var(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
+var(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
+var(wo_completerelatedness$wang)
+
+
+mean(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
+mean(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
+mean(az_completerelatedness$wang)
+
+var(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
+var(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
+var(az_completerelatedness$wang)
+
+# Next using the relatedness estimates based on the method by Queller and Goodnight
+mean(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
+mean(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
+mean(wo_completerelatedness$quellergt)
+
+var(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
+var(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
+var(wo_completerelatedness$quellergt)
+
+
+mean(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
+mean(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
+mean(az_completerelatedness$quellergt)
+
+var(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
+var(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
+var(az_completerelatedness$quellergt)
+
+
+
+# coyp from gdispersal manuscript starting line 350
+
+# Distance between trap sites (meters): straight line distance (assuming earth as an ellipsoid) between all pairs of trapping locations based on the longitude and latitude of each site.
+
+#Plot pairwise distances among all females and among all males in the sample
+#Calculate all pairwise distances
+all_pairwise_distances <- distm(idinfo[,c('Lon','Lat')], idinfo[,c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(all_pairwise_distances)<-idinfo$Name
+colnames(all_pairwise_distances)<-idinfo$Name
+diag(all_pairwise_distances)<-NA
+
+#Calculate pairwise distances among all the females in California
+female_pairwise_distances <- distm(adultgracklelocations[idinfo$Sex=="F",c('Lon','Lat')], adultgracklelocations[adultgracklelocations$Sex=="F",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(female_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="F",]$Individual
+colnames(female_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="F",]$Individual
+diag(female_pairwise_distances)<-NA
+
+#Calculate pairwise distances among all the females in Arizona
+female_pairwise_distances <- distm(adultgracklelocations[adultgracklelocations$Sex=="F",c('Lon','Lat')], adultgracklelocations[adultgracklelocations$Sex=="F",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(female_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="F",]$Individual
+colnames(female_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="F",]$Individual
+diag(female_pairwise_distances)<-NA
+
+#Calculate pairwise distances among all the males in California
+male_pairwise_distances <- distm(adultgracklelocations[adultgracklelocations$Sex=="M",c('Lon','Lat')], adultgracklelocations[adultgracklelocations$Sex=="M",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(male_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="M",]$Individual
+colnames(male_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="M",]$Individual
+diag(male_pairwise_distances)<-NA
+
+#Calculate pairwise distances among all the males in Arizona
+male_pairwise_distances <- distm(adultgracklelocations[adultgracklelocations$Sex=="M",c('Lon','Lat')], adultgracklelocations[adultgracklelocations$Sex=="M",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(male_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="M",]$Individual
+colnames(male_pairwise_distances)<-adultgracklelocations[adultgracklelocations$Sex=="M",]$Individual
+diag(male_pairwise_distances)<-NA
+
+#plot distributions of pairwise distances
+hist(all_pairwise_distances,col="grey75",border="black",breaks=10)
+hist(female_pairwise_distances,col="grey75",border="black",breaks=10)
+hist(male_pairwise_distances,col="grey75",border="black",breaks=10)
+
+```
+
+
+```
+
+
+
 ### F. ETHICS
 
 This research is carried out in accordance with permits from the:
