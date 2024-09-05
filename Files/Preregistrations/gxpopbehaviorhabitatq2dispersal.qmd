@@ -156,8 +156,6 @@ $\mu$ \~ Normal(0,1) *\[*$\mu$ prior\]
 
 $\sigma$ \~ Uniform(0,1) *\[*$\sigma$ prior\]
 
-
-
 ```{r relatedness calculation, include=FALSE, echo=FALSE}
 #Load the relevant packages
 library(related)
@@ -165,6 +163,8 @@ library(tidyr)
 library(dplyr)
 library(vegan)
 library(geosphere)
+
+# Compare AZ sample size to Gus article - are the previously genotyped individuals included? Does the one indivdiual have to be excluded again?
 
 #Load the relevant data
 #SNP data, processed to be in correct format to calculate pairwise relatedness (output files saved for flexforaging article)
@@ -177,6 +177,8 @@ idinfo <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/m
 
 # Exclude juveniles from the dataset, because they might not yet have dispersed
 adultids<-idinfo[idinfo$Age %in% "A",]
+
+samplesize<-as.data.frame(adultids %>% group_by(Population,Sex) %>% summarize(samplesize=n()))
 
 wo_snpdata<-wo_input$gdata
 wo_snpdata$V1<-gsub("-","",wo_snpdata$V1)
@@ -194,7 +196,7 @@ az_outfile<-coancestry(az_snpdata,wang=1,quellergt=1,lynchli=1)
 wo_pairwise_r<-wo_outfile$relatedness
 az_pairwise_r<-az_outfile$relatedness
 
-# Calculate for each individuals their pairwise relatedness to all other members of the group
+# List for each individuals their pairwise relatedness to all other members of the group
 wo_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(wo_pairwise_r),ncol=ncol(wo_pairwise_r)))
 colnames(wo_completerelatedness)<-colnames(wo_pairwise_r)
 wo_completerelatedness$pair.no<-c(wo_pairwise_r$pair.no,wo_pairwise_r$pair.no)
@@ -319,10 +321,7 @@ hist(male_pairwise_distances,col="grey75",border="black",breaks=10)
 
 ```
 
-
-```
-
-
+In this text, we show the summary statistics: Females in Arizona `r samplesize[3,3]`, Males in Arizona `r samplesize[4,3]`, Females in California `r samplesize[5,3]`, Males in California `r samplesize[6,3]`
 
 ### F. ETHICS
 
