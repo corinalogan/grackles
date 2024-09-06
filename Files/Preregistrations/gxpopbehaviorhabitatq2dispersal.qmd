@@ -163,6 +163,7 @@ library(tidyr)
 library(dplyr)
 library(vegan)
 library(geosphere)
+library(rethinking)
 
 # Compare AZ sample size to Gus article - are the previously genotyped individuals included? Does the one indivdiual have to be excluded again?
 
@@ -174,6 +175,9 @@ az_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackl
 
 # Load additional information on individuals
 idinfo <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq2dispersal_individualinfoforrelatedness.csv"), header=T, sep=",", stringsAsFactors=F)
+
+# remove an individual for which we did not have blood, and therefore no genotype
+idinfo<-idinfo[-38,]
 
 # Exclude juveniles from the dataset, because they might not yet have dispersed
 adultids<-idinfo[idinfo$Age %in% "A",]
@@ -279,6 +283,57 @@ mean(az_completerelatedness$quellergt)
 var(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
 var(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
 var(az_completerelatedness$quellergt)
+
+
+# Compare whether average relatedness is higher in one of the populations
+
+birdsex<-adultids[,c(2,5)]
+colnames(birdsex)<-c("ind1.id","ind1.sex")
+az_completerelatedness<-left_join(az_completerelatedness,birdsex,by="ind1.id")
+wo_completerelatedness<-left_join(wo_completerelatedness,birdsex,by="ind1.id")
+colnames(birdsex)<-c("ind2.id","ind2.sex")
+az_completerelatedness<-left_join(az_completerelatedness,birdsex,by="ind2.id")
+wo_completerelatedness<-left_join(wo_completerelatedness,birdsex,by="ind2.id")
+az_completerelatedness$sexdyad<-paste(az_completerelatedness$ind1.sex,az_completerelatedness$ind2.sex)
+wo_completerelatedness$sexdyad<-paste(wo_completerelatedness$ind1.sex,wo_completerelatedness$ind2.sex)
+az_completerelatedness[which(az_completerelatedness$sexdyad=="F F"),]$sexdyad<-"1"
+az_completerelatedness[which(az_completerelatedness$sexdyad=="M F"),]$sexdyad<-"2"
+az_completerelatedness[which(az_completerelatedness$sexdyad=="F M"),]$sexdyad<-"2"
+az_completerelatedness[which(az_completerelatedness$sexdyad=="M M"),]$sexdyad<-"3"
+wo_completerelatedness[which(wo_completerelatedness$sexdyad=="F F"),]$sexdyad<-"1"
+wo_completerelatedness[which(wo_completerelatedness$sexdyad=="M F"),]$sexdyad<-"2"
+wo_completerelatedness[which(wo_completerelatedness$sexdyad=="F M"),]$sexdyad<-"2"
+wo_completerelatedness[which(wo_completerelatedness$sexdyad=="M M"),]$sexdyad<-"3"
+
+
+dat_relatedness<-list(
+  relatedness = c(az_completerelatedness$quellergt,wo_completerelatedness$wang),
+  population = as.numeric(as.factor(c(rep(1,nrow(az_completerelatedness)),rep(2,nrow(wo_completerelatedness))))),
+  sex = as.numeric(as.factor(c(az_completerelatedness$sexdyad,wo_completerelatedness$sexdyad)))
+)
+
+set.seed(1109)
+mimmodel <- ulam( alist(
+  relatedness ~dnorm(nu,theta),
+  nu <- p[population]+s[sex,population],
+  p[population]~dnorm(0,1),
+  vector[2]:s[sex] ~ multi_normal(0,Rho_s,sigma_s),
+  Rho_s~dlkjcorr(4),
+  sigma_s~dexp(1),
+  a[sex]~dnorm(0,0.1), #relatedness values are centered on zero
+  theta ~ dexp(1)
+) , data=dat_relatedness, chains=4 , cores=4 , cmdstan = TRUE)
+
+precis(mimmodel,depth=2)
+#             mean   sd  5.5% 94.5% rhat ess_bulk
+# p[1]       -0.01 0.01 -0.02  0.00 1.01   463.20
+# p[2]       -0.01 0.01 -0.02  0.00 1.02   256.30
+# sigma_s[1]  0.01 0.02  0.00  0.03 1.01   333.59
+# sigma_s[2]  0.01 0.04  0.00  0.04 1.01   207.15
+# a[1]        0.00 0.10 -0.15  0.16 1.00  1627.24
+# a[2]        0.00 0.10 -0.17  0.16 1.00  1506.39
+# a[3]        0.00 0.10 -0.15  0.16 1.00  1396.31
+# theta       0.08 0.00  0.08  0.08 1.00  2051.99
 
 
 ```
@@ -407,7 +462,80 @@ counts<-c(counts,sum(subsetrel>0.249))
 counts<-counts[2:10001]
 sum(counts==0)/10000
 
+
+
+
+
+# Network model, determining whether the number of close relatives differs by sex and population
+
+library(STRAND)
+
+
+az_relatednessmatrix<-as.data.frame(pivot_wider(az_completerelatedness,id_cols=ind1.id,names_from=ind2.id,values_from=wang))
+
+row.names(az_relatednessmatrix)<-az_relatednessmatrix$ind1.id
+az_relatednessmatrix<-az_relatednessmatrix[,2:80]
+az_relatednessmatrix<-az_relatednessmatrix[,c(79,1:78)]
+
+az_birds<-adultids[adultids$Population %in% "Tempe",]
+az_birds<-az_birds[order(az_birds$BirdID),]
+
+
+az_relatives<-(az_relatednessmatrix>0.249)*1
+diag(az_relatives)<-0
+outcome=list(Relative=az_relatives)
+group_ids=data.frame(Sex=as.factor(az_birds$Sex))
+
+
+dat = make_strand_data(
+  outcome = outcome,
+  block_covariates = group_ids ,
+  individual_covariates = NULL,
+  dyadic_covariates = NULL,
+  outcome_mode = "poisson"
+  )
+
+
+fit =
+  fit_block_plus_social_relations_model(
+    data=dat,
+    block_regression = ~ Sex,
+    focal_regression = ~ 1,
+    dyad_regression = ~ 1,
+    target_regression = ~ 1,
+    mode="mcmc",
+    stan_mcmc_parameters = list(
+      chains = 1,
+      iter_warmup = 1500,
+      iter_sampling = 1500)
+    )
+
+
+
+# Summarize results
+res = summarize_strand_results(fit)
+# Plot slopes
+vis = strand_caterpillar_plot(res,normalized=TRUE, only_slopes=TRUE)
+vis
+
+# Individuals of the same sex are slightly more likely to be related than individuals of the opposite sex, f-f dyads are equally likely to be close kin than are m-m dyads.
+
+#                                             Variable Median HPDI:0.05 HPDI:0.95   Mean    SD
+# 1                                   focal effects sd  1.636     1.196     2.076  1.654 0.277
+# 2                                  target effects sd  1.631     1.239     2.144  1.654 0.278
+# 3                                  dyadic effects sd   2.65     2.188     3.172  2.673 0.307
+# 4  focal-target effects rho (generalized recipocity)  0.976     0.941     0.998  0.969 0.024
+# 5             dyadic effects rho (dyadic recipocity)  0.986     0.969     0.999  0.983 0.012
+# 6                                 offset, Any to Any -4.281    -6.269    -1.918 -4.262  1.35
+# 7                                     offset, F to F -5.157    -7.263    -3.222 -5.184 1.224
+# 8                                     offset, F to M -5.182    -7.126    -3.222 -5.219 1.193
+# 9                                     offset, M to F -5.215    -7.146    -3.278 -5.227  1.19
+# 10                                    offset, M to M -5.391    -7.729    -3.262 -5.389  1.35
+
+
 ```
+
+
 
 
 In this text, we show the summary statistics: Females in Arizona `r samplesize[3,3]`, Males in Arizona `r samplesize[4,3]`, Females in California `r samplesize[5,3]`, Males in California `r samplesize[6,3]`
@@ -415,7 +543,7 @@ In this text, we show the summary statistics: Females in Arizona `r samplesize[3
 
 
 
-```{r relatedness calculation, include=FALSE, echo=FALSE}
+```{r distance calculation, include=FALSE, echo=FALSE}
 # Distance between trap sites (meters): straight line distance (assuming earth as an ellipsoid) between all pairs of trapping locations based on the longitude and latitude of each site.
 
 #Plot pairwise distances among all females and among all males in the sample
