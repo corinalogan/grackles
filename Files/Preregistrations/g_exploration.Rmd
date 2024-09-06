@@ -705,9 +705,6 @@ bol = merge(bol, flexID, by = "BirdID", all = T)
 # remove NA birds that were in the aviaries but did not complete boldness assays (4 birds)
 bol = bol[-which(is.na(bol$Condition)),]
 
-bol$BirdID = as.factor(bol$BirdID)
-bol$Condition = as.factor(bol$Condition)
-bol$FlexGroup = as.factor(bol$FlexGroup)
 
 ### total duration on ground: duration near + duration far
 # Significantly correlated with Latency to land on ground (r = -0.82, p << 0.01)
@@ -715,8 +712,7 @@ bol$TotalDurationNear.20cm =  as.numeric(bol$TotalDurationNear.20cm)
 bol$TotalDurationNear.20cm[which(is.na(bol$TotalDurationNear.20cm))]<-0
 bol$TotalDurationFar.20cm =  as.numeric(bol$TotalDurationFar.20cm)
 bol$TotalDurationFar.20cm[which(is.na(bol$TotalDurationFar.20cm))]<-0
-bol$DurationOnGround = bol$TotalDurationFar.20cm + bol$TotalDurationNear.20cm
-
+bol$DurationOnGround = bol$TotalDurationFar.20cm + bol$TotalDurationNear.20cm # duration on ground means within 1m of object
 
 ####### FIGURING OUT DATA STRUCTURE FOR REPEATABILITY ANALYSIS ######
 hist(bol$DurationOnGround) #definitely looks zero-inflated
@@ -732,23 +728,25 @@ overdisp_fun <- function(model) {
     pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
     c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
 }
-overdisp_fun(d1) # both overdispersed, use zero-inflated negative binomial model
+overdisp_fun(d2) # both overdispersed, use zero-inflated negative binomial model
 
-### UNREGISTERED ANALYSIS: Is response different to cat and hawk vs pigeon? ###
+#### UNREGISTERED ANALYSIS: Is response different to cat and hawk vs pigeon? ####
 # C1 = cat, C2 = pigeon, C3 = hawk
 
 library(remotes)
 install_github("nyiuab/NBZIMM", force=T, build_vignettes=F)
 library(NBZIMM)
-d3 = glmm.zinb(fixed = round(DurationOnGround) ~ Condition + FlexGroup, random = ~1|BirdID, data = bol, niter = 50)
-d3
-# response to C2 is different from C1 (ß = -0.80, p = 0) - significantly less time on the ground with the cat than the pigeon
+
 # C3 is NOT different from C1 (ß = -0.14, p = 0.52) - no difference in time on the ground between the cat and the hawk
+d3 = glmm.zinb(DurationOnGround ~ Condition + FlexGroup + offset(log(TrialDuration)), random = ~1|BirdID, data = bol)
+summary(d3) # Output displayed below chunk
 # reorder factor levels to get difference between C2 & C3
 bol$Condition = factor(bol$Condition, levels=c('C2', 'C3', 'C1'))
-d3 = glmm.zinb(fixed = round(DurationOnGround) ~ Condition + FlexGroup, random = ~1|BirdID, data = bol)
-d3
-# response to C2 is different from C3 (ß = -0.95, p = 0) - significantly less time on the ground with the hawk than the pigeon
+d3 = glmm.zinb(DurationOnGround ~ Condition + FlexGroup + offset(log(TrialDuration)), random = ~1|BirdID, data = bol)
+summary(d3)
+# response to C2 is different from C1 (ß = -0.80, p = 0) & C3 (ß = -0.95, p = 0) - significantly less time on the ground with the cat and hawk than the pigeon
+# The cat and hawk did not result in different time on the ground (ß = -0.1, p = 0.71)
+#exponentiate the coefficient to get the rate of change in Duration on ground.
 
 ### So, our control condition (known non-threat) worked and C1 & C3 seem to be perceived as threatening. Now only model repeatability of the response to threatening objects (C1 & C3) ###
 hist(bol$DurationOnGround[-which(bol$Condition == "C2")])
@@ -781,7 +779,7 @@ ggplot(bol[-which(bol$Condition == "Pigeon"),]) +
   geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
   geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, size = 0.7)) + 
   facet_grid(.~Condition) +
-  labs(x = "Time", y = "Duration near object (sec)") + 
+  labs(x = "Time", y = "Duration within 1m of object (sec)") + 
   theme_bw() +
   theme(axis.text = element_text(size = 14),
         axis.title = element_text(size = 20),
@@ -855,20 +853,35 @@ per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/
 
 per = per[-which(is.na(per$Condition)),] #remove individual that did not complete reversal
 per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
-unique(per$BirdID) #18 individuals
+per$BirdID = as.factor(per$BirdID)
+unique(per$Name) #18 individuals
 table(per$Condition,per$BirdID) #10 control, 8 manipulated individuals
 per$TouchRate = per$SumTouches/per$TotTime #account for trial time
+per$binTouch = ifelse(per$SumTouches>0,1,0)
+
+
+#separate functional and nonfunctional touches
+perF = per[-which(per$Test == "MABplasNFun" | per$Test == "MABlogNFun"),] 
+perNF = per[which(per$Test == "MABplasNFun" | per$Test == "MABlogNFun"),] 
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), data=per, n=250)
+simulationOutput <- simulateResiduals(fittedModel = glmer(binTouch ~ Test + Condition + TotTime + (1|BirdID), 
+                                                          family = "binomial", data=perF), n=250)
 plot(simulationOutput$scaledResiduals) 
-testDispersion(simulationOutput) #not overdispersed
-testZeroInflation(simulationOutput) #yes, zero inflated  
+#testDispersion(simulationOutput) # dispersion tests are not informative in logistic regression
+testZeroInflation(simulationOutput) #not zero inflated  
 testUniformity(simulationOutput) #not heteroscedastic
-plot(simulationOutput) 
+plot(simulationOutput)
 
+simulationOutputN <- simulateResiduals(fittedModel = glmer(binTouch ~ Test + Condition + TotTime + (1|BirdID), 
+                                                          family = "binomial", data=perNF), n=250)
+plot(simulationOutputN$scaledResiduals) 
+#testDispersion(simulationOutput) # dispersion tests are not informative in logistic regression
+testZeroInflation(simulationOutputN) #not zero inflated  
+testUniformity(simulationOutputN) #not heteroscedastic
+plot(simulationOutputN) 
 
 #REPEATABILITY
 #GLMM
@@ -877,16 +890,16 @@ library(MCMCglmm)
 prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
-              G=list(G1=list(V=1, nu=0)))
-pers <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
-                 data=per, verbose=F, prior=prior1, nitt=330000, thin=100, burnin=30000)
+              G=list(G1=list(V=1, nu=0.002)))
+perFm <- MCMCglmm(binTouch ~ Test + Condition + TotTime, random=~BirdID, family="categorical",
+                 data=perF, verbose=F, prior=prior1, nitt=1000000, thin=1000, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
-autocorr(pers$Sol) #Did fixed effects converge?
-autocorr(pers$VCV) #Did random effects converge?
-plot(pers)
+autocorr(perFm$Sol) #Did fixed effects converge?
+autocorr(perFm$VCV) #Did random effects converge?
+plot(perFm)
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
-repeata <- pers$VCV[,"BirdID"]/(pers$VCV[,"BirdID"]+pers$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+repeata <- perFm$VCV[,"BirdID"]/(perFm$VCV[,"BirdID"]+perFm$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) # R=0.27
 var(repeata) 
 posterior.mode(repeata) 
@@ -894,8 +907,8 @@ HPDinterval(repeata, 0.95) # 0.05 - 0.53
 
 ## Unregistered analysis
 # checking repeatability with rptR
-rPer = rpt(log(SumTouches+1) ~ Test + TotTime + Condition + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian", 
-           data = per,
+rPer = rpt(binTouch ~ Test + Condition + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Binary", link = "logit",
+           data = perF,
            nboot = 1000, npermut = 500)
 rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
 # We get the same results
@@ -1312,7 +1325,7 @@ colnames(flexcompr)[2]<- "Name"
 
 ## Exploration
 flexexplore = merge(exp2, flexcompr, by = "Name", all = T) # exp2 is the exploration of the novel environment data from Chunk 5, above.
-flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
+#flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
 flexexplore = merge(flexID[,c(1,4)],flexexplore, by = "Name",all = T)
 flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
 # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
@@ -1332,10 +1345,10 @@ per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 ### separate functional (all novel apparatuses) and nonfunctional (only MAB) touches
 #### Functional first
 perFun = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-#perAvg = aggregate(SumTouches ~ Name + BirdID, data = perFun, FUN = "mean")
-#timeAvg = aggregate(TotTime ~ Name + BirdID, data = perFun, FUN = "mean")
-#perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
-flexpers = merge(perFun,flexcompr, by = "Name", all = T)
+perAvg = aggregate(SumTouches ~ Name + BirdID, data = perFun, FUN = "mean")
+timeAvg = aggregate(TotTime ~ Name + BirdID, data = perFun, FUN = "mean")
+perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpers = merge(perAvg,flexcompr, by = "Name", all = T)
 flexpers = flexpers[-which(is.na(flexpers$SumTouches)),]
 # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
 flexpers$c.phi = scale(flexpers$lastphi, center = T, scale = T)
@@ -1343,10 +1356,10 @@ flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
 
 #### Nonfunctional
 perNFun = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-#perNAvg = aggregate(SumTouches ~ Name + BirdID, data = perNFun, FUN = "mean")
-#timeNAvg = aggregate(TotTime ~ Name + BirdID, data = perNFun, FUN = "mean")
-#perNAvg = merge(perNAvg, timeNAvg, by = c("Name","BirdID"),FUN = "mean")
-flexpersN = merge(perNFun,flexcompr, by = "Name", all = T)
+perNAvg = aggregate(SumTouches ~ Name + BirdID, data = perNFun, FUN = "mean")
+timeNAvg = aggregate(TotTime ~ Name + BirdID, data = perNFun, FUN = "mean")
+perNAvg = merge(perNAvg, timeNAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpersN = merge(perNAvg,flexcompr, by = "Name", all = T)
 # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
 flexpersN$c.phi = scale(flexpersN$lastphi, center = T, scale = T)
 flexpersN$c.lambda = scale(flexpersN$lastlambda, center = T, scale = T)
@@ -1378,7 +1391,6 @@ testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic de
 # p = 0.3, not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 # all n.s.
-#plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
 
 # ANALYSIS 1: EXPLORATION Total duration near tent
@@ -1422,18 +1434,18 @@ summary(expl2) # Effective sample sizes and post.mean look good.
 #####--------Persistence with novel apparatuses as a function of flexibility---------##### 
 
 ## FlexPersist Model 3: Functional Touches Per Time 
-simulationOutput <- simulateResiduals(fittedModel = lmer(log((SumTouches/TotTime)+1) ~ c.phi + c.lambda + (1|Name), data=flexpers), n=850) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = lm(log((SumTouches/TotTime)+1) ~ c.phi + c.lambda, data=flexpers), n=850) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # not over- or under-dispersedd
 testZeroInflation(simulationOutput) # zero-inflated, 40% of data are zeros, 16% are ceiling value
-testUniformity(simulationOutput) # heteroscedastic
+testUniformity(simulationOutput) # not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 
 # ANALYSIS 3
 ## GLMM - dependent variable = Functional Touches Per Time
 library(MCMCglmm)
-#prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
 ## To define an offset in MCMCglmm, Jarrod Hadfield recommends (https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines) the following:
 k<-4 # number of fixed effects, including intercept and offset
 prior<-list(B=list(V=diag(k)*1e8, mu=rep(0,k)),
@@ -1442,7 +1454,7 @@ G=list(G1=list(V=1, nu=0)))
 prior$mu[k]<-1 # assuming the offset term is last
 prior$B$V[k,k]<-1e-4
 
-expl3 <- MCMCglmm(round(SumTouches) ~ c.phi + c.lambda + log(TotTime), random=~Batch, data=flexpers, family="poisson", verbose=F, prior=prior, nitt=5000000, thin=5000, burnin=3000)
+expl3 <- MCMCglmm(log(touchRate+1) ~ c.phi + c.lambda, data=flexpers, family="gaussian", verbose=F, prior=prior, nitt=5000000, thin=5000, burnin=3000)
 ### Getting an error that the prior specification contains the wrong number of elements.
 autocorr(expl3$Sol) #Did fixed effects converge?
 autocorr(expl3$VCV) #Did random effects converge?
@@ -1450,18 +1462,18 @@ plot(expl3)
 summary(expl3)
 
 ### Because of the error, and because poisson with an offset term is the appropriate way to model these data, we will proceed with the frequentist model.
-freqPers = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpers)
+freqPers = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpers)
 summary(freqPers)
 
 ### Nonfunctional touches
-freqPersN = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime), family=poisson, data=flexpersN)
+freqPersN = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersN)
 summary(freqPersN)
 
 
 #####--------Diversity of motor actions on the multiaccess boxes as a function of flexibility---------##### 
 
 ## FlexExplore Model 4: Number of Motor Actions 
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(TotalMot) ~ c.phi + c.lambda + (1|Batch), family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals)
 testDispersion(simulationOutput) # not over- or under-dispersed
 testZeroInflation(simulationOutput) # not zero inflated
@@ -1471,8 +1483,8 @@ plot(simulationOutput)
 # ANALYSIS 4
 #GLMM - dependent variable = Number of Motor Actions on MAB (TotalMot)
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0))) 
-expl4 <- MCMCglmm(log(TotalMot) ~ c.phi + c.lambda, random=~Batch, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
+expl4 <- MCMCglmm(log(TotalMot) ~ c.phi + c.lambda, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
 autocorr(expl4$Sol) #Did fixed effects converge?
 autocorr(expl4$VCV) #Did random effects converge?
 plot(expl4)
@@ -1516,12 +1528,95 @@ tab2 %>%
   opt_align_table_header(align = "left")
 ```
 
+#### *H1: P1-P5 alternative: Control vs flexibility manipulated individuals*
+The flexibility manipulation did work such that individuals in the serial reversal learning group increased their speed to pass each reversal. After we received in-principal recommendation for the preregistration associated with this research, we developed and tested the flexibility comprehensive variable. We found that this variable more accurately represented flexible behavior [@blaisdell2021more; @lukas2024flexmanippcj]. However, our preregistered predictions still included comparison of performance on the behavioral trait assays between control and manipulated individuals. Thus, we conduct these comparisons here. Note that results were similar to those using the flexiblity comprehensive variables.
+```{r conVmanip, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+### Exploration
+#### Duration near the outside of the tent
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # p = 0.24, not over- or under-dispersed
+testZeroInflation(simulationOutput) # p = 0.1, not zero inflated
+testUniformity(simulationOutput) # p = 0.3, not heteroscedastic
+plot(simulationOutput) # all n.s.
+
+library(MCMCglmm)
+prior1 = list(R=list(R1=list(V=1, nu=0),
+                     R2=list(V=1, nu=1, alpha.v=0.1)),
+              G=list(G1=list(V=1, nu=0)))
+explcvm <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
+plot(explcvm)
+# lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
+autocorr(explcvm$Sol) #Did fixed effects converge? Yes
+autocorr(explcvm$VCV) #Did random effects converge? autocorrelation present so we 1) center/scaled IVs, 2) increase nitt/burnin/thin 
+summary(explcvm)
+# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.53, p = 0.19) or lambda (ß = -0.33, p = 0.73).
+
+
+#### Latency to first land on the ground
+
+### Persistence
+#### Functional touches
+head(flexpers) # from chunk 7, above
+flexpers$binTouch = ifelse(flexpers$SumTouches >0,1,0)
+simulationOutput <- simulateResiduals(fittedModel = glm(binTouch ~ FlexGroup, family="binomial", data=flexpers), n=500) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over- or under-dispersed
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput) 
+
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
+perscvm <- MCMCglmm(binTouch ~ FlexGroup, data=flexpers,  family="categorical", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
+autocorr(perscvm$Sol) #Did fixed effects converge?
+autocorr(perscvm$VCV) #Did random effects converge?
+plot(perscvm)
+summary(perscvm)
+
+#### Nonfunctional touches
+head(flexpersN) # from chunk 7, above
+flexpersN$binTouch = ifelse(flexpersN$SumTouches >0,1,0)
+simulationOutput <- simulateResiduals(fittedModel = glm(binTouch ~ FlexGroup, family="binomial", data=flexpers), n=500) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over- or under-dispersed
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput) 
+
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
+perscvmN <- MCMCglmm(binTouch ~ FlexGroup, data=flexpers,  family="categorical", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
+autocorr(perscvmN$Sol) #Did fixed effects converge?
+autocorr(perscvmN$VCV) #Did random effects converge?
+plot(perscvmN)
+summary(perscvmN)
+
+
+### Motor diversity
+simulationOutput <- simulateResiduals(fittedModel = glm(log(TotalMot) ~ FlexGroup, family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over- or under-dispersed
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput) 
+
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
+motcvm <- MCMCglmm(log(TotalMot) ~FlexGroup, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
+autocorr(motcvm$Sol) #Did fixed effects converge?
+autocorr(motcvm$VCV) #Did random effects converge?
+plot(motcvm)
+summary(motcvm)
+
+```
+
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
 ```{r expbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#### 23 JUNE 2022: BOLDNESS WAS NOT REPEATABLE SO WE COULD NOT LOOK FOR CORRELATIONS BETWEEN BOLDNESS AND EXPLORATION.
+#### 23 JUNE 2022: BOLDNESS WAS NOT REPEATABLE SO WE DID NOT LOOK FOR CORRELATIONS BETWEEN BOLDNESS AND EXPLORATION.
 
 #UNREGISTERED ANALYSIS (Jan 2021): first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground.
 
