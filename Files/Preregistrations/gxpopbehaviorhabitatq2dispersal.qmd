@@ -144,6 +144,10 @@ One model will be run per sex
 
 The data will be analyzed as in @sevchik2019dispersal. To summarize, blood is collected from the bird, DNA is extracted (by Aaron Blackwell at Washington State University), size selected (between 400-700 base pairs), and sequenced using ddRADseq (at Cornell University Lab of Ornithology) on an Illumina NextSeq500 machine using the mid-output setting for 150 base pair single end reads. Data are post processed to generate single nucleotide polymorphisms (SNPs) as in @thrasher2018double. Genetic relatedness between all pairs of individuals is calculated using the package “related” (@pew2015related) in R (as in @thrasher2018double) using the estimator by Queller & Goodnight, which was more robust for our inferences in a subset of the Arizona data [@sevchik2019dispersal]. Permutations (i.e., randomly assigning site ID to individuals) and general linear models estimating average relatedness of each individual to all others at that site will be used to determine whether individuals at one site are more closely related to each other than the individuals at another site.
 
+
+
+
+
 **Model and simulation**
 
 Expected values for average relatedness per bird were based on the fact that average relatedness with these estimators has to range between -1 and 1 and because it is an average we expect a normal distribution.
@@ -163,26 +167,30 @@ library(tidyr)
 library(dplyr)
 library(vegan)
 library(geosphere)
+library(rethinking)
 
 # Compare AZ sample size to Gus article - are the previously genotyped individuals included? Does the one indivdiual have to be excluded again?
 
 #Load the relevant data
 #SNP data, processed to be in correct format to calculate pairwise relatedness (output files saved for flexforaging article)
-wo_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Woodland.txt")
+ca_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Woodland.txt")
 
 az_input<-readgenotypedata("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Tempe.txt")
 
 # Load additional information on individuals
 idinfo <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gxpopbehaviorhabitatq2dispersal_individualinfoforrelatedness.csv"), header=T, sep=",", stringsAsFactors=F)
 
+# remove an individual for which we did not have blood, and therefore no genotype
+idinfo<-idinfo[-38,]
+
 # Exclude juveniles from the dataset, because they might not yet have dispersed
 adultids<-idinfo[idinfo$Age %in% "A",]
 
 samplesize<-as.data.frame(adultids %>% group_by(Population,Sex) %>% summarize(samplesize=n()))
 
-wo_snpdata<-wo_input$gdata
-wo_snpdata$V1<-gsub("-","",wo_snpdata$V1)
-wo_snpdata<-wo_snpdata[wo_snpdata$V1 %in% adultids$BirdID,]
+ca_snpdata<-ca_input$gdata
+ca_snpdata$V1<-gsub("-","",ca_snpdata$V1)
+ca_snpdata<-ca_snpdata[ca_snpdata$V1 %in% adultids$BirdID,]
 
 az_snpdata<-az_input$gdata
 az_snpdata$V1<-gsub("A-","A",az_snpdata$V1)
@@ -193,27 +201,27 @@ az_snpdata<-az_snpdata[-45,] # remove original
 # az_snpdata<-az_snpdata[-54,] # remove new, as alternative because the reprocessing appears to have fixed the previous problems
 
 #Calculate pairwise relatedness, here choosing the relatedness method developed by Wang, Queller & Goodknight, Lynch & Li
-wo_outfile<-coancestry(wo_snpdata,wang=1,quellergt=1,lynchli=1)
+ca_outfile<-coancestry(ca_snpdata,wang=1,quellergt=1,lynchli=1)
 az_outfile<-coancestry(az_snpdata,wang=1,quellergt=1,lynchli=1)
 
 #extract the relevant information from the file
-wo_pairwise_r<-wo_outfile$relatedness
+ca_pairwise_r<-ca_outfile$relatedness
 az_pairwise_r<-az_outfile$relatedness
 
 # List for each individuals their pairwise relatedness to all other members of the group
-wo_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(wo_pairwise_r),ncol=ncol(wo_pairwise_r)))
-colnames(wo_completerelatedness)<-colnames(wo_pairwise_r)
-wo_completerelatedness$pair.no<-c(wo_pairwise_r$pair.no,wo_pairwise_r$pair.no)
-wo_completerelatedness$ind1.id<-c(wo_pairwise_r$ind1.id,wo_pairwise_r$ind2.id)
-wo_completerelatedness$ind2.id<-c(wo_pairwise_r$ind2.id,wo_pairwise_r$ind1.id)
-wo_completerelatedness$group<-c(wo_pairwise_r$group,wo_pairwise_r$group)
-wo_completerelatedness$trioml<-c(wo_pairwise_r$trioml,wo_pairwise_r$trioml)
-wo_completerelatedness$wang<-c(wo_pairwise_r$wang,wo_pairwise_r$wang)
-wo_completerelatedness$lynchli<-c(wo_pairwise_r$lynchli,wo_pairwise_r$lynchli)
-wo_completerelatedness$lynchrd<-c(wo_pairwise_r$lynchrd,wo_pairwise_r$lynchrd)
-wo_completerelatedness$ritland<-c(wo_pairwise_r$ritland,wo_pairwise_r$ritland)
-wo_completerelatedness$quellergt<-c(wo_pairwise_r$quellergt,wo_pairwise_r$quellergt)
-wo_completerelatedness$dyadml<-c(wo_pairwise_r$dyadml,wo_pairwise_r$dyadml)
+ca_completerelatedness<-as.data.frame(matrix(nrow=2*nrow(ca_pairwise_r),ncol=ncol(ca_pairwise_r)))
+colnames(ca_completerelatedness)<-colnames(ca_pairwise_r)
+ca_completerelatedness$pair.no<-c(ca_pairwise_r$pair.no,ca_pairwise_r$pair.no)
+ca_completerelatedness$ind1.id<-c(ca_pairwise_r$ind1.id,ca_pairwise_r$ind2.id)
+ca_completerelatedness$ind2.id<-c(ca_pairwise_r$ind2.id,ca_pairwise_r$ind1.id)
+ca_completerelatedness$group<-c(ca_pairwise_r$group,ca_pairwise_r$group)
+ca_completerelatedness$trioml<-c(ca_pairwise_r$trioml,ca_pairwise_r$trioml)
+ca_completerelatedness$wang<-c(ca_pairwise_r$wang,ca_pairwise_r$wang)
+ca_completerelatedness$lynchli<-c(ca_pairwise_r$lynchli,ca_pairwise_r$lynchli)
+ca_completerelatedness$lynchrd<-c(ca_pairwise_r$lynchrd,ca_pairwise_r$lynchrd)
+ca_completerelatedness$ritland<-c(ca_pairwise_r$ritland,ca_pairwise_r$ritland)
+ca_completerelatedness$quellergt<-c(ca_pairwise_r$quellergt,ca_pairwise_r$quellergt)
+ca_completerelatedness$dyadml<-c(ca_pairwise_r$dyadml,ca_pairwise_r$dyadml)
 
 
 
@@ -235,23 +243,46 @@ az_individualrelatedness<-as.data.frame(az_completerelatedness %>% group_by(ind1
 
 # Check distribution of relatedness values
 hist(az_completerelatedness$wang)
-hist(wo_completerelatedness$wang)
+hist(ca_completerelatedness$wang)
+
+```
+
+
+```{r descriptive statistics, include=FALSE, echo=FALSE}
+# Overall sample size
+samplesize<-as.data.frame(adultids %>% group_by(Population,Sex) %>% summarize(samplesize=n()))
+
+# missing data in the genotypes
+# California
+sum(ca_snpdata==0)
+sum(ca_snpdata==0)/(nrow(ca_snpdata)*(ncol(ca_snpdata)-1)) # 3.3% missing data
+apply(ca_snpdata[,2:986], 1, function(x) length(which(x=="0")))
+
+# Arizona
+sum(az_snpdata==0)
+sum(az_snpdata==0)/(nrow(az_snpdata)*(ncol(az_snpdata)-1)) # 3.0% missing data
+apply(az_snpdata[,2:925], 1, function(x) length(which(x=="0")))
+
+# Maybe remove Buñuelo C116RY because of missing data?
+
+```
 
 
 
+```{r compare average relatedness, include=FALSE, echo=FALSE}
 #identify which individuals are female and which are male
 females<-filter(adultids,Sex %in% "F",Age %in% "A")[,]$BirdID
 males<-filter(adultids,Sex %in% "M",Age %in% "A")[,]$BirdID
 
 #Calculate average of and variance in relatedness among all individuals, all females, and all males
 # First using the relatedness estimates based on the method by Wang
-mean(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
-mean(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
-mean(wo_completerelatedness$wang)
+mean(filter(ca_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
+mean(filter(ca_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
+mean(ca_completerelatedness$wang)
 
-var(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
-var(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
-var(wo_completerelatedness$wang)
+var(filter(ca_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
+var(filter(ca_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
+var(ca_completerelatedness$wang)
 
 
 mean(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$wang)
@@ -263,13 +294,13 @@ var(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$wang)
 var(az_completerelatedness$wang)
 
 # Next using the relatedness estimates based on the method by Queller and Goodnight
-mean(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
-mean(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
-mean(wo_completerelatedness$quellergt)
+mean(filter(ca_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
+mean(filter(ca_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
+mean(ca_completerelatedness$quellergt)
 
-var(filter(wo_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
-var(filter(wo_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
-var(wo_completerelatedness$quellergt)
+var(filter(ca_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
+var(filter(ca_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
+var(ca_completerelatedness$quellergt)
 
 
 mean(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
@@ -279,6 +310,57 @@ mean(az_completerelatedness$quellergt)
 var(filter(az_completerelatedness,ind1.id %in% females,ind2.id %in% females)$quellergt)
 var(filter(az_completerelatedness,ind1.id %in% males,ind2.id %in% males)$quellergt)
 var(az_completerelatedness$quellergt)
+
+
+# Compare whether average relatedness is higher in one of the populations
+
+birdsex<-adultids[,c(2,5)]
+colnames(birdsex)<-c("ind1.id","ind1.sex")
+az_completerelatedness<-left_join(az_completerelatedness,birdsex,by="ind1.id")
+ca_completerelatedness<-left_join(ca_completerelatedness,birdsex,by="ind1.id")
+colnames(birdsex)<-c("ind2.id","ind2.sex")
+az_completerelatedness<-left_join(az_completerelatedness,birdsex,by="ind2.id")
+ca_completerelatedness<-left_join(ca_completerelatedness,birdsex,by="ind2.id")
+az_completerelatedness$sexdyad<-paste(az_completerelatedness$ind1.sex,az_completerelatedness$ind2.sex)
+ca_completerelatedness$sexdyad<-paste(ca_completerelatedness$ind1.sex,ca_completerelatedness$ind2.sex)
+az_completerelatedness[which(az_completerelatedness$sexdyad=="F F"),]$sexdyad<-"1"
+az_completerelatedness[which(az_completerelatedness$sexdyad=="M F"),]$sexdyad<-"2"
+az_completerelatedness[which(az_completerelatedness$sexdyad=="F M"),]$sexdyad<-"2"
+az_completerelatedness[which(az_completerelatedness$sexdyad=="M M"),]$sexdyad<-"3"
+ca_completerelatedness[which(ca_completerelatedness$sexdyad=="F F"),]$sexdyad<-"1"
+ca_completerelatedness[which(ca_completerelatedness$sexdyad=="M F"),]$sexdyad<-"2"
+ca_completerelatedness[which(ca_completerelatedness$sexdyad=="F M"),]$sexdyad<-"2"
+ca_completerelatedness[which(ca_completerelatedness$sexdyad=="M M"),]$sexdyad<-"3"
+
+
+dat_relatedness<-list(
+  relatedness = c(az_completerelatedness$quellergt,ca_completerelatedness$wang),
+  population = as.numeric(as.factor(c(rep(1,nrow(az_completerelatedness)),rep(2,nrow(ca_completerelatedness))))),
+  sex = as.numeric(as.factor(c(az_completerelatedness$sexdyad,ca_completerelatedness$sexdyad)))
+)
+
+set.seed(1109)
+mimmodel <- ulam( alist(
+  relatedness ~dnorm(nu,theta),
+  nu <- p[population]+s[sex,population],
+  p[population]~dnorm(0,1),
+  vector[2]:s[sex] ~ multi_normal(0,Rho_s,sigma_s),
+  Rho_s~dlkjcorr(4),
+  sigma_s~dexp(1),
+  a[sex]~dnorm(0,0.1), #relatedness values are centered on zero
+  theta ~ dexp(1)
+) , data=dat_relatedness, chains=4 , cores=4 , cmdstan = TRUE)
+
+precis(mimmodel,depth=2)
+#             mean   sd  5.5% 94.5% rhat ess_bulk
+# p[1]       -0.01 0.01 -0.02  0.00 1.01   463.20
+# p[2]       -0.01 0.01 -0.02  0.00 1.02   256.30
+# sigma_s[1]  0.01 0.02  0.00  0.03 1.01   333.59
+# sigma_s[2]  0.01 0.04  0.00  0.04 1.01   207.15
+# a[1]        0.00 0.10 -0.15  0.16 1.00  1627.24
+# a[2]        0.00 0.10 -0.17  0.16 1.00  1506.39
+# a[3]        0.00 0.10 -0.15  0.16 1.00  1396.31
+# theta       0.08 0.00  0.08  0.08 1.00  2051.99
 
 
 ```
@@ -359,7 +441,7 @@ nrow(az_closerelatives)
 
 
 
-ca_closerelatives<-wo_pairwise_r[wo_pairwise_r$quellergt>0.249,]
+ca_closerelatives<-ca_pairwise_r[ca_pairwise_r$quellergt>0.249,]
 birdsex<-adultids[,c(2,5)]
 colnames(birdsex)<-c("ind1.id","ind1.sex")
 ca_closerelatives<-left_join(ca_closerelatives,birdsex,by="ind1.id")
@@ -371,7 +453,7 @@ nrow(ca_closerelatives)
 
 # 0 close female-female relatives, 0 close male-male relatives, 2 male-female relatives
 
-ca_closerelatives<-wo_pairwise_r[wo_pairwise_r$wang>0.249,]
+ca_closerelatives<-ca_pairwise_r[ca_pairwise_r$wang>0.249,]
 birdsex<-adultids[,c(2,5)]
 colnames(birdsex)<-c("ind1.id","ind1.sex")
 ca_closerelatives<-left_join(ca_closerelatives,birdsex,by="ind1.id")
@@ -407,7 +489,80 @@ counts<-c(counts,sum(subsetrel>0.249))
 counts<-counts[2:10001]
 sum(counts==0)/10000
 
+
+
+
+
+# Network model, determining whether the number of close relatives differs by sex and population
+
+library(STRAND)
+
+
+az_relatednessmatrix<-as.data.frame(pivot_wider(az_completerelatedness,id_cols=ind1.id,names_from=ind2.id,values_from=wang))
+
+row.names(az_relatednessmatrix)<-az_relatednessmatrix$ind1.id
+az_relatednessmatrix<-az_relatednessmatrix[,2:80]
+az_relatednessmatrix<-az_relatednessmatrix[,c(79,1:78)]
+
+az_birds<-adultids[adultids$Population %in% "Tempe",]
+az_birds<-az_birds[order(az_birds$BirdID),]
+
+
+az_relatives<-(az_relatednessmatrix>0.249)*1
+diag(az_relatives)<-0
+outcome=list(Relative=az_relatives)
+group_ids=data.frame(Sex=as.factor(az_birds$Sex))
+
+
+dat = make_strand_data(
+  outcome = outcome,
+  block_covariates = group_ids ,
+  individual_covariates = NULL,
+  dyadic_covariates = NULL,
+  outcome_mode = "poisson"
+  )
+
+
+fit =
+  fit_block_plus_social_relations_model(
+    data=dat,
+    block_regression = ~ Sex,
+    focal_regression = ~ 1,
+    dyad_regression = ~ 1,
+    target_regression = ~ 1,
+    mode="mcmc",
+    stan_mcmc_parameters = list(
+      chains = 1,
+      iter_warmup = 1500,
+      iter_sampling = 1500)
+    )
+
+
+
+# Summarize results
+res = summarize_strand_results(fit)
+# Plot slopes
+vis = strand_caterpillar_plot(res,normalized=TRUE, only_slopes=TRUE)
+vis
+
+# Individuals of the same sex are slightly more likely to be related than individuals of the opposite sex, f-f dyads are equally likely to be close kin than are m-m dyads.
+
+#                                             Variable Median HPDI:0.05 HPDI:0.95   Mean    SD
+# 1                                   focal effects sd  1.636     1.196     2.076  1.654 0.277
+# 2                                  target effects sd  1.631     1.239     2.144  1.654 0.278
+# 3                                  dyadic effects sd   2.65     2.188     3.172  2.673 0.307
+# 4  focal-target effects rho (generalized recipocity)  0.976     0.941     0.998  0.969 0.024
+# 5             dyadic effects rho (dyadic recipocity)  0.986     0.969     0.999  0.983 0.012
+# 6                                 offset, Any to Any -4.281    -6.269    -1.918 -4.262  1.35
+# 7                                     offset, F to F -5.157    -7.263    -3.222 -5.184 1.224
+# 8                                     offset, F to M -5.182    -7.126    -3.222 -5.219 1.193
+# 9                                     offset, M to F -5.215    -7.146    -3.278 -5.227  1.19
+# 10                                    offset, M to M -5.391    -7.729    -3.262 -5.389  1.35
+
+
 ```
+
+
 
 
 In this text, we show the summary statistics: Females in Arizona `r samplesize[3,3]`, Males in Arizona `r samplesize[4,3]`, Females in California `r samplesize[5,3]`, Males in California `r samplesize[6,3]`
@@ -415,38 +570,38 @@ In this text, we show the summary statistics: Females in Arizona `r samplesize[3
 
 
 
-```{r relatedness calculation, include=FALSE, echo=FALSE}
+```{r distance calculation, include=FALSE, echo=FALSE}
 # Distance between trap sites (meters): straight line distance (assuming earth as an ellipsoid) between all pairs of trapping locations based on the longitude and latitude of each site.
 
 #Plot pairwise distances among all females and among all males in the sample
 #Calculate all pairwise distances
-all_pairwise_distances <- distm(idinfo[,c('Lon','Lat')], idinfo[,c('Lon','Lat')], fun=distVincentyEllipsoid)
-rownames(all_pairwise_distances)<-idinfo$Name
-colnames(all_pairwise_distances)<-idinfo$Name
+all_pairwise_distances <- distm(adultids[,c('Lon','Lat')], adultids[,c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(all_pairwise_distances)<-adultids$Name
+colnames(all_pairwise_distances)<-adultids$Name
 diag(all_pairwise_distances)<-NA
 
-#Calculate pairwise distances among all the females in California
-CA_female_pairwise_distances <- distm(idinfo[idinfo$Sex=="F" & idinfo$Population=="Woodland",c('Lon','Lat')], idinfo[idinfo$Sex=="F" & idinfo$Population=="Woodland",c('Lon','Lat')], fun=distVincentyEllipsoid)
-rownames(CA_female_pairwise_distances)<-idinfo[idinfo$Sex=="F" & idinfo$Population=="Woodland",]$BirdID
-colnames(CA_female_pairwise_distances)<-idinfo[idinfo$Sex=="F" & idinfo$Population=="Woodland",]$BirdID
+#Calculate pairwise distances among all the adult females in California
+CA_female_pairwise_distances <- distm(adultids[adultids$Sex=="F" & adultids$Population=="Woodland",c('Lon','Lat')], adultids[adultids$Sex=="F" & adultids$Population=="Woodland",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(CA_female_pairwise_distances)<-adultids[adultids$Sex=="F" & adultids$Population=="Woodland",]$BirdID
+colnames(CA_female_pairwise_distances)<-adultids[adultids$Sex=="F" & adultids$Population=="Woodland",]$BirdID
 diag(CA_female_pairwise_distances)<-NA
 
-#Calculate pairwise distances among all the females in Arizona
-AZ_female_pairwise_distances <- distm(idinfo[idinfo$Sex=="F" & idinfo$Population=="Tempe",c('Lon','Lat')], idinfo[idinfo$Sex=="F" & idinfo$Population=="Tempe",c('Lon','Lat')], fun=distVincentyEllipsoid)
-rownames(AZ_female_pairwise_distances)<-idinfo[idinfo$Sex=="F" & idinfo$Population=="Tempe",]$BirdID
-colnames(AZ_female_pairwise_distances)<-idinfo[idinfo$Sex=="F" & idinfo$Population=="Tempe",]$BirdID
+#Calculate pairwise distances among all the adult females in Arizona
+AZ_female_pairwise_distances <- distm(adultids[adultids$Sex=="F" & adultids$Population=="Tempe",c('Lon','Lat')], adultids[adultids$Sex=="F" & adultids$Population=="Tempe",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(AZ_female_pairwise_distances)<-adultids[adultids$Sex=="F" & adultids$Population=="Tempe",]$BirdID
+colnames(AZ_female_pairwise_distances)<-adultids[adultids$Sex=="F" & adultids$Population=="Tempe",]$BirdID
 diag(AZ_female_pairwise_distances)<-NA
 
-#Calculate pairwise distances among all the males in California
-CA_male_pairwise_distances <- distm(idinfo[idinfo$Sex=="M" & idinfo$Population=="Woodland",c('Lon','Lat')], idinfo[idinfo$Sex=="M" & idinfo$Population=="Woodland",c('Lon','Lat')], fun=distVincentyEllipsoid)
-rownames(CA_male_pairwise_distances)<-idinfo[idinfo$Sex=="M" & idinfo$Population=="Woodland",]$BirdID
-colnames(CA_male_pairwise_distances)<-idinfo[idinfo$Sex=="M" & idinfo$Population=="Woodland",]$BirdID
+#Calculate pairwise distances among all the adult males in California
+CA_male_pairwise_distances <- distm(adultids[adultids$Sex=="M" & adultids$Population=="Woodland",c('Lon','Lat')], adultids[adultids$Sex=="M" & adultids$Population=="Woodland",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(CA_male_pairwise_distances)<-adultids[adultids$Sex=="M" & adultids$Population=="Woodland",]$BirdID
+colnames(CA_male_pairwise_distances)<-adultids[adultids$Sex=="M" & adultids$Population=="Woodland",]$BirdID
 diag(CA_male_pairwise_distances)<-NA
 
-#Calculate pairwise distances among all the males in Arizona
-AZ_male_pairwise_distances <- distm(idinfo[idinfo$Sex=="M" & idinfo$Population=="Tempe",c('Lon','Lat')], idinfo[idinfo$Sex=="M" & idinfo$Population=="Tempe",c('Lon','Lat')], fun=distVincentyEllipsoid)
-rownames(AZ_male_pairwise_distances)<-idinfo[idinfo$Sex=="M" & idinfo$Population=="Tempe",]$BirdID
-colnames(AZ_male_pairwise_distances)<-idinfo[idinfo$Sex=="M" & idinfo$Population=="Tempe",]$BirdID
+#Calculate pairwise distances among all the adult males in Arizona
+AZ_male_pairwise_distances <- distm(adultids[adultids$Sex=="M" & adultids$Population=="Tempe",c('Lon','Lat')], adultids[adultids$Sex=="M" & adultids$Population=="Tempe",c('Lon','Lat')], fun=distVincentyEllipsoid)
+rownames(AZ_male_pairwise_distances)<-adultids[adultids$Sex=="M" & adultids$Population=="Tempe",]$BirdID
+colnames(AZ_male_pairwise_distances)<-adultids[adultids$Sex=="M" & adultids$Population=="Tempe",]$BirdID
 diag(AZ_male_pairwise_distances)<-NA
 
 #plot distributions of pairwise distances
@@ -461,10 +616,438 @@ hist(AZ_male_pairwise_distances,col="grey75",border="black",breaks=20)
 AZ_all_pairwise_distance<-all_pairwise_distances[rownames(all_pairwise_distances) %in% adultids[adultids$Population == "Tempe",]$Name,colnames(all_pairwise_distances) %in% adultids[adultids$Population == "Tempe",]$Name]
 
 CA_all_pairwise_distance<-all_pairwise_distances[rownames(all_pairwise_distances) %in% adultids[adultids$Population == "Woodland",]$Name,colnames(all_pairwise_distances) %in% adultids[adultids$Population == "Woodland",]$Name]
+
+
+
 ```
 
 
 
+
+
+```{r dispersal_anaysisii, eval=FALSE, warning=FALSE, results='asis', echo=TRUE}
+options(width=60)
+
+#Analysis 2: Assess whether distances among closely related females are shorter than distances among closely related males
+
+
+# Arizona
+#First define close relatives as all pairs of individuals who are related by a level of 0.25 or higher (half-siblings or higher) using the Wang estimator
+az_close_relatives_females<-filter(az_pairwise_r,wang >0.2499,ind1.id %in% females,ind2.id %in% females)
+az_close_relatives_females_individuals<-c(az_close_relatives_females$ind1.id,az_close_relatives_females$ind2.id)
+
+#Alternatively, select close relatives as pairs of individuals who are related at a level of 0.25 of higher using the Queller & Goodnight estimator
+# az_close_relatives_females<-filter(az_pairwise_r,quellergt >0.2499,ind1.id %in% females,ind2.id %in% females)
+# az_close_relatives_females_individuals<-c(az_close_relatives_females$ind1.id,az_close_relatives_females$ind2.id)
+
+#Pick one of the two estimators before proceeding with the following analyses
+
+#Next subset the the distance matrix to only include these individuals
+
+az_close_relatives_females_pairwise_distances<-matrix(nrow=nrow(az_close_relatives_females),ncol=1)
+
+for (i in 1:nrow(az_close_relatives_females)) {
+  ind1<-az_close_relatives_females[i,]$ind1.id
+  ind2<-az_close_relatives_females[i,]$ind2.id
+  pair_distance<-AZ_female_pairwise_distances[ind1,ind2]
+  az_close_relatives_females_pairwise_distances[i,]<-pair_distance
+}
+
+median_az_f_025_distances<-median(az_close_relatives_females_pairwise_distances)
+
+hist(az_close_relatives_females_pairwise_distances)
+
+
+#repeat the same for the males
+az_close_relatives_males<-filter(az_pairwise_r,wang >0.2499,ind1.id %in% males,ind2.id %in% males)
+az_close_relatives_males_individuals<-c(az_close_relatives_males$ind1.id,az_close_relatives_males$ind2.id)
+
+#Again, the alternative with the Queller & Goodnight method, pick only one of the two
+# close_relatives_males<-filter(pairwise_r,quellergt >0.2499,ind1.id %in% males,ind2.id %in% males)
+# close_relatives_males_individuals<-c(close_relatives_males$ind1.id,close_relatives_males$ind2.id)
+
+
+#Next subset the the distance matrix to only include these individuals
+
+az_close_relatives_males_pairwise_distances<-matrix(nrow=nrow(az_close_relatives_males),ncol=1)
+
+for (i in 1:nrow(az_close_relatives_males)) {
+  ind1<-az_close_relatives_males[i,]$ind1.id
+  ind2<-az_close_relatives_males[i,]$ind2.id
+  pair_distance<-AZ_male_pairwise_distances[ind1,ind2]
+  az_close_relatives_males_pairwise_distances[i,]<-pair_distance
+}
+
+median_az_m_025_distances<-median(az_close_relatives_males_pairwise_distances)
+
+hist(az_close_relatives_males_pairwise_distances)
+
+#calculate difference between the distances among males and among females
+observeddifferenceindistances<-median(az_close_relatives_males_pairwise_distances,na.rm=T)-median(az_close_relatives_females_pairwise_distances,na.rm=T)
+
+median_az_difference_025_distances<-observeddifferenceindistances
+
+#perform simulation to generate random draws of matching numbers of individuals to assess whether the sex-difference in the distance is more or less than what would be expected by chance
+number_close_relatives_females<-nrow(az_close_relatives_females)
+number_close_relatives_males<-nrow(az_close_relatives_males)
+
+simulateddifferencesindistances<-matrix(ncol=1,nrow=10000)
+simulateddfemaleindistances<-matrix(ncol=1,nrow=10000)
+simulateddmaleindistances<-matrix(ncol=1,nrow=10000)
+
+rownames(AZ_all_pairwise_distance)<-adultids[adultids$Name %in% rownames(AZ_all_pairwise_distance),]$BirdID
+colnames(AZ_all_pairwise_distance)<-adultids[adultids$Name %in% colnames(AZ_all_pairwise_distance),]$BirdID
+
+for (i in 1:10000) {
+simulated_close_relatives_females<-sample_n(az_pairwise_r, number_close_relatives_females, replace = TRUE)
+
+subset_relatives_females_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_females),ncol=1)
+
+for (j in 1:nrow(simulated_close_relatives_females)) {
+  ind1<-simulated_close_relatives_females[j,]$ind1.id
+  ind2<-simulated_close_relatives_females[j,]$ind2.id
+  pair_distance<-AZ_all_pairwise_distance[ind1,ind2]
+  subset_relatives_females_pairwise_distances[j,]<-pair_distance
+}
+
+simulated_close_relatives_males<-sample_n(az_pairwise_r, number_close_relatives_males, replace = TRUE)
+
+subset_relatives_males_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_males),ncol=1)
+
+for (k in 1:nrow(simulated_close_relatives_males)) {
+  ind1<-simulated_close_relatives_males[k,]$ind1.id
+  ind2<-simulated_close_relatives_males[k,]$ind2.id
+  pair_distance<-AZ_all_pairwise_distance[ind1,ind2]
+  subset_relatives_males_pairwise_distances[k,]<-pair_distance
+}
+
+simulateddfemaleindistances[i,1]<-median(subset_relatives_females_pairwise_distances,na.rm=T)
+simulateddmaleindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)
+simulateddifferencesindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)-median(subset_relatives_females_pairwise_distances,na.rm=T)
+  }
+
+simulation_az_f_025_distances<-sum(simulateddfemaleindistances<median(az_close_relatives_females_pairwise_distances))/10000
+simulation_az_m_025_distances<-sum(simulateddmaleindistances>median(az_close_relatives_males_pairwise_distances))/10000
+simulation_az_difference_025_distances<-sum(simulateddifferencesindistances>observeddifferenceindistances)/10000
+
+
+
+
+# Arizona
+#To match the California sample (see below), we also define close relatives as all pairs of individuals who are related by a level of 0.125 or higher (cousins or higher) using the Wang estimator
+az_close_relatives_females<-filter(az_pairwise_r,wang >0.12499,ind1.id %in% females,ind2.id %in% females)
+az_close_relatives_females_individuals<-c(az_close_relatives_females$ind1.id,az_close_relatives_females$ind2.id)
+
+#Alternatively, select close relatives as pairs of individuals who are related at a level of 0.25 of higher using the Queller & Goodnight estimator
+# az_close_relatives_females<-filter(az_pairwise_r,quellergt >0.2499,ind1.id %in% females,ind2.id %in% females)
+# az_close_relatives_females_individuals<-c(az_close_relatives_females$ind1.id,az_close_relatives_females$ind2.id)
+
+#Pick one of the two estimators before proceeding with the following analyses
+
+#Next subset the the distance matrix to only include these individuals
+
+az_close_relatives_females_pairwise_distances<-matrix(nrow=nrow(az_close_relatives_females),ncol=1)
+
+for (i in 1:nrow(az_close_relatives_females)) {
+  ind1<-az_close_relatives_females[i,]$ind1.id
+  ind2<-az_close_relatives_females[i,]$ind2.id
+  pair_distance<-AZ_female_pairwise_distances[ind1,ind2]
+  az_close_relatives_females_pairwise_distances[i,]<-pair_distance
+}
+
+median_az_f_0125_distances<-median(az_close_relatives_females_pairwise_distances)
+
+hist(az_close_relatives_females_pairwise_distances)
+
+
+#repeat the same for the males
+az_close_relatives_males<-filter(az_pairwise_r,wang >0.12499,ind1.id %in% males,ind2.id %in% males)
+az_close_relatives_males_individuals<-c(az_close_relatives_males$ind1.id,az_close_relatives_males$ind2.id)
+
+#Again, the alternative with the Queller & Goodnight method, pick only one of the two
+# close_relatives_males<-filter(pairwise_r,quellergt >0.2499,ind1.id %in% males,ind2.id %in% males)
+# close_relatives_males_individuals<-c(close_relatives_males$ind1.id,close_relatives_males$ind2.id)
+
+
+#Next subset the the distance matrix to only include these individuals
+
+az_close_relatives_males_pairwise_distances<-matrix(nrow=nrow(az_close_relatives_males),ncol=1)
+
+for (i in 1:nrow(az_close_relatives_males)) {
+  ind1<-az_close_relatives_males[i,]$ind1.id
+  ind2<-az_close_relatives_males[i,]$ind2.id
+  pair_distance<-AZ_male_pairwise_distances[ind1,ind2]
+  az_close_relatives_males_pairwise_distances[i,]<-pair_distance
+}
+
+median_az_m_0125_distances<-median(az_close_relatives_males_pairwise_distances)
+
+hist(az_close_relatives_males_pairwise_distances)
+
+#calculate difference between the distances among males and among females
+observeddifferenceindistances<-median(az_close_relatives_males_pairwise_distances,na.rm=T)-median(az_close_relatives_females_pairwise_distances,na.rm=T)
+
+median_az_difference_0125_distances<-observeddifferenceindistances
+
+#perform simulation to generate random draws of matching numbers of individuals to assess whether the sex-difference in the distance is more or less than what would be expected by chance
+number_close_relatives_females<-nrow(az_close_relatives_females)
+number_close_relatives_males<-nrow(az_close_relatives_males)
+
+simulateddifferencesindistances<-matrix(ncol=1,nrow=10000)
+simulateddfemaleindistances<-matrix(ncol=1,nrow=10000)
+simulateddmaleindistances<-matrix(ncol=1,nrow=10000)
+
+rownames(AZ_all_pairwise_distance)<-adultids[adultids$Name %in% rownames(AZ_all_pairwise_distance),]$BirdID
+colnames(AZ_all_pairwise_distance)<-adultids[adultids$Name %in% colnames(AZ_all_pairwise_distance),]$BirdID
+
+for (i in 1:10000) {
+simulated_close_relatives_females<-sample_n(az_pairwise_r, number_close_relatives_females, replace = TRUE)
+
+subset_relatives_females_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_females),ncol=1)
+
+for (j in 1:nrow(simulated_close_relatives_females)) {
+  ind1<-simulated_close_relatives_females[j,]$ind1.id
+  ind2<-simulated_close_relatives_females[j,]$ind2.id
+  pair_distance<-AZ_all_pairwise_distance[ind1,ind2]
+  subset_relatives_females_pairwise_distances[j,]<-pair_distance
+}
+
+simulated_close_relatives_males<-sample_n(az_pairwise_r, number_close_relatives_males, replace = TRUE)
+
+subset_relatives_males_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_males),ncol=1)
+
+for (k in 1:nrow(simulated_close_relatives_males)) {
+  ind1<-simulated_close_relatives_males[k,]$ind1.id
+  ind2<-simulated_close_relatives_males[k,]$ind2.id
+  pair_distance<-AZ_all_pairwise_distance[ind1,ind2]
+  subset_relatives_males_pairwise_distances[k,]<-pair_distance
+}
+
+simulateddfemaleindistances[i,1]<-median(subset_relatives_females_pairwise_distances,na.rm=T)
+simulateddmaleindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)
+simulateddifferencesindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)-median(subset_relatives_females_pairwise_distances,na.rm=T)
+  }
+
+simulation_az_f_0125_distances<-sum(simulateddfemaleindistances<median(az_close_relatives_females_pairwise_distances))/10000
+simulation_az_m_0125_distances<-sum(simulateddmaleindistances>median(az_close_relatives_males_pairwise_distances))/10000
+simulation_az_difference_0125_distances<-sum(simulateddifferencesindistances>observeddifferenceindistances)/10000
+
+
+
+
+# California
+# In our California sample, there is only one same-sex pair of individuals who is related  at the level of 0.25 or higher. We therefore switch the calculation here to include as relatives pairs of individuals who are related at the level of 0.125 or higher (8 f-f pairs, 7 m-m pairs)
+#First define close relatives as all pairs of individuals who are related by a level of 0.125 or higher (cousins or higher) using the Wang estimator
+ca_close_relatives_females<-filter(ca_pairwise_r,wang >0.12499,ind1.id %in% females,ind2.id %in% females)
+ca_close_relatives_females_individuals<-c(ca_close_relatives_females$ind1.id,ca_close_relatives_females$ind2.id)
+
+#Alternatively, select close relatives as pairs of individuals who are related at a level of 0.25 of higher using the Queller & Goodnight estimator
+# ca_close_relatives_females<-filter(ca_pairwise_r,quellergt >0.2499,ind1.id %in% females,ind2.id %in% females)
+# ca_close_relatives_females_individuals<-c(ca_close_relatives_females$ind1.id,ca_close_relatives_females$ind2.id)
+
+#Pick one of the two estimators before proceeding with the following analyses
+
+#Next subset the the distance matrix to only include these individuals
+
+ca_close_relatives_females_pairwise_distances<-matrix(nrow=nrow(ca_close_relatives_females),ncol=1)
+
+for (i in 1:nrow(ca_close_relatives_females)) {
+  ind1<-ca_close_relatives_females[i,]$ind1.id
+  ind2<-ca_close_relatives_females[i,]$ind2.id
+  pair_distance<-CA_female_pairwise_distances[ind1,ind2]
+  ca_close_relatives_females_pairwise_distances[i,]<-pair_distance
+}
+
+median_ca_f_0125_distances<-median(ca_close_relatives_females_pairwise_distances)
+
+hist(ca_close_relatives_females_pairwise_distances)
+
+
+#repeat the same for the males
+ca_close_relatives_males<-filter(ca_pairwise_r,wang >0.2499,ind1.id %in% males,ind2.id %in% males)
+ca_close_relatives_males_individuals<-c(ca_close_relatives_males$ind1.id,ca_close_relatives_males$ind2.id)
+
+#Again, the alternative with the Queller & Goodnight method, pick only one of the two
+# close_relatives_males<-filter(pairwise_r,quellergt >0.2499,ind1.id %in% males,ind2.id %in% males)
+# close_relatives_males_individuals<-c(close_relatives_males$ind1.id,close_relatives_males$ind2.id)
+
+
+#Next subset the the distance matrix to only include these individuals
+
+ca_close_relatives_males_pairwise_distances<-matrix(nrow=nrow(ca_close_relatives_males),ncol=1)
+
+for (i in 1:nrow(ca_close_relatives_males)) {
+  ind1<-ca_close_relatives_males[i,]$ind1.id
+  ind2<-ca_close_relatives_males[i,]$ind2.id
+  pair_distance<-CA_male_pairwise_distances[ind1,ind2]
+  ca_close_relatives_males_pairwise_distances[i,]<-pair_distance
+}
+
+median_ca_m_0125_distances<-median(ca_close_relatives_males_pairwise_distances)
+
+hist(ca_close_relatives_males_pairwise_distances)
+
+#calculate difference between the distances among males and among females
+observeddifferenceindistances<-median(ca_close_relatives_males_pairwise_distances,na.rm=T)-median(ca_close_relatives_females_pairwise_distances,na.rm=T)
+
+median_ca_difference_0125_distances<-observeddifferenceindistances
+
+#perform simulation to generate random draws of matching numbers of individuals to assess whether the sex-difference in the distance is more or less than what would be expected by chance
+number_close_relatives_females<-nrow(ca_close_relatives_females)
+number_close_relatives_males<-nrow(ca_close_relatives_males)
+
+simulateddifferencesindistances<-matrix(ncol=1,nrow=10000)
+simulateddfemaleindistances<-matrix(ncol=1,nrow=10000)
+simulateddmaleindistances<-matrix(ncol=1,nrow=10000)
+
+rownames(CA_all_pairwise_distance)<-adultids[adultids$Name %in% rownames(CA_all_pairwise_distance),]$BirdID
+colnames(CA_all_pairwise_distance)<-adultids[adultids$Name %in% colnames(CA_all_pairwise_distance),]$BirdID
+
+for (i in 1:10000) {
+simulated_close_relatives_females<-sample_n(ca_pairwise_r, number_close_relatives_females, replace = TRUE)
+
+subset_relatives_females_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_females),ncol=1)
+
+for (j in 1:nrow(simulated_close_relatives_females)) {
+  ind1<-simulated_close_relatives_females[j,]$ind1.id
+  ind2<-simulated_close_relatives_females[j,]$ind2.id
+  pair_distance<-CA_all_pairwise_distance[ind1,ind2]
+  subset_relatives_females_pairwise_distances[j,]<-pair_distance
+}
+
+simulated_close_relatives_males<-sample_n(ca_pairwise_r, number_close_relatives_males, replace = TRUE)
+
+subset_relatives_males_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_males),ncol=1)
+
+for (k in 1:nrow(simulated_close_relatives_males)) {
+  ind1<-simulated_close_relatives_males[k,]$ind1.id
+  ind2<-simulated_close_relatives_males[k,]$ind2.id
+  pair_distance<-CA_all_pairwise_distance[ind1,ind2]
+  subset_relatives_males_pairwise_distances[k,]<-pair_distance
+}
+
+simulateddfemaleindistances[i,1]<-median(subset_relatives_females_pairwise_distances,na.rm=T)
+simulateddmaleindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)
+simulateddifferencesindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)-median(subset_relatives_females_pairwise_distances,na.rm=T)
+  }
+
+simulation_ca_f_0125_distances<-sum(simulateddfemaleindistances<median(ca_close_relatives_females_pairwise_distances))/10000
+simulation_ca_m_0125_distances<-sum(simulateddmaleindistances>median(ca_close_relatives_males_pairwise_distances))/10000
+simulation_ca_difference_0125_distances<-sum(simulateddifferencesindistances>observeddifferenceindistances)/10000
+
+
+
+# Repeat without the birds trapped in Woodland
+
+# The sample of birds from California includes individuals trapped at two different locations. To avoid potential sampling biases because of this, we re-run the analysis to only include individuals from the site in Sacramento, where most of the birds were trapped.
+
+
+
+# California
+# In our California sample, there is only one same-sex pair of individuals who is related  at the level of 0.25 or higher. We therefore switch the calculation here to include as relatives pairs of individuals who are related at the level of 0.125 or higher (8 f-f pairs, 7 m-m pairs)
+#First define close relatives as all pairs of individuals who are related by a level of 0.125 or higher (cousins or higher) using the Wang estimator
+ca_close_relatives_females<-filter(ca_pairwise_r,wang >0.12499,ind1.id %in% females,ind2.id %in% females)
+ca_close_relatives_females_individuals<-c(ca_close_relatives_females$ind1.id,ca_close_relatives_females$ind2.id)
+
+#Alternatively, select close relatives as pairs of individuals who are related at a level of 0.25 of higher using the Queller & Goodnight estimator
+# ca_close_relatives_females<-filter(ca_pairwise_r,quellergt >0.2499,ind1.id %in% females,ind2.id %in% females)
+# ca_close_relatives_females_individuals<-c(ca_close_relatives_females$ind1.id,ca_close_relatives_females$ind2.id)
+
+#Pick one of the two estimators before proceeding with the following analyses
+
+#Next subset the the distance matrix to only include these individuals
+
+ca_close_relatives_females_pairwise_distances<-matrix(nrow=nrow(ca_close_relatives_females),ncol=1)
+
+for (i in 1:nrow(ca_close_relatives_females)) {
+  ind1<-ca_close_relatives_females[i,]$ind1.id
+  ind2<-ca_close_relatives_females[i,]$ind2.id
+  pair_distance<-CA_female_pairwise_distances[ind1,ind2]
+  ca_close_relatives_females_pairwise_distances[i,]<-pair_distance
+}
+
+median_ca_f_0125_distances<-median(ca_close_relatives_females_pairwise_distances)
+
+hist(ca_close_relatives_females_pairwise_distances)
+
+
+#repeat the same for the males
+ca_close_relatives_males<-filter(ca_pairwise_r,wang >0.2499,ind1.id %in% males,ind2.id %in% males)
+ca_close_relatives_males_individuals<-c(ca_close_relatives_males$ind1.id,ca_close_relatives_males$ind2.id)
+
+#Again, the alternative with the Queller & Goodnight method, pick only one of the two
+# close_relatives_males<-filter(pairwise_r,quellergt >0.2499,ind1.id %in% males,ind2.id %in% males)
+# close_relatives_males_individuals<-c(close_relatives_males$ind1.id,close_relatives_males$ind2.id)
+
+
+#Next subset the the distance matrix to only include these individuals
+
+ca_close_relatives_males_pairwise_distances<-matrix(nrow=nrow(ca_close_relatives_males),ncol=1)
+
+for (i in 1:nrow(ca_close_relatives_males)) {
+  ind1<-ca_close_relatives_males[i,]$ind1.id
+  ind2<-ca_close_relatives_males[i,]$ind2.id
+  pair_distance<-CA_male_pairwise_distances[ind1,ind2]
+  ca_close_relatives_males_pairwise_distances[i,]<-pair_distance
+}
+
+median_ca_m_0125_distances<-median(ca_close_relatives_males_pairwise_distances)
+
+hist(ca_close_relatives_males_pairwise_distances)
+
+#calculate difference between the distances among males and among females
+observeddifferenceindistances<-median(ca_close_relatives_males_pairwise_distances,na.rm=T)-median(ca_close_relatives_females_pairwise_distances,na.rm=T)
+
+median_ca_difference_0125_distances<-observeddifferenceindistances
+
+#perform simulation to generate random draws of matching numbers of individuals to assess whether the sex-difference in the distance is more or less than what would be expected by chance
+number_close_relatives_females<-nrow(ca_close_relatives_females)
+number_close_relatives_males<-nrow(ca_close_relatives_males)
+
+simulateddifferencesindistances<-matrix(ncol=1,nrow=10000)
+simulateddfemaleindistances<-matrix(ncol=1,nrow=10000)
+simulateddmaleindistances<-matrix(ncol=1,nrow=10000)
+
+rownames(CA_all_pairwise_distance)<-adultids[adultids$Name %in% rownames(CA_all_pairwise_distance),]$BirdID
+colnames(CA_all_pairwise_distance)<-adultids[adultids$Name %in% colnames(CA_all_pairwise_distance),]$BirdID
+
+for (i in 1:10000) {
+simulated_close_relatives_females<-sample_n(ca_pairwise_r, number_close_relatives_females, replace = TRUE)
+
+subset_relatives_females_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_females),ncol=1)
+
+for (j in 1:nrow(simulated_close_relatives_females)) {
+  ind1<-simulated_close_relatives_females[j,]$ind1.id
+  ind2<-simulated_close_relatives_females[j,]$ind2.id
+  pair_distance<-CA_all_pairwise_distance[ind1,ind2]
+  subset_relatives_females_pairwise_distances[j,]<-pair_distance
+}
+
+simulated_close_relatives_males<-sample_n(ca_pairwise_r, number_close_relatives_males, replace = TRUE)
+
+subset_relatives_males_pairwise_distances<-matrix(nrow=nrow(simulated_close_relatives_males),ncol=1)
+
+for (k in 1:nrow(simulated_close_relatives_males)) {
+  ind1<-simulated_close_relatives_males[k,]$ind1.id
+  ind2<-simulated_close_relatives_males[k,]$ind2.id
+  pair_distance<-CA_all_pairwise_distance[ind1,ind2]
+  subset_relatives_males_pairwise_distances[k,]<-pair_distance
+}
+
+simulateddfemaleindistances[i,1]<-median(subset_relatives_females_pairwise_distances,na.rm=T)
+simulateddmaleindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)
+simulateddifferencesindistances[i,1]<-median(subset_relatives_males_pairwise_distances,na.rm=T)-median(subset_relatives_females_pairwise_distances,na.rm=T)
+  }
+
+simulation_ca_f_0125_distances<-sum(simulateddfemaleindistances<median(ca_close_relatives_females_pairwise_distances))/10000
+simulation_ca_m_0125_distances<-sum(simulateddmaleindistances>median(ca_close_relatives_males_pairwise_distances))/10000
+simulation_ca_difference_0125_distances<-sum(simulateddifferencesindistances>observeddifferenceindistances)/10000
+
+
+
+
+
+```
 
 
 
