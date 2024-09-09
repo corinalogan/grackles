@@ -1543,12 +1543,12 @@ library(kableExtra)
 library(gt)
 
 m <- list(
-   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=FE1,  family="poisson"),
-   "Latency to land" = lm(log(LatencyFirstLand) ~ c.phi + c.lambda, data=FE2),
-   "Diversity of motor actions" = glmer(log(TotalMot) ~ c.phi + c.lambda + (1|Batch), family="gaussian", data=flexmot),
-   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime),
-                                        family="poisson",data=flexpers),
-   "Number of nonfunctional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|Batch), offset = log(TotTime),
+   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
+   "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
+   "Diversity of motor actions" = lm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot),
+   "Number of functional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
+                                        family="poisson",data=flexpersF),
+   "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
                                         family="poisson",data=flexpersN))
 
 cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of functional or nonfunctional touches to the novel apparatuses per time) was significantly related to phi."
@@ -1567,7 +1567,7 @@ tab2 %>%
                locations = cells_body(rows = c(2,3), columns = 1)) %>%
   tab_style(
     style = cell_text(weight = "bold"),
-    locations = cells_body(columns = c(13,16),rows = 2)) %>%
+    locations = cells_body(columns = c(13,16),rows = c(2,3))) %>%
   tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 ```
