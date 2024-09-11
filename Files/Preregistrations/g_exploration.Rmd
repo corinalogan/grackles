@@ -779,7 +779,7 @@ ggplot(bol[-which(bol$Condition == "Pigeon"),]) +
   geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
   geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, size = 0.7)) + 
   facet_grid(.~Condition) +
-  labs(x = "Time", y = "Duration within 1m of object (sec)") + 
+  labs(x = "Time", y = "Duration (sec) within 100cm") + 
   theme_bw() +
   theme(axis.text = element_text(size = 14),
         axis.title = element_text(size = 20),
@@ -1581,7 +1581,7 @@ simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNea
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # p = 0.24, not over- or under-dispersed
 testZeroInflation(simulationOutput) # p = 0.1, not zero inflated
-testUniformity(simulationOutput) # p = 0.3, not heteroscedastic
+testUniformity(simulationOutput) # p = 0.6, not heteroscedastic
 plot(simulationOutput) # all n.s.
 
 library(MCMCglmm)
@@ -1590,14 +1590,32 @@ prior1 = list(R=list(R1=list(V=1, nu=0),
               G=list(G1=list(V=1, nu=0)))
 explcvm <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
 plot(explcvm)
-# lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
 autocorr(explcvm$Sol) #Did fixed effects converge? Yes
-autocorr(explcvm$VCV) #Did random effects converge? autocorrelation present so we 1) center/scaled IVs, 2) increase nitt/burnin/thin 
+autocorr(explcvm$VCV) #Did random effects converge? 
 summary(explcvm)
-# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.53, p = 0.19) or lambda (ß = -0.33, p = 0.73).
+# Flexibility manipulated grackles spend longer Duration near the outside of the tent (ß = 3.90, p = 0.05).
 
 
 #### Latency to first land on the ground
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore), n=1000) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# p = 0.93, not over- or under-dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+# no zeros so not zero-inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p = 0.38, so not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+# ANALYSIS 2: EXPLORATION LatencyFirstLand
+#GLMM - dependent variable = LatencyFirstLand
+library(MCMCglmm)
+explcvm2 <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+autocorr(explcvm2$Sol) #Did fixed effects converge? Yes
+autocorr(explcvm2$VCV) #Did random effects converge? Units, Yes
+plot(explcvm2) # convergence looks good
+summary(explcvm2) # Effective sample sizes and post.mean look good.
+# no relationship between Latency to first Land on the ground and flexibility manipulation condition (ß = -0.41, p = 0.60)
 
 ### Persistence
 #### Functional touches
