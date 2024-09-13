@@ -1489,42 +1489,6 @@ autocorr(expl4$VCV) #Did random effects converge?
 plot(expl4)
 summary(expl4)
 
-
-
-#####-------Summary table--------#####
-
-library(modelsummary)
-library(kableExtra)
-library(gt)
-
-m <- list(
-   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
-   "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
-   "Diversity of motor actions" = lm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot),
-   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
-                                        family="poisson",data=flexpersF),
-   "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
-                                        family="poisson",data=flexpersN))
-
-cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of functional or nonfunctional touches to the novel apparatuses per time) was significantly related to phi."
-tab2 = modelsummary(m,
-                    output = "gt",
-                    fmt = 2,
-                    shape = term ~ model + statistic,
-                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
-                    statistic = c("std.error",
-                                  "p.value"),
-                    coef_omit = "SD",
-                    gof_omit = ".*",
-                    gof_map = NA)
-tab2 %>%
-  tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
-               locations = cells_body(rows = c(2,3), columns = 1)) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_body(columns = 16,rows = c(2,3))) %>%
-  tab_header(title = cap) %>%
-  opt_align_table_header(align = "left")
 ```
 
 #### *H1: P1-P5 alternative: Control vs flexibility manipulated individuals*
@@ -1621,6 +1585,78 @@ summary(motcvm)
 
 ```
 
+```{r results summary tables, eval=F,warning=F,results='asis',echo=T,include=T}
+#####-------Summary table--------#####
+
+library(modelsummary)
+library(kableExtra)
+library(gt)
+
+m <- list(
+   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
+   "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
+   "Diversity of motor actions" = lm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot),
+   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
+                                        family="poisson",data=flexpersF),
+   "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
+                                        family="poisson",data=flexpersN))
+
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of functional or nonfunctional touches to the novel apparatuses per time) was significantly related to phi."
+tab2 = modelsummary(m,
+                    output = "gt",
+                    fmt = 2,
+                    shape = term ~ model + statistic,
+                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
+                    statistic = c("std.error",
+                                  "p.value"),
+                    coef_omit = "SD",
+                    gof_omit = ".*",
+                    gof_map = NA)
+tab2 %>%
+  tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
+               locations = cells_body(rows = c(2,3), columns = 1)) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = 16,rows = c(2,3))) %>%
+  tab_header(title = cap) %>%
+  opt_align_table_header(align = "left")
+
+
+# Table 3 - performance on behavioral assays as a function of flexibility manipulation or control group
+
+m2 <- list(
+  "Duration near" = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore),
+   "Latency to land" = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore),
+   "Diversity of motor actions" = glm(log(TotalMot) ~ FlexGroup, family="gaussian", data=flexmot),
+   "Number of functional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), 
+                                                   family = poisson, data=flexpersF2),
+   "Number of nonfunctional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime),
+                                                      family=poisson, data = flexpersN2))
+   
+
+cap = "Table 3: We assessed the relationship between performance on the behavioral trait assays and whether grackles were in the serial reversal learning (manipulation) group where behavioral flexibility was experimentally increased, or in the control group. Results differed from the analysis using phi and lambda as our measures of behavioral flexibility. We found that flexibility manipulated grackles were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
+tab3 = modelsummary(m2,
+                    output = "gt",
+                    fmt = 2,
+                    shape = term ~ model + statistic,
+                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
+                    statistic = c("std.error",
+                                  "p.value"),
+                    coef_omit = "SD",
+                    gof_omit = ".*",
+                    gof_map = NA)
+tab3 %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = 4,rows = 2)) %>%
+  tab_header(title = cap) %>%
+  text_replace(
+    pattern = "^FlexGroupManipulation$",
+    replacement = "Flexibility manipulated") %>%
+  opt_align_table_header(align = "left")
+```
+
+
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
@@ -1706,36 +1742,6 @@ ggplot(expbol, aes(x = BirdID, y = LatencyFirstLand, colour = BirdID, shape = Te
   scale_fill_discrete(guide = "none") +
   scale_colour_discrete(guide = "none")
 
-
-
-# DATA CHECKING
-# library(DHARMa)
-# library(lme4)
-# simulationOutput <- simulateResiduals(fittedModel = lm(log(LatencyFirstLand.C1) ~ LatencyFirstLand.Environment + LatencyFirstLand.Object, family=gaussian, data=expbol.melt), n=250) #250 simulations, but if want higher precision change n>1000
-# plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-# testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-# #p=0.86 normal dispersion
-# testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p<0.05
-# #no zeros, so not zero inflated. p = 1
-# testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-# #p=0.10 not heteroscedastic
-# plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-# #right plot looks horrible. May not be a good fit with gaussian
-# #plotResiduals(ReverseNumber, simulationOutput$scaledResiduals) #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
-
-
-# eb2 <- summary(eb)
-# library(xtable)
-# eb2.table <- xtable(eb2)
-# library(knitr)
-# kable(eb2.table, caption="Table 2: Model selection output.", format="html", digits=2)
-# 
-# #Model Validation
-# library(MuMIn)
-# options(na.action = "na.fail")
-# base1 <- dredge(glm(NumberIncorrectTrialsReversal ~ AvgFunctionalTouchesExploration * Condition, family="poisson", data=persist2))
-# library(knitr)
-# kable(base1, caption="Table 3: Model selection output.")
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data [@burnham2003model]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package [@bates2012lme4]. If the best fitting model has a high Akaike weight (>0.89; [@burnham2003model]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the [base/test *- delete as appropriate*] model (Table 2).
