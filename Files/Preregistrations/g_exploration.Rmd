@@ -1430,89 +1430,44 @@ summary(expl2) # Effective sample sizes and post.mean look good.
 
 #####--------Persistence with novel apparatuses as a function of flexibility---------##### 
 
-## FlexPersist Model 3: Combined Touches Per Time 
-simulationOutput <- simulateResiduals(fittedModel = lm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpers), n=850) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) 
-testDispersion(simulationOutput) # not over- or under-dispersed
-testZeroInflation(simulationOutput) # zero-inflated, but only 2/19 are zeros
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-
-
-# ANALYSIS 3
-## GLMM - dependent variable = Combined Touches Per Time
-# flexpers$touchRate = flexpers$SumTouches/flexpers$TotTime
-# library(MCMCglmm)
-# prior = list(R=list(V = diag(2), nu = 0.002, fix = 2))
-#   #R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
-# 
-# ### Trying a hurdle poisson model to account for zero-inflation... but does not account for the rate (touches per time)
-# expl3 <- MCMCglmm(round(SumTouches) ~ trait - 1 +
-#  at.level(trait, 1):c.phi +
-#  at.level(trait, 1):c.lambda + 
-#  at.level(trait, 1):TotTime,
-#  rcov = ~idh(trait):units,
-#  random = NULL, data=flexpers, family="hupoisson", verbose=F, prior=prior, nitt=10000000,
-#  thin=8000, burnin=3000)
-# autocorr(expl3$Sol) #Did fixed effects converge?
-# autocorr(expl3$VCV) #Did random effects converge?
-# plot(expl3)
-# summary(expl3)
 
 ## FlexPersist Model 3_functional: Functional Touches Per Time 
-flexpersF = flexpersF[-which(is.na(flexpersF$SumTouches)),]
-simulationOutput <- simulateResiduals(fittedModel = lm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersF), n=850) #250 simulations, but if want higher precision change n>1000
+#whole data set
+flexperTotF$touchRate = flexperTotF$SumTouches/flexperTotF$TotTime
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), 
+                                                          offset=log(TotTime), family=poisson, 
+                                                          data=flexpersF), n=850) 
 plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersedd
-testZeroInflation(simulationOutput) # zero-inflated, but only 2/19 are zeros
+testDispersion(simulationOutput) # not overdispersed with olre
+testZeroInflation(simulationOutput) # not zero-inflated with olre
 testUniformity(simulationOutput) # not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
-### Trying a hurdle poisson model to account for zero-inflation
-# flexpersF$touchRate = flexpersF$SumTouches/flexpersF$TotTime
-# expl3f <- MCMCglmm(round(SumTouches) ~ trait - 1 +
-#  at.level(trait, 1):c.phi +
-#  at.level(trait, 1):c.lambda + 
-#  at.level(trait, 1):TotTime,
-#  rcov = ~idh(trait):units,
-#  data=flexpersF, family="hupoisson", verbose=F, prior=prior, nitt=5000000, thin=5000, burnin=3000)
-# autocorr(expl3f$Sol) #Did fixed effects converge?
-# autocorr(expl3f$VCV) #Did random effects converge?
-# plot(expl3f)
-# summary(expl3f)
+# use poisson with offset (see below)
+
 
 ## FlexPersist Model 3_non-functional: Non - Functional Touches Per Time 
 flexpersN = flexpersN[-which(is.na(flexpersN$SumTouches)),]
-simulationOutput <- simulateResiduals(fittedModel = lm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersN), n=850) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), data=flexpersN), n=850) 
 plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersedd
-testZeroInflation(simulationOutput) # not zero-inflated
-testUniformity(simulationOutput) # not heteroscedastic
+testDispersion(simulationOutput) # not over- or under-dispersed 
+testZeroInflation(simulationOutput) # not zero-inflated 
+testUniformity(simulationOutput) # not heteroscedastic 
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
-# flexpersN$touchRate = flexpersN$SumTouches/flexpersN$TotTime
-# 
-# prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0),R3=list(V=1,nu=0)))
-# expl3n <- MCMCglmm(round(SumTouches) ~ c.phi + c.lambda + TotTime,
-#  data=flexpersN, family="poisson", verbose=F, prior=prior, nitt=5000000, thin=5000, burnin=3000)
-# autocorr(expl3n$Sol) #Did fixed effects converge?
-# autocorr(expl3n$VCV) #Did random effects converge?
-# plot(expl3n)
-# summary(expl3n)
 
+### Poisson with an offset term is the appropriate way to model touches per time, but functional touches was zero-inflated and heteroscedastic according to the DHARMa test. We added an observation level random effect and the model then passed all checks. We could not find a method for using an offset term in MCMCglmm, so we will proceed with the frequentist model.
 
-
-### Poisson with an offset term is the appropriate way to model touches per time, plus functional touches was zero-inflated according to the DHARMa test. We could not find a method for using an offset term in zero-inflated poisson in MCMCglmm, so we will proceed with the frequentist model.
-#### Combined touches
-library(pscl)
-freqPers = zeroinfl(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), data=flexpers)
-summary(freqPers)
 #### Functional touches
-freqPersF = zeroinfl(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), data=flexpersF)
+freqPersF = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset= log(TotTime), family=poisson, data=flexpersF)
 summary(freqPersF)
+# Neither phi (ß = 0.42, p = 0.11), nor lambda (ß = 0.08, p = 0.77) are related to functional touches per time
+
 #### Nonfunctional touches was not zero inflated
-freqPersN = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data = flexpersN)
+freqPersN = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersN)
 summary(freqPersN)
+# Grackles with larger phi made more nonfunctional touches (ß = 0.26, p < 0.01) and those with smaller lambda made more nonfunctional touches (ß = -0.11, p < 0.02)
+
 
 #####--------Diversity of motor actions on the multiaccess boxes as a function of flexibility---------##### 
 
@@ -1546,7 +1501,7 @@ m <- list(
    "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
    "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
    "Diversity of motor actions" = lm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot),
-   "Number of functional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
+   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
                                         family="poisson",data=flexpersF),
    "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
                                         family="poisson",data=flexpersN))
@@ -1567,7 +1522,7 @@ tab2 %>%
                locations = cells_body(rows = c(2,3), columns = 1)) %>%
   tab_style(
     style = cell_text(weight = "bold"),
-    locations = cells_body(columns = c(13,16),rows = c(2,3))) %>%
+    locations = cells_body(columns = 16,rows = c(2,3))) %>%
   tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 ```
@@ -1575,7 +1530,7 @@ tab2 %>%
 #### *H1: P1-P5 alternative: Control vs flexibility manipulated individuals*
 The flexibility manipulation did work such that individuals in the serial reversal learning group increased their speed to pass each reversal. After we received in-principal recommendation for the preregistration associated with this research, we developed and tested the flexibility comprehensive variable. We found that this variable more accurately represented flexible behavior [@blaisdell2021more; @lukas2024flexmanippcj]. However, our preregistered predictions still included comparison of performance on the behavioral trait assays between control and manipulated individuals. Thus, we conduct these comparisons here. Note that results were similar to those using the flexiblity comprehensive variables.
 ```{r conVmanip, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-### Exploration
+#### Exploration ####
 #### Duration near the outside of the tent
 simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) 
@@ -1588,74 +1543,67 @@ library(MCMCglmm)
 prior1 = list(R=list(R1=list(V=1, nu=0),
                      R2=list(V=1, nu=1, alpha.v=0.1)),
               G=list(G1=list(V=1, nu=0)))
-explcvm <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
+
+explcvm <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=800, burnin=4000)
 plot(explcvm)
 autocorr(explcvm$Sol) #Did fixed effects converge? Yes
 autocorr(explcvm$VCV) #Did random effects converge? 
 summary(explcvm)
-# Flexibility manipulated grackles spend longer Duration near the outside of the tent (ß = 3.90, p = 0.05).
+
+# Flexibility manipulated grackles spend longer Duration near the outside of the tent (ß = 3.92, p = 0.04).
 
 
 #### Latency to first land on the ground
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore), n=1000) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-# p = 0.93, not over- or under-dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
-# no zeros so not zero-inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-# p = 0.38, so not heteroscedastic
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore), n=1000) 
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # p = 0.93, not over- or under-dispersed
+testZeroInflation(simulationOutput) # no zeros so not zero-inflated
+testUniformity(simulationOutput) # p = 0.38, so not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 # ANALYSIS 2: EXPLORATION LatencyFirstLand
 #GLMM - dependent variable = LatencyFirstLand
 library(MCMCglmm)
-explcvm2 <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+explcvm2 <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=1000000, thin=600, burnin=3000)
 autocorr(explcvm2$Sol) #Did fixed effects converge? Yes
 autocorr(explcvm2$VCV) #Did random effects converge? Units, Yes
 plot(explcvm2) # convergence looks good
 summary(explcvm2) # Effective sample sizes and post.mean look good.
 # no relationship between Latency to first Land on the ground and flexibility manipulation condition (ß = -0.41, p = 0.60)
 
-### Persistence
-#### Functional touches
-head(flexpers) # from chunk 7, above
-flexpers$binTouch = ifelse(flexpers$SumTouches >0,1,0)
-simulationOutput <- simulateResiduals(fittedModel = glm(binTouch ~ FlexGroup, family="binomial", data=flexpers), n=500) #250 simulations, but if want higher precision change n>1000
+#### Persistence ####
+flexpersF2 = merge(flexpersF,flexID, by=c("Name","BirdID"), all = T)
+flexpersF2 = flexpersF2[-which(is.na(flexpersF2$SumTouches)),]
+flexpersN2 = merge(flexpersN,flexID, by=c("Name","BirdID"), all = T)
+flexpersN2 = flexpersN2[-which(is.na(flexpersN2$SumTouches)),]
+
+#### Functional touches was not zero inflated, overdispersed and heteroscedastic - so added observation level random effect 
+flexpersF2$olre = 1:nrow(flexpersF2)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersF2), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersed
-testZeroInflation(simulationOutput) # not zero inflated
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) 
+testDispersion(simulationOutput) # not over-dispersed with olre
+testZeroInflation(simulationOutput) # not zero inflated with olre
+testUniformity(simulationOutput) # not heteroscedastic with olre
+plot(simulationOutput)
 
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
-perscvm <- MCMCglmm(binTouch ~ FlexGroup, data=flexpers,  family="categorical", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
-autocorr(perscvm$Sol) #Did fixed effects converge?
-autocorr(perscvm$VCV) #Did random effects converge?
-plot(perscvm)
-summary(perscvm)
+freqPersFcvm = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family = poisson, data=flexpersF2)
+summary(freqPersFcvm)
+# No difference in functional touches to objects between manipulated and control grackles (ß = 0.81, p = 0.09)
 
-#### Nonfunctional touches
-head(flexpersN) # from chunk 7, above
-flexpersN$binTouch = ifelse(flexpersN$SumTouches >0,1,0)
-simulationOutput <- simulateResiduals(fittedModel = glm(binTouch ~ FlexGroup, family="binomial", data=flexpers), n=500) #250 simulations, but if want higher precision change n>1000
+#### Nonfunctional touches was not zero inflated, but was overdispersed and heteroscedastic - so added observation level random effect
+flexpersN2$olre = 1:nrow(flexpersN2)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersN2), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersed
+testDispersion(simulationOutput) # not over-dispersed with olre
 testZeroInflation(simulationOutput) # not zero inflated
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) 
-
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
-perscvmN <- MCMCglmm(binTouch ~ FlexGroup, data=flexpers,  family="categorical", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
-autocorr(perscvmN$Sol) #Did fixed effects converge?
-autocorr(perscvmN$VCV) #Did random effects converge?
-plot(perscvmN)
-summary(perscvmN)
+testUniformity(simulationOutput) # not heteroscedastic with olre
+plot(simulationOutput)
+freqPersNcvm = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersN2)
+summary(freqPersNcvm)
+# No difference in nonfunctional touches to MABs between manipulated and control grackles (ß = 0.24, p = 0.58)
 
 
-### Motor diversity
+#### Motor diversity ####
 simulationOutput <- simulateResiduals(fittedModel = glm(log(TotalMot) ~ FlexGroup, family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals)
 testDispersion(simulationOutput) # not over- or under-dispersed
@@ -1665,7 +1613,7 @@ plot(simulationOutput)
 
 library(MCMCglmm)
 prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
-motcvm <- MCMCglmm(log(TotalMot) ~FlexGroup, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
+motcvm <- MCMCglmm(log(TotalMot) ~FlexGroup, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=600, burnin=3000)
 autocorr(motcvm$Sol) #Did fixed effects converge?
 autocorr(motcvm$VCV) #Did random effects converge?
 plot(motcvm)
@@ -1836,19 +1784,17 @@ r3 = merge(tmp1,tmp2, by = c("ID","Reversal"))
 r3 = r3[-which(r3$Reversal == 0),]
 colnames(r3)[1] = "Name"
 
-batch = unique(reverse[,c(3,4)])
-colnames(batch)[2] = "Name"
-
+# Functional touches
 avgper = aggregate(TouchRate ~ Name, data = per[-which(per$Test == "MABlogNFun"|per$Test == "MABplasNFun"),], FUN = "mean")
 avgper$s.per = scale(avgper$TouchRate, center = T, scale = T)
 persist2 = merge(r3, avgper, by = "Name")
-persist2 = merge(persist2,batch, by = "Name")
+persist2 = merge(persist2,flexID, by = "Name")
 
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(Trial+1) ~ s.per + (1|Batch), family = "gaussian", data=persist2), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = glm(log(Trial+1) ~ s.per + FlexGroup, family = "gaussian", data=persist2), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # not over/under dispersed
 testZeroInflation(simulationOutput) # not zero inflated
@@ -1856,22 +1802,47 @@ testUniformity(simulationOutput) # not heteroscedastic
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 #GLM
-p2 <- lmer(log(Trial+1) ~ s.per + (1|Batch), data=persist2)
+p2 <- lm(log(Trial+1) ~ s.per + FlexGroup, data=persist2)
 summary(p2)
+# No relationship between functional touches per time and number of mistakes before switching in reversal learning
+
+
+# Nonfunctional touches
+avgper2 = aggregate(TouchRate ~ Name, data = per[which(per$Test == "MABlogNFun"|per$Test == "MABplasNFun"),], FUN = "mean")
+avgper2$s.per = scale(avgper2$TouchRate, center = T, scale = T)
+persist3 = merge(r3, avgper2, by = "Name")
+persist3 = merge(persist3,flexID, by = "Name")
+
+simulationOutput <- simulateResiduals(fittedModel = glm(log(Trial+1) ~ s.per + FlexGroup, family = "gaussian", data=persist3), n=250) 
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # not over/under dispersed
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+#GLM
+p3 <- lm(log(Trial+1) ~ s.per + FlexGroup, data=persist3)
+summary(p3)
+# No relationship between nonfunctional touches per time and number of mistakes before switching in reversal learning
 
 sp2 <- summary(p2)
+sp3 <- summary(p3)
+
 library(xtable)
 library(knitr)
 #kable(sp2, caption="Table 2: Model selection output.", format="html", digits=2)
 
-#Model Validation
+#Functional touches Model Validation
 library(MuMIn)
 options(na.action = "na.fail")
-base1 <- dredge(lmer(log(Trial+1) ~ s.per + (1|Batch), data=persist2))
+base1 <- dredge(lm(log(Trial+1) ~ s.per + FlexGroup, data=persist2))
 library(knitr)
 kable(base1, caption="Table 3: Model selection output.")
 # intercept only model is a better fit, so no evidence for a relationship between the two persistence variables.
 
+#Nonfunctional touches model validation
+base2 <- dredge(lm(log(Trial+1) ~ s.per + FlexGroup, data=persist3))
+kable(base2, caption="Table 3: Model selection output.")
 ```
 
 **Model validation:** Determine whether the test model results are likely to be reliable given the data [@burnham2003model]. Compare Akaike weights (range: 0–1, the sum of all model weights equals 1; Akaike, 1981) between the test model and a base model (number of trials to reverse as the response variable and 1 as the explanatory variable) using the dredge function in the MuMIn package [@bates2012lme4]. If the best fitting model has a high Akaike weight (>0.89; [@burnham2003model]), then it indicates that the results are likely given the data. The Akaike weights indicate the best fitting model is the [base/test *- delete as appropriate*] model (Table 2).
