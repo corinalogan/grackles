@@ -169,7 +169,6 @@ library(vegan)
 library(geosphere)
 library(rethinking)
 
-# Compare AZ sample size to Gus article - are the previously genotyped individuals included? Does the one indivdiual have to be excluded again?
 
 #Load the relevant data
 #SNP data, processed to be in correct format to calculate pairwise relatedness (output files saved for flexforaging article)
@@ -186,6 +185,10 @@ idinfo<-idinfo[-38,]
 # Exclude juveniles from the dataset, because they might not yet have dispersed
 adultids<-idinfo[idinfo$Age %in% "A",]
 
+#identify which individuals are female and which are male
+females<-filter(adultids,Sex %in% "F",Age %in% "A")[,]$BirdID
+males<-filter(adultids,Sex %in% "M",Age %in% "A")[,]$BirdID
+
 samplesize<-as.data.frame(adultids %>% group_by(Population,Sex) %>% summarize(samplesize=n()))
 
 ca_snpdata<-ca_input$gdata
@@ -198,6 +201,9 @@ az_snpdata<-az_snpdata[az_snpdata$V1 %in% adultids$BirdID,]
 
 # individual A053PS is included twice - because we resequenced this individual
 az_snpdata<-az_snpdata[-45,] # remove original
+# Need to re-arrange the data frame now to make sure that this individual is in the right place
+az_snpdata<-arrange(az_snpdata,V1)
+
 # az_snpdata<-az_snpdata[-54,] # remove new, as alternative because the reprocessing appears to have fixed the previous problems
 
 #Calculate pairwise relatedness, here choosing the relatedness method developed by Wang, Queller & Goodknight, Lynch & Li
@@ -249,6 +255,9 @@ hist(ca_completerelatedness$wang)
 
 
 ```{r descriptive statistics, include=FALSE, echo=FALSE}
+library(adegenet)
+library(pegas)
+
 # Overall sample size
 samplesize<-as.data.frame(adultids %>% group_by(Population,Sex) %>% summarize(samplesize=n()))
 
@@ -265,14 +274,88 @@ apply(az_snpdata[,2:925], 1, function(x) length(which(x=="0")))
 
 # Maybe remove Buñuelo C116RY because of missing data?
 
+
+ca_genepopfile<-read.table("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Woodland.txt",sep=" ",colClasses="character")
+
+az_genepopfile<-read.table("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Tempe.txt",sep=" ",colClasses="character")
+
+az_genepopfile<-read.table("/Users/dieterlukas/ownCloud/Documents/Grackles/GusGenetics/2023/AZpopulations.snps.txt",sep="\t",colClasses="character")
+
+ca_genepopfile<-read.table("/Users/dieterlukas/ownCloud/Documents/Grackles/GusGenetics/2023/WOpopulations.snps.txt",sep="\t",colClasses="character")
+
+
+ca_genepopfile_ade<-ca_genepopfile
+row.names(ca_genepopfile_ade)<-ca_genepopfile_ade[,1]
+ca_genepopfile_ade<-ca_genepopfile_ade[,2:ncol(ca_genepopfile_ade)]
+ca_ade_input<-df2genind(ca_genepopfile_ade, ncode=2,NA.char="00")
+ca_ade_hw<-hw.test(ca_ade_input)
+ca_toto <- summary(ca_ade_input)
+bartlett.test(list(ca_toto$Hexp,ca_toto$Hobs))
+median(ca_toto$Hexp-ca_toto$Hobs)
+mean(ca_toto$Hexp)
+sum(ca_ade_hw[,4]<0.005)/nrow(ca_ade_hw)
+ca_toto$NA.perc
+
+apply(ca_genepopfile_ade[,1:493], 1, function(x) length(which(x=="0000")))
+apply(ca_genepopfile_ade, 2, function(x) length(which(x=="0000")))
+
+az_genepopfile_ade<-az_genepopfile
+row.names(az_genepopfile_ade)<-az_genepopfile_ade[,1]
+az_genepopfile_ade<-az_genepopfile_ade[,2:ncol(az_genepopfile_ade)]
+az_ade_input<-df2genind(az_genepopfile_ade, ncode=2,NA.char="00")
+az_ade_hw<-hw.test(az_ade_input)
+az_toto <- summary(az_ade_input)
+bartlett.test(list(az_toto$Hexp,az_toto$Hobs))
+median(az_toto$Hexp-az_toto$Hobs)
+mean(az_toto$Hexp)
+sum(az_ade_hw[,4]<0.005)/nrow(az_ade_hw)
+ca_toto$NA.perc
+
+apply(az_genepopfile_ade[,1:462], 1, function(x) length(which(x=="0000")))
+apply(az_genepopfile_ade, 2, function(x) length(which(x=="0000")))
+
+
+P_id_sibs<-NA
+for(i in 2:987){
+  if(i %%2 == 0){
+  p<-(sum(ca_snpdata[,i]==1)+sum(ca_snpdata[,i+1]==1))/(2*nrow(ca_snpdata)-(sum(ca_snpdata[,i]==0)+sum(ca_snpdata[,i+1]==0)))
+  q<-(sum(ca_snpdata[,i]==2)+sum(ca_snpdata[,i+1]==2))/(2*nrow(ca_snpdata)-(sum(ca_snpdata[,i]==0)+sum(ca_snpdata[,i+1]==0)))
+  r<-(sum(ca_snpdata[,i]==3)+sum(ca_snpdata[,i+1]==3))/(2*nrow(ca_snpdata)-(sum(ca_snpdata[,i]==0)+sum(ca_snpdata[,i+1]==0)))
+  s<-(sum(ca_snpdata[,i]==4)+sum(ca_snpdata[,i+1]==4))/(2*nrow(ca_snpdata)-(sum(ca_snpdata[,i]==0)+sum(ca_snpdata[,i+1]==0)))
+  P_id_sibs[(i/2)] <- 0.25 + (0.5*sum(p*p+q*q+r*r+s*s))+(0.5*(p*p+q*q+r*r+s*s)^2)-(0.25*(p^4+q^4+r^4+s^4))
+  i<-i+1
+  }
+}
+
+cumprod(P_id_sibs)
+
+
+P_id_sibs<-NA
+for(i in 2:925){
+  if(i %%2 == 0){
+  p<-(sum(az_snpdata[,i]==1)+sum(az_snpdata[,i+1]==1))/(2*nrow(az_snpdata)-(sum(az_snpdata[,i]==0)+sum(az_snpdata[,i+1]==0)))
+  q<-(sum(az_snpdata[,i]==2)+sum(az_snpdata[,i+1]==2))/(2*nrow(az_snpdata)-(sum(az_snpdata[,i]==0)+sum(az_snpdata[,i+1]==0)))
+  r<-(sum(az_snpdata[,i]==3)+sum(az_snpdata[,i+1]==3))/(2*nrow(az_snpdata)-(sum(az_snpdata[,i]==0)+sum(az_snpdata[,i+1]==0)))
+  s<-(sum(az_snpdata[,i]==4)+sum(az_snpdata[,i+1]==4))/(2*nrow(az_snpdata)-(sum(az_snpdata[,i]==0)+sum(az_snpdata[,i+1]==0)))
+  P_id_sibs[(i/2)] <- 0.25 + (0.5*sum(p*p+q*q+r*r+s*s))+(0.5*(p*p+q*q+r*r+s*s)^2)-(0.25*(p^4+q^4+r^4+s^4))
+  i<-i+1
+  }
+}
+
+cumprod(P_id_sibs)
+
+
 ```
 
+CA
+We retained 493 SNPs. Data was missing for 3.3% of all alleles (individuals missing information for either one or both of their chromosomes for that particular position). None of the SNP showed a particular underrepresentation of information. This missingness was due to the incomplete genotype of one individual (C116RY), who had missing data at 459 of the 493 SNPs, whereas all other individuals had data missing at four or less SNPs. All SNPs had 2 alleles and the observed heterozygosity (individuals carrying one copy each of the two bases) was 0.29, identical to the heterozygosity expected in a population with the same allele frequencies and random mating. The probability of identity for siblings, the chance that two siblings will show the same genotypes given the allele frequencies across these 493 SNP loci and random mating among individuals, is less than 10 to the power of minus 64. 
+
+missing data CA / AZ
+
+We retained 462 SNPs. Data was missing for 3.0% of all alleles (individuals missing information for either one or both of their chromosomes for that particular position). None of the SNP showed a particular underrepresentation of information. There were three individuals whose genotypes were less complete (A072KB at 191, 41% of SNPs; A088YR missing data at 174, 38%, of SNPs; A-059NB at 148, 32% of SNPs), whereas all other individuals had data missing at less than 10% of SNPs. All SNPs had 2 alleles and the observed heterozygosity (individuals carrying one copy each of the two bases) was 0.29, similar to the heterozygosity expected in a population with the same allele frequencies and random mating. The probability of identity for siblings, the chance that two siblings will show the same genotypes given the allele frequencies across these 462 SNP loci and random mating among individuals, is less than 10 to the power of minus 60. 
 
 
 ```{r compare average relatedness, include=FALSE, echo=FALSE}
-#identify which individuals are female and which are male
-females<-filter(adultids,Sex %in% "F",Age %in% "A")[,]$BirdID
-males<-filter(adultids,Sex %in% "M",Age %in% "A")[,]$BirdID
 
 #Calculate average of and variance in relatedness among all individuals, all females, and all males
 # First using the relatedness estimates based on the method by Wang
@@ -364,6 +447,11 @@ precis(mimmodel,depth=2)
 
 
 ```
+
+
+
+For discussion: In species with known philopatry/dispersal patterns, what is the average relatedness, and how many kin dyads are there?
+
 
 
 ```{r relatedness permutation, include=FALSE, echo=FALSE}
@@ -1061,43 +1149,69 @@ options(width=60)
 
 # Start with Arizona:
 
-#have each value only once in the distance matrix
-for (i in 1:ncol(AZ_all_pairwise_distance)) {
-  AZ_all_pairwise_distance[i,i:ncol(AZ_all_pairwise_distance)]<-NA
-}
-
-
-
 #turn pairwise_r$wang into a matrix
 az_all_relatedness<-select(az_pairwise_r,ind1.id,ind2.id,wang)
 az_relatedness_matrix<-spread(az_all_relatedness,"ind1.id","wang")
 az_relatedness_matrix <- cbind(az_relatedness_matrix,AF_061PR="NA")
 az_relatedness_matrix<-arrange(az_relatedness_matrix,ind2.id)
-az_relatedness_matrix <- InsertRow(data=az_relatedness_matrix, NewRow=rep("NA",samplesize[3,3]+samplesize[4,3]), RowNum=1)
-az_relatedness_matrix[1,1] <- "AF_001YP"
+az_relatedness_matrix <- InsertRow(data=az_relatedness_matrix, NewRow=rep("NA",samplesize[3,3]+samplesize[4,3]+1), RowNum=1)
+az_relatedness_matrix[1,1] <- "A001YP"
 rownames(az_relatedness_matrix)<-az_relatedness_matrix[,1]
 
 #turn pairwise_r$quellergt into a matrix
-az_relatedness_matrix<-select(az_pairwise_r,ind1.id,ind2.id,quellergt)
-az_relatedness_matrix<-spread(az_relatedness_matrix,"ind1.id","quellergt")
-az_relatedness_matrix <- cbind(az_relatedness_matrix,AF_061PR="NA")
-az_relatedness_matrix<-arrange(az_relatedness_matrix,ind2.id)
-az_relatedness_matrix <- InsertRow(data=az_relatedness_matrix, NewRow=rep("NA",samplesize[3,3]+samplesize[4,3]), RowNum=1)
-az_relatedness_matrix[1,1] <- "AF_001YP"
-rownames(az_relatedness_matrix)<-az_relatedness_matrix[,1]
+# az_relatedness_matrix<-select(az_pairwise_r,ind1.id,ind2.id,quellergt)
+# az_relatedness_matrix<-spread(az_relatedness_matrix,"ind1.id","quellergt")
+# az_relatedness_matrix <- cbind(az_relatedness_matrix,AF_061PR="NA")
+# az_relatedness_matrix<-arrange(az_relatedness_matrix,ind2.id)
+# az_relatedness_matrix <- InsertRow(data=az_relatedness_matrix, NewRow=rep("NA",samplesize[3,3]+samplesize[4,3]), RowNum=1)
+# az_relatedness_matrix[1,1] <- "A001YP"
+# rownames(az_relatedness_matrix)<-az_relatedness_matrix[,1]
 
-relatedness_matrix<-relatedness_matrix[1:52,2:53]
+az_relatedness_matrix<-az_relatedness_matrix[1:nrow(az_relatedness_matrix),2:ncol(az_relatedness_matrix)]
 
-female_relatedness_matrix<-relatedness_matrix[rownames(relatedness_matrix) %in% females,colnames(relatedness_matrix) %in% females]
-male_relatedness_matrix<-relatedness_matrix[rownames(relatedness_matrix) %in% males,colnames(relatedness_matrix) %in% males]
+az_female_relatedness_matrix<-az_relatedness_matrix[rownames(az_relatedness_matrix) %in% females,colnames(az_relatedness_matrix) %in% females]
+az_male_relatedness_matrix<-az_relatedness_matrix[rownames(az_relatedness_matrix) %in% males,colnames(az_relatedness_matrix) %in% males]
+
+AZ_female_pairwise_distances_r<-AZ_female_pairwise_distances[order(factor(rownames(AZ_female_pairwise_distances), levels = rownames(az_female_relatedness_matrix), ordered=TRUE)),order(factor(colnames(AZ_female_pairwise_distances), levels = colnames(az_female_relatedness_matrix), ordered=TRUE))]
+
+
+
+# for (i in 1:ncol(AZ_female_pairwise_distances_r)) {
+#  AZ_female_pairwise_distances_r[i,i:ncol(AZ_female_pairwise_distances_r)]<-NA
+# }
+
+AZ_male_pairwise_distances_r<-AZ_male_pairwise_distances[order(factor(rownames(AZ_male_pairwise_distances), levels = rownames(az_male_relatedness_matrix), ordered=TRUE)),order(factor(colnames(AZ_male_pairwise_distances), levels = colnames(az_male_relatedness_matrix), ordered=TRUE))]
+
+AZ_male_pairwise_distances_r<-AZ_male_pairwise_distances_r[rownames(AZ_male_pairwise_distances_r) %in% rownames(az_male_relatedness_matrix),colnames(AZ_male_pairwise_distances_r) %in% colnames(az_male_relatedness_matrix)]
+
+for (i in 1:ncol(AZ_male_pairwise_distances_r)) {
+  AZ_male_pairwise_distances_r[i,i:ncol(AZ_male_pairwise_distances_r)]<-NA
+}
+
+
+az_female_relatedness_matrix[, 1:ncol(az_female_relatedness_matrix)] <- apply(az_female_relatedness_matrix[, 1:ncol(az_female_relatedness_matrix)], 2, function(x) as.numeric(as.character(x)))
+
+az_male_relatedness_matrix[, 1:ncol(az_male_relatedness_matrix)] <- apply(az_male_relatedness_matrix[, 1:ncol(az_male_relatedness_matrix)], 2, function(x) as.numeric(as.character(x)))
+
+AZ_female_pairwise_distances_r[, 1:ncol(AZ_female_pairwise_distances_r)] <- apply(AZ_female_pairwise_distances_r[, 1:ncol(AZ_female_pairwise_distances_r)], 2, function(x) as.numeric(as.character(x)))
+
+rownames(AZ_female_pairwise_distances_r)<-gsub("-","_",rownames(AZ_female_pairwise_distances_r))
+colnames(AZ_female_pairwise_distances_r)<-gsub("-","_",colnames(AZ_female_pairwise_distances_r))
+rownames(az_female_relatedness_matrix)<-gsub("-","_",rownames(az_female_relatedness_matrix))
+colnames(az_female_relatedness_matrix)<-gsub("-","_",colnames(az_female_relatedness_matrix))
+
+rownames(AZ_female_pairwise_distances_r)<-gsub("A","AF_",rownames(AZ_female_pairwise_distances_r))
+colnames(AZ_female_pairwise_distances_r)<-gsub("A","AF_",colnames(AZ_female_pairwise_distances_r))
+rownames(az_female_relatedness_matrix)<-gsub("A","AF_",rownames(az_female_relatedness_matrix))
+colnames(az_female_relatedness_matrix)<-gsub("A","AF_",colnames(az_female_relatedness_matrix))
 
 #perform the correlogram analysis
 #first way, defining the distance classes
-female_correlogram_setdistances<-mantel.correlog(D.eco=female_relatedness_matrix,D.geo=female_pairwise_distances,break.pts=c(0,100,200,300,400,500,750,1250,1550,2000,2500),cutoff=FALSE,nperm=10000)
-male_correlogram_setdistances<-mantel.correlog(D.eco=male_relatedness_matrix,D.geo=male_pairwise_distances,break.pts=c(0,100,200,300,400,500,750,1250,1550,2000,2500),cutoff=FALSE,nperm=10000)
+az_female_correlogram_setdistances<-mantel.correlog(D.eco=az_female_relatedness_matrix,D.geo=AZ_female_pairwise_distances_r,break.pts=c(0,100,200,300,400,500,750,1000,1250,2000),cutoff=FALSE,nperm=10000)
+az_male_correlogram_setdistances<-mantel.correlog(D.eco=az_male_relatedness_matrix,D.geo=AZ_male_pairwise_distances,break.pts=c(0,100,200,300,400,500,750,1000,1250,2000),cutoff=FALSE,nperm=10000)
 #second way, setting the number of distance classes
-female_correlogram_classes<-mantel.correlog(D.eco=female_relatedness_matrix,D.geo=female_pairwise_distances,n.class=5)
-male_correlogram_classes<-mantel.correlog(D.eco=male_relatedness_matrix,D.geo=male_pairwise_distances,n.class=5)
+az_female_correlogram_classes<-mantel.correlog(D.eco=az_female_relatedness_matrix,D.geo=AZ_female_pairwise_distances_r,n.class=5)
+az_male_correlogram_classes<-mantel.correlog(D.eco=az_male_relatedness_matrix,D.geo=AZ_male_pairwise_distances,n.class=5)
 
 #additional way, with the distance classes based on the inferred distance among relatives from analysis ii
 female_correlogram_setdistances<-mantel.correlog(D.eco=female_relatedness_matrix,D.geo=female_pairwise_distances,break.pts=c(0,150,450,900,1600,2000),cutoff=FALSE,nperm=10000)
@@ -1105,6 +1219,83 @@ male_correlogram_setdistances<-mantel.correlog(D.eco=male_relatedness_matrix,D.g
 
 female_correlogram_setdistances
 male_correlogram_setdistances
+
+
+
+
+# Next California:
+
+#turn pairwise_r$wang into a matrix
+ca_all_relatedness<-select(ca_pairwise_r,ind1.id,ind2.id,wang)
+ca_relatedness_matrix<-spread(ca_all_relatedness,"ind1.id","wang")
+ca_relatedness_matrix <- cbind(ca_relatedness_matrix,AF_061PR="NA")
+ca_relatedness_matrix<-arrange(ca_relatedness_matrix,ind2.id)
+ca_relatedness_matrix <- InsertRow(data=ca_relatedness_matrix, NewRow=rep("NA",samplesize[5,3]+samplesize[6,3]+1), RowNum=1)
+ca_relatedness_matrix[1,1] <- "C101AY"
+rownames(ca_relatedness_matrix)<-ca_relatedness_matrix[,1]
+
+#turn pairwise_r$quellergt into a matrix
+# ca_relatedness_matrix<-select(ca_pairwise_r,ind1.id,ind2.id,quellergt)
+# ca_relatedness_matrix<-spread(ca_relatedness_matrix,"ind1.id","quellergt")
+# ca_relatedness_matrix <- cbind(ca_relatedness_matrix,AF_061PR="NA")
+# ca_relatedness_matrix<-arrange(ca_relatedness_matrix,ind2.id)
+# ca_relatedness_matrix <- InsertRow(data=ca_relatedness_matrix, NewRow=rep("NA",samplesize[3,3]+samplesize[4,3]), RowNum=1)
+# ca_relatedness_matrix[1,1] <- "A001YP"
+# rownames(ca_relatedness_matrix)<-ca_relatedness_matrix[,1]
+
+ca_relatedness_matrix<-ca_relatedness_matrix[1:nrow(ca_relatedness_matrix),2:ncol(ca_relatedness_matrix)]
+
+ca_female_relatedness_matrix<-ca_relatedness_matrix[rownames(ca_relatedness_matrix) %in% females,colnames(ca_relatedness_matrix) %in% females]
+ca_male_relatedness_matrix<-ca_relatedness_matrix[rownames(ca_relatedness_matrix) %in% males,colnames(ca_relatedness_matrix) %in% males]
+
+ca_female_pairwise_distances_r<-CA_female_pairwise_distances[order(factor(rownames(CA_female_pairwise_distances), levels = rownames(ca_female_relatedness_matrix), ordered=TRUE)),order(factor(colnames(CA_female_pairwise_distances), levels = colnames(ca_female_relatedness_matrix), ordered=TRUE))]
+
+
+
+# for (i in 1:ncol(ca_female_pairwise_distances_r)) {
+#  ca_female_pairwise_distances_r[i,i:ncol(ca_female_pairwise_distances_r)]<-NA
+# }
+
+ca_male_pairwise_distances_r<-CA_male_pairwise_distances[order(factor(rownames(CA_male_pairwise_distances), levels = rownames(ca_male_relatedness_matrix), ordered=TRUE)),order(factor(colnames(CA_male_pairwise_distances), levels = colnames(ca_male_relatedness_matrix), ordered=TRUE))]
+
+
+for (i in 1:ncol(ca_male_pairwise_distances_r)) {
+  ca_male_pairwise_distances_r[i,i:ncol(ca_male_pairwise_distances_r)]<-NA
+}
+
+
+ca_female_relatedness_matrix[, 1:ncol(ca_female_relatedness_matrix)] <- apply(ca_female_relatedness_matrix[, 1:ncol(ca_female_relatedness_matrix)], 2, function(x) as.numeric(as.character(x)))
+
+ca_male_relatedness_matrix[, 1:ncol(ca_male_relatedness_matrix)] <- apply(ca_male_relatedness_matrix[, 1:ncol(ca_male_relatedness_matrix)], 2, function(x) as.numeric(as.character(x)))
+
+ca_female_pairwise_distances_r[, 1:ncol(ca_female_pairwise_distances_r)] <- apply(ca_female_pairwise_distances_r[, 1:ncol(ca_female_pairwise_distances_r)], 2, function(x) as.numeric(as.character(x)))
+
+rownames(ca_female_pairwise_distances_r)<-gsub("-","_",rownames(ca_female_pairwise_distances_r))
+colnames(ca_female_pairwise_distances_r)<-gsub("-","_",colnames(ca_female_pairwise_distances_r))
+rownames(ca_female_relatedness_matrix)<-gsub("-","_",rownames(ca_female_relatedness_matrix))
+colnames(ca_female_relatedness_matrix)<-gsub("-","_",colnames(ca_female_relatedness_matrix))
+
+rownames(ca_female_pairwise_distances_r)<-gsub("A","AF_",rownames(ca_female_pairwise_distances_r))
+colnames(ca_female_pairwise_distances_r)<-gsub("A","AF_",colnames(ca_female_pairwise_distances_r))
+rownames(ca_female_relatedness_matrix)<-gsub("A","AF_",rownames(ca_female_relatedness_matrix))
+colnames(ca_female_relatedness_matrix)<-gsub("A","AF_",colnames(ca_female_relatedness_matrix))
+
+#perform the correlogram analysis
+#first way, defining the distance classes
+ca_female_correlogram_setdistances<-mantel.correlog(D.eco=ca_female_relatedness_matrix,D.geo=ca_female_pairwise_distances_r,break.pts=c(0,100,200,300,400,500,750,1000,1250,2000),cutoff=FALSE,nperm=10000)
+ca_male_correlogram_setdistances<-mantel.correlog(D.eco=ca_male_relatedness_matrix,D.geo=ca_male_pairwise_distances_r,break.pts=c(0,100,200,300,400,500,750,1000,1250,2000),cutoff=FALSE,nperm=10000)
+#second way, setting the number of distance classes
+ca_female_correlogram_classes<-mantel.correlog(D.eco=ca_female_relatedness_matrix,D.geo=ca_female_pairwise_distances_r,n.class=5)
+ca_male_correlogram_classes<-mantel.correlog(D.eco=ca_male_relatedness_matrix,D.geo=ca_male_pairwise_distances_r,n.class=5)
+
+#additional way, with the distance classes based on the inferred distance among relatives from analysis ii
+female_correlogram_setdistances<-mantel.correlog(D.eco=female_relatedness_matrix,D.geo=female_pairwise_distances,break.pts=c(0,150,450,900,1600,2000),cutoff=FALSE,nperm=10000)
+male_correlogram_setdistances<-mantel.correlog(D.eco=male_relatedness_matrix,D.geo=male_pairwise_distances,break.pts=c(0,150,450,900,1600,2000),cutoff=FALSE,nperm=10000)
+
+female_correlogram_setdistances
+male_correlogram_setdistances
+
+
 
 ```
 
