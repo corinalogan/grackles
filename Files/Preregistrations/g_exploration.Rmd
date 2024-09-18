@@ -1531,26 +1531,6 @@ summary(freqPersN)
 # Grackles with larger phi made more nonfunctional touches (ß = 0.26, p < 0.01) and those with smaller lambda made more nonfunctional touches (ß = -0.11, p < 0.02)
 
 
-#####--------Diversity of motor actions on the multiaccess boxes as a function of flexibility---------##### 
-
-## FlexExplore Model 4: Number of Motor Actions 
-simulationOutput <- simulateResiduals(fittedModel = glm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersed
-testZeroInflation(simulationOutput) # not zero inflated
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) 
-
-# ANALYSIS 4
-#GLMM - dependent variable = Number of Motor Actions on MAB (TotalMot)
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
-expl4 <- MCMCglmm(log(TotalMot) ~ c.phi + c.lambda, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=1000, burnin=3000)
-autocorr(expl4$Sol) #Did fixed effects converge?
-autocorr(expl4$VCV) #Did random effects converge?
-plot(expl4)
-summary(expl4)
-
 ```
 
 #### *H1: P1-P5 alternative: Control vs flexibility manipulated individuals*
@@ -1629,22 +1609,6 @@ summary(freqPersNcvm)
 # No difference in nonfunctional touches to MABs between manipulated and control grackles (ß = 0.24, p = 0.58)
 
 
-#### Motor diversity ####
-simulationOutput <- simulateResiduals(fittedModel = glm(log(TotalMot) ~ FlexGroup, family="gaussian", data=flexmot), n=500) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersed
-testZeroInflation(simulationOutput) # not zero inflated
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) 
-
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0))) #, G=list(G1=list(V=1,nu=0))) 
-motcvm <- MCMCglmm(log(TotalMot) ~FlexGroup, data=flexmot,  family="gaussian", verbose=F, prior=prior, nitt=1000000, thin=600, burnin=3000)
-autocorr(motcvm$Sol) #Did fixed effects converge?
-autocorr(motcvm$VCV) #Did random effects converge?
-plot(motcvm)
-summary(motcvm)
-
 ```
 
 ```{r results summary tables, eval=F,warning=F,results='asis',echo=T,include=T}
@@ -1657,13 +1621,12 @@ library(gt)
 m <- list(
    "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
    "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
-   "Diversity of motor actions" = lm(log(TotalMot) ~ c.phi + c.lambda, family="gaussian", data=flexmot),
    "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
                                         family="poisson",data=flexpersF),
    "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
                                         family="poisson",data=flexpersN))
 
-cap = "Table 2: Behavioral flexibility, measured with two variables comprising our flexibility comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). Furthermore, there is no relationship between flexibility and the diversity of motor actions grackles used to solve the multiaccess boxes. However, we did find that persistence (the number of functional or nonfunctional touches to the novel apparatuses per time) was significantly related to phi."
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that persistence (the number of nonfunctional touches to the novel apparatuses per time) was significantly related to phi and lambda."
 tab2 = modelsummary(m,
                     output = "gt",
                     fmt = 2,
@@ -1679,24 +1642,23 @@ tab2 %>%
                locations = cells_body(rows = c(2,3), columns = 1)) %>%
   tab_style(
     style = cell_text(weight = "bold"),
-    locations = cells_body(columns = 16,rows = c(2,3))) %>%
+    locations = cells_body(columns = 13,rows = c(2,3))) %>%
   tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 
 
-# Table 3 - performance on behavioral assays as a function of flexibility manipulation or control group
+# Table 3 - Performance on exploration and persistence assays as a function of whether the grackle underwent a flexibility manipulation through serial reversal learning or were part of the control group.
 
 m2 <- list(
   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore),
    "Latency to land" = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore),
-   "Diversity of motor actions" = glm(log(TotalMot) ~ FlexGroup, family="gaussian", data=flexmot),
    "Number of functional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), 
                                                    family = poisson, data=flexpersF2),
    "Number of nonfunctional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime),
                                                       family=poisson, data = flexpersN2))
    
 
-cap = "Table 3: We assessed the relationship between performance on the behavioral trait assays and whether grackles were in the serial reversal learning (manipulation) group where behavioral flexibility was experimentally increased, or in the control group. Results differed from the analysis using phi and lambda as our measures of behavioral flexibility. We found that flexibility manipulated grackles were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
+cap = "Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning (manipulation) group where behavioral flexibility was experimentally increased, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the manipulation group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
 tab3 = modelsummary(m2,
                     output = "gt",
                     fmt = 2,
