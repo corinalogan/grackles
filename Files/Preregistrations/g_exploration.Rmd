@@ -1291,7 +1291,7 @@ motRpt = rpt(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID),
            data = mot3, ratio = T,
            nboot = 200, npermut = 100)
 motRpt
-# R = 0, p > 0.05
+# R = 0, p = 0.5, CI = 0 - 0.45
 # This is contrary to what we'd expect based on the likelihood ratio test that shows the BirdID random effect accounts for a significant amount of variance in the response. However, this is because the rptR package automatically adds an observation-level random effect (olre) in Poisson models to control for overdispersion. The olre soaks up all of the variance, so the BirdID random effect explains 0 variance. Our data checking with DHARMa indicated that our model was not overdispersed and therefore does not need the olre.
 mot2$olre = 1:nrow(mot2)
 motR1.2 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime))+(1|olre), family ="poisson", data=mot2) 
@@ -1303,7 +1303,23 @@ resVar = log(1/exp(motR1@beta[1])+1) # residual variance
 ranVar = as.numeric(VarCorr(motR1)) # BirdID random effect variance
 R = ranVar/(ranVar + resVar) #0.06
 
-# Repeatability is still very low, close to 0. Therefore, individuals do not consistently use a similar number of motor behaviors across the two MABs relative to other individuals.
+# permutations for p-value
+results = NA
+for(i in 1:1000){
+  tmp = data.frame("BirdID" = mot2$BirdID, 
+                   "FlexGroup" = mot2$FlexGroup,
+                   "TotTime"=mot2$TotTime, 
+                   "TotalMot" = sample(mot2$TotalMot,replace=F))
+  m = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=tmp)
+  resVar = log(1/exp(m@beta[1])+1) # residual variance
+  ranVar = as.numeric(VarCorr(m)) # BirdID random effect variance
+  results[i] = ranVar/(ranVar + resVar)
+}
+hist(results)
+abline(v=0.06,col="red")
+sum(results > 0.06)/1000 # probability the repeatability estimate from our actual data is greater than the repeatability estimates generated from the permutations which randomized the data. 
+
+# Repeatability is still very low, close to 0. Permutations indicate the p-value is 0.54. This is very similar to the results when using the rpt function (that included the olre). Therefore, individuals do not consistently use a similar number of motor behaviors across the two MABs relative to other individuals. We report the rpt results for consistency with the other repeatability tests.
 
 ```
 
