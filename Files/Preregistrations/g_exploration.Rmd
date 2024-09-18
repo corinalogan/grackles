@@ -903,9 +903,7 @@ rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
 
 
 ### Plotting
-maxTouch = aggregate(SumTouches ~ BirdID, data = per, FUN = "max")
-colnames(maxTouch)[2] = "MaxTouch"
-per2 = merge(per, maxTouch, by = "BirdID",all = T)
+per2 = per
 per2$BirdID = as.factor(as.character(per2$BirdID))
 per2$TouchRate = per2$SumTouches/per2$TotTime
 per2 = per2[-which(per2$Test == "MABlogNFun" | per2$Test == "MABplasNFun"),] #no difference between number of functional or nonfunctional touches, so remove nonfunctional touches for the plot.
@@ -915,7 +913,7 @@ per2$Test = factor(per2$Test, levels = c("Boldness","Environment","Object",
                               "MAB wooden", "MAB plastic"))
 
 library(ggplot2)
-ggplot(per2,aes(x=reorder(BirdID,maxTouch),y=TouchRate,shape=Test,color=BirdID)) +
+ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)) +
   geom_point(size = 6, stroke = 2, alpha = 0.75, position = position_dodge(width = 0.35)) +
   labs(x = "Bird", y = "Number of touches per time") + 
   theme_bw() +
