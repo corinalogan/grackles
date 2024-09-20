@@ -1334,17 +1334,20 @@ colnames(bol2)[2] = "Test"
 bol2 = bol2[,c(1:3,15:17)]
 
 newBold = rbind(bol2, exp.o2)
-newBold = newBold[which(newBold$Time == 1),]
+newBold2 = aggregate(DurationOnGround~Name + FlexGroup + Test, FUN = "mean", data = newBold) #average performance from time 1 & time 2
+
+
+newBold = newBold[which(newBold$Time == 1),] #performance only from time 1
 newBold$Test = as.factor(as.character(newBold$Test))
-newBold$olre = 1:nrow(newBold)
+newBold2$olre = 1:nrow(newBold2)
 
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(DurationOnGround+1) ~ FlexGroup + (1|BirdID) + (1|olre),
-                                                         family = "poisson", data=newBold), n=250)
-testDispersion(simulationOutput) # normally dispersed
-testZeroInflation(simulationOutput) # zero inflated  
-testUniformity(simulationOutput) # heteroscedastic
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre),
+                                                         family = "poisson", data=newBold2), n=250)
+testDispersion(simulationOutput) # underdispersed
+testZeroInflation(simulationOutput) # not zero inflated  
+testUniformity(simulationOutput) # slightly heteroscedastic
 plot(simulationOutput$scaledResiduals) 
 plot(simulationOutput)
 
@@ -1365,8 +1368,8 @@ newBolrpt = rpt(binDur ~ FlexGroup + (1|Name),grname="Name",datatype="Binary",li
 newBolrpt # repeatability = 0
 
 newBolrpt2 = rpt(round(DurationOnGround) ~ FlexGroup + (1|Name),grname = "Name",datatype = "Poisson",
-                 nboot = 200, npermut = 100, data = newBold)
-newBolrpt2
+                 nboot = 200, npermut = 100, data = newBold2)
+newBolrpt2 # repeatability still close to 0
 
 nb1 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name), family = poisson,data = newBold)
 nb2 = glm(round(DurationOnGround) ~ FlexGroup, family = poisson, data = newBold)
@@ -1374,9 +1377,9 @@ nb3 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre), family = 
 anova(nb1,nb3) # random effect of bird name does not significantly add to variance explained
           
 library(ggplot2)
-ggplot(newBold) +
-  geom_line(aes(x = as.factor(Test), y = DurationOnGround, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
-  geom_point(aes(x = as.factor(Test), y = DurationOnGround, color = BirdID, size = 0.7,alpha = 0.7)) + 
+ggplot(newBold2) +
+  geom_line(aes(x = as.factor(Test), y = DurationOnGround, group = Name, color = Name), size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Test), y = DurationOnGround, color = Name, size = 0.7,alpha = 0.7)) + 
   labs(x = "Threatening object", y = "Duration (sec) within 100cm") + 
   theme_bw() +
   theme(axis.text = element_text(size = 14),
