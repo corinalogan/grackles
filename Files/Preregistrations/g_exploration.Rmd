@@ -1321,6 +1321,75 @@ sum(results > 0.06)/1000 # probability the repeatability estimate from our actua
 
 ```
 
+Perhaps boldness is not repeatable because grackles are more likely to change their behavioral response to a potentially threatening object after the first exposure to that object. Consequently, this *unregistered post-hoc analysis* tests whether grackle boldness is repeatable across potentially threatening objects if we only consider their performance on the first trial.
+```{r repeatableBol posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Add explore object data to boldness data because grackles perceived it as a potential threat
+exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),-2]
+colnames(exp.o2)[2] = "Test"
+exp.o2$Test = "Novel Object"
+exp.o2 = exp.o2[,c(1:3,14:16)]
+
+bol2 = bol[-which(bol$Condition == "Pigeon"),-c(2,3)]
+colnames(bol2)[2] = "Test"
+bol2 = bol2[,c(1:3,15:17)]
+
+newBold = rbind(bol2, exp.o2)
+newBold = newBold[which(newBold$Time == 1),]
+newBold$Test = as.factor(as.character(newBold$Test))
+newBold$olre = 1:nrow(newBold)
+
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(DurationOnGround+1) ~ FlexGroup + (1|BirdID) + (1|olre),
+                                                         family = "poisson", data=newBold), n=250)
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # zero inflated  
+testUniformity(simulationOutput) # heteroscedastic
+plot(simulationOutput$scaledResiduals) 
+plot(simulationOutput)
+
+# Data are still a poor fit for Poisson (even with olre) or Gaussian. Again we will binarize the response as the bird came to the ground (1) or did not (0) in the presence of the threatening object
+
+newBold$binDur = ifelse(newBold$DurationOnGround >0,1,0)
+
+simulationOutput <- simulateResiduals(fittedModel = glmer(binDur ~ FlexGroup + (1|BirdID), family = binomial(link = "logit"),
+                                                          data=newBold), n=250)
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # not zero inflated  
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput$scaledResiduals) 
+plot(simulationOutput)
+
+newBolrpt = rpt(binDur ~ FlexGroup + (1|Name),grname="Name",datatype="Binary",link = "logit",
+                nboot = 200, npermut = 100, data = newBold)
+newBolrpt # repeatability = 0
+
+newBolrpt2 = rpt(round(DurationOnGround) ~ FlexGroup + (1|Name),grname = "Name",datatype = "Poisson",
+                 nboot = 200, npermut = 100, data = newBold)
+newBolrpt2
+
+nb1 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name), family = poisson,data = newBold)
+nb2 = glm(round(DurationOnGround) ~ FlexGroup, family = poisson, data = newBold)
+nb3 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre), family = poisson,data = newBold)
+anova(nb1,nb3) # random effect of bird name does not significantly add to variance explained
+          
+library(ggplot2)
+ggplot(newBold) +
+  geom_line(aes(x = as.factor(Test), y = DurationOnGround, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Test), y = DurationOnGround, color = BirdID, size = 0.7,alpha = 0.7)) + 
+  labs(x = "Threatening object", y = "Duration (sec) within 100cm") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        strip.text.x = element_text(size = 20)) +
+  ggtitle("Boldness") +
+  theme(legend.position="none")
+
+```
+
+
+
 #### *H1: P1-P5: correlation of flexibility with exploration of new environments and objects, boldness, persistence, and motor diversity*
 
 **Analysis:** If behavior is not repeatable across assays at Time 1 and Time 2 (six weeks apart, both assays occur after the flexibility manipulation takes place) for exploration, boldness, persistence, or motor diversity (see analysis for P6), we will not include these variables in analyses involving flexibility. If behavior is repeatable within individuals, we will examine the relationship between flexibility and these variables as follows. Note that the two exploration measures (novel environment and novel object) will be combined into one variable if they correlate and are both repeatable within individuals.
