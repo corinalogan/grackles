@@ -4,8 +4,6 @@ author:
   - '[McCune KB](https://www.kelseymccune.com)^1^'
   - 'Lukas D^2^'
   - 'MacPherson M^1^'
-  - 'Bergeron L^1^'
-  - 'Folsom M^2^'
   - '[Logan CJ](http://CorinaLogan.com)^2^'
 date: '`r Sys.Date()`'
 output:
@@ -1359,8 +1357,13 @@ anova(m3,m4) #random effect does not improve the fit of the model, does not acco
 exp = rbind(exp2, exp.o2)
 rptBoth = rpt(log(LatencyFirstLand) ~ Test + FlexGroup + (1|BirdID), grname = "BirdID", data=exp, datatype="Gaussian", nboot=1000, npermut=100)
 summary(rptBoth) # R = 0.49, CI = 0.21-0.69, p = 0
+rptBoth2 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp, datatype="Gaussian", nboot=1000, npermut=100)
+summary(rptBoth2) #no difference in repeatability if we don't control for Test - in other words, the between-individual variance is the same regardless of which test
 
+xcontx = lmer(log(LatencyFirstLand) ~ Test + FlexGroup + (1|BirdID), data = exp)
+car::Anova(xcontx) #grackles take longer to land in the presence of the object relative to the environment
 
+# Supplementary figure 1
 ggplot(exp, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID, shape = Test)) +
   geom_point(size = 3) +
   facet_wrap( ~ BirdID) + 
@@ -1852,7 +1855,7 @@ m2 <- list(
                                                       family=poisson, data = flexpersN2))
    
 
-cap = "Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning (manipulation) group where behavioral flexibility was experimentally increased, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the manipulation group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
+cap = "Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning group where grackles were trained to be more behavioral flexibility, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the trained group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
 tab3 = modelsummary(m2,
                     output = "gt",
                     fmt = 2,
@@ -1870,7 +1873,7 @@ tab3 %>%
   tab_header(title = cap) %>%
   text_replace(
     pattern = "^FlexGroupManipulation$",
-    replacement = "Flexibility manipulated") %>%
+    replacement = "Flexibility trained") %>%
   opt_align_table_header(align = "left")
 ```
 
