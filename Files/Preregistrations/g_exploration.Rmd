@@ -428,7 +428,7 @@ HPDinterval(repeata, 0.95) # 0 - 0.06
 # these values are the exact same. All this means is FlexGroup has no effect/accounts for no variance
 ```
 
-![](g_exploration_fig2_boldness.jpeg){width=50%}
+![](g_exploration_fig2_boldness.jpeg){width=70%}
 Figure 2: The grackles did not respond consistently to the threatening objects across the two time points. Each line color represents an individual and the dots show the number of seconds individuals spent on the ground within 100cm of the threatening object during each of the two 15-minute trials (Time 1 and Time 2). The two time points were separated by an average of 33 days (range: 11-49 days) and if performance was repeatable we would expect the line connecting the two dots to be at or close to horizontal.
 
 #### Exploration
@@ -436,7 +436,7 @@ Similar to boldness, we assessed the repeatability of exploratory behavior acros
 
 We found that the latency to approach the novel environment across time points 1 and 2 was highly repeatable (*R* = 0.72, CI = 0.42-0.88, *p* < 0.01). Similarly, the duration spent near the novel environment was also highly repeatable (*R* = 0.85, CI = 0.67-0.98, *p* < 0.01). However, the latency to approach the novel object was not repeatable (*R* = 0.05, CI = 0-0.5, *p* = 1; Fig. 3). When we assessed performance across the novel environment and novel object tasks, we found that latency to approach was repeatable across the two different contexts, but this result was driven by the very high between-individual variance in the environment assay (*R* = 0.49, CI = 0.21-0.69, *p* = 0; Fig. S1).
 
-```{r POSTrepeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r POSTrepeatableExpEnv, warning=FALSE, include=FALSE, results='asis'}
 #Exploration of novel environment
 ee <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(ee)  #Check to make sure it looks right
@@ -569,9 +569,8 @@ HPDinterval(repeata, 0.95) #0.67-0.98
 
 ### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
 exp2$Name = as.factor(as.character(exp2$Name))
-exp2$olre = 1:nrow(exp2)
 library(rptR)
-r1 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|Name) + (1|olre), grname = "BirdID", data=exp2, datatype="Gaussian", nboot=1000, npermut=100)
+r1 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|Name), grname = "BirdID", data=exp2, datatype="Gaussian", nboot=1000, npermut=100)
 r1
 # R = 0.72
 # CI = 0.41-0.89
@@ -605,7 +604,7 @@ ggplot(exp2) +
 ## Need to facet by ExpObj data for including in manuscript - in below code chunk.
 ```
 
-```{r POSTrepeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r POSTrepeatableExpObj, warning=FALSE, include=FALSE, results='asis'}
 #Exploration of novel object
 eo <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(eo)  #Check to make sure it looks right
@@ -737,6 +736,7 @@ anova(m3,m4) #random effect does not improve the fit of the model, does not acco
 
 
 #### CONTEXTUAL REPEATABILITY - combine explore environment and explore object back together. Only novel condition
+exp2$DurationOnGround = exp2$TotalDurationInTent + exp2$TotalDurationFar.20cm + exp2$TotalDurationNear.20cm
 exp = rbind(exp2, exp.o2)
 rptBoth = rpt(log(LatencyFirstLand) ~ Test + FlexGroup + (1|BirdID), grname = "BirdID", data=exp, datatype="Gaussian", nboot=1000, npermut=100)
 summary(rptBoth) # R = 0.49, CI = 0.21-0.69, p = 0
@@ -767,6 +767,9 @@ ggplot(exp) +
   ggtitle("Exploration") +
   theme(legend.position="none")
 ```
+
+![](g_exploration_fig3_exploration.jpeg){width=70%}
+Figure 3: The response to the two exploration tests. Performance in the novel environment test was significantly repeatable across time. Grackles did not respond consistently to the novel object across the two time points. Each line color represents an individual and the dots show the amount of time before individuals approached to within 100cm of the novel item during each of the two 45-minute trials. The two time points were separated by 34 days on average (range: 11-49) and if performance is repeatable within a test we would expect the line connecting the two dots to be at or close to horizontal. Cross-contextual repeatability is indicated by similarly colored dots occurring at similar points on the y-axis across test types.
 
 #### Persistence
 We tested whether individuals (n = 18) were repeatable in the number of touches per trial time that they made across multiple novel test apparatuses (Fig. 1b-f): boldness objects, exploration environment and object, as well as the two different MABs. We found that persistence in interacting with these diverse objects was repeatable (*R* = 0.28, CI = 0.07-0.46, *p* < 0.01; Fig. 4)
@@ -856,7 +859,7 @@ We will first verify that our measures of exploration, boldness and persistence 
 
 **P3 alternative 2:** There is no correlation between persistence and the number of incorrect choices in reversal learning before making the first correct choice. This indicates that flexibility is an independent trait. 
 
-![Figure 1.](g_exploreFig1.png)
+![Figure 1.](g_exploration_oldFig1.png)
 
 ***Figure 1.*** An overview of the study design and a selection of the variables we will measure for each assay. Exploration will be measured by comparing individual behavior within a familiar environment to behavior towards a novel environment, as well as response to a familiar object vs. a novel object within the familiar environment that contains their regular food. Boldness will be measured as the willingness to eat next to a threatening object (familiar, novel oject, or a taxidermic predator) in their familiar environment. Persistence will be measured as the number of touches to the novel environment and novel object in the Exploration assay, the objects in the Boldness assay, and the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). Motor diversity will be measured using the multi-access box in a separate [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md). After the flexibility manipulation occurs, assays will be conducted at least twice (e.g., Time 1, Time 2) and differences (if any) between the control and manipulated groups in the behavioral flexibility [preregistration](https://github.com/corinalogan/grackles/blob/master/EasyToReadFiles/g_flexmanip.md) will be compared across time and, with persistence, across tests (e.g., Test 1, Test 2) because persistence is measured in four different assays.
 
