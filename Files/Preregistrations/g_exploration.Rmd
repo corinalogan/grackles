@@ -861,7 +861,70 @@ ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)
 Figure 4: Persistence (the number of touches per time) was repeatable across multiple diverse test apparatuses. The x-axis shows each individual bird, which are also identified by unique colors, while the y-axis is the number of touches per trial time for each type of apparatus. Test apparatuses are distinguished by shape and we abbreviated multiaccess box as “MAB” in the figure legend.
 
 #### Motor Diversity
-We quantified the number of different motor behaviors used while interacting with 2 distinct MABs in 14 grackles. Grackles were not consistent in the number of motor behaviors used across the two MABs and so repeatability was very low and not statistically significant (*R* = 0.06, CI = 0.00-0.45, *p* = 0.50).
+We conducted an *unregistered analysis* to quantify repeatability in the number of different motor behaviors used while interacting with two distinct MABs in 17 grackles. Grackles were not consistent in the number of motor behaviors used across the two MABs and so repeatability was very low and not statistically significant (*R* = 0.06, CI = 0.00-0.45, *p* = 0.50).
+
+```{r POSTrepeatableMotDiv, warning=FALSE, include=FALSE, results='asis'}
+## *UNREGISTERED ANALYSIS*
+head(mot) #2 measures for each individual - one for plastic, one for log. 
+mot2 = merge(mot, flexID, by = c("BirdID","Name"),all = T)
+mot2 = mot2[-which(is.na(mot2$TotalMot)),]
+
+mot2$motRate = mot2$TotalMot/mot2$TotTime
+
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID), family = poisson, data=mot3), n=250)
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # not zero inflated  
+testUniformity(simulationOutput) #not heteroscedastic
+plot(simulationOutput$scaledResiduals) 
+plot(simulationOutput)
+
+# Best fit model is poisson with offset for trial time.
+# We do not know how to write the prior to incorporate an offset term into MCMCglmm (this code provided by Hadfield produces an error: https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines)
+motR1 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=mot2) #offset covariate should work in rpt the same way
+summary(motR1) # random effect variance = 0.57
+
+motR2 = glm(TotalMot ~ FlexGroup + offset(log(TotTime)), family = "poisson", data=mot2)
+anova(motR1,motR2) # BirdID random effect significantly adds to variance explained
+
+library(rptR)
+motRpt = rpt(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID), 
+           grname = ("BirdID"), datatype = "Poisson",
+           data = mot3, ratio = T,
+           nboot = 200, npermut = 100)
+motRpt
+# R = 0, p = 0.5, CI = 0 - 0.45
+# This is contrary to what we'd expect based on the likelihood ratio test that shows the BirdID random effect accounts for a significant amount of variance in the response. However, this is because the rptR package automatically adds an observation-level random effect (olre) in Poisson models to control for overdispersion. The olre soaks up all of the variance, so the BirdID random effect explains 0 variance. Our data checking with DHARMa indicated that our model was not overdispersed and therefore does not need the olre.
+mot2$olre = 1:nrow(mot2)
+motR1.2 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime))+(1|olre), family ="poisson", data=mot2) 
+summary(motR1.2) # BirdID random effect variance now accounts for 0 variance
+
+# From Nakagawa & Schielzeth 2010 we can hand calculate repeatability using the Poisson log-link distribution-specific residual variance = ln(1/exp(β0) + 1). This way we can check if there is repeatability if olre are not included.
+motR1@beta[1] # ß0 
+resVar = log(1/exp(motR1@beta[1])+1) # residual variance
+ranVar = as.numeric(VarCorr(motR1)) # BirdID random effect variance
+R = ranVar/(ranVar + resVar) #0.06
+
+# permutations for p-value
+results = NA
+for(i in 1:1000){
+  tmp = data.frame("BirdID" = mot2$BirdID, 
+                   "FlexGroup" = mot2$FlexGroup,
+                   "TotTime"=mot2$TotTime, 
+                   "TotalMot" = sample(mot2$TotalMot,replace=F))
+  m = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=tmp)
+  resVar = log(1/exp(m@beta[1])+1) # residual variance
+  ranVar = as.numeric(VarCorr(m)) # BirdID random effect variance
+  results[i] = ranVar/(ranVar + resVar)
+}
+hist(results)
+abline(v=0.06,col="red")
+sum(results > 0.06)/1000 # probability the repeatability estimate from our actual data is greater than the repeatability estimates generated from the permutations which randomized the data. 
+
+# Repeatability is still very low, close to 0. Permutations indicate the p-value is 0.54. This is very similar to the results when using the rpt function (that included the olre). Therefore, individuals do not consistently use a similar number of motor behaviors across the two MABs relative to other individuals. We report the rpt results for consistency with the other repeatability tests.
+
+```
 
 ### Hypothesis 1: Relationships among measures
 The repeatability analyses informed which of our methods measured consistent individual differences in behavior. Our next goal was to investigate the relationships among only the repeatable measures (exploration of a novel environment and persistence) and behavioral flexibility.
@@ -1714,67 +1777,7 @@ posterior.mode(repeata)
 HPDinterval(repeata, 0.95)
 ```
 
-```{r repeatableMotDiv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-head(mot) #2 measures for each individual - one for plastic, one for log. 
-mot2 = merge(mot, flexID, by = c("BirdID","Name"),all = T)
-mot2 = mot2[-which(is.na(mot2$TotalMot)),]
 
-mot2$motRate = mot2$TotalMot/mot2$TotTime
-
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID), family = poisson, data=mot3), n=250)
-testDispersion(simulationOutput) # normally dispersed
-testZeroInflation(simulationOutput) # not zero inflated  
-testUniformity(simulationOutput) #not heteroscedastic
-plot(simulationOutput$scaledResiduals) 
-plot(simulationOutput)
-
-# Best fit model is poisson with offset for trial time.
-# We do not know how to write the prior to incorporate an offset term into MCMCglmm (this code provided by Hadfield produces an error: https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines)
-motR1 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=mot2) #offset covariate should work in rpt the same way
-summary(motR1) # random effect variance = 0.57
-
-motR2 = glm(TotalMot ~ FlexGroup + offset(log(TotTime)), family = "poisson", data=mot2)
-anova(motR1,motR2) # BirdID random effect significantly adds to variance explained
-
-library(rptR)
-motRpt = rpt(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID), 
-           grname = ("BirdID"), datatype = "Poisson",
-           data = mot3, ratio = T,
-           nboot = 200, npermut = 100)
-motRpt
-# R = 0, p = 0.5, CI = 0 - 0.45
-# This is contrary to what we'd expect based on the likelihood ratio test that shows the BirdID random effect accounts for a significant amount of variance in the response. However, this is because the rptR package automatically adds an observation-level random effect (olre) in Poisson models to control for overdispersion. The olre soaks up all of the variance, so the BirdID random effect explains 0 variance. Our data checking with DHARMa indicated that our model was not overdispersed and therefore does not need the olre.
-mot2$olre = 1:nrow(mot2)
-motR1.2 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime))+(1|olre), family ="poisson", data=mot2) 
-summary(motR1.2) # BirdID random effect variance now accounts for 0 variance
-
-# From Nakagawa & Schielzeth 2010 we can hand calculate repeatability using the Poisson log-link distribution-specific residual variance = ln(1/exp(β0) + 1). This way we can check if there is repeatability if olre are not included.
-motR1@beta[1] # ß0 
-resVar = log(1/exp(motR1@beta[1])+1) # residual variance
-ranVar = as.numeric(VarCorr(motR1)) # BirdID random effect variance
-R = ranVar/(ranVar + resVar) #0.06
-
-# permutations for p-value
-results = NA
-for(i in 1:1000){
-  tmp = data.frame("BirdID" = mot2$BirdID, 
-                   "FlexGroup" = mot2$FlexGroup,
-                   "TotTime"=mot2$TotTime, 
-                   "TotalMot" = sample(mot2$TotalMot,replace=F))
-  m = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=tmp)
-  resVar = log(1/exp(m@beta[1])+1) # residual variance
-  ranVar = as.numeric(VarCorr(m)) # BirdID random effect variance
-  results[i] = ranVar/(ranVar + resVar)
-}
-hist(results)
-abline(v=0.06,col="red")
-sum(results > 0.06)/1000 # probability the repeatability estimate from our actual data is greater than the repeatability estimates generated from the permutations which randomized the data. 
-
-# Repeatability is still very low, close to 0. Permutations indicate the p-value is 0.54. This is very similar to the results when using the rpt function (that included the olre). Therefore, individuals do not consistently use a similar number of motor behaviors across the two MABs relative to other individuals. We report the rpt results for consistency with the other repeatability tests.
-
-```
 
 Perhaps boldness is not repeatable because grackles are more likely to change their behavioral response to a potentially threatening object after the first exposure to that object. Consequently, this *unregistered post-hoc analysis* tests whether grackle boldness is repeatable across potentially threatening objects if we only consider their performance on the first trial.
 ```{r repeatableBol posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
