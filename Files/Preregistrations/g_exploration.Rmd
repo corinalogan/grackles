@@ -431,7 +431,7 @@ HPDinterval(repeata, 0.95) # 0 - 0.06
 ![](g_exploration_fig2_boldness.jpeg){width=70%}
 Figure 2: The grackles did not respond consistently to the threatening objects across the two time points. Each line color represents an individual and the dots show the number of seconds individuals spent on the ground within 100cm of the threatening object during each of the two 15-minute trials (Time 1 and Time 2). The two time points were separated by an average of 33 days (range: 11-49 days) and if performance was repeatable we would expect the line connecting the two dots to be at or close to horizontal.
 
-#### Exploration
+### Exploration
 Similar to boldness, we assessed the repeatability of exploratory behavior across two time points and across two different contexts: a novel object and a novel environment. Because novel items might elicit a response based on the boldness personality trait rather than an exploratory response [@carter2013animal], we also compared the novel environment and novel object responses to control conditions with a familiar environment and a familiar object to determine whether grackles perceived the novelty as threatening (this is an *unregistered analysis*). We found no difference in the latency of individuals to approach the novel compared to the familiar environment (*ß* = 0.29, CI = -0.24-0.81, *p* = 0.27), or the duration they spent near the novel and familiar environments (*ß* = -0.61, CI = -1.47-0.20, *p* = 0.14). In contrast, grackles took significantly longer to approach the novel object relative to the familiar object (*ß* = 2.11, CI = 1.22-2.89, *p* < 0.01), indicating the novel object may have been perceived as threatening.
 
 We found that the latency to approach the novel environment across time points 1 and 2 was highly repeatable (*R* = 0.72, CI = 0.42-0.88, *p* < 0.01). Similarly, the duration spent near the novel environment was also highly repeatable (*R* = 0.85, CI = 0.67-0.98, *p* < 0.01). However, the latency to approach the novel object was not repeatable (*R* = 0.05, CI = 0-0.5, *p* = 1; Fig. 3). When we assessed performance across the novel environment and novel object tasks, we found that latency to approach was repeatable across the two different contexts, but this result was driven by the very high between-individual variance in the environment assay (*R* = 0.49, CI = 0.21-0.69, *p* = 0; Fig. S1).
@@ -771,8 +771,93 @@ ggplot(exp) +
 ![](g_exploration_fig3_exploration.jpeg){width=70%}
 Figure 3: The response to the two exploration tests. Performance in the novel environment test was significantly repeatable across time. Grackles did not respond consistently to the novel object across the two time points. Each line color represents an individual and the dots show the amount of time before individuals approached to within 100cm of the novel item during each of the two 45-minute trials. The two time points were separated by 34 days on average (range: 11-49) and if performance is repeatable within a test we would expect the line connecting the two dots to be at or close to horizontal. Cross-contextual repeatability is indicated by similarly colored dots occurring at similar points on the y-axis across test types.
 
-#### Persistence
-We tested whether individuals (n = 18) were repeatable in the number of touches per trial time that they made across multiple novel test apparatuses (Fig. 1b-f): boldness objects, exploration environment and object, as well as the two different MABs. We found that persistence in interacting with these diverse objects was repeatable (*R* = 0.28, CI = 0.07-0.46, *p* < 0.01; Fig. 4)
+### Persistence
+We tested whether individuals (n = 17) were repeatable in the number of touches per trial time that they made across multiple novel test apparatuses (Fig. 1b-f): boldness objects, exploration environment and object, as well as the two different MABs. We found that persistence in interacting with these diverse objects was repeatable (*R* = 0.28, CI = 0.07-0.46, *p* < 0.01; Fig. 4)
+
+```{r POSTrepeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+#Persistence
+per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
+
+per = per[-which(is.na(per$Condition)),] #remove individual that did not complete reversal
+per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
+per$BirdID = as.factor(per$BirdID)
+unique(per$Name) #18 individuals
+table(per$Condition,per$BirdID) #10 control, 8 manipulated individuals
+per$TouchRate = per$SumTouches/per$TotTime #account for trial time
+per$binTouch = ifelse(per$SumTouches>0,1,0)
+
+
+# DATA CHECKING
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), family = "gaussian", data=per), n=250)
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # zero inflated  
+testUniformity(simulationOutput) #not heteroscedastic
+plot(simulationOutput)
+
+
+#REPEATABILITY
+#GLMM
+library(MCMCglmm)
+#prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+prior1 = list(R=list(R1=list(V=1, nu=1),
+                     R2=list(V=1, nu=1),
+                     R3=list(V=1, nu=1)),
+              G=list(G1=list(V=1, nu=0.002)))
+perFm <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
+                 data=per, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
+# no difference between control and manipulated groups, no effect of trial time
+autocorr(perFm$Sol) #Did fixed effects converge?
+autocorr(perFm$VCV) #Did random effects converge?
+plot(perFm)
+
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
+repeata <- perFm$VCV[,"BirdID"]/(perFm$VCV[,"BirdID"]+perFm$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # R=0.27
+var(repeata) 
+posterior.mode(repeata) 
+HPDinterval(repeata, 0.95) # 0.05 - 0.53  
+
+## Unregistered analysis
+# checking repeatability with rptR
+rPer = rpt(log(SumTouches +1) ~ Test + Condition + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
+           data = per,
+           nboot = 1000, npermut = 500)
+rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
+# We get the same results
+
+
+### Plotting
+per2 = per
+per2$BirdID = as.factor(as.character(per2$BirdID))
+per2$TouchRate = per2$SumTouches/per2$TotTime
+per2 = per2[-which(per2$Test == "MABlogNFun" | per2$Test == "MABplasNFun"),] #no difference between number of functional or nonfunctional touches, so remove nonfunctional touches for the plot.
+per2$Test = factor(per2$Test, levels = c("Boldness","Environment","Object",
+                                         "MABlogFun","MABplasFun"),
+                   labels = c("Boldness objects", "Exploration environment", "Exploration object",
+                              "MAB wooden", "MAB plastic"))
+
+library(ggplot2)
+ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)) +
+  geom_point(size = 6, stroke = 2, alpha = 0.75, position = position_dodge(width = 0.35)) +
+  labs(x = "Bird", y = "Number of touches per time") + 
+  theme_bw() +
+  theme(legend.key.size = unit(2, 'lines')) +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        legend.title=element_text(size=20),
+        legend.text = element_text(size=14)) +
+  ggtitle("Persistence") +
+  scale_shape_manual(values = c(15, 16, 17, 3, 4)) +
+  scale_colour_discrete(guide = "none")
+
+
+```
+
 
 #### Motor Diversity
 We quantified the number of different motor behaviors used while interacting with 2 distinct MABs in 14 grackles. Grackles were not consistent in the number of motor behaviors used across the two MABs and so repeatability was very low and not statistically significant (*R* = 0.06, CI = 0.00-0.45, *p* = 0.50).
@@ -1372,7 +1457,7 @@ The data will be checked for overdispersion, underdispersion, zero-inflation, an
 
 Note: The power analysis is the same as for P3 (below) because there are the same number of explanatory variables (fixed effects).
 
-```{r PREREGISTRATIONrepeatableBold, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONrepeatableBold, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 # Boldness
 bol <- read.csv("/Users/corina/GTGR/data/data_boldness.csv",
     header = T, sep = ",", stringsAsFactors = F)
@@ -1438,91 +1523,71 @@ per <- read.csv("/Users/corina/GTGR/data/data_persist.csv", header = T,
     sep = ",", stringsAsFactors = F)
 ```
 
-```{r repeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#Persistence
-per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
-
-per = per[-which(is.na(per$Condition)),] #remove individual that did not complete reversal
-per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
-per$BirdID = as.factor(per$BirdID)
-unique(per$Name) #18 individuals
-table(per$Condition,per$BirdID) #10 control, 8 manipulated individuals
-per$TouchRate = per$SumTouches/per$TotTime #account for trial time
-per$binTouch = ifelse(per$SumTouches>0,1,0)
-
+```{r PREREGISTRATIONrepeatablePer, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
+# Persistence
+per <- read.csv("/Users/corina/GTGR/data/data_persist.csv", header = T,
+    sep = ",", stringsAsFactors = F)
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), family = "gaussian", data=per), n=250)
-plot(simulationOutput$scaledResiduals) 
-testDispersion(simulationOutput) # normally dispersed
-testZeroInflation(simulationOutput) # zero inflated  
-testUniformity(simulationOutput) #not heteroscedastic
+simulationOutput <- simulateResiduals(fittedModel = glmer(NoTouches ~
+    Test * Condition + (1 | ID), family = poisson, data = per),
+    n = 250)
+simulationOutput$scaledResiduals
+testDispersion(simulationOutput)
+testZeroInflation(simulationOutput)
+testUniformity(simulationOutput)
 plot(simulationOutput)
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #can't get this code to work yet
 
-
-#REPEATABILITY
-#GLMM
+# REPEATABILITY GLMM
 library(MCMCglmm)
-#prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-prior1 = list(R=list(R1=list(V=1, nu=1),
-                     R2=list(V=1, nu=1),
-                     R3=list(V=1, nu=1)),
-              G=list(G1=list(V=1, nu=0.002)))
-perFm <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
-                 data=per, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
-# no difference between control and manipulated groups, no effect of trial time
-autocorr(perFm$Sol) #Did fixed effects converge?
-autocorr(perFm$VCV) #Did random effects converge?
-plot(perFm)
+prior = list(R = list(R1 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1,
+    nu = 0)))
+pers <- MCMCglmm(NoTouches ~ Test * Condition, random = ~ID,
+    family = "poisson", data = per, verbose = F, prior = prior,
+    nitt = 13000, thin = 10, burnin = 3000)
+summary(pers)
+# autocorr(pers$Sol) #Did fixed effects converge?
+# autocorr(pers$VCV) #Did random effects converge?
 
-#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
-repeata <- perFm$VCV[,"BirdID"]/(perFm$VCV[,"BirdID"]+perFm$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) # R=0.27
-var(repeata) 
-posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) # 0.05 - 0.53  
+# In MCMCglmm, the latent scale adjusted repeatability and
+# its credible interval can simply be obtained by:
+# mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from
+# Maxime Dahirel
 
-## Unregistered analysis
-# checking repeatability with rptR
-rPer = rpt(log(SumTouches +1) ~ Test + Condition + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
-           data = per,
-           nboot = 1000, npermut = 500)
-rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
-# We get the same results
+repeata <- pers$VCV[, "ID"]/(pers$VCV[, "ID"] + pers$VCV[, "units"])  #latent scale adjusted repeatability and its credible interval
+mean(repeata)
+var(repeata)
+posterior.mode(repeata)
+HPDinterval(repeata, 0.95)
 
+# Repeatability on the data/observed scale (accounting for
+# fixed effects) code from Supplementary Material S2 from
+# Villemereuil et al. 2018 J Evol Biol
+vf <- sapply(1:nrow(pers[["Sol"]]), function(i) {
+    var(predict(pers, it = i))
+})  #estimates for each iteration of the MCMC
 
-### Plotting
-per2 = per
-per2$BirdID = as.factor(as.character(per2$BirdID))
-per2$TouchRate = per2$SumTouches/per2$TotTime
-per2 = per2[-which(per2$Test == "MABlogNFun" | per2$Test == "MABplasNFun"),] #no difference between number of functional or nonfunctional touches, so remove nonfunctional touches for the plot.
-per2$Test = factor(per2$Test, levels = c("Boldness","Environment","Object",
-                                         "MABlogFun","MABplasFun"),
-                   labels = c("Boldness objects", "Exploration environment", "Exploration object",
-                              "MAB wooden", "MAB plastic"))
+repeataF <- (vf + pers$VCV[, "ID"])/(vf + pers$VCV[, "ID"] +
+    pers$VCV[, "units"])  #latent scale adjusted + data scale
+posterior.mode(repeataF)
+HPDinterval(repeataF, 0.95)
 
-library(ggplot2)
-ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)) +
-  geom_point(size = 6, stroke = 2, alpha = 0.75, position = position_dodge(width = 0.35)) +
-  labs(x = "Bird", y = "Number of touches per time") + 
-  theme_bw() +
-  theme(legend.key.size = unit(2, 'lines')) +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_text(size = 14),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 26),
-        legend.title=element_text(size=20),
-        legend.text = element_text(size=14)) +
-  ggtitle("Persistence") +
-  scale_shape_manual(values = c(15, 16, 17, 3, 4)) +
-  scale_colour_discrete(guide = "none")
+# Now compare with the raw repeatability: null model
+persraw <- MCMCglmm(NoTouches ~ 1, random = ~ID, family = "poisson",
+    data = per, verbose = F, prior = prior, nitt = 13000, thin = 10,
+    burnin = 3000)
+summary(persraw)
 
-
+repeataraw <- persraw$VCV[, "ID"]/(persraw$VCV[, "ID"] + persraw$VCV[,
+    "units"])  #latent scale adjusted repeatability and its credible interval
+posterior.mode(repeata)
+HPDinterval(repeata, 0.95)
 ```
 
-```{r PREREGISTRATIONrepeatableExpEnv, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONrepeatableExpEnv, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 # Exploration of novel environment
 ee <- read.csv("/Users/corina/GTGR/data/data_explore.csv", header = T,
     sep = ",", stringsAsFactors = F)
@@ -1585,7 +1650,7 @@ posterior.mode(repeata)
 HPDinterval(repeata, 0.95)
 ```
 
-```{r PREREGISTRATIONrepeatableExpObj, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONrepeatableExpObj, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 eo <- read.csv("/Users/corina/GTGR/data/data_persist.csv", header = T,
     sep = ",", stringsAsFactors = F)
 
