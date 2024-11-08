@@ -254,6 +254,7 @@ We first conducted an *unregistered analysis* to evaluate whether grackles perce
 Next we assessed whether grackles reacted consistently towards each threatening object across two time periods (temporal repeatability). Because the repeatability analysis was not possible with a zero-inflated negative binomial model, we instead used a binomial model where our dependent variable represented whether the duration grackles spent within 100cm of the threatening object was greater than 0 seconds (1) or not (0). We found no evidence for repeatability of performance in either the cat (*Repeatability* = 0.18, CI = 0.00-0.96, *p* = 0.22) or hawk (*R* = 0.00, CI = 0.00-0.44, *p* = 0.48) assays (Fig. 2). Similarly, when we considered grackle performance across the two different threatening contexts (contextual repeatability) there was also no consistency in behavioral response (*R* = 0.04, CI = 0.00-0.28, *p* = 0.22).
 
 It is possible that habituation to the potentially threatening object occurs after the first exposure, such that individuals do not perform consistently across subsequent trials [@greggor2015neophobia; @takola2021novelty]. To check whether this explains the lack of contextual repeatability in this behavioral trait, we conducted an *unregistered analysis* evaluating repeatability of performance in only the first trial in response to the potentially threatening contexts: cat, hawk, and novel object (see below). We still found no evidence that response to the potentially threatening objects was repeatable across these contexts (*R* = 0.00, CI = 0.00-0.17, *p* = 1; Fig. S3).
+
 ```{r POSTrepeatableBold, message=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Boldness
 bol <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_boldness.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
@@ -430,6 +431,75 @@ HPDinterval(repeata, 0.95) # 0 - 0.06
 
 ![](g_exploration_fig2_boldness.jpeg){width=70%}
 Figure 2: The grackles did not respond consistently to the threatening objects across the two time points. Each line color represents an individual and the dots show the number of seconds individuals spent on the ground within 100cm of the threatening object during each of the two 15-minute trials (Time 1 and Time 2). The two time points were separated by an average of 33 days (range: 11-49 days) and if performance was repeatable we would expect the line connecting the two dots to be at or close to horizontal.
+
+```{r repeatableBol posthoc, warning=FALSE, include=FALSE, results='asis'}
+#Add explore object data to boldness data because grackles perceived it as a potential threat
+exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),-2]
+colnames(exp.o2)[2] = "Test"
+exp.o2$Test = "Novel Object"
+exp.o2 = exp.o2[,c(1:3,14:16)]
+
+bol2 = bol[-which(bol$Condition == "Pigeon"),-c(2,3)]
+colnames(bol2)[2] = "Test"
+bol2 = bol2[,c(1:3,15:17)]
+
+newBold = rbind(bol2, exp.o2)
+newBold2 = aggregate(DurationOnGround~Name + FlexGroup + Test, FUN = "mean", data = newBold) #average performance from time 1 & time 2
+
+
+newBold = newBold[which(newBold$Time == 1),] #performance only from time 1
+newBold$Test = as.factor(as.character(newBold$Test))
+newBold2$olre = 1:nrow(newBold2)
+
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre),
+                                                         family = "poisson", data=newBold2), n=250)
+testDispersion(simulationOutput) # underdispersed
+testZeroInflation(simulationOutput) # not zero inflated  
+testUniformity(simulationOutput) # slightly heteroscedastic
+plot(simulationOutput$scaledResiduals) 
+plot(simulationOutput)
+
+# Data are still a poor fit for Poisson (even with olre) or Gaussian. Again we will binarize the response as the bird came to the ground (1) or did not (0) in the presence of the threatening object
+
+newBold$binDur = ifelse(newBold$DurationOnGround >0,1,0)
+
+simulationOutput <- simulateResiduals(fittedModel = glmer(binDur ~ FlexGroup + (1|BirdID), family = binomial(link = "logit"),
+                                                          data=newBold), n=250)
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # not zero inflated  
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput$scaledResiduals) 
+plot(simulationOutput)
+
+newBolrpt = rpt(binDur ~ FlexGroup + (1|Name),grname="Name",datatype="Binary",link = "logit",
+                nboot = 200, npermut = 100, data = newBold)
+newBolrpt # repeatability = 0
+
+newBolrpt2 = rpt(round(DurationOnGround) ~ FlexGroup + (1|Name),grname = "Name",datatype = "Poisson",
+                 nboot = 200, npermut = 100, data = newBold2)
+newBolrpt2 # repeatability still close to 0
+
+nb1 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name), family = poisson,data = newBold)
+nb2 = glm(round(DurationOnGround) ~ FlexGroup, family = poisson, data = newBold)
+nb3 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre), family = poisson,data = newBold)
+anova(nb1,nb3) # random effect of bird name does not significantly add to variance explained
+          
+library(ggplot2)
+ggplot(newBold2) +
+  geom_line(aes(x = as.factor(Test), y = DurationOnGround, group = Name, color = Name), size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Test), y = DurationOnGround, color = Name, size = 0.7,alpha = 0.7)) + 
+  labs(x = "Threatening object", y = "Duration (sec) within 100cm") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        strip.text.x = element_text(size = 20)) +
+  ggtitle("Boldness") +
+  theme(legend.position="none")
+
+```
 
 ### Exploration
 Similar to boldness, we assessed the repeatability of exploratory behavior across two time points and across two different contexts: a novel object and a novel environment. Because novel items might elicit a response based on the boldness personality trait rather than an exploratory response [@carter2013animal], we also compared the novel environment and novel object responses to control conditions with a familiar environment and a familiar object to determine whether grackles perceived the novelty as threatening (this is an *unregistered analysis*). We found no difference in the latency of individuals to approach the novel compared to the familiar environment (*ß* = 0.29, CI = -0.24-0.81, *p* = 0.27), or the duration they spent near the novel and familiar environments (*ß* = -0.61, CI = -1.47-0.20, *p* = 0.14). In contrast, grackles took significantly longer to approach the novel object relative to the familiar object (*ß* = 2.11, CI = 1.22-2.89, *p* < 0.01), indicating the novel object may have been perceived as threatening.
@@ -860,7 +930,7 @@ ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)
 ![](g_exploration_Fig4_persistence.jpeg){width=80%}
 Figure 4: Persistence (the number of touches per time) was repeatable across multiple diverse test apparatuses. The x-axis shows each individual bird, which are also identified by unique colors, while the y-axis is the number of touches per trial time for each type of apparatus. Test apparatuses are distinguished by shape and we abbreviated multiaccess box as “MAB” in the figure legend.
 
-#### Motor Diversity
+### Motor Diversity
 We conducted an *unregistered analysis* to quantify repeatability in the number of different motor behaviors used while interacting with two distinct MABs in 17 grackles. Grackles were not consistent in the number of motor behaviors used across the two MABs and so repeatability was very low and not statistically significant (*R* = 0.06, CI = 0.00-0.45, *p* = 0.50).
 
 ```{r POSTrepeatableMotDiv, warning=FALSE, include=FALSE, results='asis'}
@@ -926,29 +996,333 @@ sum(results > 0.06)/1000 # probability the repeatability estimate from our actua
 
 ```
 
-### Hypothesis 1: Relationships among measures
+
+## Hypothesis 1: Relationships among measures
 The repeatability analyses informed which of our methods measured consistent individual differences in behavior. Our next goal was to investigate the relationships among only the repeatable measures (exploration of a novel environment and persistence) and behavioral flexibility.
 
+### Relationship between flexibility and exploration
+We first analyzed the relationship between our measures of behavioral flexibility [the Flexibility Comprehensive measure that quantifies the rate of learning to be attracted to a color option in the serial reversal learning task, $\phi$, and the rate of deviating from learned associations, $\lambda$; @lukas2024flexmanip; @blaisdell2021more] and two variables describing novel environment exploration: Duration near (within 20cm) the outside of the tent, and the latency to first come to the ground from the aviary perches to approach the tent. We found no relationship between either measure of novel environment exploration and $\phi$ or $\lambda$ (Table 2). 
 
-#### Relationship between flexibility and exploration
+We next investigated if performance varied as a function of whether individuals went through serial reversal learning to increase flexibility (trained group, n=8) or not (control group, n=11). Grackles that underwent the flexibility training were more exploratory in that they spent more time within 20cm of the outside of the novel environment relative to control individuals (Table 3; *ß* = 3.92, *p* = 0.04). However, there was no difference between trained and control individuals in latency to come to the ground within 100cm of the novel environment (*ß* = -0.43, *p* = 0.54).  
 
-We first analyzed the relationship between our measures of behavioral flexibility [the Flexibility Comprehensive measure that quantifies the rate of learning to be attracted to a color option in the serial reversal task, $\phi$, and the rate of deviating from learned associations, $\lambda$; @lukas2024flexmanip; @blaisdell2021more] and two variables describing novel environment exploration: Duration near (within 20cm) the outside of the tent, and the latency to first come to the ground from the aviary perches to approach the tent. We found no relationship between either measure of novel environment exploration and $\phi$ or $\lambda$ (Table 2). 
+### Relationship between flexibility and persistence
+In contrast, we found that grackles with a higher $\phi$ were more persistent in making nonfunctional touches to the novel MABs (n = 17, *ß* = 0.26, *p* < 0.01) but not functional touches (n=19, *ß* = 0.42, *p* = 0.11). Furthermore, individuals with lower $\lambda$ were more persistent with nonfunctional (*ß* = -0.11, *p* =0.02) but not functional (*ß* = 0.08, *p* =0.77) touches. We then looked at whether the number of incorrect choices in the reversal learning task (i.e., how much the grackle is perseverating on a previously rewarded color option before exploring the other option, which is considered a measure of persistence) was related to the average number of functional or nonfunctional touches per time to the novel apparatuses (see P3 alternative 2, above). We found no evidence of a relationship between these two potential measures of persistence because the intercept-only model was supported over the model containing the number of touches variable (Table S1). This is further evidence that the number of touches is not related to perseverating on an option in a way that inhibits learning. 
 
-We also investigated if performance varied as a function of whether individuals went through serial reversal learning to increase flexibility (trained group, n=8) or not (control group, n=11). Grackles that underwent the flexibility training were more exploratory in that they spent more time within 20cm of the outside of the novel environment relative to control individuals (Table 3; *ß* = 3.92, *p* = 0.04). However, there was no difference between trained and control individuals in latency to come to the ground within 100cm of the novel environment (*ß* = -0.43, *p* = 0.54).  
+Also in contrast to the exploration results, we found no evidence of a relationship between persistence and whether or not the grackle underwent the flexibility training. The number of functional (*ß* = 0.81, *p* = 0.09) and nonfunctional touches (*ß* = 0.24, *p* = 0.58) to the novel apparatuses did not differ between control and trained grackles (Table 3). 
 
-#### Relationship between flexibility and persistence
-In contrast, we found that grackles with a higher $\phi$ were more persistent in making nonfunctional touches to the novel multiaccess boxes (n = 17, *ß* = 0.26, *p* < 0.01) but not functional touches to all of the apparatuses (n=19, *ß* = 0.42, *p* = 0.11). Furthermore, individuals with lower $\lambda$ were more persistent with nonfunctional (n = 17, *ß* = -0.11, *p* =0.02) but not functional (n=19, *ß* = 0.08, *p* =0.77) touches. We then looked at whether the number of incorrect choices in the reversal learning task (i.e., how much the grackle is perseverating on a previously rewarded color option before exploring the other option, which is considered a measure of persistence) was related to the average number of functional or nonfunctional touches per time to the novel apparatuses (P3 alternative 2). We found no evidence for a relationship between these two potential measures of persistence because the intercept only model was supported over the model containing the number of touches variable (Table S1). This is further evidence that the number of touches is not related to perseverating on an option in a way that inhibits learning. 
+```{r POSTcorFlexBehav, warning=FALSE, include=FALSE, results='asis'}
+# RELATIONSHIP BETWEEN FLEXIBILITY AND EXPLORATION OR PERSISTENCE
+# DATA CHECKING for 1st GLMM
+library(DHARMa)
+library(lme4)
+# boldness and novel object exploration and motor diversity were not repeatable. Few grackles entered the tent in the explore environment assay so we did not include a measure for latency to enter the tent or number of sections explored. We removed those independent variables.
+# FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
+# We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), TouchesPerTime (Persistence), & NoMotorActions
+# We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
 
-In contrast, we found no evidence for a relationship between persistence and whether or not the grackle underwent the flexibility training. The number of functional (*ß* = 0.81, *p* = 0.09) and nonfunctional touches (*ß* = 0.24, *p* = 0.58) to the novel objects did not differ between control and trained grackles (Table 3). 
+
+#####--------Prepare the exploration, persistence and motor diversity data---------##### 
+
+flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
+colnames(flexcompr)[2]<- "Name"
+
+## Exploration
+flexexplore = merge(exp2, flexcompr, by = "Name", all = T) # exp2 is the exploration of the novel environment data from Chunk 5, above.
+#flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
+flexexplore = merge(flexID[,c(1,3)],flexexplore, by = c("Name","BirdID"),all = T)
+flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
+# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexexplore$c.phi = scale(flexexplore$lastphi, center = T, scale = T)
+flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
+
+#Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
+#FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
+#FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
+
+## Persistence
+per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
+per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
+unique(per$BirdID) #19 individuals
+per$TouchRate = per$SumTouches/per$TotTime #account for trial time
+flexpers = merge(per,flexcompr, by = "Name", all = T)
+
+perAvg = aggregate(SumTouches ~ Name + BirdID, data = per, FUN = "mean")
+timeAvg = aggregate(TotTime ~ Name + BirdID, data = per, FUN = "mean")
+perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpers = merge(perAvg,flexcompr, by = "Name", all = T)
+flexpers = flexpers[-which(is.na(flexpers$SumTouches)),]
+flexpers$c.phi = scale(flexpers$lastphi, center = T, scale = T)
+flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
+
+### separate functional (all novel apparatuses) and nonfunctional (only MAB) touches
+#### Functional first
+perFun = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
+perAvg = aggregate(SumTouches ~ Name + BirdID, data = perFun, FUN = "mean")
+timeAvg = aggregate(TotTime ~ Name + BirdID, data = perFun, FUN = "mean")
+perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpersF = merge(perAvg,flexcompr, by = "Name", all = T)
+#flexpersF = flexpers[-which(is.na(flexpers$SumTouches)),]
+# # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexpersF$c.phi = scale(flexpersF$lastphi, center = T, scale = T)
+flexpersF$c.lambda = scale(flexpersF$lastlambda, center = T, scale = T)
+
+# #### Nonfunctional
+perNFun = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
+perNAvg = aggregate(SumTouches ~ Name + BirdID, data = perNFun, FUN = "mean")
+timeNAvg = aggregate(TotTime ~ Name + BirdID, data = perNFun, FUN = "mean")
+perNAvg = merge(perNAvg, timeNAvg, by = c("Name","BirdID"),FUN = "mean")
+flexpersN = merge(perNAvg,flexcompr, by = "Name", all = T)
+# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
+flexpersN$c.phi = scale(flexpersN$lastphi, center = T, scale = T)
+flexpersN$c.lambda = scale(flexpersN$lastlambda, center = T, scale = T)
 
 
-### Hypothesis 2: Comparing performance in captivity and in the wild
+#####--------Exploration of a novel environment as a function of flexibility---------##### 
+
+## FlexExplore Model 1: TotalDurationNear.20cm 
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# p = 0.24, not over- or under-dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+# p = 0.1, not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p = 0.3, not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+# all n.s.
+
+
+# ANALYSIS 1: EXPLORATION Total duration near tent
+#GLMM - dependent variable = Total duration near tent - a lot of residual variation that is leading to convergence issues. Because in poisson the variance is constrained to 1, MCMCglmm looks for an observation-level residual term (random effect) to account for residual variance. We could also model this overdispersion with a negative binomial using glmer.nb, but there’s no comparable method in MCMCglmm. See: https://stat.ethz.ch/pipermail/r-sig-mixed-models/2019q2/027899.html
+
+library(MCMCglmm)
+prior1 = list(R=list(R1=list(V=1, nu=0),
+                     R2=list(V=1, nu=1, alpha.v=0.1)),
+              G=list(G1=list(V=1, nu=0)))
+expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ c.phi + c.lambda, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
+plot(expl1)
+# lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
+autocorr(expl1$Sol) #Did fixed effects converge? Yes
+autocorr(expl1$VCV) #Did random effects converge? autocorrelation present so we 1) center/scaled IVs, 2) increase nitt/burnin/thin 
+summary(expl1)
+# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.53, p = 0.19) or lambda (ß = -0.33, p = 0.73).
+
+
+## FlexExplore Model 2: LatencyFirstLand
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore), n=1000) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+# p = 0.79, not over- or under-dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+# no zeros so not zero-inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+# p = 0.77, so not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+# ANALYSIS 2: EXPLORATION LatencyFirstLand
+#GLMM - dependent variable = LatencyFirstLand
+library(MCMCglmm)
+expl2 <- MCMCglmm(log(LatencyFirstLand) ~ c.phi + c.lambda, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+autocorr(expl2$Sol) #Did fixed effects converge? Yes
+autocorr(expl2$VCV) #Did random effects converge? Units, Yes
+plot(expl2) # convergence looks good
+summary(expl2) # Effective sample sizes and post.mean look good.
+# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.16) or lambda (ß = 0.03, p = 0.88)
+
+
+#####--------Persistence with novel apparatuses as a function of flexibility---------##### 
+
+
+## FlexPersist Model 3_functional: Functional Touches Per Time 
+#whole data set
+flexperTotF$touchRate = flexperTotF$SumTouches/flexperTotF$TotTime
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), 
+                                                          offset=log(TotTime), family=poisson, 
+                                                          data=flexpersF), n=850) 
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not overdispersed with olre
+testZeroInflation(simulationOutput) # not zero-inflated with olre
+testUniformity(simulationOutput) # not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+# use poisson with offset (see below)
+
+
+## FlexPersist Model 3_non-functional: Non - Functional Touches Per Time 
+flexpersN = flexpersN[-which(is.na(flexpersN$SumTouches)),]
+simulationOutput <- simulateResiduals(fittedModel = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), data=flexpersN), n=850) 
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over- or under-dispersed 
+testZeroInflation(simulationOutput) # not zero-inflated 
+testUniformity(simulationOutput) # not heteroscedastic 
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+
+### Poisson with an offset term is the appropriate way to model touches per time, but functional touches was zero-inflated and heteroscedastic according to the DHARMa test. We added an observation level random effect and the model then passed all checks. We could not find a method for using an offset term in MCMCglmm, so we will proceed with the frequentist model.
+
+#### Functional touches
+freqPersF = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset= log(TotTime), family=poisson, data=flexpersF)
+summary(freqPersF)
+# Neither phi (ß = 0.42, p = 0.11), nor lambda (ß = 0.08, p = 0.77) are related to functional touches per time
+
+#### Nonfunctional touches was not zero inflated
+freqPersN = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersN)
+summary(freqPersN)
+# Grackles with larger phi made more nonfunctional touches (ß = 0.26, p < 0.01) and those with smaller lambda made more nonfunctional touches (ß = -0.11, p < 0.02)
+
+```
+
+```{r POSTconVtrain, warning=FALSE, include=FALSE, results='asis'}
+# Compare exploration and flexibility performance as a function of flexibility trained or control group
+#### Exploration ####
+#### Duration near the outside of the tent
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # p = 0.24, not over- or under-dispersed
+testZeroInflation(simulationOutput) # p = 0.1, not zero inflated
+testUniformity(simulationOutput) # p = 0.6, not heteroscedastic
+plot(simulationOutput) # all n.s.
+
+library(MCMCglmm)
+prior1 = list(R=list(R1=list(V=1, nu=0),
+                     R2=list(V=1, nu=1, alpha.v=0.1)),
+              G=list(G1=list(V=1, nu=0)))
+
+explcvm <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=800, burnin=4000)
+plot(explcvm)
+autocorr(explcvm$Sol) #Did fixed effects converge? Yes
+autocorr(explcvm$VCV) #Did random effects converge? 
+summary(explcvm)
+
+# Flexibility manipulated grackles spend longer Duration near the outside of the tent (ß = 3.92, p = 0.04).
+
+
+#### Latency to first land on the ground
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore), n=1000) 
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # p = 0.93, not over- or under-dispersed
+testZeroInflation(simulationOutput) # no zeros so not zero-inflated
+testUniformity(simulationOutput) # p = 0.38, so not heteroscedastic
+plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+
+# ANALYSIS 2: EXPLORATION LatencyFirstLand
+#GLMM - dependent variable = LatencyFirstLand
+library(MCMCglmm)
+explcvm2 <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=1000000, thin=600, burnin=3000)
+autocorr(explcvm2$Sol) #Did fixed effects converge? Yes
+autocorr(explcvm2$VCV) #Did random effects converge? Units, Yes
+plot(explcvm2) # convergence looks good
+summary(explcvm2) # Effective sample sizes and post.mean look good.
+# no relationship between Latency to first Land on the ground and flexibility manipulation condition (ß = -0.41, p = 0.60)
+
+#### Persistence ####
+flexpersF2 = merge(flexpersF,flexID, by=c("Name","BirdID"), all = T)
+flexpersF2 = flexpersF2[-which(is.na(flexpersF2$SumTouches)),]
+flexpersN2 = merge(flexpersN,flexID, by=c("Name","BirdID"), all = T)
+flexpersN2 = flexpersN2[-which(is.na(flexpersN2$SumTouches)),]
+
+#### Functional touches was not zero inflated, overdispersed and heteroscedastic - so added observation level random effect 
+flexpersF2$olre = 1:nrow(flexpersF2)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersF2), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over-dispersed with olre
+testZeroInflation(simulationOutput) # not zero inflated with olre
+testUniformity(simulationOutput) # not heteroscedastic with olre
+plot(simulationOutput)
+
+freqPersFcvm = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family = poisson, data=flexpersF2)
+summary(freqPersFcvm)
+# No difference in functional touches to objects between manipulated and control grackles (ß = 0.81, p = 0.09)
+
+#### Nonfunctional touches was not zero inflated, but was overdispersed and heteroscedastic - so added observation level random effect
+flexpersN2$olre = 1:nrow(flexpersN2)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersN2), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals)
+testDispersion(simulationOutput) # not over-dispersed with olre
+testZeroInflation(simulationOutput) # not zero inflated
+testUniformity(simulationOutput) # not heteroscedastic with olre
+plot(simulationOutput)
+freqPersNcvm = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersN2)
+summary(freqPersNcvm)
+# No difference in nonfunctional touches to MABs between manipulated and control grackles (ß = 0.24, p = 0.58)
+```
+
+```{r POSTresults summary tables, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+#####-------Summary table--------#####
+
+library(modelsummary)
+library(kableExtra)
+library(gt)
+
+m <- list(
+   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
+   "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
+   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
+                                        family="poisson",data=flexpersF),
+   "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
+                                        family="poisson",data=flexpersN))
+
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that persistence (the number of nonfunctional touches to the novel apparatuses per time) was significantly related to phi and lambda."
+tab2 = modelsummary(m,
+                    output = "gt",
+                    fmt = 2,
+                    shape = term ~ model + statistic,
+                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
+                    statistic = c("std.error",
+                                  "p.value"),
+                    coef_omit = "SD",
+                    gof_omit = ".*",
+                    gof_map = NA)
+tab2 %>%
+  tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
+               locations = cells_body(rows = c(2,3), columns = 1)) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = 13,rows = c(2,3))) %>%
+  tab_header(title = cap) %>%
+  opt_align_table_header(align = "left")
+
+
+# Table 3 - Performance on exploration and persistence assays as a function of whether the grackle underwent a flexibility manipulation through serial reversal learning or were part of the control group.
+
+m2 <- list(
+  "Duration near" = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore),
+   "Latency to land" = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore),
+   "Number of functional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), 
+                                                   family = poisson, data=flexpersF2),
+   "Number of nonfunctional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime),
+                                                      family=poisson, data = flexpersN2))
+   
+
+cap = "Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning group where grackles were trained to be more behavioral flexibility, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the trained group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
+tab3 = modelsummary(m2,
+                    output = "gt",
+                    fmt = 2,
+                    shape = term ~ model + statistic,
+                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
+                    statistic = c("std.error",
+                                  "p.value"),
+                    coef_omit = "SD",
+                    gof_omit = ".*",
+                    gof_map = NA)
+tab3 %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = 4,rows = 2)) %>%
+  tab_header(title = cap) %>%
+  text_replace(
+    pattern = "^FlexGroupManipulation$",
+    replacement = "Flexibility trained") %>%
+  opt_align_table_header(align = "left")
+```
+
+## Hypothesis 2: Comparing performance in captivity and in the wild
 Participation of free-flying color-tagged grackles in our exploration and boldness assays in the wild was very low. Of the 19 grackles that experienced the personality assessments in the aviaries, we were only able to measure the corresponding performance in the wild for 2 in the exploration object assay and 2 in the boldness cat assay (3 individuals total). Therefore, we cannot statistically analyze the consistency of performance within individuals across aviary and wild contexts. Qualitatively, in all 4 assays in the wild, grackles approached the item more quickly in the wild compared to aviary assays (Fig. 4). 
 
 We also compared general performance on the exploration environment task (the only repeatable exploration or boldness task) of all grackles in the aviaries compared to all grackles that participated in the wild tests (i.e. many of the color-banded grackles that participated in the wild were never brought into the aviaries). We had no data from the same birds for the exploration environment test in both the aviary and wild contexts and our sample size for wild individuals was small (n=3 wild grackles, n=19 aviary grackles). From this small sample, we found no difference in the latency to approach the novel environment between the aviary or wild context (*ß* = -0.39, CI = -1.83-1.46, *p* = 0.63).
 
 
-## DISCUSSION
+# DISCUSSION {-}
 
 Rapid human-induced environmental change leads to novel challenges for wildlife, where individual and species ability to survive is most often possible through behavioral flexibility [@wright2010behaivoral]. Although several behavioral traits are implicated in successful adaptation to human modified environments [@chapple2012can], it is uncommon to directly test for multiple traits in the same individuals. Here, we used multiple novel and threatening stimuli to assess the validity of methods measuring various behavioral traits, and the relationships among traits, in great-tailed grackles, a species that has adapted to many human-induced changes to its environment during a rapid range expansion. We found that only some of our methods for measuring behavioral traits in captivity produced repeatable performance, indicating that the method elicits performance based on an inherent trait. Exploration and persistence were the two behavioral traits that were repeatable across time and context and thus are more likely to represent inherent traits that could be related to behavioral flexibility. Indeed, both exploration and persistence were correlated with behavioral flexibility. However, our results varied based on which of the two measures we used to quantify behavioral flexibility.
 
@@ -1780,74 +2154,7 @@ HPDinterval(repeata, 0.95)
 
 
 Perhaps boldness is not repeatable because grackles are more likely to change their behavioral response to a potentially threatening object after the first exposure to that object. Consequently, this *unregistered post-hoc analysis* tests whether grackle boldness is repeatable across potentially threatening objects if we only consider their performance on the first trial.
-```{r repeatableBol posthoc, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#Add explore object data to boldness data because grackles perceived it as a potential threat
-exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),-2]
-colnames(exp.o2)[2] = "Test"
-exp.o2$Test = "Novel Object"
-exp.o2 = exp.o2[,c(1:3,14:16)]
 
-bol2 = bol[-which(bol$Condition == "Pigeon"),-c(2,3)]
-colnames(bol2)[2] = "Test"
-bol2 = bol2[,c(1:3,15:17)]
-
-newBold = rbind(bol2, exp.o2)
-newBold2 = aggregate(DurationOnGround~Name + FlexGroup + Test, FUN = "mean", data = newBold) #average performance from time 1 & time 2
-
-
-newBold = newBold[which(newBold$Time == 1),] #performance only from time 1
-newBold$Test = as.factor(as.character(newBold$Test))
-newBold2$olre = 1:nrow(newBold2)
-
-library(DHARMa)
-library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre),
-                                                         family = "poisson", data=newBold2), n=250)
-testDispersion(simulationOutput) # underdispersed
-testZeroInflation(simulationOutput) # not zero inflated  
-testUniformity(simulationOutput) # slightly heteroscedastic
-plot(simulationOutput$scaledResiduals) 
-plot(simulationOutput)
-
-# Data are still a poor fit for Poisson (even with olre) or Gaussian. Again we will binarize the response as the bird came to the ground (1) or did not (0) in the presence of the threatening object
-
-newBold$binDur = ifelse(newBold$DurationOnGround >0,1,0)
-
-simulationOutput <- simulateResiduals(fittedModel = glmer(binDur ~ FlexGroup + (1|BirdID), family = binomial(link = "logit"),
-                                                          data=newBold), n=250)
-testDispersion(simulationOutput) # normally dispersed
-testZeroInflation(simulationOutput) # not zero inflated  
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput$scaledResiduals) 
-plot(simulationOutput)
-
-newBolrpt = rpt(binDur ~ FlexGroup + (1|Name),grname="Name",datatype="Binary",link = "logit",
-                nboot = 200, npermut = 100, data = newBold)
-newBolrpt # repeatability = 0
-
-newBolrpt2 = rpt(round(DurationOnGround) ~ FlexGroup + (1|Name),grname = "Name",datatype = "Poisson",
-                 nboot = 200, npermut = 100, data = newBold2)
-newBolrpt2 # repeatability still close to 0
-
-nb1 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name), family = poisson,data = newBold)
-nb2 = glm(round(DurationOnGround) ~ FlexGroup, family = poisson, data = newBold)
-nb3 = glmer(round(DurationOnGround) ~ FlexGroup + (1|Name) + (1|olre), family = poisson,data = newBold)
-anova(nb1,nb3) # random effect of bird name does not significantly add to variance explained
-          
-library(ggplot2)
-ggplot(newBold2) +
-  geom_line(aes(x = as.factor(Test), y = DurationOnGround, group = Name, color = Name), size = 1.8, alpha = 0.7) + 
-  geom_point(aes(x = as.factor(Test), y = DurationOnGround, color = Name, size = 0.7,alpha = 0.7)) + 
-  labs(x = "Threatening object", y = "Duration (sec) within 100cm") + 
-  theme_bw() +
-  theme(axis.text = element_text(size = 14),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 26),
-        strip.text.x = element_text(size = 20)) +
-  ggtitle("Boldness") +
-  theme(legend.position="none")
-
-```
 
 
 
@@ -1885,335 +2192,136 @@ Actual power                  	=	0,7027626
 
 This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
-```{r corFlexBehav, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONcorFlexBehav, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+explore <- read.csv("/Users/corina/GTGR/data/data_explore.csv",
+    header = T, sep = ",", stringsAsFactors = F)
 
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
 library(lme4)
-# boldness and novel object exploration were not repeatable and few grackles entered the tent in the explore environment assay so we did not include a measure for latency to enter the tent or number of sections explored. We removed those independent variables.
-# FlexGroup (whether the grackle was in the flexibility manipulated or control group) is accounted for by the flexibility comprehensive variable, so we are excluding that variable.
-# We also realized that as we manipulated reversal learning speed through serial reversal learning [@logan2022flexmanip], the TrialsToReverseLast variable should be the independent rather than dependent variable. This means we will conduct 4 models, one for each of: TotalDurationNear.20cm (TimeOutsideNovelEnv), LatencyFirstLand (LatencyExpEnv), TouchesPerTime (Persistence), & NoMotorActions
-# We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
+simulationOutput <- simulateResiduals(fittedModel = glmer(TrialsToReverseLast ~
+    Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection *
+        EnvCondition + TotalNumberSections * EnvCondition + LatencyTableExpObject +
+        MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions +
+        (1 | Batch), family = poisson, data = explore), n = 250)  #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
+# ANALYSIS Take the average of Time 1 and Time 2 for each
+# variable (exploration environment, exploration object,
+# boldness, motor diversity, persistence)
+TimeOutsideNovelEnvT1 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time ==
+    1, ]
+TimeOutsideNovelEnvT2 <- TimeOutsideNovelEnv[TimeOutsideNovelEnv$Time ==
+    2, ]
+TimeOutsideNovelEnv <- (TimeOutsideNovelEnvT1 + TimeOutsideNovelEnvT2)/2
 
-#####--------Prepare the exploration, persistence and motor diversity data---------##### 
+LatencyExpEnvT1 <- LatencyExpEnv[LatencyExpEnv$Time == 1, ]
+LatencyExpEnvT2 <- LatencyExpEnv[LatencyExpEnv$Time == 2, ]
+LatencyExpEnv <- (LatencyExpEnvT1 + LatencyExpEnvT2)/2
 
-flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
-colnames(flexcompr)[2]<- "Name"
+AverageTimePerSectionNovelEnvT1 <- AverageTimePerSectionNovelEnv[AverageTimePerSectionNovelEnv$Time ==
+    1, ]
+AverageTimePerSectionNovelEnvT2 <- AverageTimePerSectionNovelEnv[AverageTimePerSectionNovelEnv$Time ==
+    2, ]
+AverageTimePerSectionNovelEnv <- (AverageTimePerSectionNovelEnvT1 +
+    AverageTimePerSectionNovelEnvT2)/2
 
-## Exploration
-flexexplore = merge(exp2, flexcompr, by = "Name", all = T) # exp2 is the exploration of the novel environment data from Chunk 5, above.
-#flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
-flexexplore = merge(flexID[,c(1,3)],flexexplore, by = c("Name","BirdID"),all = T)
-flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
-# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
-flexexplore$c.phi = scale(flexexplore$lastphi, center = T, scale = T)
-flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
+TotalNumberSectionsNovelEnvT1 <- TotalNumberSectionsNovelEnv[TotalNumberSectionsNovelEnv$Time ==
+    1, ]
+TotalNumberSectionsNovelEnvT2 <- TotalNumberSectionsNovelEnv[TotalNumberSectionsNovelEnv$Time ==
+    2, ]
+TotalNumberSectionsNovelEnv <- (TotalNumberSectionsNovelEnvT1 +
+    TotalNumberSectionsNovelEnvT2)/2
 
-#Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
-#FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
-#FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
+LatencyTableExpObjectT1 <- LatencyTableExpObject[LatencyTableExpObject$Time ==
+    1, ]
+LatencyTableExpObjectT2 <- LatencyTableExpObject[LatencyTableExpObject$Time ==
+    2, ]
+LatencyTableExpObject <- (LatencyTableExpObjectT1 + LatencyTableExpObjectT2)/2
 
-## Persistence
-per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
-per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
-unique(per$BirdID) #19 individuals
-per$TouchRate = per$SumTouches/per$TotTime #account for trial time
-flexpers = merge(per,flexcompr, by = "Name", all = T)
+MultiaccessTouchesPerTimeT1 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time ==
+    1, ]
+MultiaccessTouchesPerTimeT2 <- MultiaccessTouchesPerTime[MultiaccessTouchesPerTime$Time ==
+    2, ]
+MultiaccessTouchesPerTime <- (MultiaccessTouchesPerTimeT1 + MultiaccessTouchesPerTimeT2)/2
 
-perAvg = aggregate(SumTouches ~ Name + BirdID, data = per, FUN = "mean")
-timeAvg = aggregate(TotTime ~ Name + BirdID, data = per, FUN = "mean")
-perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
-flexpers = merge(perAvg,flexcompr, by = "Name", all = T)
-flexpers = flexpers[-which(is.na(flexpers$SumTouches)),]
-flexpers$c.phi = scale(flexpers$lastphi, center = T, scale = T)
-flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
+LatencyBoldnessT1 <- LatencyBoldness[LatencyBoldness$Time ==
+    1, ]
+LatencyBoldnessT2 <- LatencyBoldness[LatencyBoldness$Time ==
+    2, ]
+LatencyBoldness <- (LatencyBoldnessT1 + LatencyBoldnessT2)/2
 
-### separate functional (all novel apparatuses) and nonfunctional (only MAB) touches
-#### Functional first
-perFun = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-perAvg = aggregate(SumTouches ~ Name + BirdID, data = perFun, FUN = "mean")
-timeAvg = aggregate(TotTime ~ Name + BirdID, data = perFun, FUN = "mean")
-perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
-flexpersF = merge(perAvg,flexcompr, by = "Name", all = T)
-#flexpersF = flexpers[-which(is.na(flexpers$SumTouches)),]
-# # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
-flexpersF$c.phi = scale(flexpersF$lastphi, center = T, scale = T)
-flexpersF$c.lambda = scale(flexpersF$lastlambda, center = T, scale = T)
+NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time == 1,
+    ]
+NoMotorActionsT1 <- NoMotorActions[NoMotorActions$Time == 1,
+    ]
+NoMotorActions <- (NoMotorActionsT1 + NoMotorActionsT2)/2
 
-# #### Nonfunctional
-perNFun = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-perNAvg = aggregate(SumTouches ~ Name + BirdID, data = perNFun, FUN = "mean")
-timeNAvg = aggregate(TotTime ~ Name + BirdID, data = perNFun, FUN = "mean")
-perNAvg = merge(perNAvg, timeNAvg, by = c("Name","BirdID"),FUN = "mean")
-flexpersN = merge(perNAvg,flexcompr, by = "Name", all = T)
-# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
-flexpersN$c.phi = scale(flexpersN$lastphi, center = T, scale = T)
-flexpersN$c.lambda = scale(flexpersN$lastlambda, center = T, scale = T)
-
-
-
-## Motor diversity
-mot = per[which(per$Test == "MABlogFun" | per$Test == "MABplasFun"),] # only interested in motor diversity when attempting to solve the multiaccess boxes. Functional and non-functional rows have the same motor diversity number
-motAvg = aggregate(TotalMot ~ Name + BirdID, data = mot, FUN = "mean")
-motAvg = merge(motAvg, timeAvg, by = c("Name","BirdID"), all = T)
-flexmot = merge(motAvg, flexcompr, by = "Name",all = T)
-flexmot = merge(flexmot, flexID, by = c("Name","BirdID"))
-flexmot = flexmot[-which(is.na(flexmot$TotalMot)),] # 2 birds did not receive MAB tests
-# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
-flexmot$c.phi = scale(flexmot$lastphi, center = T, scale = T)
-flexmot$c.lambda = scale(flexmot$lastlambda, center = T, scale = T)
-
-
-#####--------Exploration of a novel environment as a function of flexibility---------##### 
-
-## FlexExplore Model 1: TotalDurationNear.20cm 
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-# p = 0.24, not over- or under-dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
-# p = 0.1, not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-# p = 0.3, not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-# all n.s.
-
-
-# ANALYSIS 1: EXPLORATION Total duration near tent
-#GLMM - dependent variable = Total duration near tent - a lot of residual variation that is leading to convergence issues. Because in poisson the variance is constrained to 1, MCMCglmm looks for an observation-level residual term (random effect) to account for residual variance. We could also model this overdispersion with a negative binomial using glmer.nb, but there’s no comparable method in MCMCglmm. See: https://stat.ethz.ch/pipermail/r-sig-mixed-models/2019q2/027899.html
-
+# GLMM - dependent variable = number of trials to reverse
+# in the last reversal
 library(MCMCglmm)
-prior1 = list(R=list(R1=list(V=1, nu=0),
-                     R2=list(V=1, nu=1, alpha.v=0.1)),
-              G=list(G1=list(V=1, nu=0)))
-expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ c.phi + c.lambda, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
-plot(expl1)
-# lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
-autocorr(expl1$Sol) #Did fixed effects converge? Yes
-autocorr(expl1$VCV) #Did random effects converge? autocorrelation present so we 1) center/scaled IVs, 2) increase nitt/burnin/thin 
+prior = list(R = list(R1 = list(V = 1, nu = 0), R2 = list(V = 1,
+    nu = 0), R3 = list(V = 1, nu = 0), R4 = list(V = 1, nu = 0),
+    R5 = list(V = 1, nu = 0), R6 = list(V = 1, nu = 0), R7 = list(V = 1,
+        nu = 0), R8 = list(V = 1, nu = 0), R9 = list(V = 1, nu = 0),
+    R10 = list(V = 1, nu = 0), R11 = list(V = 1, nu = 0)), G = list(G1 = list(V = 1,
+    nu = 0), G2 = list(V = 1, nu = 0)))
+
+expl1 <- MCMCglmm(TrialsToReverseLast ~ Condition + TimeOutsideNovelEnv +
+    LatencyExpEnv + AverageTimePerSection * EnvCondition + TotalNumberSections *
+    EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime +
+    LatencyBoldness + NoMotorActions, random = ~Batch, family = "poisson",
+    data = explore, verbose = F, prior = prior, nitt = 13000,
+    thin = 10, burnin = 3000)
 summary(expl1)
-# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.53, p = 0.19) or lambda (ß = -0.33, p = 0.73).
+autocorr(expl1$Sol)  #Did fixed effects converge?
+autocorr(expl1$VCV)  #Did random effects converge?
 
 
-## FlexExplore Model 2: LatencyFirstLand
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore), n=1000) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
-# p = 0.79, not over- or under-dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
-# no zeros so not zero-inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
-# p = 0.77, so not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+# DATA CHECKING for 2nd GLMM
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = glmer(Ratio40 ~
+    Condition + TimeOutsideNovelEnv + LatencyExpEnv + AverageTimePerSection *
+        EnvCondition + TotalNumberSections * EnvCondition + LatencyTableExpObject +
+        MultiaccessTouchesPerTime + LatencyBoldness + NoMotorActions +
+        (1 | Batch), family = poisson, data = explore), n = 250)  #250 simulations, but if want higher precision change n>1000
+simulationOutput$scaledResiduals  #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
+testDispersion(simulationOutput)  #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+testZeroInflation(simulationOutput)  #compare expected vs observed zeros, not zero-inflated if p<0.05
+testUniformity(simulationOutput)  #check for heteroscedasticity ('a systematic dependency of the dispersion / variance on another variable in the model' Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+plot(simulationOutput)  #...there should be no pattern in the data points in the right panel
+plotResiduals(ReverseNumber, simulationOutput$scaledResiduals)  #plot the residuals against other predictors (in cases when there is more than 1 fixed effect) - can't get this code to work yet
 
-# ANALYSIS 2: EXPLORATION LatencyFirstLand
-#GLMM - dependent variable = LatencyFirstLand
-library(MCMCglmm)
-expl2 <- MCMCglmm(log(LatencyFirstLand) ~ c.phi + c.lambda, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
-autocorr(expl2$Sol) #Did fixed effects converge? Yes
-autocorr(expl2$VCV) #Did random effects converge? Units, Yes
-plot(expl2) # convergence looks good
-summary(expl2) # Effective sample sizes and post.mean look good.
-# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.16) or lambda (ß = 0.03, p = 0.88)
+# 2nd GLMM - dependent variable = ratio of correct divided
+# by incorrect trials for first 40 trials of final reversal
+# after making the first correct choice
 
+expl2 <- MCMCglmm(Ratio40 ~ Condition + TimeOutsideNovelEnv +
+    LatencyExpEnv + AverageTimePerSection * EnvCondition + TotalNumberSections *
+    EnvCondition + LatencyTableExpObject + MultiaccessTouchesPerTime +
+    LatencyBoldness + NoMotorActions, random = ~Batch, family = "poisson",
+    data = explore, verbose = F, prior = prior, nitt = 13000,
+    thin = 10, burnin = 3000)
 
-#####--------Persistence with novel apparatuses as a function of flexibility---------##### 
-
-
-## FlexPersist Model 3_functional: Functional Touches Per Time 
-#whole data set
-flexperTotF$touchRate = flexperTotF$SumTouches/flexperTotF$TotTime
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), 
-                                                          offset=log(TotTime), family=poisson, 
-                                                          data=flexpersF), n=850) 
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not overdispersed with olre
-testZeroInflation(simulationOutput) # not zero-inflated with olre
-testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-
-# use poisson with offset (see below)
-
-
-## FlexPersist Model 3_non-functional: Non - Functional Touches Per Time 
-flexpersN = flexpersN[-which(is.na(flexpersN$SumTouches)),]
-simulationOutput <- simulateResiduals(fittedModel = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), data=flexpersN), n=850) 
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersed 
-testZeroInflation(simulationOutput) # not zero-inflated 
-testUniformity(simulationOutput) # not heteroscedastic 
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-
-
-### Poisson with an offset term is the appropriate way to model touches per time, but functional touches was zero-inflated and heteroscedastic according to the DHARMa test. We added an observation level random effect and the model then passed all checks. We could not find a method for using an offset term in MCMCglmm, so we will proceed with the frequentist model.
-
-#### Functional touches
-freqPersF = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset= log(TotTime), family=poisson, data=flexpersF)
-summary(freqPersF)
-# Neither phi (ß = 0.42, p = 0.11), nor lambda (ß = 0.08, p = 0.77) are related to functional touches per time
-
-#### Nonfunctional touches was not zero inflated
-freqPersN = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersN)
-summary(freqPersN)
-# Grackles with larger phi made more nonfunctional touches (ß = 0.26, p < 0.01) and those with smaller lambda made more nonfunctional touches (ß = -0.11, p < 0.02)
-
-
+summary(expl2)
+autocorr(expl2$Sol)  #Did fixed effects converge?
+autocorr(expl2$VCV)  #Did random effects converge?
 ```
 
 #### *H1: P1-P5 alternative: Control vs flexibility manipulated individuals*
-The flexibility manipulation did work such that individuals in the serial reversal learning group increased their speed to pass each reversal. After we received in-principal recommendation for the preregistration associated with this research, we developed and tested the flexibility comprehensive variable. We found that this variable more accurately represented flexible behavior [@blaisdell2021more; @lukas2024flexmanippcj]. However, our preregistered predictions still included comparison of performance on the behavioral trait assays between control and manipulated individuals. Thus, we conduct these comparisons here. Note that results were similar to those using the flexiblity comprehensive variables.
-```{r conVmanip, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
-#### Exploration ####
-#### Duration near the outside of the tent
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) 
-testDispersion(simulationOutput) # p = 0.24, not over- or under-dispersed
-testZeroInflation(simulationOutput) # p = 0.1, not zero inflated
-testUniformity(simulationOutput) # p = 0.6, not heteroscedastic
-plot(simulationOutput) # all n.s.
-
-library(MCMCglmm)
-prior1 = list(R=list(R1=list(V=1, nu=0),
-                     R2=list(V=1, nu=1, alpha.v=0.1)),
-              G=list(G1=list(V=1, nu=0)))
-
-explcvm <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=800, burnin=4000)
-plot(explcvm)
-autocorr(explcvm$Sol) #Did fixed effects converge? Yes
-autocorr(explcvm$VCV) #Did random effects converge? 
-summary(explcvm)
-
-# Flexibility manipulated grackles spend longer Duration near the outside of the tent (ß = 3.92, p = 0.04).
-
-
-#### Latency to first land on the ground
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore), n=1000) 
-plot(simulationOutput$scaledResiduals) 
-testDispersion(simulationOutput) # p = 0.93, not over- or under-dispersed
-testZeroInflation(simulationOutput) # no zeros so not zero-inflated
-testUniformity(simulationOutput) # p = 0.38, so not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-
-# ANALYSIS 2: EXPLORATION LatencyFirstLand
-#GLMM - dependent variable = LatencyFirstLand
-library(MCMCglmm)
-explcvm2 <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=1000000, thin=600, burnin=3000)
-autocorr(explcvm2$Sol) #Did fixed effects converge? Yes
-autocorr(explcvm2$VCV) #Did random effects converge? Units, Yes
-plot(explcvm2) # convergence looks good
-summary(explcvm2) # Effective sample sizes and post.mean look good.
-# no relationship between Latency to first Land on the ground and flexibility manipulation condition (ß = -0.41, p = 0.60)
-
-#### Persistence ####
-flexpersF2 = merge(flexpersF,flexID, by=c("Name","BirdID"), all = T)
-flexpersF2 = flexpersF2[-which(is.na(flexpersF2$SumTouches)),]
-flexpersN2 = merge(flexpersN,flexID, by=c("Name","BirdID"), all = T)
-flexpersN2 = flexpersN2[-which(is.na(flexpersN2$SumTouches)),]
-
-#### Functional touches was not zero inflated, overdispersed and heteroscedastic - so added observation level random effect 
-flexpersF2$olre = 1:nrow(flexpersF2)
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersF2), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over-dispersed with olre
-testZeroInflation(simulationOutput) # not zero inflated with olre
-testUniformity(simulationOutput) # not heteroscedastic with olre
-plot(simulationOutput)
-
-freqPersFcvm = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family = poisson, data=flexpersF2)
-summary(freqPersFcvm)
-# No difference in functional touches to objects between manipulated and control grackles (ß = 0.81, p = 0.09)
-
-#### Nonfunctional touches was not zero inflated, but was overdispersed and heteroscedastic - so added observation level random effect
-flexpersN2$olre = 1:nrow(flexpersN2)
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersN2), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over-dispersed with olre
-testZeroInflation(simulationOutput) # not zero inflated
-testUniformity(simulationOutput) # not heteroscedastic with olre
-plot(simulationOutput)
-freqPersNcvm = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), family=poisson, data = flexpersN2)
-summary(freqPersNcvm)
-# No difference in nonfunctional touches to MABs between manipulated and control grackles (ß = 0.24, p = 0.58)
-
-
-```
-
-```{r results summary tables, eval=F,warning=F,results='asis',echo=T,include=T}
-#####-------Summary table--------#####
-
-library(modelsummary)
-library(kableExtra)
-library(gt)
-
-m <- list(
-   "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
-   "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
-   "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
-                                        family="poisson",data=flexpersF),
-   "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
-                                        family="poisson",data=flexpersN))
-
-cap = "Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that persistence (the number of nonfunctional touches to the novel apparatuses per time) was significantly related to phi and lambda."
-tab2 = modelsummary(m,
-                    output = "gt",
-                    fmt = 2,
-                    shape = term ~ model + statistic,
-                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
-                    statistic = c("std.error",
-                                  "p.value"),
-                    coef_omit = "SD",
-                    gof_omit = ".*",
-                    gof_map = NA)
-tab2 %>%
-  tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
-               locations = cells_body(rows = c(2,3), columns = 1)) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_body(columns = 13,rows = c(2,3))) %>%
-  tab_header(title = cap) %>%
-  opt_align_table_header(align = "left")
-
-
-# Table 3 - Performance on exploration and persistence assays as a function of whether the grackle underwent a flexibility manipulation through serial reversal learning or were part of the control group.
-
-m2 <- list(
-  "Duration near" = glmer(round(TotalDurationNear.20cm) ~ FlexGroup + (1|Name), family=poisson, data=flexexplore),
-   "Latency to land" = lmer(log(LatencyFirstLand) ~ FlexGroup + (1|Name), data=flexexplore),
-   "Number of functional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime), 
-                                                   family = poisson, data=flexpersF2),
-   "Number of nonfunctional touches per time" = glmer(round(SumTouches) ~ FlexGroup + (1|olre), offset = log(TotTime),
-                                                      family=poisson, data = flexpersN2))
-   
-
-cap = "Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning group where grackles were trained to be more behavioral flexibility, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the trained group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility."
-tab3 = modelsummary(m2,
-                    output = "gt",
-                    fmt = 2,
-                    shape = term ~ model + statistic,
-                    estimate  = "{estimate} [{conf.low}, {conf.high}]",
-                    statistic = c("std.error",
-                                  "p.value"),
-                    coef_omit = "SD",
-                    gof_omit = ".*",
-                    gof_map = NA)
-tab3 %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_body(columns = 4,rows = 2)) %>%
-  tab_header(title = cap) %>%
-  text_replace(
-    pattern = "^FlexGroupManipulation$",
-    replacement = "Flexibility trained") %>%
-  opt_align_table_header(align = "left")
-```
-
+The flexibility manipulation did work such that individuals in the serial reversal learning group increased their speed to pass each reversal. After we received in-principal recommendation for the preregistration associated with this research, we developed and tested the flexibility comprehensive variable. We found that this variable more accurately represented flexible behavior [@blaisdell2021more; @lukas2024flexmanippcj]. However, our preregistered predictions still included comparison of performance on the behavioral trait assays between control and manipulated individuals. Thus, we conducted these comparisons, above in the post-study manuscript. *NOTE that we preregistered that we would run this analysis, but we did not preregister any code*
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
-```{r expbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONcorrexpbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 #### 23 JUNE 2022: BOLDNESS WAS NOT REPEATABLE SO WE DID NOT LOOK FOR CORRELATIONS BETWEEN BOLDNESS AND EXPLORATION.
 
 #UNREGISTERED ANALYSIS (Jan 2021): first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground.
