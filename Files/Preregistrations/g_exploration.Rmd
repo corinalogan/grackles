@@ -7,17 +7,17 @@ author:
   - '[Logan CJ](http://CorinaLogan.com)^3^'
 date: '`r Sys.Date()`'
 output:
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+  md_document: 
+    toc: true
   html_document: 
     toc: true
     toc_depth: 4
     toc_float: 
       collapsed: false
     code_folding: hide 
-  md_document: 
-    toc: true
-  pdf_document:
-    keep_tex: yes
-    latex_engine: xelatex
   github_document: 
     toc: true
 bibliography: MyLibrary.bib
@@ -43,60 +43,6 @@ knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F)
 options(xtable.comment = FALSE) #makes it so a note about how the table was printed doesn't show up in the pdf
 ```
 
-```{r cleanbib, include=FALSE, eval=F}
-### make a bibtex file that has only the references cited in this rmd 
-#load the Rmd file
-Rmd <- readChar("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration.Rmd",nchars=1e7)
-
-#find all in text citations that start with @, but are preceded by a space
-pattern <- "\\ @(.*?)\\ "
-m <- regmatches(Rmd,gregexpr(pattern,Rmd))[[1]]
-m
-
-res<- gsub("\\ ","",m) #delete spaces
-res<- gsub("\\]","",res) #delete ]
-res<- gsub("\\;","",res) #delete ;
-res<- gsub("\\,","",res) #delete ,
-res<- gsub("\\.","",res) # delete .
-
-#find all in text citations that start with @, but are preceded by a "["
-pattern2 <- "\\[@(.*?)\\ "
-m2 <- regmatches(Rmd,gregexpr(pattern2,Rmd))[[1]]
-m2
-
-res2<- gsub("\\[","",m2)
-res2<- gsub("\\]","",res2)
-res2<- gsub("\\]","",res2)
-res2<- gsub("\\;","",res2)
-res2<- gsub("\\,","",res2)
-res2<- gsub("\\.","",res2)
-res2<- gsub("\\ ","",res2)
-
-#combine both patterns
-allbibtexkeys<-c(res,res2)
-
-#write to a new file and then clean it up manually
-write(allbibtexkeys,file="g_exploration_bibtexkeys.txt")
-
-#load the cleaned txt file
-allbibtexkeys<-read.csv("gxpopbehaviorhabitatq1_bibtexkeys.txt")
-
-#use bib2df to convert the bibliography file into a dataframe
-install.packages("bib2df")
-library(bib2df)
-
-#load the bib from GitHub
-df <- bib2df("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/MyLibrary.bib")
-
-#remove the @ to match the entry in the bib file
-allbibtexkeys2<- gsub("\\@","",allbibtexkeys[,1])
-
-#filter the full bib to only keep the entries that are cited here
-df_filtered<-df[df$BIBTEXKEY %in% allbibtexkeys2,]
-
-#use bib2df to convert the data frame into the bibliography file that only contains the citations in this Rmd
-df2bib(df_filtered, file = "g_exploration_refs.bib", append = FALSE)
-```
 
 ##### Affiliations: 
 1) Institute for Social, Behavioral and Economic Research, University of California Santa Barbara
@@ -115,7 +61,7 @@ Jeremy Van Cleve (2019) Probing behaviors correlated with behavioral flexibility
 
 **Preregistration:** [html](http://corinalogan.com/Preregistrations/g_exploration.html), [pdf](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_explorationPassedPreStudyPeerReviewOn27Mar2019.pdf), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_exploration.Rmd)
 
-**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 11 November 2024): preprint [pdf] ... at EcoEvoRxiv, [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd)
+**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 11 November 2024): [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd)
 
 # Abstract {-}
 
@@ -131,11 +77,11 @@ Humans are altering all ecosystems on the planet too rapidly for most species to
 
 Behavioral flexibility is rarely directly tested at the individual level. Research studying the impact of flexibility on the success of species invasions most often uses proxies of flexibility such as species brain size, or presence of the theoretical outcomes of flexible behavior like the number of foraging innovations [@sol2002behavioural]. Until recently, few studies had directly tested the relationship between flexibility, foraging behavior, and other cognitive traits like innovativeness [@chow2016practice; @logan2016far; @audet2024problem]. New evidence suggests that the more flexible great-tailed grackles showed greater foraging diversity in the wild [@logan2024flexfor], and were better able to innovate solutions on a novel foraging apparatus [@logan2023flexmanippcj]. Consequently, behavioral flexibility may show variation within, as well as among, species and may affect diverse aspects of individual behavioral interactions with the environment. To better understand how behavioral flexibility might facilitate responses to novelty and resilience to anthropogenic change, it is important to directly test flexibility and relate it to other ecological and behavioral traits at the individual level.
 
-Although behavioral flexibility has been the trait that research has focused on to understand how behavioral traits can impact adaptation to anthropogenic environmental changes, individual differences in other traits like exploratory tendency, boldness, persistence, or motor diversity could also play a role and correlate with behavioral flexibility [@logan016ehavioral; @sol2002behavioural]. For example, exploration is theoretically important for increasing the likelihood of encountering fitness-enhancing resources in novel environments [@canestrelli2016bolder; @griffin2016invading] and so the ability to adapt behavior to novel circumstances could be driven by exploratory tendency rather than, or in conjunction with, behavioral flexibility [@cohen2007should]. To distinguish whether observed behavior in the wild or performance on behavioral trait assays are motivated by one or more distinct traits, it is important to measure multiple traits in the same individuals [@carter2013animal]. 
+Although behavioral flexibility has been the trait that research has focused on to understand how behavioral traits can impact adaptation to anthropogenic environmental changes, individual differences in other traits like exploratory tendency, boldness, persistence, or motor diversity could also play a role and correlate with behavioral flexibility [@logan2016behavioral; @sol2002behavioural]. For example, exploration is theoretically important for increasing the likelihood of encountering fitness-enhancing resources in novel environments [@canestrelli2016bolder; @griffin2016invading] and so the ability to adapt behavior to novel circumstances could be driven by exploratory tendency rather than, or in conjunction with, behavioral flexibility [@cohen2007should]. To distinguish whether observed behavior in the wild or performance on behavioral trait assays are motivated by one or more distinct traits, it is important to measure multiple traits in the same individuals [@carter2013animal]. 
 
-Experimental evaluation of the relationship between flexibility and other behavioral traits has produced inconsistent results [@dougherty2018linking; @logan2016behaivoral]. In one well studied avian group, the Paridae, exploration is related to flexibility, implying that they are not two distinct traits, but the direction of the relationship is inconsistent across species [positive: @herborn2014personality, @rojas2020exploration; negative: @amy2012worms]. Inconsistencies such as this exist for other behavioral traits as well [see @logan2016behavioral for detailed review]. Individuals approaching a potentially threatening aspect of the environment require a certain degree of boldness [@mccune2018evidence]. However, the relationship between boldness and flexibility can be positive [@titulaer2012personality], negative [@bensky2022behavioral; @bebus2016associative], or neutral [@guenther2014learning; @de2022bold]. Theoretically, persistence should inhibit flexibility because it results in perseverating on a previously rewarded behavior rather than changing to a more productive behavior for a given circumstance [@morand2022cognitive]. In contrast to persistence, motor diversity is theoretically positively correlated with flexibility because it implies that the individual has a repertoire of different behaviors it is able to choose from to match each circumstance [@diquelou2016role]. Research in squirrels supports this prediction [@chow2016practice], where the more flexible individuals were less persistent and more likely to use diverse motor behaviors. Whereas, an earlier study in great-tailed grackles using different behavioral assays found no relationship between flexibility and any other behavioral traits, including persistence and motor diversity [@logan2016behavioral].   
+Experimental evaluation of the relationship between flexibility and other behavioral traits has produced inconsistent results [@dougherty2018linking; @logan2016behavioral]. In one well studied avian group, the Paridae, exploration is related to flexibility, implying that they are not two distinct traits, but the direction of the relationship is inconsistent across species [positive: @herborn2014personality, @rojas2020exploration; negative: @amy2012worms]. Inconsistencies such as this exist for other behavioral traits as well [see @logan2016behavioral for detailed review]. Individuals approaching a potentially threatening aspect of the environment require a certain degree of boldness [@mccune2018evidence]. However, the relationship between boldness and flexibility can be positive [@titulaer2012personality], negative [@bensky2022behavioral; @bebus2016associative], or neutral [@guenther2014learning; @de2022bold]. Theoretically, persistence should inhibit flexibility because it results in perseverating on a previously rewarded behavior rather than changing to a more productive behavior for a given circumstance [@morand2022cognitive]. In contrast to persistence, motor diversity is theoretically positively correlated with flexibility because it implies that the individual has a repertoire of different behaviors it is able to choose from to match each circumstance [@diquelou2016role]. Research in squirrels supports this prediction [@chow2016practice], where the more flexible individuals were less persistent and more likely to use diverse motor behaviors. Whereas, an earlier study in great-tailed grackles using different behavioral assays found no relationship between flexibility and any other behavioral traits, including persistence and motor diversity [@logan2016behavioral].   
 
-The lack of consistent support for which behavioral traits are related (or not) to flexibility could stem from what has been called a “jingle-jangle fallacy” [@carter2013animal]. This term describes the mismatch between a trait label (like exploration) and what the method (novel environment) actually measures (could be exploration, activity, or boldness). A mismatch can occur when researchers use a single trait label for what are actually multiple distinct inherent traits (“jingle fallacy”), or if using distinct labels for what is actually the same inherent trait (“jangle fallacy”). One step towards avoiding this issue is to use multiple experimental methods, as in a test battery, to measure a variety of behaviors, then assess the relationships among performance to identify which aspects of the behaviors that are measured might be driven by the same underlying trait [@shaw2017cognitive; @perlas2017revisiting].
+The lack of consistent support for which behavioral traits are related (or not) to flexibility could stem from what has been called a “jingle-jangle fallacy” [@carter2013animal]. This term describes the mismatch between a trait label (like exploration) and what the method (novel environment) actually measures (could be exploration, activity, or boldness). A mismatch can occur when researchers use a single trait label for what are actually multiple distinct inherent traits (“jingle fallacy”), or if using distinct labels for what is actually the same inherent trait (“jangle fallacy”). One step towards avoiding this issue is to use multiple experimental methods, as in a test battery, to measure a variety of behaviors, then assess the relationships among performance to identify which aspects of the behaviors that are measured might be driven by the same underlying trait [@shaw2017cognitive; @perals2017revisiting].
 
 To determine whether behavior labels represent the same underlying trait, it is also important to ensure that measured performance on behavioral assays is consistent within individuals across time and context (i.e., repeatable). Inter-individual differences in performance could result from short-term variation in the external environment like social interactions or food availability. Furthermore, short-term differences in internal states like hunger or stress can lead to variation in behavior within species. This plasticity is distinct from consistent individual differences in behavior across contexts stemming from genetic or developmental effects [i.e., animal personality; @duckworth2010evolution; @fidler2007drd4]. Only behaviors that stem from inherent characteristics can be evolutionarily linked through natural selection [@reale2007integrating; @rowe2014measuring]. It is important to know whether traits are linked because such linkage could result in limited behavioral plasticity that may alter the ability or mode of adapting to rapid environmental changes [@sih2004behavioral]. Indeed, inconsistency in the direction of the relationship between flexibility and behavioral traits in previous studies could stem from a lack of repeatability in performance on behavioral trait assays. To address whether behavioral flexibility is related to other behavioral traits, we must first assess whether our methods produce performance that is repeatable [@dingemanse2013quantifying] to validate that it is more likely to represent variation in an inherent trait. 
 
@@ -171,7 +117,7 @@ Here, we first test whether performance on measures of exploration, boldness, pe
 
 
 ## Preregistration details
-The hypotheses, methods, and analysis plan are described in detail in the peer-reviewed preregistration. We summarize these methods here, with any changes from the preregistration noted in the *Changes after the study began* section. The preregistration was written and submitted to Peer Community In (PCI) Ecology for peer review (Sep 2018) before collecting any data. After data collection began (and before any data analysis was conducted), we received peer reviews from PCI Ecology, revised, resubmitted the preregistration (Feb 2019). It received an in principle recommendation in Mar 2019.
+The hypotheses, methods, and analysis plan are described in detail in the peer-reviewed preregistration. We summarize these methods here, with any changes from the preregistration noted in the *Changes after the study began* section. The preregistration was written and submitted to Peer Community In (PCI) Ecology for peer review (Sep 2018) before collecting any data. After data collection began (and before any data analysis was conducted), we received peer reviews from PCI Ecology, revised, and resubmitted the preregistration (Feb 2019). It received an in principle recommendation in Mar 2019.
 
 
 ## Summary of methods
@@ -179,7 +125,7 @@ The hypotheses, methods, and analysis plan are described in detail in the peer-r
 Grackles were caught in the wild in Tempe, Arizona USA. All individuals received color leg bands for individual identification and some individuals (n=19) were brought temporarily into aviaries. We gave these individuals various assays to measure behavioral flexibility, exploration, boldness, persistence and motor diversity, and then released them back to the wild. Grackles were individually housed in an aviary (each 244 cm long by 122 cm wide by 213 cm tall) for a maximum of six months where they had *ad lib* access to water. During testing (except exploration, see below) we food deprived grackles for up to four hours per day, but they had the opportunity to receive high value food items by participating in the assays. They had access to a maintenance diet at all other times. Individuals were given three to four days to habituate to the aviaries before their test battery began. For our second hypothesis, we tested as many grackles as possible in the wild that were color-banded (n=18 total, including 4 previously tested in the aviaries).
 
 ### Behavioral flexibility
-As part of a different investigation, we used serial reversal learning to measure and then increase grackle behavioral flexibility. Details on the methods and results from this research are published elsewhere [@logan2024flexmanippcj; @mccune2023flexmanippeerj]. Briefly, we trained grackles to search in one of two color containers for food (Fig. 1a). After grackles showed a significant preference for this color (passing criterion was 17/20 trials correct), we switched the location of the food to the other color container (a “reversal”, for which we used the same passing criterion). We measured baseline behavioral flexibility as the number of trials it took grackles to switch their preference in the first reversal and search primarily in the second color container. A randomized subset of grackles (n = 8) received training to experimentally increase behavioral flexibility. We switched the location of the food multiple times (serial reversals) until grackles were switching their preference quickly enough to meet our passing criterion of two consecutive reversals in 50 trials or fewer. Instead of serial reversals, control grackles (n = 11) received equal testing experience with two identically colored containers, both containing a food item. 
+As part of a different investigation, we used serial reversal learning to measure and then increase grackle behavioral flexibility. Details on the methods and results from this research are published elsewhere [@logan2023flexmanippcj; @mccune2023flexmanippeerj]. Briefly, we trained grackles to search in one of two color containers for food (Fig. 1a). After grackles showed a significant preference for this color (passing criterion was 17/20 trials correct), we switched the location of the food to the other color container (a “reversal”, for which we used the same passing criterion). We measured baseline behavioral flexibility as the number of trials it took grackles to switch their preference in the first reversal and search primarily in the second color container. A randomized subset of grackles (n = 8) received training to experimentally increase behavioral flexibility. We switched the location of the food multiple times (serial reversals) until grackles were switching their preference quickly enough to meet our passing criterion of two consecutive reversals in 50 trials or fewer. Instead of serial reversals, control grackles (n = 11) received equal testing experience with two identically colored containers, both containing a food item. 
 
 In addition to assessing the relationship between performance on the behavioral trait assays and whether the grackle was flexibility trained (or in the control group), we preregistered that we would assess which of multiple additional continuous variables best represented flexible behavior. These variable were 1) the number of trials to reverse a preference in the last reversal the individual receives (for control individuals, the first reversal was also the last reversal); 2) The ratio of correct divided by incorrect trials for the first 40 trials in their final reversal, after the individual has seen the newly rewarded option once; 3) the average number of trials to solve and the average number of trials to attempt a new option on the multiaccess box (MAB), if these variables are uncorrelated with reversal performance; and 4) the “Flexibility Comprehensive” variables, described below. We determined that the Flexibility Comprehensive variables more effectively represent flexibility [@lukas2024flexmanip]. Furthermore, we found the latency to switch to a new locus on the MAB tasks was correlated with reversal performance. As a result, we focus only on the Flexibility Comprehensive variables here. 
 
@@ -195,7 +141,7 @@ We define boldness as an individual’s response to a potential threat [@reale20
 We defined exploration as an individual’s response to novelty [@reale2007integrating] to gather information that does not satisfy immediate needs [@mettke2002significance]. We used two different assays to measure exploratory tendency: novel environment (a small tent) and novel object (a pink fuzzy shape) exploration (Fig. 1b & 1c). We also conducted control conditions where we measured the grackle’s behavior in its familiar environment (the aviary) and with a familiar object (an empty water dish). Exploration tests occurred when the grackle was not food deprived to ensure that any approach to the novel object was for information gathering rather than food. Each trial was 45 minutes long and we always conducted the familiar condition trial immediately before the novel condition trial. We also conducted each of these assays twice to measure repeatability. As in boldness trials, we measured multiple behaviors during exploration trials and statistically analyzed the variable for which we ultimately had the most data (see below).
 
 ### Motor diversity and persistence
-We defined motor diversity as the number of different motor actions used to solve novel problems on either of two multiaccess boxes (MABs; Fig. 1e & 1f). We used an ethogram (Table 1) to define and distinguish each interaction with the MABs. We quantified persistence as the number of touches to a novel apparatus per trial time [@logan2016behavioral; @griffin2015innovative], where the novel apparatuses included the novel environment and novel object from the exploration assays, the potentially threatening boldness objects, as well as the two MABs. Touches to the MABs were separated based on whether they were functional (touches to the doors or loci that could result in getting the food item) or nonfunctional (touches to the side of the box that would never result in food). Motor diversity and persistence were coded from videos of grackles interacting with the two different MAB apparatuses for a separate experiment on problem solving ability [@logan2024flexmanippcj], as well as the novel apparatuses from the exploration and boldness assays.
+We defined motor diversity as the number of different motor actions used to solve novel problems on either of two multiaccess boxes (MABs; Fig. 1e & 1f). We used an ethogram (Table 1) to define and distinguish each interaction with the MABs. We quantified persistence as the number of touches to a novel apparatus per trial time [@logan2016behavioral; @griffin2015innovative], where the novel apparatuses included the novel environment and novel object from the exploration assays, the potentially threatening boldness objects, as well as the two MABs. Touches to the MABs were separated based on whether they were functional (touches to the doors or loci that could result in getting the food item) or nonfunctional (touches to the side of the box that would never result in food). Motor diversity and persistence were coded from videos of grackles interacting with the two different MAB apparatuses for a separate experiment on problem solving ability [@logan2023flexmanippcj], as well as the novel apparatuses from the exploration and boldness assays.
 
 
 ### Individual differences assays in the wild
@@ -211,17 +157,20 @@ We quantified multiple variables describing performance in each of the boldness 
 *Relationship with flexibility* - If performance was repeatable across two time points in the behavioral trait assays, we investigated whether performance was correlated with either of the Flexibility Comprehensive variables ($\phi$ and $\lambda$). Furthermore, we analyzed whether there was a difference in performance on the behavioral trait assays between grackles that underwent serial reversal learning flexibility training relative to grackles in the control group. We preregistered that we would include in these models an independent variable accounting for age effects if our subjects include juveniles as well as adults (but see *Changes after study began* section).
 
 ![](g_exploration_Fig1.png){width=50%}
+
 Figure 1: This experiment assessed the relationship between multiple different behavioral tests and contexts. We quantified and increased behavioral flexibility with serial reversal learning of a color preference: a light gray and a dark gray tube (a), we determined individual differences in exploration of a novel environment: a tent (b), exploration of a novel object: a homemade pink fuzzy shape (c), boldness towards threatening objects (purple halloween cat and Cooper’s hawk) compared to a known non-threat (pigeon) (d), we cataloged motor diversity when interacting with novel foraging problems on the two multiaccess boxes (e-f), and we measured persistence by we counting the number of touches to all novel apparatuses (b, c, d, e, and f).
 
 Table 1. Motor action ethogram for the two multiaccess box experiments. Any of the four modifiers can be added to any of the six motor actions. However, Stand only goes with the On top modifier, resulting in a total of 21 unique motor actions. For example, Vertical Peck is a peck to a vertical surface, and Gape Upside Down is a gape with the head being held upside down. Note that one interaction can be coded in multiple categories (e.g., if a bird pulls the string first horizontally and then vertically).
-![](g_exploration_Table1.png){width=100%}
+![](g_exploration_Table1.png){width=60%}
 
 ## Changes after the study began
 
 **After data collection began and before data analysis:**
+
 1) We added an *unregistered analysis* to assess interobserver reliability for the response variables to determine how repeatable our data collection was by having the videos coded by multiple coders. This unregistered analysis is described, and results reported, in the Supplementary Material 1.
 
 **After data collection and during data analysis:**
+
 1) We conducted an *unregistered analysis* to compare the grackles’ responses to the familiar item with responses to the novel/threatening items in the exploration and boldness assays. The definition for boldness relates to the behavioral response to threat, so we would expect a decrease in interactions with the novel/threatening items relative to the control item. To test that this occurred, and the grackles perceived the items as threatening, we used MCMCglmm to model the effect of condition (novel or familiar item trial) on the latency to approach and the duration spent in proximity to the items in the exploration assays. We used a gaussian distribution for latency to approach and Poisson distribution for the duration spent in proximity. We included a covariate that identified whether the bird was in the serial reversal manipulation (or not) and a random effect for bird ID. The boldness data were overdispersed and zero-inflated so we used a zero-inflated negative binomial mixed model with the R package NBZIMM [@zhang2020nbzimm]. In this model, we also included a covariate for the serial reversal manipulation and a random effect for bird ID.
 
 2) For the repeatability analyses, we preregistered that we would calculate repeatability from the ratio of variance components extracted from MCMCglmm models. We also obtained credible intervals from the posterior distribution of these models. However, repeatability is a ratio so values can never be less than zero. As such, we are not able to ascertain the significance of our repeatability values by determining whether the credible interval overlaps with zero. We conducted an *unregistered analysis* to obtain p-values indicating whether performance was significantly more repeatable than random by utilizing the built in permutation tests in the rptR package [@stoffel2017rptr]. This also ensured that repeatability values and credible intervals were consistent with the preregistered MCMCglmm methods to validate that our non-informative priors were appropriate. 
@@ -234,7 +183,7 @@ Table 1. Motor action ethogram for the two multiaccess box experiments. Any of t
 
 6) During the exploration environment assays, very few grackles stepped inside the tent (n = 4), so we did not have enough data to use the following preregistered variables in the analysis relating exploration and behavioral flexibility: Latency to enter a novel environment inside a familiar environment, Time spent in each of the different sections inside a novel environment or the corresponding areas on the floor when the novel environment is not present (familiar environment) as an interaction with the Environment Condition: activity in novel environment vs. activity in familiar environment, Time spent per section of a novel environment or in the corresponding areas on the floor when the novel environment is not present (familiar environment) as an interaction with the Environment Condition: time spent in novel environment vs. time spent in familiar environment.
 
-7) We also realized that, because we experimentally increased reversal learning speed through serial reversal learning [@logan2024flexmanippcj], behavioral flexibility should be the independent rather than dependent variable. 
+7) We also realized that, because we experimentally increased reversal learning speed through serial reversal learning [@logan2023flexmanippcj], behavioral flexibility should be the independent rather than dependent variable. 
 
 8) We found [@blaisdell2021more; @lukas2024flexmanip] that the "Flexibility Comprehensive" variables were much more effective at representing flexibility than the other variables we preregistered (e.g., Trials to reverse in the last reversal). Therefore, as preregistered, we only use this variable here, as described above in the methods. Because the individual’s serial reversal learning treatment condition (control or trained) is accounted for in the flexibility comprehensive variable, we did not include condition as an additional independent variable in these models. Note that we still conducted the preregistered analyses testing correlations between performance on the behavioral trait assays and whether the individual was in the control or flexibility trained group. 
 
@@ -255,7 +204,7 @@ Next we assessed whether grackles reacted consistently towards each threatening 
 
 It is possible that habituation to the potentially threatening object occurs after the first exposure, such that individuals do not perform consistently across subsequent trials [@greggor2015neophobia; @takola2021novelty]. To check whether this explains the lack of contextual repeatability in this behavioral trait, we conducted an *unregistered analysis* evaluating repeatability of performance in only the first trial in response to the potentially threatening contexts: cat, hawk, and novel object (see below). We still found no evidence that response to the potentially threatening objects was repeatable across these contexts (*R* = 0.00, CI = 0.00-0.17, *p* = 1; Fig. S3).
 
-```{r POSTrepeatableBold, message=FALSE, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTrepeatableBold, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Boldness
 bol <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_boldness.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 bol = bol[which(bol$IndicatedTrial == 2 & bol$AviaryOrWild == "Aviary"),-c(1:5,22:25)]
@@ -298,7 +247,7 @@ bol$DurationOnGround = bol$TotalDurationFar.20cm + bol$TotalDurationNear.20cm # 
 
 ####### FIGURING OUT DATA STRUCTURE FOR REPEATABILITY ANALYSIS ######
 hist(bol$DurationOnGround) #definitely looks zero-inflated
-
+library(lme4)
 d1 = glmer.nb(round(DurationOnGround) ~ Condition + FlexGroup + (1|BirdID), data = bol)
 d2 = glmer(round(DurationOnGround) ~ Condition + FlexGroup + (1|BirdID),data = bol, family = poisson)
 # function from Ben Bolker for calculating overdispersion in glmm
@@ -430,9 +379,10 @@ HPDinterval(repeata, 0.95) # 0 - 0.06
 ```
 
 ![](g_exploration_fig2_boldness.jpeg){width=70%}
+
 Figure 2: The grackles did not respond consistently to the threatening objects across the two time points. Each line color represents an individual and the dots show the number of seconds individuals spent on the ground within 100cm of the threatening object during each of the two 15-minute trials (Time 1 and Time 2). The two time points were separated by an average of 33 days (range: 11-49 days) and if performance was repeatable we would expect the line connecting the two dots to be at or close to horizontal.
 
-```{r repeatableBol posthoc, warning=FALSE, include=FALSE, results='asis'}
+```{r repeatableBol posthoc, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Add explore object data to boldness data because grackles perceived it as a potential threat
 exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),-2]
 colnames(exp.o2)[2] = "Test"
@@ -506,7 +456,7 @@ Similar to boldness, we assessed the repeatability of exploratory behavior acros
 
 We found that the latency to approach the novel environment across time points 1 and 2 was highly repeatable (*R* = 0.72, CI = 0.42-0.88, *p* < 0.01). Similarly, the duration spent near the novel environment was also highly repeatable (*R* = 0.85, CI = 0.67-0.98, *p* < 0.01). However, the latency to approach the novel object was not repeatable (*R* = 0.05, CI = 0-0.5, *p* = 1; Fig. 3). When we assessed performance across the novel environment and novel object tasks, we found that latency to approach was repeatable across the two different contexts, but this result was driven by the very high between-individual variance in the environment assay (*R* = 0.49, CI = 0.21-0.69, *p* = 0; Fig. S1).
 
-```{r POSTrepeatableExpEnv, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTrepeatableExpEnv, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Exploration of novel environment
 ee <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(ee)  #Check to make sure it looks right
@@ -674,7 +624,7 @@ ggplot(exp2) +
 ## Need to facet by ExpObj data for including in manuscript - in below code chunk.
 ```
 
-```{r POSTrepeatableExpObj, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTrepeatableExpObj, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Exploration of novel object
 eo <- read.csv("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_exploration.csv", header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(eo)  #Check to make sure it looks right
@@ -839,12 +789,13 @@ ggplot(exp) +
 ```
 
 ![](g_exploration_fig3_exploration.jpeg){width=70%}
+
 Figure 3: The response to the two exploration tests. Performance in the novel environment test was significantly repeatable across time. Grackles did not respond consistently to the novel object across the two time points. Each line color represents an individual and the dots show the amount of time before individuals approached to within 100cm of the novel item during each of the two 45-minute trials. The two time points were separated by 34 days on average (range: 11-49) and if performance is repeatable within a test we would expect the line connecting the two dots to be at or close to horizontal. Cross-contextual repeatability is indicated by similarly colored dots occurring at similar points on the y-axis across test types.
 
 ### Persistence
-We tested whether individuals (n = 17) were repeatable in the number of touches per trial time that they made across multiple novel test apparatuses (Fig. 1b-f): boldness objects, exploration environment and object, as well as the two different MABs. We found that persistence in interacting with these diverse objects was repeatable (*R* = 0.28, CI = 0.07-0.46, *p* < 0.01; Fig. 4)
+We tested whether individuals (n = 18) were repeatable in the number of touches per trial time that they made across multiple novel test apparatuses (Fig. 1b-f): boldness objects, exploration environment and object, as well as the two different MABs. We found that persistence in interacting with these diverse objects was repeatable (*R* = 0.28, CI = 0.07-0.46, *p* < 0.01; Fig. 4)
 
-```{r POSTrepeatablePer, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r POSTrepeatablePer, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Persistence
 per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -927,13 +878,14 @@ ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)
 
 
 ```
-![](g_exploration_Fig4_persistence.jpeg){width=80%}
+![](g_exploration_Fig4_persistence.jpeg){width=100%}
+
 Figure 4: Persistence (the number of touches per time) was repeatable across multiple diverse test apparatuses. The x-axis shows each individual bird, which are also identified by unique colors, while the y-axis is the number of touches per trial time for each type of apparatus. Test apparatuses are distinguished by shape and we abbreviated multiaccess box as “MAB” in the figure legend.
 
 ### Motor Diversity
 We conducted an *unregistered analysis* to quantify repeatability in the number of different motor behaviors used while interacting with two distinct MABs in 17 grackles. Grackles were not consistent in the number of motor behaviors used across the two MABs and so repeatability was very low and not statistically significant (*R* = 0.06, CI = 0.00-0.45, *p* = 0.50).
 
-```{r POSTrepeatableMotDiv, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTrepeatableMotDiv, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 ## *UNREGISTERED ANALYSIS*
 head(mot) #2 measures for each individual - one for plastic, one for log. 
 mot2 = merge(mot, flexID, by = c("BirdID","Name"),all = T)
@@ -1001,7 +953,7 @@ sum(results > 0.06)/1000 # probability the repeatability estimate from our actua
 The repeatability analyses informed which of our methods measured consistent individual differences in behavior. Our next goal was to investigate the relationships among only the repeatable measures (exploration of a novel environment and persistence) and behavioral flexibility.
 
 ### Relationship between flexibility and exploration
-We first analyzed the relationship between our measures of behavioral flexibility [the Flexibility Comprehensive measure that quantifies the rate of learning to be attracted to a color option in the serial reversal learning task, $\phi$, and the rate of deviating from learned associations, $\lambda$; @lukas2024flexmanip; @blaisdell2021more] and two variables describing novel environment exploration: Duration near (within 20cm) the outside of the tent, and the latency to first come to the ground from the aviary perches to approach the tent. We found no relationship between either measure of novel environment exploration and $\phi$ or $\lambda$ (Table 2). 
+We first analyzed the relationship between our measures of behavioral flexibility (the Flexibility Comprehensive measure that quantifies the rate of learning to be attracted to a color option in the serial reversal learning task, $\phi$, and the rate of deviating from learned associations, $\lambda$; @lukas2024flexmanip; @blaisdell2021more) and two variables describing novel environment exploration: Duration near (within 20cm) the outside of the tent, and the latency to first come to the ground from the aviary perches to approach the tent. We found no relationship between either measure of novel environment exploration and $\phi$ or $\lambda$ (Table 2). 
 
 We next investigated if performance varied as a function of whether individuals went through serial reversal learning to increase flexibility (trained group, n=8) or not (control group, n=11). Grackles that underwent the flexibility training were more exploratory in that they spent more time within 20cm of the outside of the novel environment relative to control individuals (Table 3; *ß* = 3.92, *p* = 0.04). However, there was no difference between trained and control individuals in latency to come to the ground within 100cm of the novel environment (*ß* = -0.43, *p* = 0.54).  
 
@@ -1010,7 +962,7 @@ In contrast, we found that grackles with a higher $\phi$ were more persistent in
 
 Also in contrast to the exploration results, we found no evidence of a relationship between persistence and whether or not the grackle underwent the flexibility training. The number of functional (*ß* = 0.81, *p* = 0.09) and nonfunctional touches (*ß* = 0.24, *p* = 0.58) to the novel apparatuses did not differ between control and trained grackles (Table 3). 
 
-```{r POSTcorFlexBehav, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTcorFlexBehav, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 # RELATIONSHIP BETWEEN FLEXIBILITY AND EXPLORATION OR PERSISTENCE
 # DATA CHECKING for 1st GLMM
 library(DHARMa)
@@ -1172,7 +1124,7 @@ summary(freqPersN)
 
 ```
 
-```{r POSTpersist2, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTpersist2, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 # Testing P3 alternative 2 - relationship between persistence measures
 reverse <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_data_reverseraw.csv", header=T, sep=",", stringsAsFactors=F) 
 
@@ -1246,7 +1198,7 @@ base2 <- dredge(lm(log(Trial+1) ~ s.per + FlexGroup, data=persist3))
 kable(base2, caption="Table 3: Model selection output.")
 ```
 
-```{r POSTconVtrain, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTconVtrain, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 # Compare exploration and flexibility performance as a function of flexibility trained or control group
 #### Exploration ####
 #### Duration near the outside of the tent
@@ -1321,9 +1273,9 @@ summary(freqPersNcvm)
 # No difference in nonfunctional touches to MABs between manipulated and control grackles (ß = 0.24, p = 0.58)
 ```
 
-```{r POSTresults summary tables, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+```{r POSTresults summary tables, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #####-------Summary table--------#####
-
+library(lme4)
 library(modelsummary)
 library(kableExtra)
 library(gt)
@@ -1353,7 +1305,7 @@ tab2 %>%
   tab_style(
     style = cell_text(weight = "bold"),
     locations = cells_body(columns = 13,rows = c(2,3))) %>%
-  tab_header(title = cap) %>%
+  #tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 
 
@@ -1383,19 +1335,23 @@ tab3 %>%
   tab_style(
     style = cell_text(weight = "bold"),
     locations = cells_body(columns = 4,rows = 2)) %>%
-  tab_header(title = cap) %>%
+  #tab_header(title = cap) %>%
   text_replace(
     pattern = "^FlexGroupManipulation$",
     replacement = "Flexibility trained") %>%
   opt_align_table_header(align = "left")
 ```
+Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that persistence (the number of nonfunctional touches to the novel apparatuses per time) was significantly related to phi and lambda.
+![](g_exploration_Table2.png){width=100%}
+Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning group where grackles were trained to be more behavioral flexibility, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the trained group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility.
+![](g_exploration_Table3.png){width=100%}
 
 ## Hypothesis 2: Comparing performance in captivity and in the wild
-Participation of free-flying color-tagged grackles in our exploration and boldness assays in the wild was very low. Of the 19 grackles that experienced the personality assessments in the aviaries, we were only able to measure the corresponding performance in the wild for 2 in the exploration object assay and 2 in the boldness cat assay (3 individuals total). Therefore, we cannot statistically analyze the consistency of performance within individuals across aviary and wild contexts. Qualitatively, in all 4 assays in the wild, grackles approached the item more quickly in the wild compared to aviary assays (Fig. 4).  
+Participation of free-flying color-tagged grackles in our exploration and boldness assays in the wild was very low. Of the 19 grackles that experienced the personality assessments in the aviaries, we were only able to measure the corresponding performance in the wild for 2 in the exploration object assay and 2 in the boldness cat assay (3 individuals total). Therefore, we cannot statistically analyze the consistency of performance within individuals across aviary and wild contexts. Qualitatively, in all 4 assays in the wild, grackles approached the item more quickly in the wild compared to aviary assays (Fig. 5).  
 
 We also compared general performance on the exploration environment task (the only repeatable exploration or boldness task) of all grackles in the aviaries compared to all grackles that participated in the wild tests (i.e., many of the color-banded grackles that participated in the wild were never brought into the aviaries). We had no data from the same birds for the exploration environment test in both the aviary and wild contexts and our sample size for wild individuals was small (n=3 wild grackles, n=19 aviary grackles). From this small sample, we found no difference in the latency to approach the novel environment between the aviary or wild context (*ß* = -0.39, CI = -1.83-1.46, *p* = 0.63).
 
-```{r POSTcapwildexp, warning=FALSE, include=FALSE, results='asis'}
+```{r POSTcapwildexp, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 ### ONLY NOVEL ENVIRONMENT EXPLORATION WAS REPEATABLE SO JUST COMPARING CAPTIVE AND WILD PERFORMANCE ON THAT TEST ###
 
 #Exploration: novel environment
@@ -1499,13 +1455,14 @@ ggplot(tmp, aes(x = BirdID, y = LatencyFirstLand, colour = Context, shape = Test
 ```
 
 ![](g_exploration_Fig5_capVwild.jpeg){width=50%}
-Figure 4: We were only able to measure performance on our boldness and exploration tasks on 3 individuals in both the aviaries (orange symbols) and in the wild (blue symbols). In all cases, grackles were faster to approach to within 20m of the item in the wild compared to the aviaries. The boldness cat assay is indicated with a square symbol and the exploration object assay is indicated with a triangle symbol. Note that neither of these assays produced repeatable performance across time from grackles in the aviaries. This, coupled with the small sample size means these results should be interpreted and generalized with caution. The black horizontal lines at 900 and 2000 seconds represent the ceiling values (i.e. the trial end times) for the boldness and exploration assays, respectively.
+
+Figure 5: We were only able to measure performance on our boldness and exploration tasks on 3 individuals in both the aviaries (orange symbols) and in the wild (blue symbols). In all cases, grackles were faster to approach to within 20m of the item in the wild compared to the aviaries. The boldness cat assay is indicated with a square symbol and the exploration object assay is indicated with a triangle symbol. Note that neither of these assays produced repeatable performance across time from grackles in the aviaries. This, coupled with the small sample size means these results should be interpreted and generalized with caution. The black horizontal lines at 900 and 2000 seconds represent the ceiling values (i.e. the trial end times) for the boldness and exploration assays, respectively.
 
 # DISCUSSION {-}
 
-Rapid human-induced environmental change leads to novel challenges for wildlife, where individual and species ability to survive is most often possible through behavioral change [@wright2010behaivoral]. Although several behavioral traits are implicated in successful adaptation to human modified environments [@chapple2012can], it is uncommon to directly test for multiple traits in the same individuals. Here, we used multiple novel and threatening stimuli to assess the validity of methods measuring various behavioral traits, and the relationships among traits, in great-tailed grackles, a species that has adapted to many human-induced changes to its environment during a rapid range expansion. We found that only some of our methods for measuring behavioral traits in captivity produced repeatable performance, indicating that the method elicits performance based on an inherent trait. Exploration and persistence were the two behavioral traits that were repeatable across time and context and thus are more likely to represent inherent traits that could be related to behavioral flexibility. Indeed, both exploration and persistence were correlated with behavioral flexibility. 
+Rapid human-induced environmental change leads to novel challenges for wildlife, where individual and species ability to survive is most often possible through behavioral change [@wright2010behavioral]. Although several behavioral traits are implicated in successful adaptation to human modified environments [@chapple2012can], it is uncommon to directly test for multiple traits in the same individuals. Here, we used multiple novel and threatening stimuli to assess the validity of methods measuring various behavioral traits, and the relationships among traits, in great-tailed grackles, a species that has adapted to many human-induced changes to its environment during a rapid range expansion. We found that only some of our methods for measuring behavioral traits in captivity produced repeatable performance, indicating that the method elicits performance based on an inherent trait. Exploration and persistence were the two behavioral traits that were repeatable across time and context and thus are more likely to represent inherent traits that could be related to behavioral flexibility. Indeed, both exploration and persistence were correlated with behavioral flexibility. 
 
-Personality traits like boldness, exploration, and persistence are not directly observable. To validate that the experimental method used likely elicited performance reflective of the inherent personality trait, performance must be repeatable across time and contexts [@carter2013what]. We found that the number of touches that grackles made to multiple different novel apparatuses was repeatable, indicating that this is likely a valid method for measuring the trait persistence. Despite using multiple assays and stimuli to quantify exploration, boldness, and motor diversity, we found that only one method produced repeatable performance: the novel environment exploration assay. The other methods, exploration of a novel object, boldness towards two different novel threats, and the number of distinct motor behaviors used to interact with the two different MABs (Fig. 1) did not produce repeatable performance across sampling periods. However, we provide in Supplementary Material 2 a plot of the raw boldness and exploration data so readers can visually compare performance among tests (Fig. S2). 
+Personality traits like boldness, exploration, and persistence are not directly observable. To validate that the experimental method used likely elicited performance reflective of the inherent personality trait, performance must be repeatable across time and contexts [@carter2013animal]. We found that the number of touches that grackles made to multiple different novel apparatuses was repeatable, indicating that this is likely a valid method for measuring the trait persistence. Despite using multiple assays and stimuli to quantify exploration, boldness, and motor diversity, we found that only one method produced repeatable performance: the novel environment exploration assay. The other methods, exploration of a novel object, boldness towards two different novel threats, and the number of distinct motor behaviors used to interact with the two different MABs (Fig. 1) did not produce repeatable performance across sampling periods. However, we provide in Supplementary Material 2 a plot of the raw boldness and exploration data so readers can visually compare performance among tests (Fig. S2). 
 
 A key aspect distinguishing boldness from exploration is that boldness reflects a response to potentially threatening objects, novel or familiar [@carter2013animal; @greggor2015neophobia]. Consequently, we compared performance between the novel or threatening objects and the familiar objects in the exploration and boldness assays. The novel environment was the only object the grackles did not perceive as a threat. Although the novel object for the exploration assay was not meant to be threatening (e.g., it was smaller than the threatening objects, it did not have eyes), grackles still spent significantly less time near it than their familiar object. Consequently, grackles did not perform consistently on these assays where the object was perceived as threatening. This highlights the relevance of the jingle-jangle fallacy, which describes the mismatch between a trait label and what the method actually measures [@carter2013animal]. Although we expected the novel object to measure the trait exploration, by incorporating control conditions and multiple other novel and threatening objects, it was clear that the novel object was eliciting performance that was likely more reflective of boldness. 
 
@@ -1853,13 +1810,20 @@ icc(d[,c(5,6)], model = "oneway", type = "consistency", unit = "single", conf.le
 ![](g_exploration_S1_exploration.jpeg){width=100%}
 Figure S1 (repeatability of exploration): Grackles performed consistently across the two **exploration** contexts. Circles represent performance on the novel environment test and triangles represent performance on the novel object test. If performance across contexts is repeatable we would expect to see the circle and triangle at each time point to be near one another. 
 
+
+
 ![](g_exploration_S2_boldexpl.jpeg){width=100%}
 Figure S2: Performance of each grackle on the **boldness** cat (square), boldness hawk (triangle), **explore** environment (star) and explore object (circle) assays. Note that explore environment (star) was the only assay that resulted in repeatable performance across time. Here we present data only from time point one. The black horizontal lines at 900 and 2000 seconds represent the ceiling values (i.e. the trial end times) for the boldness and exploration assays, respectively. 
 
-![](g_exploration_S3_boldness.jpeg){width=50%}
+
+
+![](g_exploration_S3_boldness.jpeg){width=80%}
+
 Figure S3: Habituation to the potentially threatening objects did not affect the repeatability of a grackle’s response. We still found no significant repeatability in performance when only evaluating the first trial for each object. Each line color represents an individual and the dots show the number of seconds individuals spent on the ground (within 100cm) in the presence of the threatening object during Time 1’s 15-minute trial.
 
+
 Table S1 (hypothesis 1, prediction 3 alternative 2): Model selection output from the linear mixed model relating the number of incorrect choices on the last reversal to the average number of touches to the novel apparatuses per time. The intercept-only model (Model 1) was a better fit to the data than a model (Model 2) that included the number of touches.
+
 ![](g_exploration_TableS1_perscomp.png){width=100%}
 
 ## S3 - Detailed Methods (Preregistration)
@@ -2086,12 +2050,12 @@ To address the power analysis issues, we will run simulations on our Arizona dat
 
 #### *Data checking*
 
-The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@Hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
+The data will be checked for overdispersion, underdispersion, zero-inflation, and heteroscedasticity with the DHARMa R package [@hartig2019dharma] following methods by [Hartig](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html). Note: DHARMa doesn't support MCMCglmm, therefore we will use the closest supported model: glmer from the R package lme4 [@lme4].
 
 
 #### *Repeatability of exploration, boldness and persistence*
 
-**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package ([@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. 
+**Analysis:** We will obtain repeatability estimates that account for the observed and latent scales, and then compare them with the raw repeatability estimate from the null model. The repeatability estimate indicates how much of the total variance, after accounting for fixed and random effects, is explained by individual differences (ID). We will run this GLMM using the MCMCglmm function in the MCMCglmm package [@hadfield2010mcmc] with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary. 
 
 *Note Feb 2021: a Gaussian distribution was used instead of a Poisson for exploration and boldness latencies because they are continuous variables.*
 
@@ -2364,7 +2328,7 @@ Perhaps boldness is not repeatable because grackles are more likely to change th
 
 **Analysis:** If behavior is not repeatable across assays at Time 1 and Time 2 (six weeks apart, both assays occur after the flexibility manipulation takes place) for exploration, boldness, persistence, or motor diversity (see analysis for P6), we will not include these variables in analyses involving flexibility. If behavior is repeatable within individuals, we will examine the relationship between flexibility and these variables as follows. Note that the two exploration measures (novel environment and novel object) will be combined into one variable if they correlate and are both repeatable within individuals.
 
-Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfieldMCMCglmmpackage]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfieldMCMCglmmpackage]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
+Because the independent variables could influence each other, we will analyze them in a single model: Generalized Linear Mixed Model (GLMM; MCMCglmm function, MCMCglmm package; [@hadfield2010mcmc]) with a Poisson distribution and log link using 13,000 iterations with a thinning interval of 10, a burnin of 3,000, and minimal priors (V=1, nu=0) [@hadfield2014coursenotes]. We will ensure the GLMM shows acceptable convergence (i.e., lag time autocorrelation values <0.01; [@hadfield2010mcmc]), and adjust parameters if necessary. We will determine whether an independent variable had an effect or not using the Estimate in the full model.
 
 To roughly estimate our ability to detect actual effects (because these power analyses are designed for frequentist statistics, not Bayesian statistics), we ran a power analysis in G&ast;Power with the following settings: test family=F tests, statistical test=linear multiple regression: Fixed model (R^2 deviation from zero), type of power analysis=a priori, alpha error probability=0.05. We reduced the power to 0.70 and increased the effect size until the total sample size in the output matched our projected sample size (n=32). The number of predictor variables was restricted to only the fixed effects because this test was not designed for mixed models. The protocol of the power analysis is here:
 
@@ -2394,7 +2358,7 @@ Actual power                  	=	0,7027626
 
 This means that, with our sample size of 32, we have a 70% chance of detecting a large effect (approximated at f^2=0.35 by @cohen1988statistical). 
 
-```{r PREREGISTRATIONcorFlexBehav, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONcorFlexBehav, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 explore <- read.csv("/Users/corina/GTGR/data/data_explore.csv",
     header = T, sep = ",", stringsAsFactors = F)
 
@@ -2517,13 +2481,13 @@ autocorr(expl2$VCV)  #Did random effects converge?
 ```
 
 #### *H1: P1-P5 alternative: Control vs flexibility manipulated individuals*
-The flexibility manipulation did work such that individuals in the serial reversal learning group increased their speed to pass each reversal. After we received in-principal recommendation for the preregistration associated with this research, we developed and tested the flexibility comprehensive variable. We found that this variable more accurately represented flexible behavior [@blaisdell2021more; @lukas2024flexmanippcj]. However, our preregistered predictions still included comparison of performance on the behavioral trait assays between control and manipulated individuals. Thus, we conducted these comparisons, above in the post-study manuscript. *NOTE that we preregistered that we would run this analysis, but we did not preregister any code*
+The flexibility manipulation did work such that individuals in the serial reversal learning group increased their speed to pass each reversal. After we received in-principal recommendation for the preregistration associated with this research, we developed and tested the flexibility comprehensive variable. We found that this variable more accurately represented flexible behavior [@blaisdell2021more; @lukas2024flexmanip]. However, our preregistered predictions still included comparison of performance on the behavioral trait assays between control and manipulated individuals. Thus, we conducted these comparisons, above in the post-study manuscript. *NOTE that we preregistered that we would run this analysis, but we did not preregister any code*
 
 #### *H1: P1 alternative 4: correlations between exploration and boldness measures*
 
 **Analysis:** Generalized Linear Model (GLM; glm function, stats package) with a Poisson distribution and log link. For an estimation of our ability to detect actual effects, please see the power analysis for P3 below.
 
-```{r PREREGISTRATIONcorrexpbol, eval=FALSE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
+```{r PREREGISTRATIONcorrexpbol, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #### 23 JUNE 2022: BOLDNESS WAS NOT REPEATABLE SO WE DID NOT LOOK FOR CORRELATIONS BETWEEN BOLDNESS AND EXPLORATION.
 
 #UNREGISTERED ANALYSIS (Jan 2021): first check whether first latency to land on the ground per video correlates between exploration environment and exploration object. The field season is now running in Woodland, CA, but the boldness data from Arizona is not yet done being video coded. The field team needs to know whether they can eliminate one of the exploration tests (they are currently conducting environment and object) because these assays are taking up too much time. The variable with the most data in it is Latency to first landing on the ground.
