@@ -26,6 +26,78 @@ header-includes:
   - \linenumbers
 ---
 
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+```
+
+```{r setup, include=FALSE}
+library(knitr)
+library(formatR)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=70),tidy=TRUE) 
+#Make code chunks wrap text so it doesn't go off the page when knitting to PDF
+
+knitr::opts_chunk$set(echo=F, include=T, results='asis', warning=F, message=F) 
+#sets global options to display code along with the results https://exeter-data-analytics.github.io/LitProg/r-markdown.html
+#set echo=F for knitting to PDF (hide code), and echo=T for knitting to HTML (show code)
+
+options(xtable.comment = FALSE) #makes it so a note about how the table was printed doesn't show up in the pdf
+```
+
+```{r cleanbib, include=FALSE, eval=F}
+### make a bibtex file that has only the references cited in this rmd 
+#load the Rmd file
+Rmd <- readChar("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration.Rmd",nchars=1e7)
+
+#find all in text citations that start with @, but are preceded by a space
+pattern <- "\\ @(.*?)\\ "
+m <- regmatches(Rmd,gregexpr(pattern,Rmd))[[1]]
+m
+
+res<- gsub("\\ ","",m) #delete spaces
+res<- gsub("\\]","",res) #delete ]
+res<- gsub("\\;","",res) #delete ;
+res<- gsub("\\,","",res) #delete ,
+res<- gsub("\\.","",res) # delete .
+
+#find all in text citations that start with @, but are preceded by a "["
+pattern2 <- "\\[@(.*?)\\ "
+m2 <- regmatches(Rmd,gregexpr(pattern2,Rmd))[[1]]
+m2
+
+res2<- gsub("\\[","",m2)
+res2<- gsub("\\]","",res2)
+res2<- gsub("\\]","",res2)
+res2<- gsub("\\;","",res2)
+res2<- gsub("\\,","",res2)
+res2<- gsub("\\.","",res2)
+res2<- gsub("\\ ","",res2)
+
+#combine both patterns
+allbibtexkeys<-c(res,res2)
+
+#write to a new file and then clean it up manually
+write(allbibtexkeys,file="g_exploration_bibtexkeys.txt")
+
+#load the cleaned txt file
+allbibtexkeys<-read.csv("gxpopbehaviorhabitatq1_bibtexkeys.txt")
+
+#use bib2df to convert the bibliography file into a dataframe
+install.packages("bib2df")
+library(bib2df)
+
+#load the bib from GitHub
+df <- bib2df("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/MyLibrary.bib")
+
+#remove the @ to match the entry in the bib file
+allbibtexkeys2<- gsub("\\@","",allbibtexkeys[,1])
+
+#filter the full bib to only keep the entries that are cited here
+df_filtered<-df[df$BIBTEXKEY %in% allbibtexkeys2,]
+
+#use bib2df to convert the data frame into the bibliography file that only contains the citations in this Rmd
+df2bib(df_filtered, file = "g_exploration_refs.bib", append = FALSE)
+```
+
 ##### Affiliations: 
 1) Institute for Social, Behavioral and Economic Research, University of California Santa Barbara
 2) College of Forestry, Wildlife and Environment, Auburn University
@@ -34,34 +106,26 @@ header-includes:
 
 *Corresponding author: kelseybmccune@gmail.com
 
-```{r setup, include=FALSE}
-library(knitr)
-opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+&nbsp;
 
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-<img width="50%" src="logoPCIecology.png">
+**This is the post-study manuscript of the preregistration that was pre-study peer reviewed and received an In Principle Recommendation on 27 March 2019 by:**
 
-**Cite as:** McCune K, MacPherson M, Rowney C, Bergeron L, Folsom M, Logan CJ. 2019. [Is behavioral flexibility linked with exploration, but not boldness, persistence, or motor diversity?](http://corinalogan.com/Preregistrations/g_exploration.html) (http://corinalogan.com/Preregistrations/g_exploration.html) In principle acceptance by *PCI Ecology* of the version on 27 Mar 2019 [https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd).
+Jeremy Van Cleve (2019) Probing behaviors correlated with behavioral flexibility. *Peer Community in Ecology*, 100020. [10.24072/pci.ecology.100020](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True). Reviewers: two anonymous reviewers
 
-<img width="5%" src="logoOpenAccess.png"> <img width="5%" src="logoOpenCode.png"> <img width="5%" src="logoOpenPeerReview.png">
+**Preregistration:** [html](http://corinalogan.com/Preregistrations/g_exploration.html), [pdf](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_explorationPassedPreStudyPeerReviewOn27Mar2019.pdf), [rmd](https://github.com/corinalogan/grackles/blob/d17a75c24df4b90aa607eda452f4fcc496ae9409/Files/Preregistrations/g_exploration.Rmd)
 
-**This preregistration has been pre-study peer reviewed and received an In Principle Recommendation by:**
+**Post-study manuscript** (submitted to PCI Ecology for post-study peer review on 11 November 2024): preprint [pdf] ... at EcoEvoRxiv, [rmd](https://github.com/corinalogan/grackles/blob/master/Files/Preregistrations/g_exploration.Rmd)
 
-Jeremy Van Cleve (2019) Probing behaviors correlated with behavioral flexibility. *Peer Community in Ecology*, 100020. [10.24072/pci.ecology.100020](https://ecology.peercommunityin.org/public/rec?id=29&reviews=True)
-
- - Reviewers: two anonymous reviewers
-
-\newpage
-
-## ABSTRACT
+# Abstract {-}
 
 Behavioral flexibility, the ability to change behavior when circumstances change based on learning from previous experience, is thought to play an important role in a species' ability to successfully adapt to new environments and expand its geographic range. However, behavioral flexibility is rarely directly tested at the individual level. This limits our ability to determine how it relates to other traits, such as exploration or persistence, that might also influence individual responses to novel circumstances. Without this information, we lack the power to predict which traits facilitate a species' ability to adapt behavior to new environments. We use great-tailed grackles (a bird species) as a model to investigate this question because they have rapidly expanded their range into North America over the past 140 years. We evaluated whether grackle behavioral flexibility (measured as color reversal learning correlated with individual differences in the exploration of new environments and novel objects, boldness towards known and novel threats, as well as persistence and motor diversity in accessing a novel food source. We determined that grackles were repeatable in their exploration of a novel environment across two time points and in their persistence when interacting with several different novel apparatuses. There was a significant positive relationship between persistence and the two components of flexibility - the rate of learning to prefer a color option in the reversal learning task, and the rate of deviating from a preferred option. Furthermore, grackles that underwent serial reversal learning to experimentally increase behavioral flexibility were more exploratory in that they spent more time in close proximity to the novel environment relative to control individuals. This indicates that, the more an individual investigated or interacted with a novel apparatus, the more it was able to potentially learn and update its knowledge of current reward contingencies to adapt behavior accordingly. Our findings improve our understanding of the traits that are linked with flexibility in a highly adaptable species. We highlight the importance of using multiple different methods for measuring boldness and exploration to evaluate consistency of performance and therefore the methodological validity. We also show the importance of persistence as a factor in  adapting to novel environmental changes.
 
+**Keywords:** behavioral flexibility, personality, anthropogenic change, repeatability
+
 ### [Video summary](https://youtu.be/Xd_nYV9Lj7E) [https://youtu.be/Xd_nYV9Lj7E](https://youtu.be/Xd_nYV9Lj7E)
 
-## INTRODUCTION
+# Introduction {-}
 
 	Humans are altering all ecosystems on the planet too rapidly for most species to evolve adaptations to survive and reproduce [@hendry2008human; @sih2013understanding]. Among other consequences, anthropogenic change can lead to a proliferation of novel habitats, foods, and predators [@sih2011evolution]. Across short timescales, individuals must adapt to this novelty through changes in behavior. Behavioral flexibility is defined as the ability to use learning to functionally change behavior when circumstances change [@mikhalevich_is_2017]. As such, behavioral flexibility is thought to facilitate species resilience to anthropogenic change [@sol2013behavioural] and species invasions into novel areas [@sol2002behavioural; @wright2010behavioral].
 	
