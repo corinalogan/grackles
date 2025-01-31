@@ -297,11 +297,16 @@ bol$Condition <- factor(bol$Condition, labels = c("Pigeon","Hawk","Cat"))
 library(rptR)
 rptC1 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Cat"),], datatype = "Binary", nboot = 1000, npermut = 200)
 # R = 0.18, p = 0.215, CI = 0-0.96
+rptC1.base = rpt(binDur ~ (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Cat"),], datatype = "Binary", nboot = 1000, npermut = 200)
+# R = 0.25, p = 0.155, CI = 0-0.97
+summary(glmer(binDur ~ FlexGroup + (1|BirdID), data = bol[which(bol$Condition == "Cat"),], family = binomial(link = "logit")))
+### Reviewer comment 5: Covariate FlexGroup is not accounting for a significant amount of variance.
+
 rptC3 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200)
 # R = 0, p = 0.48
-rptBoth = rpt(binDur ~ Condition + FlexGroup + (1|BirdID), grname = "BirdID", data = bol[-which(bol$Condition == "Pigeon"),], datatype = "Binary", nboot = 1000, npermut = 200)
-# R = 0.04, p = 0.22
-
+rptC3.base = rpt(binDur ~ (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200)
+summary(glmer(binDur ~ FlexGroup + (1|BirdID), data = bol[which(bol$Condition == "Hawk"),], family = binomial(link = "logit")))
+### Reviewer comment 5: Covariate FlexGroup is not accounting for a significant amount of variance.
 
 ## Boldness is NOT repeatable ##
 
@@ -339,8 +344,10 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 
 
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-bold <- MCMCglmm(binDur ~ FlexGroup, random=~BirdID, family="categorical", data=bol[-which(bol$Condition == "Pigeon"),], verbose=F, prior=prior, nitt=63000, thin=20, burnin=5000)
+prior = list(R=list(R1=list(V=1,nu=0),
+                    R2=list(V=1,nu=0)),
+             G=list(G1=list(V=1,nu=0)))
+bold <- MCMCglmm(binDur ~ FlexGroup + Condition, random=~BirdID, family="categorical", data=bol[-which(bol$Condition == "Pigeon"),], verbose=F, prior=prior, nitt=6300000, thin=1000, burnin=5000)
 summary(bold)
 autocorr(bold$Sol) #Did fixed effects converge? (<0.1)? yes, after increasing iterations
 autocorr(bold$VCV) #Did random effects converge? (<0.1)? yes
@@ -349,34 +356,38 @@ autocorr(bold$VCV) #Did random effects converge? (<0.1)? yes
 #Therefore, because MCMCglmm can easily calculate repeatability on the latent scale, there is no need to transform this back to the observed scale.
 
 repeata <- bold$VCV[,"BirdID"]/(bold$VCV[,"BirdID"]+bold$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) # 0.13
+mean(repeata) # 0.02
 var(repeata) # 0.08
 posterior.mode(repeata) # << -0.01
-HPDinterval(repeata, 0.95) # 0 - 0.06
-# R = 0.01 (CI: 0, 0.06)
+HPDinterval(repeata, 0.95) # 0 - 0.11
+# R = 0.02 (CI: 0, 0.10)
 
+# Addressing Reviewer 5 comment:
+bol.base <- MCMCglmm(binDur ~ 1, random=~BirdID, family="categorical", data=bol[-which(bol$Condition == "Pigeon"),], verbose=F, prior=prior, nitt=6000000, thin=1000, burnin=5000)
+repeat.base <- bol.base$VCV[,"BirdID"]/(bol.base$VCV[,"BirdID"]+bol.base$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeat.base) # 0.01
 
-# Repeatability on the data/observed scale (accounting for fixed effects)
-#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
-vf <- sapply(1:nrow(bold[["Sol"]]), function(i) {
-   var(predict(bold, it=i))  
-}) #estimates for each iteration of the MCMC
+# from Nakagawa & Schielzeth 2013
+mVarF <- var(as.vector(apply(bold$Sol,2,mean) %*% t(bold$X)))
+mVarF/(mVarF+sum(apply(bold$VCV,2,mean)))
+# alternative with credile intervals
+vmVarF<-numeric(1000)
+for(i in 1:1000){
+  Var<-var(as.vector(bold$Sol[i,] %*% t(bold$X)))
+  vmVarF[i]<-Var}
 
-repeataF <- (vf+bold$VCV[,"BirdID"])/(vf+bold$VCV[,"BirdID"]+bold$VCV[,"units"]) #latent scale adjusted + data scale
-mean(repeataF) # 0.49
-posterior.mode(repeataF) 
-HPDinterval(repeataF, 0.95) # 0 - 0.06
-# get almost exact same results with rptR (R = 0.03, CI = 0-0.23, p = 0.27)
+R2m<-vmVarF/(vmVarF+bold$VCV[,1]+bold$VCV[,2])
+mean(R2m) # R2 marginal = 0.13
+posterior.mode(R2m)
+HPDinterval(R2m) # 0 - 0.43
 
-# Now compare with the raw repeatability: null model
-boldraw <- MCMCglmm(binDur ~ 1, random=~BirdID, family="categorical", data=bol[-which(bol$Condition=="Pigeon"),], verbose=F, prior=prior, nitt=63000, thin=20, burnin=5000)
-summary(boldraw)
+R2c<-(vmVarF+bold$VCV[,1])/(vmVarF+bold$VCV[,1]+bold$VCV[,2] )
+mean(R2c) # R2 conditional = 0.14
+posterior.mode(R2c)
+HPDinterval(R2c) # 0 - 0.47
 
-repeataraw <- boldraw$VCV[,"BirdID"]/(boldraw$VCV[,"BirdID"]+boldraw$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeataraw) # 0.01
-posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) # 0 - 0.06
-# these values are the exact same. All this means is FlexGroup has no effect/accounts for no variance
+# Reviewer comment 5: FlexGroup & Boldness condition covariates do account for a significant amount of variance.
+
 ```
 
 ![](g_exploration_fig2_boldness.jpeg){width=70%}
@@ -552,6 +563,8 @@ autocorr(expl1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 
 autocorr(expl1$VCV) #Did random effects converge? Yes
 
 
+summary(expl1) # FlexGroup is n.s.
+
 #Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 repeata <- expl1$VCV[,"BirdID"]/(expl1$VCV[,"BirdID"]+expl1$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeata) #0.68
@@ -559,18 +572,39 @@ var(repeata) #0.02
 posterior.mode(repeata) #0.73
 HPDinterval(repeata, 0.95) #0.37-0.92
 
-# Repeatability on the data/observed scale (accounting for fixed effects)
-#code from Supplementary Material S2 from Villemereuil et al. 2018 J Evol Biol
-vf <- sapply(1:nrow(expl1[["Sol"]]), function(i) {
-   var(predict(expl1, it=i))  
-}) #estimates for each iteration of the MCMC
+# Addressing Reviewer 5 comment:
+expl1.base <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+repeat.base <- expl1.base$VCV[,"BirdID"]/(expl1.base$VCV[,"BirdID"]+expl1.base$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeat.base) #0.68
 
-repeataF <- (vf+expl1$VCV[,"BirdID"])/(vf+expl1$VCV[,"BirdID"]+expl1$VCV[,"units"]) #latent scale adjusted + data scale
-mean(repeataF) #0.69
-posterior.mode(repeataF) #0.79
-HPDinterval(repeataF, 0.95) #0.43-0.95
+# from Nakagawa & Schielzeth 2013
+mVarF <- var(as.vector(apply(expl1$Sol,2,mean) %*% t(expl1$X)))
+mVarF/(mVarF+sum(apply(expl1$VCV,2,mean)))
+# alternative with credile intervals
+vmVarF<-numeric(1000)
+for(i in 1:1000){
+  Var<-var(as.vector(expl1$Sol[i,] %*% t(expl1$X)))
+  vmVarF[i]<-Var}
+
+expl1_list <- split(expl1$Sol, seq(nrow(expl1$Sol)))
+vmVarF1 <- map(expl1_list, ~.x %*% t(as.matrix(expl1$X))) %>% map_dbl(~var(as.vector(.x)))
+table(near(vmVarF, vmVarF1)) # vectors are the same
+
+R2m<-vmVarF/(vmVarF+expl1$VCV[,1]+expl1$VCV[,2])
+mean(R2m) # R2 marginal = 0.05
+posterior.mode(R2m)
+HPDinterval(R2m) # 0 - 0.19
+
+R2c<-(vmVarF+expl1$VCV[,1])/(vmVarF+expl1$VCV[,1]+expl1$VCV[,2] )
+mean(R2c) # R2 conditional = 0.71
+posterior.mode(R2c)
+HPDinterval(R2c) # 0.44-0.91
+
+# Reviewer comment 5: FlexGroup covariate does not account for a significant amount of variance.
 
 #RESULT: LatencyFirstLand (Explore Environment variable) = repeatable
+
+
 
 #### TotalDurationNear
 prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
@@ -578,6 +612,7 @@ expl2 <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random=~BirdID, fam
 autocorr(expl2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(expl2$VCV) #Did random effects converge? Yes
 
+summary(expl2) # FlexGroup post.mean = 3.96, p = 0.05
 
 #Advice from one of our reviewers Maxime Dahirel: In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units])
 repeata <- expl2$VCV[,"BirdID"]/(expl2$VCV[,"BirdID"]+expl2$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
@@ -586,7 +621,41 @@ var(repeata) #0.01
 posterior.mode(repeata) #0.93
 HPDinterval(repeata, 0.95) #0.67-0.98
 
+# Addressing Reviewer comment 5
+library(tidyr)
+library(purrr)
+library(dplyr)
+expl2.base <- MCMCglmm(round(TotalDurationNear.20cm) ~ 1, random=~BirdID, family="poisson", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+repeat.base <- expl2.base$VCV[,"BirdID"]/(expl2.base$VCV[,"BirdID"]+expl2.base$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeat.base) #0.89
+
+# from Nakagawa & Schielzeth 2013
+mVarF <- var(as.vector(apply(expl2$Sol,2,mean) %*% t(expl2$X)))
+mVarF/(mVarF+sum(apply(expl2$VCV,2,mean)))
+# alternative with crebile intervals
+vmVarF<-numeric(1000)
+for(i in 1:1000){
+  Var<-var(as.vector(expl2$Sol[i,] %*% t(expl2$X)))
+  vmVarF[i]<-Var}
+
+expl2_list <- split(expl2$Sol, seq(nrow(expl2$Sol)))
+vmVarF1 <- map(expl2_list, ~.x %*% t(as.matrix(expl2$X))) %>% map_dbl(~var(as.vector(.x)))
+table(near(vmVarF, vmVarF1)) # vectors are the same
+
+R2m<-vmVarF/(vmVarF+expl2$VCV[,1]+expl2$VCV[,2])
+mean(R2m) # R2 marginal = 0.19
+posterior.mode(R2m)
+HPDinterval(R2m) # 0 - 0.43
+
+R2c<-(vmVarF+expl2$VCV[,1])/(vmVarF+expl2$VCV[,1]+expl2$VCV[,2] )
+mean(R2c) # R2 conditional = 0.90
+posterior.mode(R2c)
+HPDinterval(R2c) # 0.76-0.99
+
+# Reviewer comment 5: While FlexGroup does account for significant variance, the R value is relatively unchanged in the base model and model including FlexGroup
+
 #RESULT: TotalDurationNear.20cm (Explore Environment variable) = repeatable
+
 
 ### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct - output matches that of MCMCglmm ###
 exp2$Name = as.factor(as.character(exp2$Name))
@@ -888,15 +957,16 @@ We conducted an *unregistered analysis* to quantify repeatability in the number 
 
 ```{r POSTrepeatableMotDiv, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 ## *UNREGISTERED ANALYSIS*
-head(mot) #2 measures for each individual - one for plastic, one for log. 
-mot2 = merge(mot, flexID, by = c("BirdID","Name"),all = T)
-mot2 = mot2[-which(is.na(mot2$TotalMot)),]
-
-mot2$motRate = mot2$TotalMot/mot2$TotTime
+head(per) #2 measures for each individual - one for plastic, one for log. 
+mot = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun" | per$Test == "Environment" |
+                 per$Test == "Object" | per$Test == "Boldness"),] # for motor diversity, there is no differentiation between function and nonfunctional. Also, we are only interested in motor actions on the MABs
+# 1-2 values per individual, 17 individuals
+mot$motRate = mot$TotalMot/mot$TotTime
+mot$Condition = as.factor(mot$Condition)
 
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID), family = poisson, data=mot3), n=250)
+simulationOutput <- simulateResiduals(fittedModel = glmer(TotalMot ~ Condition + Test + offset(log(TotTime)) + (1|BirdID), family = poisson, data=mot), n=250)
 testDispersion(simulationOutput) # normally dispersed
 testZeroInflation(simulationOutput) # not zero inflated  
 testUniformity(simulationOutput) #not heteroscedastic
@@ -905,7 +975,7 @@ plot(simulationOutput)
 
 # Best fit model is poisson with offset for trial time.
 # We do not know how to write the prior to incorporate an offset term into MCMCglmm (this code provided by Hadfield produces an error: https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines)
-motR1 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=mot2) #offset covariate should work in rpt the same way
+motR1 = glmer(TotalMot ~ Condition + Test + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=mot) #offset covariate should work in rpt the same way
 summary(motR1) # random effect variance = 0.57
 
 motR2 = glm(TotalMot ~ FlexGroup + offset(log(TotTime)), family = "poisson", data=mot2)
@@ -989,8 +1059,7 @@ flexexplore$c.phi = scale(flexexplore$lastphi, center = T, scale = T)
 flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
 
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
-#FE1 = aggregate(TotalDurationNear.20cm ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
-#FE2 = aggregate(LatencyFirstLand ~ Name + Batch + c.lambda + c.phi + lastlambda + lastphi, data = flexexplore, FUN = "mean")
+
 
 ## Persistence
 per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
