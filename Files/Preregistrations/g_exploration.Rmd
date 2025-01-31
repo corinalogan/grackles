@@ -344,9 +344,10 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 
 
 library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0),
-                    R2=list(V=1,nu=0)),
-             G=list(G1=list(V=1,nu=0)))
+prior = list(B=list(mu=c(0,0,0), V=gelman.prior(~FlexGroup+Condition,
+               data=bol[-which(bol$Condition == "Pigeon"),],scale=sqrt(pi^2/3+1))),
+             G=list(G1=list(V=1,nu=1,alpha.mu=0,alpha.V=1000)),
+             R=list(V=1,fix=1))
 bold <- MCMCglmm(binDur ~ FlexGroup + Condition, random=~BirdID, family="categorical", data=bol[-which(bol$Condition == "Pigeon"),], verbose=F, prior=prior, nitt=6300000, thin=1000, burnin=5000)
 summary(bold)
 autocorr(bold$Sol) #Did fixed effects converge? (<0.1)? yes, after increasing iterations
@@ -368,25 +369,32 @@ repeat.base <- bol.base$VCV[,"BirdID"]/(bol.base$VCV[,"BirdID"]+bol.base$VCV[,"u
 mean(repeat.base) # 0.01
 
 # from Nakagawa & Schielzeth 2013
+c2 <- (16 * sqrt(3)/(15 * pi))^2
+bold$Sol1 <- bold$Sol/sqrt(1+c2 * bold$VCV[, "units"]) 
+bold$VCV1 <- bold$VCV/(1+c2 * bold$VCV[, "units"]) 
+mFixed <- mean(bold$Sol1[,2]) * bold$X[, 2] + mean(bold$Sol1[, 3]) * bold$X[, 3] 
+
 mVarF <- var(as.vector(apply(bold$Sol,2,mean) %*% t(bold$X)))
-mVarF/(mVarF+sum(apply(bold$VCV,2,mean)))
-# alternative with credile intervals
+mVarF/(mVarF+sum(apply(bold$VCV1,2,mean)))
+# alternative with credible intervals
 vmVarF<-numeric(1000)
 for(i in 1:1000){
-  Var<-var(as.vector(bold$Sol[i,] %*% t(bold$X)))
+  Var<-var(as.vector(bold$Sol1[i,] %*% t(bold$X)))
   vmVarF[i]<-Var}
 
-R2m<-vmVarF/(vmVarF+bold$VCV[,1]+bold$VCV[,2])
-mean(R2m) # R2 marginal = 0.13
+(mVarF)/(mVarF + sum(apply(bold$VCV1,2,mean)[-3])+pi^2/3)
+R2m<-vmVarF/(vmVarF+bold$VCV1[,1]+bold$VCV1[,2]+pi^2/3)
+mean(R2m) # R2 marginal = 0.07
 posterior.mode(R2m)
-HPDinterval(R2m) # 0 - 0.43
+HPDinterval(R2m) # 0 - 0.18
 
-R2c<-(vmVarF+bold$VCV[,1])/(vmVarF+bold$VCV[,1]+bold$VCV[,2] )
+(mVarF+sum(apply(bold$VCV1,2,mean)[-3]))/(mVarF + sum(apply(bold$VCV1,2,mean)[-3])+pi^2/3)
+R2c<-(vmVarF+bold$VCV1[,1]+bold$VCV1[,2])/(vmVarF+bold$VCV1[,1]+bold$VCV1[,2]+pi^2/3)
 mean(R2c) # R2 conditional = 0.14
 posterior.mode(R2c)
-HPDinterval(R2c) # 0 - 0.47
+HPDinterval(R2c) # 0.19 - 0.61
 
-# Reviewer comment 5: FlexGroup & Boldness condition covariates do account for a significant amount of variance.
+# Reviewer comment 5: FlexGroup & Boldness condition covariates do account for a some variance.
 
 ```
 
@@ -607,8 +615,9 @@ HPDinterval(R2c) # 0.44-0.91
 
 
 #### TotalDurationNear
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-expl2 <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random=~BirdID, family="poisson", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+prior = list(G=list(G1=list(V=1,nu=1,alpha.mu=0,alpha.V=1000)),
+             R=list(R1=list(V=1,nu=0.002)))
+expl2 <- MCMCglmm(round(TotalDurationNear.20cm) ~ FlexGroup, random=~BirdID, family="poisson", data=exp2, verbose=F, prior=prior, nitt=130000, thin=100, burnin=3000)
 autocorr(expl2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(expl2$VCV) #Did random effects converge? Yes
 
@@ -625,34 +634,31 @@ HPDinterval(repeata, 0.95) #0.67-0.98
 library(tidyr)
 library(purrr)
 library(dplyr)
-expl2.base <- MCMCglmm(round(TotalDurationNear.20cm) ~ 1, random=~BirdID, family="poisson", data=exp2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+expl2.base <- MCMCglmm(round(TotalDurationNear.20cm) ~ 1, random=~BirdID, family="poisson", data=exp2, verbose=F, prior=prior, nitt=130000, thin=100, burnin=5000)
 repeat.base <- expl2.base$VCV[,"BirdID"]/(expl2.base$VCV[,"BirdID"]+expl2.base$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
 mean(repeat.base) #0.89
 
 # from Nakagawa & Schielzeth 2013
 mVarF <- var(as.vector(apply(expl2$Sol,2,mean) %*% t(expl2$X)))
-mVarF/(mVarF+sum(apply(expl2$VCV,2,mean)))
+mVdis <- log(1 + 1/exp(expl2.base$Sol[,1] + 0.5*(rowSums(expl2.base$VCV))))
+mVarF/(mVarF+sum(apply(expl2$VCV,2,mean))+mean(mVdis))
 # alternative with crebile intervals
 vmVarF<-numeric(1000)
 for(i in 1:1000){
   Var<-var(as.vector(expl2$Sol[i,] %*% t(expl2$X)))
   vmVarF[i]<-Var}
 
-expl2_list <- split(expl2$Sol, seq(nrow(expl2$Sol)))
-vmVarF1 <- map(expl2_list, ~.x %*% t(as.matrix(expl2$X))) %>% map_dbl(~var(as.vector(.x)))
-table(near(vmVarF, vmVarF1)) # vectors are the same
-
-R2m<-vmVarF/(vmVarF+expl2$VCV[,1]+expl2$VCV[,2])
+R2m<-vmVarF/(vmVarF+expl2$VCV[,1]+expl2$VCV[,2]+mean(mVdis))
 mean(R2m) # R2 marginal = 0.19
 posterior.mode(R2m)
 HPDinterval(R2m) # 0 - 0.43
 
-R2c<-(vmVarF+expl2$VCV[,1])/(vmVarF+expl2$VCV[,1]+expl2$VCV[,2] )
+R2c<-(vmVarF+expl2$VCV[,1])/(vmVarF+expl2$VCV[,1]+expl2$VCV[,2] + mVdis)
 mean(R2c) # R2 conditional = 0.90
 posterior.mode(R2c)
 HPDinterval(R2c) # 0.76-0.99
 
-# Reviewer comment 5: While FlexGroup does account for significant variance, the R value is relatively unchanged in the base model and model including FlexGroup
+# Reviewer comment 5: While FlexGroup does account for some variance, the R squared value is higher in the model including BirdId
 
 #RESULT: TotalDurationNear.20cm (Explore Environment variable) = repeatable
 
@@ -892,7 +898,6 @@ plot(simulationOutput)
 #REPEATABILITY
 #GLMM
 library(MCMCglmm)
-#prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
 prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
@@ -909,7 +914,30 @@ repeata <- perFm$VCV[,"BirdID"]/(perFm$VCV[,"BirdID"]+perFm$VCV[,"units"]) #late
 mean(repeata) # R=0.27
 var(repeata) 
 posterior.mode(repeata) 
-HPDinterval(repeata, 0.95) # 0.05 - 0.53  
+HPDinterval(repeata, 0.95) # 0.07 - 0.47  
+
+# Addressing Reviewer comment 5:
+# from Nakagawa & Schielzeth 2013
+mVarF <- var(as.vector(apply(perFm$Sol,2,mean) %*% t(perFm$X)))
+mVarF/(mVarF+sum(apply(perFm$VCV,2,mean)))
+# alternative with credile intervals
+vmVarF<-numeric(1000)
+for(i in 1:1000){
+  Var<-var(as.vector(perFm$Sol[i,] %*% t(perFm$X)))
+  vmVarF[i]<-Var}
+
+R2m<-vmVarF/(vmVarF+perFm$VCV[,1]+perFm$VCV[,2])
+mean(R2m) # R2 marginal = 0.57
+posterior.mode(R2m)
+HPDinterval(R2m) # 0.47 - 0.68
+
+R2c<-(vmVarF+perFm$VCV[,1])/(vmVarF+perFm$VCV[,1]+perFm$VCV[,2] )
+mean(R2c) # R2 conditional = 0.69
+posterior.mode(R2c)
+HPDinterval(R2c) # 0.59 - 0.78
+
+# Reviewer comment 5: Fixed effects do account for much of the variance
+
 
 ## Unregistered analysis
 # checking repeatability with rptR
@@ -975,20 +1003,20 @@ plot(simulationOutput)
 
 # Best fit model is poisson with offset for trial time.
 # We do not know how to write the prior to incorporate an offset term into MCMCglmm (this code provided by Hadfield produces an error: https://r-sig-mixed-models.r-project.narkive.com/H0mmc3JL/r-sig-me-mcmcglmm-poisson-with-an-offset-term-and-splines)
-motR1 = glmer(TotalMot ~ Condition + Test + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=mot) #offset covariate should work in rpt the same way
-summary(motR1) # random effect variance = 0.57
+motR1 = glmer(TotalMot ~ Condition + Test + (1|BirdID) + (1|Unit) + offset(log(TotTime)), family ="poisson", data=mot) #offset covariate should work in rpt the same way
+summary(motR1) # random effect variance = 0.47
 
-motR2 = glm(TotalMot ~ FlexGroup + offset(log(TotTime)), family = "poisson", data=mot2)
+motR2 = glm(TotalMot ~ Condition + Test + offset(log(TotTime)), family = "poisson", data=mot)
 anova(motR1,motR2) # BirdID random effect significantly adds to variance explained
 
 library(rptR)
-motRpt = rpt(TotalMot ~ FlexGroup + offset(log(TotTime)) + (1|BirdID), 
+motRpt = rpt(TotalMot ~ Condition + Test + offset(log(TotTime)) + (1|BirdID), 
            grname = ("BirdID"), datatype = "Poisson",
-           data = mot3, ratio = T,
+           data = mot, ratio = T,
            nboot = 200, npermut = 100)
 motRpt
-# R = 0, p = 0.5, CI = 0 - 0.45
-# This is contrary to what we'd expect based on the likelihood ratio test that shows the BirdID random effect accounts for a significant amount of variance in the response. However, this is because the rptR package automatically adds an observation-level random effect (olre) in Poisson models to control for overdispersion. The olre soaks up all of the variance, so the BirdID random effect explains 0 variance. Our data checking with DHARMa indicated that our model was not overdispersed and therefore does not need the olre.
+# R = 0.2, p = 0.29, CI = 0 - 0.66
+# This is contrary to what we'd expect based on the likelihood ratio test that shows the BirdID random effect accounts for a significant amount of variance in the response. However, this is because the rptR package automatically adds an observation-level random effect (olre) in Poisson models to control for overdispersion. The olre soaks up all of the variance, so the BirdID random effect explains nonsignificant variance. Our data checking with DHARMa indicated that our model was not overdispersed and therefore does not need the olre.
 mot2$olre = 1:nrow(mot2)
 motR1.2 = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime))+(1|olre), family ="poisson", data=mot2) 
 summary(motR1.2) # BirdID random effect variance now accounts for 0 variance
@@ -997,25 +1025,45 @@ summary(motR1.2) # BirdID random effect variance now accounts for 0 variance
 motR1@beta[1] # ß0 
 resVar = log(1/exp(motR1@beta[1])+1) # residual variance
 ranVar = as.numeric(VarCorr(motR1)) # BirdID random effect variance
-R = ranVar/(ranVar + resVar) #0.06
+R = ranVar/(ranVar + resVar) #0.08
 
 # permutations for p-value
 results = NA
 for(i in 1:1000){
-  tmp = data.frame("BirdID" = mot2$BirdID, 
-                   "FlexGroup" = mot2$FlexGroup,
-                   "TotTime"=mot2$TotTime, 
-                   "TotalMot" = sample(mot2$TotalMot,replace=F))
+  tmp = data.frame("BirdID" = mot$BirdID, 
+                   "FlexGroup" = mot$Condition,
+                   "Test" = mot$Test,
+                   "TotTime"=mot$TotTime, 
+                   "TotalMot" = sample(mot$TotalMot,replace=F))
   m = glmer(TotalMot ~ FlexGroup + (1|BirdID) + offset(log(TotTime)), family ="poisson", data=tmp)
   resVar = log(1/exp(m@beta[1])+1) # residual variance
   ranVar = as.numeric(VarCorr(m)) # BirdID random effect variance
   results[i] = ranVar/(ranVar + resVar)
 }
 hist(results)
-abline(v=0.06,col="red")
-sum(results > 0.06)/1000 # probability the repeatability estimate from our actual data is greater than the repeatability estimates generated from the permutations which randomized the data. 
+abline(v=0.08,col="red")
+sum(results > 0.08)/1000 # probability the repeatability estimate from our actual data is greater than the repeatability estimates generated from the permutations which randomized the data. 
 
-# Repeatability is still very low, close to 0. Permutations indicate the p-value is 0.54. This is very similar to the results when using the rpt function (that included the olre). Therefore, individuals do not consistently use a similar number of motor behaviors across the two MABs relative to other individuals. We report the rpt results for consistency with the other repeatability tests.
+# Repeatability is still very low. Permutations indicate the p-value is 0.23. This is very similar to the results when using the rpt function (that included the olre). Therefore, individuals do not consistently use a similar number of motor behaviors across the two MABs relative to other individuals. We report the rpt results for consistency with the other repeatability tests.
+
+# Addressing Reviewer comment 5:
+# from Nakagawa & Schielzeth 2013
+Unit <- factor(1:length(mot$TotalMot))
+motR0 = glmer(TotalMot ~ 1 + (1|BirdID) + (1|Unit) + offset(log(TotTime)), family ="poisson", data=mot)
+
+Fixed <- fixef(motR1)[2] * motR1@pp$X[, 2] + fixef(motR1)[3] * motR1@pp$X[, 3] #+ fixef(motR1)[4] * motR1@pp$X[, 4]
+VarF <- var(Fixed)
+VarF <- var(as.vector(fixef(motR1) %*% t(motR1@pp$X)))
+VarF/(VarF + VarCorr(motR1)$BirdID[1] + VarCorr(motR1)$Unit[1] + log(1+1/exp(as.numeric(fixef(motR0)))))
+
+Vdis <- log(1 + 1/exp(as.numeric(fixef(motR0) + 0.5*(VarCorr(motR0)$BirdID[1] + VarCorr(motR1)$Unit[1]))))
+VarF/(VarF + VarCorr(motR1)$BirdID[1] + VarCorr(motR1)$Unit[1] + Vdis) # R2 marginal = 0.06
+
+(VarF + VarCorr(motR1)$BirdID[1])/
+  (VarF + VarCorr(motR1)$BirdID[1] + VarCorr(motR1)$Unit[1] + Vdis) # R2 conditional = 0.08
+                                  
+
+# Reviewer comment 5: Fixed effects do account for much of the variance
 
 ```
 
