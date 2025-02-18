@@ -312,9 +312,14 @@ summary(glmer(binDur ~ FlexGroup + (1|BirdID), data = bol[which(bol$Condition ==
 
 # easier to see individual inconsistency with DurationOnGround than the 0/1 variable we used in the analysis where the lines lie on top of each other
 library(ggplot2)
+
+bol$FlexGroup=factor(bol$FlexGroup, levels = c("Control","Manipulation"), labels = c("Control","Trained"))
+
 ggplot(bol[-which(bol$Condition == "Pigeon"),]) +
-  geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
-  geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, size = 0.7)) + 
+  geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID), 
+            size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, shape = FlexGroup, 
+                 size = 0.7, alpha = 0.7)) + 
   facet_grid(.~Condition) +
   labs(x = "Time", y = "Duration (sec) within 100cm") + 
   theme_bw() +
@@ -322,8 +327,12 @@ ggplot(bol[-which(bol$Condition == "Pigeon"),]) +
         axis.title = element_text(size = 20),
         plot.title = element_text(size = 26),
         strip.text.x = element_text(size = 20)) +
+  theme(legend.title = element_text(size=16),
+        legend.text = element_text(size=14)) +
   ggtitle("Boldness") +
-  theme(legend.position="none")
+  guides(color = FALSE,
+         shape=guide_legend(title="Serial reversal \n learning group", override.aes = list(size = 5))) +
+  guides(alpha = F) + guides(size = F)
 
 
 ############ Registered Analysis: Now double-check repeatability in MCMCglmm #############
