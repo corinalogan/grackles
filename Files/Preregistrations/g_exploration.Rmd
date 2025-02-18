@@ -630,7 +630,7 @@ var(repeata) #0.01
 posterior.mode(repeata) #0.93
 HPDinterval(repeata, 0.95) #0.67-0.98
 
-# Addressing Reviewer comment 5
+# Addressing post study Reviewer comment 5
 library(tidyr)
 library(purrr)
 library(dplyr)
@@ -833,7 +833,7 @@ anova(m3,m4) #random effect does not improve the fit of the model, does not acco
 
 #### CONTEXTUAL REPEATABILITY - combine explore environment and explore object back together. Only novel condition
 exp2$DurationOnGround = exp2$TotalDurationInTent + exp2$TotalDurationFar.20cm + exp2$TotalDurationNear.20cm
-exp = rbind(exp2, exp.o2)
+exp.both = rbind(exp2, exp.o2)
 rptBoth = rpt(log(LatencyFirstLand) ~ Test + FlexGroup + (1|BirdID), grname = "BirdID", data=exp, datatype="Gaussian", nboot=1000, npermut=100)
 summary(rptBoth) # R = 0.49, CI = 0.21-0.69, p = 0
 rptBoth2 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp, datatype="Gaussian", nboot=1000, npermut=100)
@@ -850,9 +850,12 @@ ggplot(exp, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID, shap
   theme_bw() + 
   scale_colour_discrete(guide = "none") 
 
-ggplot(exp) +
-  geom_line(aes(x = as.factor(Time), y = LatencyFirstLand, group = BirdID, color = BirdID), size = 1.8, alpha = 0.7) + 
-  geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, size = 0.7)) + 
+exp.both$FlexGroup=factor(exp.both$FlexGroup, levels = c("Control","Manipulation"), labels = c("Control","Trained"))
+
+ggplot(exp.both) +
+  geom_line(aes(x = as.factor(Time), y = LatencyFirstLand, group = BirdID, color = BirdID, shape = FlexGroup), 
+            size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, shape = FlexGroup, size = 0.7, alpha = 0.7)) + 
   facet_grid(.~Test) +
   labs(x = "Time", y = "Latency to approach (sec)") + 
   theme_bw() +
@@ -860,8 +863,12 @@ ggplot(exp) +
         axis.title = element_text(size = 20),
         plot.title = element_text(size = 26),
         strip.text.x = element_text(size = 20)) +
+  theme(legend.title = element_text(size=16), #change legend title font size
+        legend.text = element_text(size=14)) + #change legend text font size
   ggtitle("Exploration") +
-  theme(legend.position="none")
+  guides(color = FALSE,
+         shape=guide_legend(title="Serial reversal \n learning group", override.aes = list(size = 5))) + 
+  guides(alpha = F) + guides(size = F)
 ```
 
 ![](g_exploration_fig3_exploration.jpeg){width=70%}
