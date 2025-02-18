@@ -899,11 +899,13 @@ table(per$Condition,per$BirdID) #10 control, 8 manipulated individuals
 per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 per$binTouch = ifelse(per$SumTouches>0,1,0)
 
+colnames(per)[3] = "FlexGroup"
+per$FlexGroup=factor(per$FlexGroup, levels = c("CON","Manip"), labels = c("Control","Trained"))
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + Condition + TotTime + (1|BirdID), family = "gaussian", data=per), n=250)
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + (1|BirdID), family = "gaussian", data=per), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # normally dispersed
 testZeroInflation(simulationOutput) # zero inflated  
@@ -918,7 +920,7 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
-perFm <- MCMCglmm(log(SumTouches+1) ~ Test + Condition + TotTime, random=~BirdID, family="gaussian",
+perFm <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime, random=~BirdID, family="gaussian",
                  data=per, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFm$Sol) #Did fixed effects converge?
@@ -957,7 +959,7 @@ HPDinterval(R2c) # 0.59 - 0.78
 
 ## Unregistered analysis
 # checking repeatability with rptR
-rPer = rpt(log(SumTouches +1) ~ Test + Condition + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
+rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
            data = per,
            nboot = 1000, npermut = 500)
 rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
@@ -980,7 +982,7 @@ ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)
   labs(x = "Bird", y = "Number of touches per time") + 
   theme_bw() +
   theme(legend.key.size = unit(2, 'lines')) +
-  theme(axis.text.x = element_blank(),
+  theme(#axis.text.x = element_blank(),
         axis.text.y = element_text(size = 14),
         axis.title = element_text(size = 20),
         plot.title = element_text(size = 26),
@@ -988,7 +990,11 @@ ggplot(per2,aes(x=reorder(BirdID,TouchRate),y=TouchRate,shape=Test,color=BirdID)
         legend.text = element_text(size=14)) +
   ggtitle("Persistence") +
   scale_shape_manual(values = c(15, 16, 17, 3, 4)) +
-  scale_colour_discrete(guide = "none")
+  scale_colour_discrete(guide = "none") +
+  scale_x_discrete(labels=c("A044KS" = "C", "A025GO" = "T","A088YR" = "C", "A031-Y" = "C","A022-N" = "C", "A064LR" = "T",
+                            "A096NS" = "T", "A075Y-" = "C","A090SB" = "C", "A086GB" = "T","A070KP" = "C", "A007-S" = "C",
+                            "A068YS" = "T", "A035P-" = "T","A087AG" = "C", "A042GY" = "C","A036R-" = "T", "A073OL" = "T"
+                             ))
 
 
 ```
