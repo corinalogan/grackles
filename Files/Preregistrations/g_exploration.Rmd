@@ -861,15 +861,17 @@ ggplot(exp, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID, shap
 
 exp.both$FlexGroup=factor(exp.both$FlexGroup, levels = c("Control","Manipulation"), labels = c("Control","Trained"))
 
-ggplot(exp.both) +
+elatency = ggplot(exp.both) +
   geom_line(aes(x = as.factor(Time), y = LatencyFirstLand, group = BirdID, color = BirdID, shape = FlexGroup), 
             size = 1.8, alpha = 0.7) + 
   geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, shape = FlexGroup, size = 0.7, alpha = 0.7)) + 
   facet_grid(.~Test) +
-  labs(x = "Time", y = "Latency to approach (sec)") + 
+  labs(y = "Latency to approach (sec)") + 
   theme_bw() +
   theme(axis.text = element_text(size = 14),
-        axis.title = element_text(size = 20),
+        axis.text.x = element_blank(),
+        axis.title.y = element_text(size = 20),
+        axis.title.x = element_blank(),
         plot.title = element_text(size = 26),
         strip.text.x = element_text(size = 20)) +
   theme(legend.title = element_text(size=16), #change legend title font size
@@ -878,6 +880,24 @@ ggplot(exp.both) +
   guides(color = FALSE,
          shape=guide_legend(title="Serial reversal \n learning group", override.aes = list(size = 5))) + 
   guides(alpha = F) + guides(size = F)
+
+eduration = ggplot(exp.both) +
+  geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID, shape = FlexGroup), 
+            size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, shape = FlexGroup, size = 0.7, alpha = 0.7)) + 
+  facet_grid(.~Test) +
+  labs(x = "Time", y = "Duration near (sec)") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 26),
+        strip.text.x = element_blank()) +
+  theme(legend.title = element_text(size=16), #change legend title font size
+        legend.text = element_text(size=14)) + #change legend text font size
+  theme(legend.position="none")
+
+library(ggpubr)
+ggarrange(elatency, eduration, nrow = 2, common.legend = T, legend = "right")
 ```
 
 ![](g_exploration_fig3_exploration.jpeg){width=70%}
