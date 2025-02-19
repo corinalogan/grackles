@@ -974,13 +974,44 @@ mean(R2c) # R2 conditional = 0.69
 posterior.mode(R2c)
 HPDinterval(R2c) # 0.59 - 0.78
 
-# Reviewer comment 5: Fixed effects do account for much of the variance
+# Results for reviewer comment 5: Fixed effects do account for much of the variance
+
+
+
+## Reviewer comment 38: Checking whether repeatability decreases/disappears if we only look at number of touches to the MABs
+per2 = per[-which(per$Test == "Environment" | per$Test == "Object" | per$Test == "Boldness"),]
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + (1|BirdID), family = "gaussian", data=per2), n=250)
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # zero inflated, but only 4 zeros  
+testUniformity(simulationOutput) #heteroscedastic
+plot(simulationOutput)
+
+prior1 = list(R=list(R1=list(V=1, nu=1),
+                     R2=list(V=1, nu=1),
+                     R3=list(V=1, nu=1)),
+              G=list(G1=list(V=1, nu=0.002)))
+perFmMAB <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime, random=~BirdID, family="gaussian",
+                 data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
+# no difference between control and manipulated groups, no effect of trial time
+autocorr(perFmMAB$Sol) #Did fixed effects converge?
+autocorr(perFmMAB$VCV) #Did random effects converge?
+plot(perFmMAB)
+
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
+repeata <- perFmMAB$VCV[,"BirdID"]/(perFmMAB$VCV[,"BirdID"]+perFmMAB$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # R=0.27
+var(repeata) 
+posterior.mode(repeata) 
+HPDinterval(repeata, 0.95) # 0.07 - 0.47  
+
+# Results for Reviewer comment 38: We get almost the same value for repeatability if we exclude boldness/exploration
 
 
 ## Unregistered analysis
 # checking repeatability with rptR
 rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
-           data = per,
+           data = per2,
            nboot = 1000, npermut = 500)
 rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
 # We get the same results
