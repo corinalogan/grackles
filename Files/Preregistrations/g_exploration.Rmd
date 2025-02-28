@@ -954,6 +954,16 @@ var(repeata)
 posterior.mode(repeata) 
 HPDinterval(repeata, 0.95) # 0.07 - 0.47  
 
+## Unregistered analysis
+# checking repeatability with rptR
+rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
+           data = per2,
+           nboot = 1000, npermut = 500)
+rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
+# We get the same results
+
+
+
 # Addressing Reviewer comment 5:
 # from Nakagawa & Schielzeth 2013
 mVarF <- var(as.vector(apply(perFm$Sol,2,mean) %*% t(perFm$X)))
@@ -1008,13 +1018,42 @@ HPDinterval(repeata, 0.95) # 0.07 - 0.47
 # Results for Reviewer comment 38: We get almost the same value for repeatability if we exclude boldness/exploration
 
 
+# Reviewer comment 41: We analyze the relationship between flexibility and nonfunctional touches without first verifying that nonfunctional touches is repeatable across the two different MABs.
+per2 = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + (1|BirdID), family = "gaussian", data=per2), n=250)
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) # normally dispersed
+testZeroInflation(simulationOutput) # zero inflated, but only 2 zeros  
+testUniformity(simulationOutput) #heteroscedastic
+plot(simulationOutput)
+
+prior1 = list(R=list(R1=list(V=1, nu=1),
+                     R2=list(V=1, nu=1),
+                     R3=list(V=1, nu=1)),
+              G=list(G1=list(V=1, nu=0.002)))
+perFmMAB2 <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime, random=~BirdID, family="gaussian",
+                 data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
+# no difference between control and manipulated groups, no effect of trial time
+autocorr(perFmMAB2$Sol) #Did fixed effects converge?
+autocorr(perFmMAB2$VCV) #Did random effects converge?
+plot(perFmMAB2)
+
+#In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
+repeata <- perFmMAB2$VCV[,"BirdID"]/(perFmMAB2$VCV[,"BirdID"]+perFmMAB2$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) # R=0.06 ... very low repeatability
+var(repeata) 
+posterior.mode(repeata) 
+HPDinterval(repeata, 0.95)
 ## Unregistered analysis
 # checking repeatability with rptR
 rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
            data = per2,
            nboot = 1000, npermut = 500)
-rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
-# We get the same results
+rPer # R=0, CI= 0-0.5
+
+# Results for reviewer comment 41: Actually nonfunctional touches on their own are not repeatable across the two different MABs. So we will not model nonfunctional touches as a function of behavioral flexibility.
+
+
 
 
 ### Plotting
