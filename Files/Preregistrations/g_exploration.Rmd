@@ -933,13 +933,12 @@ table(per$Condition,per$BirdID) #10 control, 8 manipulated individuals
 per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 per$binTouch = ifelse(per$SumTouches>0,1,0)
 
-colnames(per)[3] = "FlexGroup"
-per$FlexGroup=factor(per$FlexGroup, levels = c("CON","Manip"), labels = c("Control","Trained"))
+per = merge(per, flexID, by = c("Name", "BirdID")) # Add Sex & Age covariates per Reviewer comment 34 & 36
 
 # DATA CHECKING
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + (1|BirdID), family = "gaussian", data=per), n=250)
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), family = "gaussian", data=per), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # normally dispersed
 testZeroInflation(simulationOutput) # zero inflated  
@@ -954,7 +953,7 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
-perFm <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime, random=~BirdID, family="gaussian",
+perFm <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex, random=~BirdID, family="gaussian",
                  data=per, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFm$Sol) #Did fixed effects converge?
@@ -970,13 +969,13 @@ HPDinterval(repeata, 0.95) # 0.07 - 0.47
 
 ## Unregistered analysis
 # checking repeatability with rptR
-rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
-           data = per2,
+rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
+           data = per,
            nboot = 1000, npermut = 500)
 rPer # R = 0.28 (0.07-0.46), p_LRT < 0.001, p_permut = 0.002
 # We get the same results
 
-
+# Persistence, as total number of touches, is repeatable regardless of whether Age & Sex are included
 
 # Addressing Reviewer comment 5:
 # from Nakagawa & Schielzeth 2013
@@ -1004,7 +1003,7 @@ HPDinterval(R2c) # 0.59 - 0.78
 
 ## Reviewer comment 38: Checking whether repeatability decreases/disappears if we only look at number of touches to the MABs
 per2 = per[-which(per$Test == "Environment" | per$Test == "Object" | per$Test == "Boldness"),]
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + (1|BirdID), family = "gaussian", data=per2), n=250)
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), family = "gaussian", data=per2), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # normally dispersed
 testZeroInflation(simulationOutput) # zero inflated, but only 4 zeros  
@@ -1015,7 +1014,7 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
-perFmMAB <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime, random=~BirdID, family="gaussian",
+perFmMAB <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex, random=~BirdID, family="gaussian",
                  data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFmMAB$Sol) #Did fixed effects converge?
@@ -1029,23 +1028,23 @@ var(repeata)
 posterior.mode(repeata) 
 HPDinterval(repeata, 0.95) # 0.07 - 0.47  
 
-# Results for Reviewer comment 38: We get almost the same value for repeatability if we exclude boldness/exploration
+# Results for Reviewer comment 38: We get almost the same value for repeatability if we exclude boldness/exploration, regardless of whether Age & Sex are included
 
 
-# Reviewer comment 41: We analyze the relationship between flexibility and nonfunctional touches without first verifying that nonfunctional touches is repeatable across the two different MABs.
+# Reviewer comment 41: We analyzed the relationship between flexibility and nonfunctional touches without first verifying that nonfunctional touches is repeatable across the two different MABs.
 per2 = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + (1|BirdID), family = "gaussian", data=per2), n=250)
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), family = "gaussian", data=per2), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # normally dispersed
 testZeroInflation(simulationOutput) # zero inflated, but only 2 zeros  
-testUniformity(simulationOutput) #heteroscedastic
+testUniformity(simulationOutput) #not heteroscedastic
 plot(simulationOutput)
 
 prior1 = list(R=list(R1=list(V=1, nu=1),
                      R2=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
-perFmMAB2 <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime, random=~BirdID, family="gaussian",
+perFmMAB2 <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex, random=~BirdID, family="gaussian",
                  data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFmMAB2$Sol) #Did fixed effects converge?
@@ -1060,7 +1059,7 @@ posterior.mode(repeata)
 HPDinterval(repeata, 0.95)
 ## Unregistered analysis
 # checking repeatability with rptR
-rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
+rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
            data = per2,
            nboot = 1000, npermut = 500)
 rPer # R=0, CI= 0-0.5
