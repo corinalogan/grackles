@@ -279,15 +279,15 @@ pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
 
 #### Calculating home range size ####
 #Turn dataframe into telemetry object
-telem = pts.min[,c(1,2,4,5,7)] #only need bird name, date, lat and long, time
-telem$timestamp = paste(telem$Date,telem$Time, sep=' ') #telem format requires date/time merged together for timestamp
-telem = telem[,-c(2,5)] #remove other date and time columns
+telem = pts.min[,c(1,2,3,7,11,12)] #only need bird name, date, lat and long, time
+#telem$timestamp = paste(telem$Date,telem$Time, sep=' ') #telem format requires date/time merged together for timestamp
+telem = telem[,-c(2,3)] #remove other date and time columns
 colnames(telem) = c("individual.local.identifier","location.lat","location.long","timestamp") #use required column names
 telem = as.telemetry(telem, timeformat = "%Y-%m-%d %H:%M:%S",timezone = "")
 
-for(i in 1:length(telem)){
+for(i in telem){
   GUESS = ctmm.guess(telem$i, interactive = FALSE)
-  m = ctmm.fit(telem$i, GUESS)
+  m = ctmm.select(ctmm.fit(telem$i, GUESS))
   hr = akde(telem$i, m)
   est[i] = summary(hr)$CI[2]
   results = rbind(results,est[i])

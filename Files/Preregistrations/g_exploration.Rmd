@@ -226,7 +226,7 @@ flexID$FlexGroup[which(flexID$Name == "Taco")]<- "Control"
 
 # Add band ID bird names to data frame to merge it with boldness data
 biometrics = read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Data/data_biometricsAZ.csv"), header=T, sep=",", stringsAsFactors=F)
-biometrics = unique(biometrics[,c(1,2)])
+biometrics = unique(biometrics[,c(1,2,13,14)]) # add sex and age per post-study Reviewer comment 34 & 36
 flexID = merge(flexID, biometrics, by = "Name")
 
 # Fix BirdIDs entered incorrectly in boldness data sheet
@@ -249,8 +249,8 @@ bol$DurationOnGround = bol$TotalDurationFar.20cm + bol$TotalDurationNear.20cm # 
 ####### FIGURING OUT DATA STRUCTURE FOR REPEATABILITY ANALYSIS ######
 hist(bol$DurationOnGround) #definitely looks zero-inflated
 library(lme4)
-d1 = glmer.nb(round(DurationOnGround) ~ Condition + FlexGroup + (1|BirdID), data = bol)
-d2 = glmer(round(DurationOnGround) ~ Condition + FlexGroup + (1|BirdID),data = bol, family = poisson)
+d1 = glmer.nb(round(DurationOnGround) ~ Condition + FlexGroup + Age + Sex + (1|BirdID), data = bol)
+d2 = glmer(round(DurationOnGround) ~ Condition + FlexGroup + Age + Sex + (1|BirdID),data = bol, family = poisson)
 # function from Ben Bolker for calculating overdispersion in glmm
 overdisp_fun <- function(model) {
     rdf <- df.residual(model)
@@ -260,7 +260,7 @@ overdisp_fun <- function(model) {
     pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
     c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
 }
-overdisp_fun(d2) # both overdispersed, use zero-inflated negative binomial model
+overdisp_fun(d1) # both overdispersed, use zero-inflated negative binomial model
 
 #### UNREGISTERED ANALYSIS: Is response different to cat and hawk vs pigeon? ####
 # C1 = cat, C2 = pigeon, C3 = hawk
@@ -270,11 +270,11 @@ install_github("nyiuab/NBZIMM", force=T, build_vignettes=F)
 library(NBZIMM)
 
 # C3 is NOT different from C1 (ß = -0.14, p = 0.52) - no difference in time on the ground between the cat and the hawk
-d3 = glmm.zinb(DurationOnGround ~ Condition + FlexGroup + offset(log(TrialDuration)), random = ~1|BirdID, data = bol)
+d3 = glmm.zinb(DurationOnGround ~ Condition + FlexGroup + Age + Sex + offset(log(TrialDuration)), random = ~1|BirdID, data = bol)
 summary(d3) # Output displayed below chunk
 # reorder factor levels to get difference between C2 & C3
 bol$Condition = factor(bol$Condition, levels=c('C2', 'C3', 'C1'))
-d3 = glmm.zinb(DurationOnGround ~ Condition + FlexGroup + offset(log(TrialDuration)), random = ~1|BirdID, data = bol)
+d3 = glmm.zinb(DurationOnGround ~ Condition + FlexGroup + Age + Sex + offset(log(TrialDuration)), random = ~1|BirdID, data = bol)
 summary(d3)
 # response to C2 is different from C1 (ß = -0.80, p = 0) & C3 (ß = -0.95, p = 0) - significantly less time on the ground with the cat and hawk than the pigeon
 # The cat and hawk did not result in different time on the ground (ß = -0.1, p = 0.71)
@@ -282,13 +282,13 @@ summary(d3)
 
 ### So, our control condition (known non-threat) worked and C1 & C3 seem to be perceived as threatening. Now only model repeatability of the response to threatening objects (C1 & C3) ###
 hist(bol$DurationOnGround[-which(bol$Condition == "C2")])
-d1 = glmer.nb(round(DurationOnGround) ~ FlexGroup + (1|BirdID), data = bol[-which(bol$Condition == "C2"),])
-d2 = glmer(round(DurationOnGround) ~ FlexGroup + (1|BirdID),data = bol[-which(bol$Condition == "C2"),], family = poisson)
-overdisp_fun(d1) # both overdispersed, use zero-inflated negative binomial model
-d3 = glmm.zinb(fixed = round(DurationOnGround) ~ FlexGroup, random = ~1|BirdID, data = bol[-which(bol$Condition == "C2"),])
+d1 = glmer.nb(round(DurationOnGround) ~ FlexGroup + Age + Sex + (1|BirdID), data = bol[-which(bol$Condition == "C2"),])
+d2 = glmer(round(DurationOnGround) ~ FlexGroup + Age + Sex + (1|BirdID),data = bol[-which(bol$Condition == "C2"),], family = poisson)
+overdisp_fun(d2) # both overdispersed, use zero-inflated negative binomial model
+d3 = glmm.zinb(fixed = round(DurationOnGround) ~ FlexGroup + Age + Sex, random = ~1|BirdID, data = bol[-which(bol$Condition == "C2"),])
 summary(d3)
 # No effect of FlexGroup on response to threatening objects
-# but cannot get variance components for repeatability calculation from z-inb model?
+# but cannot get variance components for repeatability calculation from zinb model?
 
 ### For repeatability, need to binarize performance to 0 (did not come down) and 1 (came to the ground)
 bol$binDur = ifelse(bol$DurationOnGround >0, 1, 0)
@@ -301,12 +301,23 @@ rptC1.base = rpt(binDur ~ (1|BirdID), grname = "BirdID", data = bol[which(bol$Co
 # R = 0.25, p = 0.155, CI = 0-0.97
 summary(glmer(binDur ~ FlexGroup + (1|BirdID), data = bol[which(bol$Condition == "Cat"),], family = binomial(link = "logit")))
 ### Reviewer comment 5: Covariate FlexGroup is not accounting for a significant amount of variance.
+### Reviewer comment 34 & 36: 4 females (all adults) & 2 juveniles (both male), rpt models won't run with Sex and Age covariates because of unbalanced sample. Remove females and juveniles to see if results are different
+
+bol.red = bol[-which(bol$Sex == "F" | bol$Age == "J"),]
+rptC1.red = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol.red[which(bol.red$Condition == "Cat"),], datatype = "Binary", nboot = 1000, npermut = 200)
+# R = 0.01, p = 0.37 - Repeatability is even lower and still not significantly different from random
 
 rptC3 = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200)
 # R = 0, p = 0.48
 rptC3.base = rpt(binDur ~ (1|BirdID), grname = "BirdID", data = bol[which(bol$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200)
 summary(glmer(binDur ~ FlexGroup + (1|BirdID), data = bol[which(bol$Condition == "Hawk"),], family = binomial(link = "logit")))
 ### Reviewer comment 5: Covariate FlexGroup is not accounting for a significant amount of variance.
+
+### Reviewer comment 34 & 36 - Juveniles and females removed:
+rptC3.red = rpt(binDur ~ FlexGroup + (1|BirdID), grname = "BirdID", data = bol.red[which(bol.red$Condition == "Hawk"),], datatype = "Binary", nboot = 1000, npermut = 200) ### Will not run. Trying likelihood ratio test:
+b1 = glmer(binDur ~ FlexGroup + (1|BirdID), data = bol[which(bol$Condition == "Hawk"),], family = binomial(link = "logit"))
+b2 = glm(binDur ~ FlexGroup, data = bol[which(bol$Condition == "Hawk"),], family = binomial(link = "logit"))
+anova(b1,b2) # Not repeatable still with juvies and females removed.
 
 ## Boldness is NOT repeatable ##
 
@@ -1204,7 +1215,7 @@ library(lme4)
 # We found [@blaisdell2021more; @logan2022flexmanip] that the "Flexibility comprehensive" variable was much more effective at representing flexibility than the other variables we preregistered (i.e. Trials to reverse in the last reversal). Therefore, we only use this variable here.
 
 
-#####--------Prepare the exploration, persistence and motor diversity data---------##### 
+#####--------Prepare the exploration, persistence data---------##### 
 
 flexcompr<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexmanip_ArizonaBirds_EstimatedPhiLambdaReversalLearning.csv"), header=T, sep=",", stringsAsFactors=F)
 colnames(flexcompr)[2]<- "Name"
