@@ -1046,7 +1046,7 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
 perFmMAB2 <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex, random=~BirdID, family="gaussian",
-                 data=per3, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
+                 data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFmMAB2$Sol) #Did fixed effects converge?
 autocorr(perFmMAB2$VCV) #Did random effects converge?
@@ -1061,7 +1061,7 @@ HPDinterval(repeata, 0.95)
 ## Unregistered analysis
 # checking repeatability with rptR
 rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
-           data = per3,
+           data = per2,
            nboot = 1000, npermut = 500)
 rPer # Nonfunctional R=0, CI= 0-0.5; Functional R=0.24, p = 0.01, Regardless of whether Age & Sex are included
 
@@ -1499,11 +1499,9 @@ m <- list(
    "Duration near" = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), data=flexexplore,  family="poisson"),
    "Latency to land" = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore),
    "Number of functional touches per time" = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset = log(TotTime),
-                                        family="poisson",data=flexpersF),
-   "Number of nonfunctional touches per time" = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime),
-                                        family="poisson",data=flexpersN))
+                                        family="poisson",data=flexpersF))
 
-cap = "Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that persistence (the number of nonfunctional touches to the novel apparatuses per time) was significantly related to phi and lambda."
+cap = "Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option, and lambda - the rate of deviating from learned attractions), was not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach to within 100cm of the novel environment (Latency to Land). Moreover, persistence (the number of functional touches to the novel apparatuses per time) was not significantly related to phi or lambda."
 tab2 = modelsummary(m,
                     output = "gt",
                     fmt = 2,
@@ -1517,10 +1515,10 @@ tab2 = modelsummary(m,
 tab2 %>%
   tab_footnote(footnote = md("'c.phi' and 'c.lambda' represent the centered and scaled version of these variables because the phi and lamda values were on fairly different scales."),
                locations = cells_body(rows = c(2,3), columns = 1)) %>%
-  tab_style(
-    style = cell_text(weight = "bold"),
-    locations = cells_body(columns = 13,rows = c(2,3))) %>%
-  #tab_header(title = cap) %>%
+  #tab_style(
+   # style = cell_text(weight = "bold"),
+    #locations = cells_body(columns = 13,rows = c(2,3))) %>%
+  tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 
 
