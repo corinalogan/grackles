@@ -1031,9 +1031,10 @@ HPDinterval(repeata, 0.95) # 0.07 - 0.47
 # Results for Reviewer comment 38: We get almost the same value for repeatability if we exclude boldness/exploration, regardless of whether Age & Sex are included
 
 
-# Reviewer comment 41: We analyzed the relationship between flexibility and nonfunctional touches without first verifying that nonfunctional touches is repeatable across the two different MABs.
-per2 = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), family = "gaussian", data=per2), n=250)
+# Reviewer comment 41: We analyzed the relationship between flexibility and non/functional touches without first verifying that non/functional touches is repeatable across the two different MABs.
+per2 = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),] #nonfuntional touches only
+per3 = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),] #functional touches only
+simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), family = "gaussian", data=per3), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # normally dispersed
 testZeroInflation(simulationOutput) # zero inflated, but only 2 zeros  
@@ -1045,7 +1046,7 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
 perFmMAB2 <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex, random=~BirdID, family="gaussian",
-                 data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
+                 data=per3, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFmMAB2$Sol) #Did fixed effects converge?
 autocorr(perFmMAB2$VCV) #Did random effects converge?
@@ -1053,18 +1054,18 @@ plot(perFmMAB2)
 
 #In MCMCglmm, the latent scale adjusted repeatability and its credible interval can simply be obtained by: mod$VCV[,ID]/(mod$VCV[,ID]+mod$VCV[,units]) - advice from Maxime Dahirel
 repeata <- perFmMAB2$VCV[,"BirdID"]/(perFmMAB2$VCV[,"BirdID"]+perFmMAB2$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
-mean(repeata) # R=0.06 ... very low repeatability
+mean(repeata) # Nonfunctional R=0.06 ... very low repeatability, Functional R=0.21
 var(repeata) 
 posterior.mode(repeata) 
 HPDinterval(repeata, 0.95)
 ## Unregistered analysis
 # checking repeatability with rptR
-rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
-           data = per2,
+rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
+           data = per3,
            nboot = 1000, npermut = 500)
-rPer # R=0, CI= 0-0.5
+rPer # Nonfunctional R=0, CI= 0-0.5; Functional R=0.24, p = 0.01, Regardless of whether Age & Sex are included
 
-# Results for reviewer comment 41: Actually nonfunctional touches on their own are not repeatable across the two different MABs. So we will not model nonfunctional touches as a function of behavioral flexibility.
+# Results for reviewer comment 41: Actually nonfunctional touches on their own are not repeatable across the two different MABs, but Functional touches are. So we will not model nonfunctional touches as a function of behavioral flexibility.
 
 
 
@@ -1225,8 +1226,8 @@ colnames(flexcompr)[2]<- "Name"
 ## Exploration
 flexexplore = merge(exp2, flexcompr, by = "Name", all = T) # exp2 is the exploration of the novel environment data from Chunk 5, above.
 #flexID$Batch = c(3,1,3,1,3,3,2,4,1,3,3,1,4,1,3,3,4,1,3,1,4,1,3) #add batch designation for each bird
-flexexplore = merge(flexID[,c(1,3)],flexexplore, by = c("Name","BirdID"),all = T)
-flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (4)
+#flexexplore = merge(flexID[,c(1,3)],flexexplore, by = c("Name","BirdID"),all = T)
+flexexplore = flexexplore[-which(is.na(flexexplore$Test)),] #remove non-participators (2)
 # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
 flexexplore$c.phi = scale(flexexplore$lastphi, center = T, scale = T)
 flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
@@ -1234,14 +1235,14 @@ flexexplore$c.lambda = scale(flexexplore$lastlambda, center = T, scale = T)
 #Take the average of Time 1 and Time 2 for each variable (exploration environment, motor diversity, persistence)
 
 
-## Persistence
+## Persistence - only include functional touches because nonfunctional touches are not repeatable
 per <- read.csv ("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_exploration_data_persistence-mot.csv", header=T, sep=",", stringsAsFactors=F) 
 per = per[-which(is.na(per$SumTouches)),] #remove rows where individuals did not receive a test
 unique(per$BirdID) #19 individuals
 per$TouchRate = per$SumTouches/per$TotTime #account for trial time
 flexpers = merge(per,flexcompr, by = "Name", all = T)
 
-perAvg = aggregate(SumTouches ~ Name + BirdID, data = per, FUN = "mean")
+perAvg = aggregate(SumTouches ~ Name + BirdID + Age + Sex, data = per, FUN = "mean")
 timeAvg = aggregate(TotTime ~ Name + BirdID, data = per, FUN = "mean")
 perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
 flexpers = merge(perAvg,flexcompr, by = "Name", all = T)
@@ -1252,38 +1253,28 @@ flexpers$c.lambda = scale(flexpers$lastlambda, center = T, scale = T)
 ### separate functional (all novel apparatuses) and nonfunctional (only MAB) touches
 #### Functional first
 perFun = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-perAvg = aggregate(SumTouches ~ Name + BirdID, data = perFun, FUN = "mean")
+perAvg = aggregate(SumTouches ~ Name + BirdID + Age + Sex, data = perFun, FUN = "mean")
 timeAvg = aggregate(TotTime ~ Name + BirdID, data = perFun, FUN = "mean")
 perAvg = merge(perAvg, timeAvg, by = c("Name","BirdID"),FUN = "mean")
 flexpersF = merge(perAvg,flexcompr, by = "Name", all = T)
-#flexpersF = flexpers[-which(is.na(flexpers$SumTouches)),]
+flexpersF = flexpersF[-which(is.na(flexpersF$SumTouches)),]
 # # last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
 flexpersF$c.phi = scale(flexpersF$lastphi, center = T, scale = T)
 flexpersF$c.lambda = scale(flexpersF$lastlambda, center = T, scale = T)
-
-# #### Nonfunctional
-perNFun = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),]
-perNAvg = aggregate(SumTouches ~ Name + BirdID, data = perNFun, FUN = "mean")
-timeNAvg = aggregate(TotTime ~ Name + BirdID, data = perNFun, FUN = "mean")
-perNAvg = merge(perNAvg, timeNAvg, by = c("Name","BirdID"),FUN = "mean")
-flexpersN = merge(perNAvg,flexcompr, by = "Name", all = T)
-# last phi and last lambda are on very different scales, which caused problems with model convergence (below). Center and scale them to fix this.
-flexpersN$c.phi = scale(flexpersN$lastphi, center = T, scale = T)
-flexpersN$c.lambda = scale(flexpersN$lastlambda, center = T, scale = T)
 
 
 #####--------Exploration of a novel environment as a function of flexibility---------##### 
 
 ## FlexExplore Model 1: TotalDurationNear.20cm 
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + Age + Sex + (1|Name), family=poisson, data=flexexplore), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) 
 # p = 0.24, not over- or under-dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+testZeroInflation(simulationOutput) 
 # p = 0.1, not zero inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+testUniformity(simulationOutput) 
 # p = 0.3, not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plot(simulationOutput) 
 # all n.s.
 
 
@@ -1294,62 +1285,48 @@ library(MCMCglmm)
 prior1 = list(R=list(R1=list(V=1, nu=0),
                      R2=list(V=1, nu=1, alpha.v=0.1)),
               G=list(G1=list(V=1, nu=0)))
-expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ c.phi + c.lambda, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
+expl1 <- MCMCglmm(round(TotalDurationNear.20cm) ~ c.phi + c.lambda + Age + Sex, random = ~Name, data=flexexplore,  family="poisson", prior = prior1, verbose=F,  nitt=800000, thin=400, burnin=400000)
 plot(expl1)
-# lastphi and lastlambda variables are on very different scales, so when we use them the model has trouble converging and fit looks poor. So need to center and scale these variables so they are closer to the same scale.
 autocorr(expl1$Sol) #Did fixed effects converge? Yes
 autocorr(expl1$VCV) #Did random effects converge? autocorrelation present so we 1) center/scaled IVs, 2) increase nitt/burnin/thin 
 summary(expl1)
-# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.53, p = 0.19) or lambda (ß = -0.33, p = 0.73).
+# no relationship between Duration near the outside of the tent and flexibility variables of phi (ß = 1.53, p = 0.19) or lambda (ß = -0.33, p = 0.73), regardless of whether Sex & Age are included
 
 
 ## FlexExplore Model 2: LatencyFirstLand
-simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + (1|Name), data=flexexplore), n=1000) #250 simulations, but if want higher precision change n>1000
-plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
-testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ c.phi + c.lambda + Age + Sex + (1|Name), data=flexexplore), n=1000) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) 
+testDispersion(simulationOutput) 
 # p = 0.79, not over- or under-dispersed
-testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+testZeroInflation(simulationOutput) 
 # no zeros so not zero-inflated
-testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. Also...
+testUniformity(simulationOutput) 
 # p = 0.77, so not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
+plot(simulationOutput) 
 
 # ANALYSIS 2: EXPLORATION LatencyFirstLand
 #GLMM - dependent variable = LatencyFirstLand
 library(MCMCglmm)
-expl2 <- MCMCglmm(log(LatencyFirstLand) ~ c.phi + c.lambda, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
+expl2 <- MCMCglmm(log(LatencyFirstLand) ~ c.phi + c.lambda + Age + Sex, random=~Name, data=flexexplore,  family="gaussian", verbose=F, prior=prior1, nitt=13000, thin=10, burnin=3000)
 autocorr(expl2$Sol) #Did fixed effects converge? Yes
 autocorr(expl2$VCV) #Did random effects converge? Units, Yes
 plot(expl2) # convergence looks good
 summary(expl2) # Effective sample sizes and post.mean look good.
-# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.16) or lambda (ß = 0.03, p = 0.88)
+# no relationship between Latency to first Land on the ground and flexibility variables of phi (ß = -0.55, p = 0.16) or lambda (ß = 0.03, p = 0.88), regardless of whether Sex & Age are included
 
 
 #####--------Persistence with novel apparatuses as a function of flexibility---------##### 
 
-
-## FlexPersist Model 3_functional: Functional Touches Per Time 
-#whole data set
-flexperTotF$touchRate = flexperTotF$SumTouches/flexperTotF$TotTime
-simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), 
+## FlexPersist Model 3_Functional touches 
+flexpersF$olre = 1:nrow(flexpersF)
+simulationOutput <- simulateResiduals(fittedModel = glmer(round(SumTouches) ~ c.phi + c.lambda + 
+                                                          Age + Sex + (1|olre), 
                                                           offset=log(TotTime), family=poisson, 
                                                           data=flexpersF), n=850) 
 plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not overdispersed with olre
-testZeroInflation(simulationOutput) # not zero-inflated with olre
+testDispersion(simulationOutput) # not overdispersed
+testZeroInflation(simulationOutput) # not zero-inflated
 testUniformity(simulationOutput) # not heteroscedastic
-plot(simulationOutput) #...there should be no pattern in the data points in the right panel
-
-# use poisson with offset (see below)
-
-
-## FlexPersist Model 3_non-functional: Non - Functional Touches Per Time 
-flexpersN = flexpersN[-which(is.na(flexpersN$SumTouches)),]
-simulationOutput <- simulateResiduals(fittedModel = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), data=flexpersN), n=850) 
-plot(simulationOutput$scaledResiduals)
-testDispersion(simulationOutput) # not over- or under-dispersed 
-testZeroInflation(simulationOutput) # not zero-inflated 
-testUniformity(simulationOutput) # not heteroscedastic 
 plot(simulationOutput) #...there should be no pattern in the data points in the right panel
 
 
@@ -1358,12 +1335,7 @@ plot(simulationOutput) #...there should be no pattern in the data points in the 
 #### Functional touches
 freqPersF = glmer(round(SumTouches) ~ c.phi + c.lambda + (1|olre), offset= log(TotTime), family=poisson, data=flexpersF)
 summary(freqPersF)
-# Neither phi (ß = 0.42, p = 0.11), nor lambda (ß = 0.08, p = 0.77) are related to functional touches per time
-
-#### Nonfunctional touches was not zero inflated
-freqPersN = glm(round(SumTouches) ~ c.phi + c.lambda, offset = log(TotTime), family=poisson, data=flexpersN)
-summary(freqPersN)
-# Grackles with larger phi made more nonfunctional touches (ß = 0.26, p < 0.01) and those with smaller lambda made more nonfunctional touches (ß = -0.11, p < 0.02)
+# Neither phi (ß = 0.42, p = 0.11), nor lambda (ß = 0.08, p = 0.77) are related to functional touches per time, regardless of whether Sex and Age are included.
 
 ```
 
