@@ -431,9 +431,13 @@ exp.o2 = exp.o2[,c(1:3,14:16)]
 
 bol2 = bol[-which(bol$Condition == "Pigeon"),-c(2,3)]
 colnames(bol2)[2] = "Test"
-bol2 = bol2[,c(1:3,15:17)]
+bol2 = bol2[,c(1:3,15:16,19)]
 
 newBold = rbind(bol2, exp.o2)
+
+# Reviewer comment 37
+summary(glmer(round(DurationOnGround) ~ as.factor(Time) + FlexGroup + (1|BirdID), data = newBold, family = poisson)) # grackles spend more time on the ground in Time 2 relative to Time 1.
+
 newBold2 = aggregate(DurationOnGround~Name + FlexGroup + Test, FUN = "mean", data = newBold) #average performance from time 1 & time 2
 
 
@@ -853,6 +857,36 @@ m4 = glm(log(LatencyFirstLand) ~ FlexGroup + Age + Sex, data = exp.o2, family = 
 anova(m3,m4) #random effect does not improve the fit of the model, does not account for a significant portion of the variance.
 
 
+# Addressing Reviewer 5 comment:
+explo.base <- MCMCglmm(log(LatencyFirstLand) ~ 1, random=~BirdID, family="gaussian", data=exp.o2, verbose=F, prior=prior, nitt=13000, thin=10, burnin=3000)
+repeat.base <- explo.base$VCV[,"BirdID"]/(explo.base$VCV[,"BirdID"]+explo.base$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeat.base) #0.02
+
+# from Nakagawa & Schielzeth 2013
+mVarF <- var(as.vector(apply(explo$Sol,2,mean) %*% t(explo$X)))
+mVarF/(mVarF+sum(apply(explo$VCV,2,mean)))
+# alternative with credile intervals
+vmVarF<-numeric(1000)
+for(i in 1:1000){
+  Var<-var(as.vector(explo$Sol[i,] %*% t(explo$X)))
+  vmVarF[i]<-Var}
+
+explo_list <- split(explo$Sol, seq(nrow(explo$Sol)))
+vmVarF1 <- map(explo_list, ~.x %*% t(as.matrix(explo$X))) %>% map_dbl(~var(as.vector(.x)))
+table(near(vmVarF, vmVarF1)) 
+
+R2m<-vmVarF/(vmVarF+explo$VCV[,1]+explo$VCV[,2])
+mean(R2m) # R2 marginal = 0.10
+posterior.mode(R2m)
+HPDinterval(R2m) # 0 - 0.24
+
+R2c<-(vmVarF+explo$VCV[,1])/(vmVarF+explo$VCV[,1]+explo$VCV[,2] )
+mean(R2c) # R2 conditional = 0.11
+posterior.mode(R2c)
+HPDinterval(R2c) # 0 - 0.28
+
+# Reviewer comment 5: FlexGroup covariate accounts for a significant amount of variance.
+
 #### CONTEXTUAL REPEATABILITY - combine explore environment and explore object back together. Only novel condition
 exp2$DurationOnGround = exp2$TotalDurationInTent + exp2$TotalDurationFar.20cm + exp2$TotalDurationNear.20cm
 exp.o2$olre = 1:nrow(exp.o2)
@@ -1031,9 +1065,9 @@ HPDinterval(repeata, 0.95) # 0.07 - 0.47
 # Results for Reviewer comment 38: We get almost the same value for repeatability if we exclude boldness/exploration, regardless of whether Age & Sex are included
 
 
-# Reviewer comment 41: We analyzed the relationship between flexibility and non/functional touches without first verifying that non/functional touches is repeatable across the two different MABs.
-per2 = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),] #nonfuntional touches only
-per3 = per[-which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),] #functional touches only
+# Reviewer comment 41: We analyzed the relationship between flexibility and nonfunctional touches without first verifying that nonfunctional touches are repeatable across the two different MABs.
+per3 = per[which(per$Test == "MABlogNFun" | per$Test == "MABplasNFun"),] #nonfunctional touches only
+
 simulationOutput <- simulateResiduals(fittedModel = glmer(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex + (1|BirdID), family = "gaussian", data=per3), n=250)
 plot(simulationOutput$scaledResiduals) 
 testDispersion(simulationOutput) # normally dispersed
@@ -1046,7 +1080,7 @@ prior1 = list(R=list(R1=list(V=1, nu=1),
                      R3=list(V=1, nu=1)),
               G=list(G1=list(V=1, nu=0.002)))
 perFmMAB2 <- MCMCglmm(log(SumTouches+1) ~ Test + FlexGroup + TotTime + Age + Sex, random=~BirdID, family="gaussian",
-                 data=per2, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
+                 data=per3, verbose=F, prior=prior1, nitt=1000000, thin=500, burnin=5000)
 # no difference between control and manipulated groups, no effect of trial time
 autocorr(perFmMAB2$Sol) #Did fixed effects converge?
 autocorr(perFmMAB2$VCV) #Did random effects converge?
@@ -1061,7 +1095,7 @@ HPDinterval(repeata, 0.95)
 ## Unregistered analysis
 # checking repeatability with rptR
 rPer = rpt(log(SumTouches +1) ~ Test + FlexGroup + TotTime + (1|BirdID), grname = ("BirdID"), datatype = "Gaussian",
-           data = per2,
+           data = per3,
            nboot = 1000, npermut = 500)
 rPer # Nonfunctional R=0, CI= 0-0.5; Functional R=0.24, p = 0.01, Regardless of whether Age & Sex are included
 
@@ -1504,7 +1538,7 @@ tab2 %>%
   #tab_style(
    # style = cell_text(weight = "bold"),
     #locations = cells_body(columns = 13,rows = c(2,3))) %>%
-  tab_header(title = cap) %>%
+  #tab_header(title = cap) %>%
   opt_align_table_header(align = "left")
 
 
@@ -1532,17 +1566,17 @@ tab3 %>%
   tab_style(
     style = cell_text(weight = "bold"),
     locations = cells_body(columns = 4,rows = 2)) %>%
-  tab_header(title = cap) %>%
+  #tab_header(title = cap) %>%
   text_replace(
     pattern = "^FlexGroupManipulation$",
     replacement = "Flexibility trained") %>%
   opt_align_table_header(align = "left")
 ```
-Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option and lambda - the rate of deviating from learned attractions), is not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach the novel environment (Latency to Land). However, we did find that persistence (the number of nonfunctional touches to the novel apparatuses per time) was significantly related to phi and lambda.
+Table 2: Behavioral flexibility, measured with two variables comprising our Flexibility Comprehensive measure (phi - the learning rate of attraction to either option, and lambda - the rate of deviating from learned attractions), was not related to exploratory tendency as measured by duration spent within 20 cm of the outside of the novel environment (Duration Near) or the latency to approach to within 100 cm of the novel environment (Latency to Land). Moreover, persistence (the number of functional touches to the novel apparatuses per time) was not significantly related to phi or lambda.
 ![](g_exploration_Table2.png){width=100%}
 
 
-Table 3: We assessed the relationship between performance on the exploration and persistence assays and whether grackles were in the serial reversal learning group where grackles were trained to be more behavioral flexibility, or in the control group. Results differed from the analysis using the Flexibility Comprehensive variables as the measure of behavioral flexibility. Grackles in the trained group were more exploratory in that they spent more time near the outside of the tent than control individuals. But no other traits were related to behavioral flexibility.
+Table 3: We assessed whether exploration and persistence were related to the behavioral flexibility training. Grackles in the trained group that were more behaviorally flexible were more exploratory in that they spent more time within 20 cm of the outside of the tent compared to control individuals. Whereas, latency to land within 100 cm of the novel environment and persistence (number of functional touches per time) were not related to behavioral flexibility training.
 ![](g_exploration_Table3.png){width=100%}
 
 ## Hypothesis 2: Comparing performance in captivity and in the wild
