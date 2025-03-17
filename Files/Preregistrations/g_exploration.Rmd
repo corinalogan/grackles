@@ -772,7 +772,8 @@ library(lme4)
 simulationOutput <- simulateResiduals(fittedModel = lmer(log(LatencyFirstLand) ~ Condition + FlexGroup + Age + Sex + (1|BirdID), data=exp.o), n=250) #250 simulations, but if want higher precision change n>1000
 plot(simulationOutput$scaledResiduals) #Expect a flat distribution of the overall residuals, and uniformity in y direction if plotted against any predictor
 #looks flat
-simulationOutput2 <- simulateResiduals(fittedModel = glmer(DurationOnGround ~ Condition + FlexGroup + Age + Sex + (1|BirdID), family=poisson, data=exp.o), n=250)
+exp.o$olre = 1:nrow(exp.o)
+simulationOutput2 <- simulateResiduals(fittedModel = glmer(round(DurationOnGround) ~ FlexGroup + (1|BirdID), family=poisson, data=exp.o2), n=250)
 plot(simulationOutput2$scaledResiduals) # looks less flat
 
 testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
@@ -781,25 +782,30 @@ testDispersion(simulationOutput2) #p=0.90
 
 testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
 #p=1 No zeros, so not zero inflated
-testZeroInflation(simulationOutput2) #p<<0.05 - significantly zero inflated
+testZeroInflation(simulationOutput2) #p=0.02 - significantly zero inflated - 11 zeros out of 38 rows
 
 testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
 # p = 0.19, data normally distributed. 
-testUniformity(simulationOutput2) #p = 0.006 - Heteroscedastic
+testUniformity(simulationOutput2) #p = 0.12 
 
 plot(simulationOutput)#...there should be no pattern in the data points in the right panel
 # all n.s.
-plot(simulationOutput2) # KS test, Outlier test, within-group deviations from uniformity significant
-
-#### Use Latency To First Land as variable because it has as much data as Duration on Ground, but it passes all of the data checks (when log-transformed) whereas Duration On Ground is zero inflated and heteroscedastic.
+plot(simulationOutput2) # all n.s.
 
 ### UNREGISTERED ANALYSIS: Do grackles perceive the novel object as threatening? ###
-m1 = MCMCglmm(log(LatencyFirstLand) ~ Condition + FlexGroup + Age + Sex, random=~BirdID, family="gaussian", data=exp.o, verbose=F, prior=prior, nitt=500000, thin=500, burnin=5000)
+library(MCMCglmm)
+prior = list(R=list(R1=list(V=1,nu=0),R2=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
+m1 = MCMCglmm(log(LatencyFirstLand) ~ Condition + FlexGroup, random=~BirdID, family="gaussian", data=exp.o, verbose=F, prior=prior, nitt=500000, thin=500, burnin=5000)
 autocorr(m1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
 autocorr(m1$VCV) #Did random effects converge? Yes, after increasing iterations
 summary(m1)
-# Grackles took signifiantly longer to come to the ground for the novel relative to the familiar object. Results are the same if Age and Sex covariates are or are not included.
+# Grackles took significantly longer to come to the ground for the novel relative to the familiar object. Results are the same if Age and Sex covariates are or are not included.
 # ß = 2.11, CI = 1.22-2.89, p < 0.01
+
+m2 = MCMCglmm(round(DurationOnGround) ~ Condition + FlexGroup, random=~BirdID, family="poisson", data=exp.o, verbose=F, prior=prior, nitt=500000, thin=500, burnin=5000)
+autocorr(m2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(m2$VCV) #Did random effects converge? Yes, after increasing iterations
+summary(m2)
 
 # Only interested in Novel Object data from here on
 exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),]
@@ -807,9 +813,7 @@ exp.o2 = exp.o[-which(exp.o$Condition == "Familiar"),]
 
 ### REGISTERED ANALYSIS: REPEATABILITY ###
 #GLMM
-library(MCMCglmm)
-prior = list(R=list(R1=list(V=1,nu=0)), G=list(G1=list(V=1,nu=0)))
-explo <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup + Age + Sex, random=~BirdID, family="gaussian", data=exp.o2, verbose=F, prior=prior, nitt=6300000, thin=1000, burnin=3000)
+explo <- MCMCglmm(log(LatencyFirstLand) ~ FlexGroup, random=~BirdID, family="gaussian", data=exp.o2, verbose=F, prior=prior, nitt=6300000, thin=1000, burnin=3000)
 summary(explo) 
 autocorr(explo$Sol) #Did fixed effects converge? Yes=all values after lag 0 are <0.1 indicating they converged
 autocorr(explo$VCV) #Did random effects converge? Yes
@@ -842,6 +846,14 @@ mean(repeataraw) #0.0002
 posterior.mode(repeataraw) #-3.40e-11
 HPDinterval(repeataraw, 0.95) #2.90e-17 to 4.62e-6
 
+
+explo2 <- MCMCglmm(round(DurationOnGround) ~ FlexGroup, random=~BirdID, family="poisson", data=exp.o2, verbose=F, prior=prior, nitt=6300000, thin=1000, burnin=3000)
+
+repeata <- explo2$VCV[,"BirdID"]/(explo2$VCV[,"BirdID"]+explo2$VCV[,"units"]) #latent scale adjusted repeatability and its credible interval
+mean(repeata) #0.52
+var(repeata) #0.09
+HPDinterval(repeata, 0.95) #4.12e-17 to 0.86 - CI is very large, model is a bad fit
+
 #RESULT=Explore Object is not repeatable, regardless of whether Age & Sex covariates are included
 
 ### UNREGISTERED ANALYSIS - compare R values with rptR function and LRT test to make sure the interpretation of MCMCglmm results is correct ###
@@ -855,6 +867,16 @@ summary(r2)
 m3 = glmer(log(LatencyFirstLand) ~ FlexGroup + Age + Sex+ (1|BirdID), data = exp.o2, family = gaussian)
 m4 = glm(log(LatencyFirstLand) ~ FlexGroup + Age + Sex, data = exp.o2, family = gaussian)
 anova(m3,m4) #random effect does not improve the fit of the model, does not account for a significant portion of the variance.
+
+r3 = rpt(round(DurationOnGround) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp.o2, datatype="Poisson", nboot=1000, npermut=100) # Fit is singular
+summary(r3)
+# R = 0.05
+# CI = 0-0.522
+# p = 1
+
+m3 = glmer(round(DurationOnGround) ~ FlexGroup + (1|BirdID), data = exp.o2, family = poisson)
+m4 = glm(round(DurationOnGround) ~ FlexGroup, data = exp.o2, family = poisson)
+anova(m3,m4)
 
 
 # Addressing Reviewer 5 comment:
@@ -889,17 +911,18 @@ HPDinterval(R2c) # 0 - 0.28
 
 #### CONTEXTUAL REPEATABILITY - combine explore environment and explore object back together. Only novel condition
 exp2$DurationOnGround = exp2$TotalDurationInTent + exp2$TotalDurationFar.20cm + exp2$TotalDurationNear.20cm
-exp.o2$olre = 1:nrow(exp.o2)
 exp.both = rbind(exp2, exp.o2)
-rptBoth = rpt(log(LatencyFirstLand) ~ Test + FlexGroup + Age + Sex + (1|BirdID), grname = "BirdID", data=exp.both, datatype="Gaussian", nboot=1000, npermut=100)
+
+rptBoth = rpt(log(LatencyFirstLand) ~ Test + FlexGroup + (1|BirdID), grname = "BirdID", data=exp.both, datatype="Gaussian", nboot=1000, npermut=100)
 summary(rptBoth) # R = 0.49, CI = 0.21-0.69, p = 0
-rptBoth2 = rpt(log(LatencyFirstLand) ~ FlexGroup + Age + Sex + (1|BirdID), grname = "BirdID", data=exp.both, datatype="Gaussian", nboot=1000, npermut=100)
+rptBoth2 = rpt(log(LatencyFirstLand) ~ FlexGroup + (1|BirdID), grname = "BirdID", data=exp.both, datatype="Gaussian", nboot=1000, npermut=100)
 summary(rptBoth2) #no difference in repeatability if we don't control for Test - in other words, the between-individual variance is the same regardless of which test
 
 xcontx = lmer(log(LatencyFirstLand) ~ Test + FlexGroup+ Age + Sex+ (1|BirdID), data = exp.both)
 car::Anova(xcontx) #grackles take longer to land in the presence of the object relative to the environment
 
 # Supplementary figure 1
+library(ggplot2)
 ggplot(exp, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID, shape = Test)) +
   geom_point(size = 3) +
   facet_wrap( ~ BirdID) + 
@@ -907,13 +930,14 @@ ggplot(exp, aes(x = as.factor(Time), y = LatencyFirstLand, colour = BirdID, shap
   theme_bw() + 
   scale_colour_discrete(guide = "none") 
 
+# Figure 3
 exp.both$FlexGroup=factor(exp.both$FlexGroup, levels = c("Control","Manipulation"), labels = c("Control","Trained"))
 
-elatency = ggplot(exp.both) +
+eelatency = ggplot(exp2) +
   geom_line(aes(x = as.factor(Time), y = LatencyFirstLand, group = BirdID, color = BirdID, shape = FlexGroup), 
             size = 1.8, alpha = 0.7) + 
   geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, shape = FlexGroup, size = 0.7, alpha = 0.7)) + 
-  facet_grid(.~Test) +
+  #facet_grid(.~Test) +
   labs(y = "Latency to approach (sec)") + 
   theme_bw() +
   theme(axis.text = element_text(size = 14),
@@ -924,28 +948,51 @@ elatency = ggplot(exp.both) +
         strip.text.x = element_text(size = 20)) +
   theme(legend.title = element_text(size=16), #change legend title font size
         legend.text = element_text(size=14)) + #change legend text font size
-  ggtitle("Exploration") +
-  guides(color = FALSE,
-         shape=guide_legend(title="Serial reversal \n learning group", override.aes = list(size = 5))) + 
-  guides(alpha = F) + guides(size = F)
+  labs(title = "Novel Environment") +
+  guides(color = FALSE, shape = F,alpha = F, size = F)
 
-eduration = ggplot(exp.both) +
+eolatency = ggplot(exp.o2) +
+  geom_line(aes(x = Time, y = LatencyFirstLand, group = BirdID, color = BirdID, shape = FlexGroup), 
+            size = 1.8, alpha = 0.7) + 
+  geom_point(aes(x = as.factor(Time), y = LatencyFirstLand, color = BirdID, shape = FlexGroup, size = 0.7, alpha = 0.7)) + 
+  #facet_grid(.~Test) +
+  labs(y = "Latency to approach (sec)") + 
+  theme_bw() +
+  theme(axis.text = element_text(size = 14),
+        #axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(size = 26),
+        strip.text.x = element_text(size = 20)) +
+  theme(legend.title = element_text(size=16), #change legend title font size
+        legend.text = element_text(size=14)) + #change legend text font size
+  labs(title = "Novel Object") +
+  guides(color = FALSE, shape = F,alpha = F, size = F)
+
+eduration = ggplot(exp.o2) +
   geom_line(aes(x = as.factor(Time), y = DurationOnGround, group = BirdID, color = BirdID, shape = FlexGroup), 
             size = 1.8, alpha = 0.7) + 
   geom_point(aes(x = as.factor(Time), y = DurationOnGround, color = BirdID, shape = FlexGroup, size = 0.7, alpha = 0.7)) + 
-  facet_grid(.~Test) +
-  labs(x = "Time", y = "Duration near (sec)") + 
+  labs(x = "Time", y="Duration near (sec)") + 
   theme_bw() +
   theme(axis.text = element_text(size = 14),
-        axis.title = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
         plot.title = element_text(size = 26),
         strip.text.x = element_blank()) +
-  theme(legend.title = element_text(size=16), #change legend title font size
-        legend.text = element_text(size=14)) + #change legend text font size
-  theme(legend.position="none")
+  #scale_y_continuous("Duration near (sec)", breaks = c(0,1000,2000,3000),
+   #                  labels = c(0,1000,2000,3000), limits = c(0,3000))+
+  guides(color = "none", alpha = "none", size = "none", 
+         shape="none")+ #guide_legend(title="Serial reversal \n learning group", 
+                 #          override.aes = list(size = 5))) +
+  theme(legend.title = element_text(size=20), #change legend title font size
+        legend.text = element_text(size=18)) + #change legend text font size
+  theme(legend.position="right")
 
-library(ggpubr)
-ggarrange(elatency, eduration, nrow = 2, common.legend = T, legend = "right")
+library(gridExtra)
+leg = get_legend(eduration)
+as_ggplot(leg)
+ggarrange(eelatency, eolatency, eduration, leg, align = "hv")
 ```
 
 ![](g_exploration_fig3_exploration.jpeg){width=70%}
