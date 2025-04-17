@@ -251,60 +251,154 @@ To assess the effects that we will be able to detect given the expected sample s
 
 #### Calculating home range size
 *code not shown in pdf, see .rmd link above*
-```{r hr, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
+```{r POSThr, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #Load packages
 library(ctmm)
 library(sf)
 
-#Point to the correct data file and load it
-setwd("~/Documents/Grackle project/Space use")
+#Load data files. Need separate population spreadsheets for home range analysis
+## Home range size can only be calculated when a bird has 20 or more relocations - data filtered to birds that meet this criterion
+AZpts<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/AZgtgr_points.csv"), header=T, sep=",", stringsAsFactors=F)
+CApts<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/CAgtgr_points.csv"), header=T, sep=",", stringsAsFactors=F)
 
-pts<-read.csv("gtgr_points.csv", header = T)
-
-#Set variables to ensure the models read the data properly
-pts$Latitude = as.numeric(as.character(pts$Latitude))
-pts$Longitude = as.numeric(as.character(pts$Longitude))
-pts$Date = as.character(pts$Date)
-pts$Time = as.character(pts$Time)
-pts$da.ti = as.POSIXct(paste(pts$Date, pts$Time), format="%Y-%m-%d %H:%M:%S")
-
-### Home range size can only be calculated when a bird has 20 or more relocations
-### Count the number of relocations for each bird, then exclude individuals with less than 20
-tmp = pts
-tmp$count = 1
-tmp = aggregate(count ~ Bird.Name, FUN = "sum", data = tmp)
-pts.min = merge(pts, tmp, by = "Bird.Name", all = T)
-pts.min = pts.min[-which(pts.min$count<20),]
-pts.min$Bird.Name = as.factor(as.character(pts.min$Bird.Name))
 
 #### Calculating home range size ####
-#Turn dataframe into telemetry object
-telem = pts.min[,c(1,2,3,7,11,12)] #only need bird name, date, lat and long, time
-#telem$timestamp = paste(telem$Date,telem$Time, sep=' ') #telem format requires date/time merged together for timestamp
-telem = telem[,-c(2,3)] #remove other date and time columns
-colnames(telem) = c("individual.local.identifier","location.lat","location.long","timestamp") #use required column names
-telem = as.telemetry(telem, timeformat = "%Y-%m-%d %H:%M:%S",timezone = "")
+##### Arizona first ##### 
+#telemetry object
+telemAZ = AZpts[,c("Bird.Name","Date","Latitude","Longitude","Time")] 
+telemAZ$timestamp = paste(telemAZ$Date,telemAZ$Time, sep=' ')
+telemAZ = telemAZ[,-c(2,5)] #remove date and time columns
+colnames(telemAZ) = c("individual.local.identifier","location.lat","location.long","timestamp")
+telemAZ = as.telemetry(telemAZ, timeformat = "%Y-%m-%d %H:%M:%S",timezone = "")
 
-for(i in telem){
-  GUESS = ctmm.guess(telem$i, interactive = FALSE)
-  m = ctmm.select(ctmm.fit(telem$i, GUESS))
-  hr = akde(telem$i, m)
-  est[i] = summary(hr)$CI[2]
-  results = rbind(results,est[i])
-} 
+#Check output with plots
+plot(telemAZ$Marisco) #AZ bird with the most points 
+plot(telemAZ,col=rainbow(length(telemAZ)))
+
+#hr analysis
+hrAZ = NULL
+a = Sys.time()
+for(i in 1:length(telemAZ)){ # takes less than 1 hr to run
+  guess = ctmm.guess(telemAZ[[i]], interactive = FALSE)
+  m = ctmm.fit(telemAZ[[i]], guess)
+  hr = akde(telemAZ[[i]], m, weights = T)
+  est = data.frame(hr = summary(hr)$CI[2],
+                   ID = names(telemAZ[i]))
+  hrAZ = rbind(hrAZ,est)
+}
+Sys.time()-a
+
+hrAZ$Site = "AZ"
+
+#most birds' hr units are in hectares, a few in square kilometers. Conversion is 1 hectare = 0.01 square km
+hrAZ2 = hrAZ
+hrAZ2$hr[which(hrAZ2$ID == "Mole")] <- 508.0269
+hrAZ2$hr[which(hrAZ2$ID == "Habanero")] <- 901.6253 
+hrAZ2$hr[which(hrAZ2$ID == "Tomatillo")] <- 202.7503
+hrAZ2$hr[which(hrAZ2$ID == "Adobo")] <- 174.3430
+#now all units in hectares, convert all to km2 because this is a more commonly used unit
+hrAZ2$hr = hrAZ2$hr/100
+describe(hrAZ2$km2)
+
+##### Now California #####
+#telemetry object
+telemCA = CApts[,c("Bird.Name","Date","Latitude","Longitude","Time")] 
+telemCA$timestamp = paste(telemCA$Date,telemCA$Time, sep=' ')
+telemCA = telemCA[,-c(2,5)] #remove date and time columns
+colnames(telemCA) = c("individual.local.identifier","location.lat","location.long","timestamp")
+telemCA = as.telemetry(telemCA, timeformat = "%Y-%m-%d %H:%M:%S",timezone = "")
+plot(telemCA,col=rainbow(length(telemCA)))
+
+#hr analysis
+##for some reason cutuy gives a different result that causes for loop to fail. For now, going to have to add her in manually after.
+hrCA = NULL
+a = Sys.time()
+for(i in 1:6){ # takes a while to run (20 mins)
+  guess = ctmm.guess(telemCA[[i]], interactive = FALSE)
+  m = ctmm.fit(telemCA[[i]], guess)
+  hr = akde(telemCA[[i]], m, weights = T)
+  est = data.frame(hr = summary(hr)$CI[2],
+                   ID = names(telemCA[i]))
+  hrCA = rbind(hrCA,est)
+}
+
+for(i in 8:24){ # this takes over 2 hours to run
+  guess = ctmm.guess(telemCA[[i]], interactive = FALSE)
+  m = ctmm.fit(telemCA[[i]], guess)
+  hr = akde(telemCA[[i]], m, weights = T)
+  est = data.frame(hr = summary(hr)$CI[2],
+                   ID = names(telemCA[i]))
+  hrCA = rbind(hrCA,est)
+}
+Sys.time()-a
+
+##The above method that worked for all other birds does not work for Cutuy for some reason - here is an alternative way ###
+# Cutuy #
+a = Sys.time()
+i = 7
+  guess7 = ctmm.guess(telemCA[[i]], interactive = FALSE)
+  m7 = ctmm.fit(telemCA[[i]], guess7)
+Sys.time()-a
+Cutuy = variogram(telemCA[[7]])
+level <- c(0.5,0.95)
+xlim <- c(0,0.5 %#% "hour") # time window
+plot(Cutuy,level = level,xlim=xlim)
+plot(Cutuy,level = level,fraction = 0.25)
+
+m.ouf <- ctmm(sigma=15 %#% "km^2",tau=c(5 %#% "day",0.5 %#% "hour"))
+FITS.7 <- ctmm.fit(telemCA$Cutuy,guess7)
+summary(FITS.7)
+
+cutuy = c(39.98592,"Cutuy") #this is hectares
+hrCA = rbind(hrCA,cutuy)
+hrCA$Site = "CA"
+
+#Some birds' hr areas are in hectares, most in km2. Make unit consistently km2 for all
+hrCA2 = hrCA
+hrCA2$hr[which(hrCA2$ID == "Pina")] <- 0.68706676
+hrCA2$hr[which(hrCA2$ID == "Dulce")] <- 0.94768702
+hrCA2$hr[which(hrCA2$ID == "Galandra")] <- 0.61315050
+hrCA2$hr[which(hrCA2$ID == "Camote")] <- 0.43782592
+hrCA2$hr[which(hrCA2$ID == "Cutuy")] <- 0.3998592
+hrCA2$hr[which(hrCA2$ID == "Urraca")] <- 0.38902300
+hrCA2$hr[which(hrCA2$ID == "Churro")] <- 0.02335267
+hrCA2$hr[which(hrCA2$ID == "Cutuy")] <- 0.3998592
+
+hrCA2$hr = as.numeric(hrCA2$hr)
+
+hr = rbind(hrCA, hrAZ)
+colnames(hr)[2] = "BirdID"
+
+#### Independent variables ####
+##Make data sheet with the experimental exploration measures combined with the home range measures
+exp.o <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_data_exploration.csv"), header=T, sep=",", stringsAsFactors=F)
+exp = exp.o[-which(exp.o$Test == "Object" | exp.o$Condition == "Familiar"),]
+exp$LatencyFirstLand[which(is.na(exp$LatencyFirstLand))]<- 3060 #give ceiling value of longest trial time to the grackles that never approached
+explat = aggregate(LatencyFirstLand ~ BirdID + Site, data = exp, FUN = "mean") #performance on this test was repeatable, only need 1 value per bird
+
+exp$DurationNear = exp$TotalDurationFar.20cm + exp$TotalDurationNear.20cm
+expdur = aggregate(DurationNear ~ BirdID + Site, data = exp, FUN = "mean") #performance on this test was repeatable, only need 1 value per bird
+exp = merge(explat, expdur, by = c("BirdID","Site"))
 
 
-### Normalize data for repeatability and regression models 
-hist(log(hr$area)) 
+hr_exp = merge(exp, hr, by = c("BirdID","Site"), all = T)
 
-### Repeatability of home range in breeding and non-breeding seasons
-hr_rpt = rpt(log(area) ~ (1|BirdID), grname = "BirdID", data = hr, datatype = "Gaussian", nboot = 500, npermut = 500)
-summary(hr_rpt)
+##add in season
+AZpts.nb20 = AZpts[AZpts$Date < "2020-04-01",]
+AZpts.nb = AZpts.nb20[-which(AZpts.nb20$Date > "2019-04-01"& AZpts.nb20$Date < "2019-08-31"),]
+AZpts.b20 = AZpts[AZpts$Date > "2020-03-31",]
+AZpts.b19 = AZpts[AZpts$Date > "2019-03-31"& AZpts$Date < "2019-09-01",]
+AZpts.b = rbind(AZpts.b20, AZpts.b19)
+#is there overlap where some grackles have data in both seasons?
+unique(AZpts.b$BirdID)
+unique(AZpts.nb$BirdID)
 
-### Make data sheet with the experimental exploration measures combined with the home range measures
-exp <- read.csv("Explore_combined.csv", header = T)
-hr_exp = merge(exp, hr, by = "id", all = T)
-write.csv(hr_exp, "space_use.csv")
+CApts.nb = CApts[CApts$Date > "2021-09-01" | CApts$Date < "2021-03-31",]
+CApts.b = CApts[CApts$Date > "2021-03-31"& CApts$Date < "2021-09-01",]
+#is there overlap where some grackles have data in both seasons?
+unique(CApts.b$BirdID)
+unique(CApts.nb$BirdID)
+
 ```
 
 #### Code to create functions for analyzing movement behaviors
