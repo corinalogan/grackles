@@ -381,23 +381,66 @@ expdur = aggregate(DurationNear ~ BirdID + Site, data = exp, FUN = "mean") #perf
 exp = merge(explat, expdur, by = c("BirdID","Site"))
 
 
+covs <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_data_covariates.csv"), header=T, sep=",", stringsAsFactors=F)
+
 hr_exp = merge(exp, hr, by = c("BirdID","Site"), all = T)
+hr_total = merge(hr_exp, covs, by = c("BirdID","Site"), all = T)
+hr_red = hr_total[-which(is.na(hr_total$LatencyFirstLand)),]
+hr_red = hr_red[-which(is.na(hr_red$hr)),] 
+hr_red = hr_red[-which(is.na(hr_red$SMI)),]
+hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #41 grackles with all data
+hr_red$hr = as.numeric(hr_red$hr)
 
-##add in season
-AZpts.nb20 = AZpts[AZpts$Date < "2020-04-01",]
-AZpts.nb = AZpts.nb20[-which(AZpts.nb20$Date > "2019-04-01"& AZpts.nb20$Date < "2019-08-31"),]
-AZpts.b20 = AZpts[AZpts$Date > "2020-03-31",]
-AZpts.b19 = AZpts[AZpts$Date > "2019-03-31"& AZpts$Date < "2019-09-01",]
-AZpts.b = rbind(AZpts.b20, AZpts.b19)
-#is there overlap where some grackles have data in both seasons?
-unique(AZpts.b$BirdID)
-unique(AZpts.nb$BirdID)
 
-CApts.nb = CApts[CApts$Date > "2021-09-01" | CApts$Date < "2021-03-31",]
-CApts.b = CApts[CApts$Date > "2021-03-31"& CApts$Date < "2021-09-01",]
-#is there overlap where some grackles have data in both seasons?
-unique(CApts.b$BirdID)
-unique(CApts.nb$BirdID)
+##### DATA CHECKING sites combined #####
+library(DHARMa)
+library(lme4)
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ LatencyFirstLand + DurationNear + Sex + History + Breeding.Sites + Food.Sites + SMI + Group.Size + Season, data=hr_red), n=250) #250 simulations, but if want higher precision change n>1000
+plot(simulationOutput$scaledResiduals) #Expect a flat distribution 
+testDispersion(simulationOutput) #if under- or over-dispersed, then p-value<0.05, but then check the dispersion parameter and try to determine what in the model could be the cause and address it there, also check for zero inflation
+#p=0.26 so not over or under dispersed
+testZeroInflation(simulationOutput) #compare expected vs observed zeros, not zero-inflated if p>0.05
+#p=1 No zeros, so not zero inflated
+testUniformity(simulationOutput) #check for heteroscedasticity ("a systematic dependency of the dispersion / variance on another variable in the model" Hartig, https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html), which is indicated if dots aren't on the red line and p<0.05. 
+# p = 0.97
+plot(simulationOutput)#...there should be no pattern in the data points in the right panel
+
+library(MCMCglmm)
+m1 = MCMCglmm(log(hr) ~ LatencyFirstLand + DurationNear + Sex + History + Breeding.Sites + Food.Sites + SMI + Group.Size + Season, family="gaussian", data=hr_red, verbose=F, nitt=13000, thin=10, burnin=3000)
+autocorr(m1$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1. Yes
+autocorr(m1$VCV) #Did random effects converge? Yes
+summary(m1)
+
+library(olsrr) # Reduce variables to make sure we aren't overfitting the model with our sample size
+m2 = lm(log(hr_red$hr) ~ Site + LatencyFirstLand + DurationNear + Sex + History + Breeding.Sites + Food.Sites + SMI + Group.Size + Season, data = hr_red) #function requires lm class
+ols_step_backward_p(m2, details = T)
+
+m2_red = lm(log(hr)~ Site + LatencyFirstLand + Sex + Food.Sites + Group.Size, data = hr_red)
+summary(m2_red) # Group.Size significant
+
+##### Analyze Sites separately as home ranges look very different in each place #####
+AZhr_red = hr_red[which(hr_red$Site == "AZ"),]
+m2AZ = lm(log(AZhr_red$hr) ~ LatencyFirstLand + DurationNear + Sex + History + Breeding.Sites + Food.Sites + SMI + Group.Size + Season, data = AZhr_red) 
+ols_step_backward_p(m2AZ, details = T)
+
+m2AZ_red = lm(log(AZhr_red$hr) ~ LatencyFirstLand + DurationNear + Sex + Group.Size, data = AZhr_red) 
+summary(m2AZ_red) # Group.Size and LatencyFirstLand significant
+# As LatencyFirstLand decreases, hr size increases; as Group.Size increases, hr increases
+
+CAhr_red = hr_red[which(hr_red$Site == "CA"),]
+m2CA = lm(log(CAhr_red$hr) ~ LatencyFirstLand + DurationNear + Sex + History + Breeding.Sites + Food.Sites + SMI + Group.Size + Season, data = CAhr_red) 
+ols_step_backward_p(m2CA, details = T)
+
+m2CA_red = lm(log(CAhr_red$hr) ~ Food.Sites + Group.Size, data = CAhr_red) 
+summary(m2CA_red) # Group.Size significant
+
+
+```
+
+
+```{r captivity effects, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
+#We will additionally test whether time spent in captivity might alter the social behavior of grackles when subsequently released into the wild by testing maximum group size observed across each individual’s focal follows as a function of the individual’s captivity history (the number of days the individual was temporarily held in the aviaries before data collection on space use began).
+
 
 ```
 
