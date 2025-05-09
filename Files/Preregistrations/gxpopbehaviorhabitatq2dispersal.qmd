@@ -231,6 +231,8 @@ library(adegenet)
 library(pegas)
 library(dplyr)
 
+
+# Need to run chunk 4 first before these lines 235-250:
 # Overall sample size
 samplesize<-as.data.frame(adultids %>% group_by(Population,Sex) %>% summarize(samplesize=n()))
 
@@ -246,6 +248,8 @@ sum(az_snpdata==0)/(nrow(az_snpdata)*(ncol(az_snpdata)-1)) # 3.0% missing data
 apply(az_snpdata[,2:925], 1, function(x) length(which(x=="0")))
 
 # remove Buñuelo C116RY because of missing data
+
+
 
 
 ca_genepopfile<-read.table("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/g_flexforaging_data_genepop_Woodland.txt",sep=" ",colClasses="character")
@@ -966,26 +970,38 @@ The spatial autocorrelation analyses indicate that, in both Arizona and Californ
 
 #Based on the relatedness estimates based on the method by Queller & Goodnight
 #Perform a simulation to assess whether average relatedness among males is different from what we would expect in a random subset of the same number of individuals
-simulatedrelatedness<-matrix(ncol=1,nrow=10000)
+a_m_simulatedrelatedness<-matrix(ncol=1,nrow=10000)
 for (i in 1:10000) {
   currentset<-sample(adultids[adultids$Population %in% "Tempe",]$BirdID,samplesize[4,3])
-  simulatedrelatedness[i,1]<-mean(filter(az_pairwise_r,ind1.id %in% currentset,ind2.id %in% currentset)$quellergt)
+  a_m_simulatedrelatedness[i,1]<-mean(filter(az_pairwise_r,ind1.id %in% currentset,ind2.id %in% currentset)$quellergt)
 }
-hist(simulatedrelatedness)
+hist(a_m_simulatedrelatedness)
 #This value is similar to a p-value, it reflects the probability that the average relatedness observed among males would be expected in a random subsample
-p_simulation_malerelatednessquellergt_AZ<-sum(simulatedrelatedness>mean(filter(az_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt))/10000
+p_simulation_malerelatednessquellergt_AZ<-sum(a_m_simulatedrelatedness>mean(filter(az_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt))/10000
 # 0.2893
 
 #Perform a simulation to assess whether average relatedness among females is different from what we would expect in a random subset of the same number of individuals
-simulatedrelatedness<-matrix(ncol=1,nrow=10000)
+a_f_simulatedrelatedness<-matrix(ncol=1,nrow=10000)
 for (i in 1:10000) {
   currentset<-sample(adultids[adultids$Population %in% "Tempe",]$BirdID,samplesize[3,3])
-  simulatedrelatedness[i,1]<-mean(filter(az_pairwise_r,ind1.id %in% currentset,ind2.id %in% currentset)$quellergt)
+  a_f_simulatedrelatedness[i,1]<-mean(filter(az_pairwise_r,ind1.id %in% currentset,ind2.id %in% currentset)$quellergt)
 }
-hist(simulatedrelatedness)
+hist(a_f_simulatedrelatedness)
 #This value is similar to a p-value, it reflects the probability that the average relatedness observed among males would be expected in a random subsample
-p_simulation_femalerelatednessquellergt_AZ<-sum(simulatedrelatedness>mean(filter(az_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt))/10000
+p_simulation_femalerelatednessquellergt_AZ<-sum(a_f_simulatedrelatedness>mean(filter(az_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt))/10000
 # 0.4481
+
+a_simulatedvalues<-as.data.frame(matrix(ncol=2,nrow=20000))
+colnames(a_simulatedvalues)<-c("Sex","Relatedness")
+a_simulatedvalues[1:10000,]$Sex<-"1"
+a_simulatedvalues[1:10000,]$Relatedness<-a_f_simulatedrelatedness
+a_simulatedvalues[10001:20000,]$Sex<-"2"
+a_simulatedvalues[10001:20000,]$Relatedness<-a_m_simulatedrelatedness
+
+library(ggplot2)
+g<-ggplot(a_simulatedvalues,aes(Sex,Relatedness))
+az_viol<-g+geom_violin(scale="area",fill="grey90")+labs(y="Average relatedness")+ scale_y_continuous(limits=c(-0.08, 0.02))+ geom_segment(x = 0.6, y = mean(filter(az_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt),xend=1.4,yend=mean(filter(az_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt),col="#C3A4CF",lwd=3)+ geom_segment(x = 1.6, y = mean(filter(az_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt),xend=2.4,yend=mean(filter(az_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt),col="#742881",lwd=3)+scale_x_discrete(labels = c("1" = "females","2" = "males"))+theme_classic(base_size = 16)+annotate("text", x=0.65, y=-0.005, label= "observed",col="#C3A4CF",size=6)+annotate("text", x=1.6, y=-0.004, label= "observed",col="#742881",size=6)+annotate("text", x=1, y=-0.035, label= "permuted",col="grey40",size=6)+annotate("text", x=2, y=-0.05, label= "permuted",col="grey40",size=6)+annotate("text", x=1.45, y=0.02, label= "Arizona",col="#742881",size=8)
+
 
 
 
@@ -1021,17 +1037,20 @@ p_simulation_femalerelatednessquellergt_CA<-sum(c_f_simulatedrelatedness>mean(fi
 
 
 
-simulatedvalues<-as.data.frame(matrix(ncol=2,nrow=20000))
-colnames(simulatedvalues)<-c("Sex","Relatedness")
-simulatedvalues[1:10000,]$Sex<-"1"
-simulatedvalues[1:10000,]$Relatedness<-c_f_simulatedrelatedness
-simulatedvalues[10001:20000,]$Sex<-"2"
-simulatedvalues[10001:20000,]$Relatedness<-c_m_simulatedrelatedness
+c_simulatedvalues<-as.data.frame(matrix(ncol=2,nrow=20000))
+colnames(c_simulatedvalues)<-c("Sex","Relatedness")
+c_simulatedvalues[1:10000,]$Sex<-"1"
+c_simulatedvalues[1:10000,]$Relatedness<-c_f_simulatedrelatedness
+c_simulatedvalues[10001:20000,]$Sex<-"2"
+c_simulatedvalues[10001:20000,]$Relatedness<-c_m_simulatedrelatedness
 
 library(ggplot2)
-g<-ggplot(simulatedvalues,aes(Sex,Relatedness))
-g+geom_violin(scale="area",fill="grey90")+labs(y="Average relatedness")+ geom_segment(x = 0.6, y = mean(filter(ca_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt),xend=1.4,yend=mean(filter(ca_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt),col="#ADD4A0",lwd=3)+ geom_segment(x = 1.6, y = mean(filter(ca_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt),xend=2.4,yend=mean(filter(ca_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt),col="#1B7939",lwd=3)+scale_x_discrete(labels = c("1" = "females","2" = "males"))+theme_classic(base_size = 16)+annotate("text", x=0.65, y=-0.02, label= "observed",col="#ADD4A0",size=6)+annotate("text", x=1.65, y=-0.052, label= "observed",col="#1B7939",size=6)+annotate("text", x=1, y=-0.035, label= "permuted",col="grey40",size=6)+annotate("text", x=2, y=-0.035, label= "permuted",col="grey40",size=6)
+g<-ggplot(c_simulatedvalues,aes(Sex,Relatedness))
+c_viol<-g+geom_violin(scale="area",fill="grey90")+labs(y="Average relatedness")+ scale_y_continuous(limits=c(-0.08, 0.02))+ geom_segment(x = 0.6, y = mean(filter(ca_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt),xend=1.4,yend=mean(filter(ca_pairwise_r,ind1.id %in% females,ind2.id %in% females)$quellergt),col="#ADD4A0",lwd=3)+ geom_segment(x = 1.6, y = mean(filter(ca_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt),xend=2.4,yend=mean(filter(ca_pairwise_r,ind1.id %in% males,ind2.id %in% males)$quellergt),col="#1B7939",lwd=3)+scale_x_discrete(labels = c("1" = "females","2" = "males"))+theme_classic(base_size = 16)+annotate("text", x=0.65, y=-0.02, label= "observed",col="#ADD4A0",size=6)+annotate("text", x=1.6, y=-0.052, label= "observed",col="#1B7939",size=6)+annotate("text", x=1, y=-0.075, label= "permuted",col="grey40",size=6)+annotate("text", x=2, y=-0.07, label= "permuted",col="grey40",size=6)+annotate("text", x=1.45, y=0.02, label= "California",col="#1B7939",size=8)
 
+
+library(gridExtra)
+grid.arrange(az_viol, c_viol, ncol=2)
 
 
 ```
