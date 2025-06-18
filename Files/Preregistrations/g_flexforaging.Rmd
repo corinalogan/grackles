@@ -12,19 +12,19 @@ author:
 - 'Smith C^4^'
 - 'McCune KB^3,5^'
 output:
+  pdf_document:
+    keep_tex: true
+    latex_engine: xelatex
+  bookdown::pdf_document2:
+    keep_tex: true
+  number_sections: true
+  fig_caption: true
   html_document:
     toc: true
     toc_depth: 4
     toc_float:
       collapsed: false
     code_folding: hide
-  bookdown::pdf_document2:
-    keep_tex: true
-  number_sections: true
-  fig_caption: true
-  pdf_document:
-    keep_tex: true
-    latex_engine: xelatex
   word_document:
     toc: true
     toc_depth: '4'
@@ -100,7 +100,7 @@ allbibtexkeys<-c(res,res2)
 write(allbibtexkeys,file="g_flexforaging_bibtexkeys.txt")
 
 #load the cleaned txt file
-allbibtexkeys<-read.csv("gxpopbehaviorhabitatq1_bibtexkeys.txt")
+allbibtexkeys<-read.csv("g_flexforaging_bibtexkeys.txt")
 
 #use bib2df to convert the bibliography file into a dataframe
 install.packages("bib2df")
@@ -546,7 +546,7 @@ $humanfoods_{i}$ ~ Binomial($totalfoods_{i}$, $p$),
 
 logit($p$) ~ $a_{i}$ + $bp$ x $\phi_{i}$ + $bl$ x $\lambda_{i}$ + $br$ x $rank_{i}$,
 
-where $humanfoods_{i}$ is the number of human foods taken by individual, i, $totalfoods$ is the total number of foods taken by individual, i, $p$ is the probability of taking human foods, $a_{i}$ is the intercept, $bp$ is the slope for the interaction with the flexibility component $\phi_{i}$, $bl$ is the slope for the interaction with the flexibility component $\lambda_{i}$, and $br$ is the slope for the interaction with dominance rank, $rank_{i}$. Note that the model is the same when analyzing the latency (in sec) to attempt a new option on the multiaccess box except the terms for $\phi_{i}$ and $\lambda_{i}$ are replaced with $blat$ * $latency_{i}$ in the above model. 
+where $humanfoods_{i}$ is the number of human foods taken by individual, i, $totalfoods_{i}$ is the total number of foods taken by individual, i, $p$ is the probability of taking human foods, $a_{i}$ is the intercept, $bp$ is the slope for the interaction with the flexibility component $\phi_{i}$, $bl$ is the slope for the interaction with the flexibility component $\lambda_{i}$, and $br$ is the slope for the interaction with dominance rank, $rank_{i}$. Note that the model is the same when analyzing the latency (in sec) to attempt a new option on the multiaccess box except the terms for $\phi_{i}$ and $\lambda_{i}$ are replaced with $blat$ * $latency_{i}$ in the above model. 
 
 We used the same model to investigate whether the **proportion human foods** relates with the **number of foraging techniques used**, but we removed all terms except for $a_{i}$, and added $bt$, the slope for the interaction with the number of techniques used per bird, $tech_{i}$.
 
@@ -566,7 +566,7 @@ $number_{i}$ ~ Binomial($total_{i}$, $p$),
 
 logit($p$) ~ $a_{i}$ + $bp$ x $\phi_{i}$ + $bl$ x $\lambda_{i}$ + $br$ x $rank_{i}$,
 
-where $number_{i}$ is the number of human food sources inside the home range of individual, i, $total$ is the maximum number of human food sources a bird had in its home range in this sample, $p$ is the probability of having a given number of human food sources in a home range, and the rest of the terms are as in the above models. Note that the model is the same when analyzing the latency (in sec) to attempt a new option on the multiaccess box except the terms for $\phi_{i}$ and $\lambda_{i}$ are replaced with $blat$ * $latency_{i}$ in the above model. 
+where $number_{i}$ is the number of human food sources inside the home range of individual, i, $total_{i}$ is the maximum number of human food sources a bird had in its home range in this sample, $p$ is the probability of having a given number of human food sources in a home range, and the rest of the terms are as in the above models. Note that the model is the same when analyzing the latency (in sec) to attempt a new option on the multiaccess box except the terms for $\phi_{i}$ and $\lambda_{i}$ are replaced with $blat$ * $latency_{i}$ in the above model. 
 
 ### P4: Flexibility and social bonds
 
@@ -926,19 +926,19 @@ pt <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/maste
 pt <- data.frame(pt)
 colnames(pt) <- c("Model type","Sample size","Effect size","Avg slope / avg contrast","Proportion of iterations that cross zero")
 
-library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
-ptable <- xtable(pt)
-align(ptable) <- "|X|X|X|X|X|X|"
-print(ptable, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", latex.environments = "center", hline.after = c(-1,0,9,12,21))
+#library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+#ptable <- xtable(pt)
+#align(ptable) <- "|X|X|X|X|X|X|"
+#print(ptable, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", latex.environments = "center", hline.after = c(-1,0,9,12,21))
 
-library(stargazer) #Citation: Hlavac, Marek (2022). stargazer: Well-Formatted Regression and Summary Statistics Tables. R package version 5.2.3. https://CRAN.R-project.org/package=stargazer 
+#library(stargazer) #Citation: Hlavac, Marek (2022). stargazer: Well-Formatted Regression and Summary Statistics Tables. R package version 5.2.3. https://CRAN.R-project.org/package=stargazer 
 
-library(pander)
+#library(pander)
 #pander(pt) #breaks the table across columns, so not super helpful
 
 library(kableExtra)
-#knitr::kable(pt) %>%
-#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+knitr::kable(pt, format="latex") %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 ```{r poweranalyses, eval=FALSE, echo=F}
@@ -5158,14 +5158,14 @@ exptable <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles
 exptable <- data.frame(exptable)
 colnames(exptable) <- c("","Mean","Standard deviation","Lower 89 percentile compatibility interval (5.5%)","Upper 89 percentile compatibility interval (94.5%)")
 
-library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
-poptable <- xtable(exptable)
-align(poptable) <- "|l|X|X|X|X|X|"
-print(poptable, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", floating = TRUE, latex.environments = "center")
+#library(xtable) #https://cran.r-project.org/web/packages/xtable/vignettes/xtableGallery.pdf
+#poptable <- xtable(exptable)
+#align(poptable) <- "|l|X|X|X|X|X|"
+#print(poptable, include.rownames = FALSE, tabular.environment = "tabularx", width = "\\textwidth", floating = TRUE, latex.environments = "center")
 
 library(kableExtra)
-#knitr::kable(exptable) %>%
-#kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
+knitr::kable(exptable, format="latex") %>%
+kable_styling(full_width = T, position = "left",  bootstrap_options = "condensed", font_size = 11)
 ```
 
 ```{r p7, eval=FALSE}
