@@ -329,7 +329,8 @@ hr_exp = merge(exp, hr, by = c("BirdID","Site"), all = T)
 hr_total = merge(hr_exp, covs[,-c(3,4)], by = c("BirdID","Site"), all = T)
 hr_red = hr_total[-which(is.na(hr_total$LatencyFirstLand)),]
 hr_red = hr_red[-which(is.na(hr_red$hr)),] 
-hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #43 grackles with all data
+hr_red = hr_red[-which(is.na(hr_red$SMI)),] 
+hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #42 grackles with all data
 
 ```
 
@@ -343,7 +344,7 @@ hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #43 grackles with all data
 HR <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_HRdataSheet.csv"), header=T, sep=",", stringsAsFactors=F)
 
 # Check for significant correlations among the covariates
-tmp = HR[,-c(1,2,3,7,11,13)] # only numeric variables
+tmp = hr_red[,-c(1,2,6,12)] # only numeric variables
 #install.packages("ggcorrplot")
 library(ggcorrplot)
 corr_matrix <- cor(tmp)
@@ -361,16 +362,11 @@ corr = ggcorrplot(corr_matrix,
            ggtheme = theme_minimal())
 
 # The two exploration variables are significantly correlated (r = -0.57), so only include one in the model at a time
-# Also, Group size is correlated with Food Sites; and History is correlated with Food sites and breeding sites
-summary(lm(log(hr) ~ Group.Size + Site, data = HR))
-summary(lm(log(hr) ~ History + Site, data = HR))
-# Food sites correlated with HR, so leave that in model as it has potential to influence results. Other variables (group size & history) do not influence results
-
 
 ##### DATA CHECKING sites combined #####
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Sex + Season + Breeding.Sites + Food.Sites, data=HR), n=250) # excluding Food.sites because of correlatio with History & Group size
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Sex + Season + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR), n=250) 
 plot(simulationOutput$scaledResiduals)  
 testDispersion(simulationOutput) 
 #not over or under dispersed
@@ -397,7 +393,7 @@ summary(m1.dur.red) # CA grackles had larger home range sizes
 
 
 ### Autocorrelation of step length
-```{r POST Step length and exploration, eval=FALSE, include=FALSE}
+```{r POST Step length and exploration, echo=FALSE, message=FALSE, warning=FALSE}
 
 ########################################## Load library
 library(devtools)
@@ -422,24 +418,31 @@ install.packages("geosphere")
  d_az = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/AZgracklePtsAviaryByWeek_new.csv")
  d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
  d_ind = d_ind[,-3]
+ hist(d_ind$Season_ratio) # A few grackles with points from both breeding & non-breeding seasons, but most are one or the other
+ d_ind$Season2 = ifelse(d_ind$Season_ratio > 0.5, "Breeding", "Non-breeding") # separating based on when most of the points were collected.
+ 
  source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_Arizona.R")
 
 ########################################## Run search velocity analysis for CA birds
  d_ca = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/CAgracklePtsAviaryByWeek_new.csv")
- d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
- d_ind = d_ind[,-3]
+ #d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
+ #d_ind = d_ind[,-3]
  source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_California.R")
 
 ########################################## Merge and compare site search velocity results
 d_all.az$Site = "AZ"
-d_all.ca$Site = "CA"
-d_all = rbind(d_all.az,d_all.ca)
-d_all$manip = ifelse(d_all$Bird.Name == "Adobo" | d_all$Bird.Name == "Burrito" | d_all$Bird.Name == "Chalupa" | 
-                       d_all$Bird.Name == "Mole" | d_all$Bird.Name == "Diablo" | d_all$Bird.Name == "Chilaquile" | 
-                       d_all$Bird.Name == "Pollito",
+d_all.az$manip = ifelse(d_all.az$Bird.Name == "Adobo" | d_all.az$Bird.Name == "Burrito" | d_all.az$Bird.Name == "Chalupa" | 
+                       d_all.az$Bird.Name == "Mole" | d_all.az$Bird.Name == "Diablo" | d_all.az$Bird.Name == "Chilaquile" | 
+                       d_all.az$Bird.Name == "Pollito" | d_all.az$Bird.Name == "Habanero",
                      "yes","no")
-summary(lm(MeanLFV~Site+manip,data=d_all))
-summary(lm(SigmaLFV~Site+manip,data=d_all))
+summary(lm(MeanLFV~manip,data=d_all.az)) # no effect of flexibility manipulation, so can leave this out
+summary(lm(SigmaLFV~manip,data=d_all.az))
+d_all.az = d_all.az[-which(d_all.az$Bird.Name == "Concha" | d_all.az$Bird.Name == "Pernil" | 
+                             d_all.az$Bird.Name == "Pupusa" | d_all.az$Bird.Name == "Guacamole"),] # these grackles are included but did not go through exploration
+
+d_all.ca$Site = "CA"
+d_all = rbind(d_all.az[,c(1:13)],d_all.ca)
+
 
 res_tot = rbind(res_az,res_ca)
 res_tot.site = data.frame(Outcome="MeanLFV", Pred="Vars", M=1.1, L=1.1, H=1.1)
@@ -456,9 +459,9 @@ res_tot$Site[which(is.na(res_tot$Site))]<-"Combined"
 ########################################## Plot search velocity results 
 #  source("Code/Plot_Merged_Search_Velocity_Results.R") # global site comparison not included
 res_tot2 = res_tot[-which(res_tot$Site == "Combined"),]
-res_tot2$Pred = factor(res_tot2$Pred, levels = c("Duration","Breeding","NonBreeding","Food.Sites","Breeding.Sites",
+res_tot2$Pred = factor(res_tot2$Pred, levels = c("Duration","Season2","Food.Sites","Breeding.Sites",
                                                "Group.Size","History","Male","SMI"),
-                      labels = c("Novel environment exploration","Breeding season","Non-breeding season",
+                      labels = c("Novel environment exploration","Season (Breeding)",
                                  "Food sites","Breeding sites",
                                  "Group size","Days in aviary","Sex (Female)",
                                  "Body condition"))
@@ -480,9 +483,13 @@ res_out_preds = ggplot(res_tot2, aes(Pred, M)) +
   scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
   xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
   theme(legend.position="bottom") + theme(text=element_text(size=18))
+print(res_out_preds)
+```
+Figure X: Average and standard deviation of the effect of each covariate on step length per time. Data from grackles in Arizona is shown in green and data from California grackles is shown in yellow.
 
 
 
+```{r POST Step length results table, echo=FALSE, message=FALSE, warning=FALSE}
 #####-------Summary table--------#####
 ## AZ
 tab = data.frame(Predictor="Vars", Estimate=1.1, SE=1.1, t.value = 1.1, p.value=1.1)
