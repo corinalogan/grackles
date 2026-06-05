@@ -323,23 +323,28 @@ exp = merge(explat, expdur, by = c("BirdID","Site"))
 
 
 covs <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_data_covariates.csv"), header=T, sep=",", stringsAsFactors=F)
+colnames(covs)[1] = "BirdID"
 
 hr_exp = merge(exp, hr, by = c("BirdID","Site"), all = T)
-hr_total = merge(hr_exp, covs, by = c("BirdID","Site"), all = T)
+hr_total = merge(hr_exp, covs[,-c(3,4)], by = c("BirdID","Site"), all = T)
 hr_red = hr_total[-which(is.na(hr_total$LatencyFirstLand)),]
 hr_red = hr_red[-which(is.na(hr_red$hr)),] 
-hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #42 grackles with all data
+hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #43 grackles with all data
 
 ```
 
-```{r POST H1-home range and exploration, eval=FALSE, include=FALSE}
+
+## HYPOTHESIS 1: Individual differences in exploration are related to variation in space use.
+
+### Home range size
+```{r POST Home range and exploration, eval=FALSE, include=FALSE}
 #### H1 - Does home range size relate to exploration? ####
-# load data sheet created in previous R chunk
-HR <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/541c762fba2e8cabc70f19b3778057d498f22e9a/Files/Preregistrations/gspaceuse_HRdataSheet.csv"), header=T, sep=",", stringsAsFactors=F)
+# load hr_red data sheet created in previous R chunk
+HR <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_HRdataSheet.csv"), header=T, sep=",", stringsAsFactors=F)
 
 # Check for significant correlations among the covariates
-tmp = HR[,-c(1,2,3,7,13)] # only numeric variables
-install.packages("ggcorrplot")
+tmp = HR[,-c(1,2,3,7,11,13)] # only numeric variables
+#install.packages("ggcorrplot")
 library(ggcorrplot)
 corr_matrix <- cor(tmp)
 pvals <- cor_pmat(tmp)
@@ -355,15 +360,17 @@ corr = ggcorrplot(corr_matrix,
            title = "Correlation Heatmap of H1 Covariates",
            ggtheme = theme_minimal())
 
-# The two exploration variables are significantly correlated (r = -0.58), so only include one in the model at a time
-# Also, Group size is correlated with SMI and Food Sites; and Food sites is also correlated with History and hr
-# Remove Group size and History from models and test against HR separately
+# The two exploration variables are significantly correlated (r = -0.57), so only include one in the model at a time
+# Also, Group size is correlated with Food Sites; and History is correlated with Food sites and breeding sites
+summary(lm(log(hr) ~ Group.Size + Site, data = HR))
+summary(lm(log(hr) ~ History + Site, data = HR))
+# Food sites correlated with HR, so leave that in model as it has potential to influence results. Other variables (group size & history) do not influence results
 
 
 ##### DATA CHECKING sites combined #####
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Sex + Breeding.Sites + Food.Sites + SMI + Season, data=HR), n=250) #250 simulations, but if want higher precision change n>1000
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Sex + Season + Breeding.Sites + Food.Sites, data=HR), n=250) # excluding Food.sites because of correlatio with History & Group size
 plot(simulationOutput$scaledResiduals)  
 testDispersion(simulationOutput) 
 #not over or under dispersed
@@ -373,101 +380,194 @@ testUniformity(simulationOutput)
 # not significant
 plot(simulationOutput)
 
+# No violation of assumptions of linear models
+
 library(MCMCglmm)
-m1.lat.red = MCMCglmm(log(hr) ~ LatencyFirstLand + Site + Sex + Breeding.Sites + Food.Sites + SMI + Season, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
+m1.lat.red = MCMCglmm(log(hr) ~ scale(LatencyFirstLand, center = TRUE, scale = TRUE) + Site + Sex + Season + Breeding.Sites + Food.Sites, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
 autocorr(m1.lat.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
 autocorr(m1.lat.red$VCV) #Did error converge? Yes
 summary(m1.lat.red) # CA grackles had larger home range sizes
 
-m1.dur.red = MCMCglmm(log(hr) ~ DurationNear + Site + Sex + Breeding.Sites + Food.Sites + SMI + Season, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
+m1.dur.red = MCMCglmm(log(hr) ~ scale(DurationNear, center = TRUE, scale = TRUE) + Site + Sex + Season + Breeding.Sites + Food.Sites, family="gaussian", data=HR, verbose=F, nitt=200000, thin=50, burnin=8000)
 autocorr(m1.dur.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
 autocorr(m1.dur.red$VCV) #Did error converge? Yes
 summary(m1.dur.red) # CA grackles had larger home range sizes
 
-##### Analyze Sites separately as home ranges look very different in each place #####
-## AZ ##
-tmpAZ = HR[which(HR$Site == "AZ"),-c(1:3,7,13)]
-AZcorr_matrix <- cor(tmpAZ)
-AZpvals <- cor_pmat(tmpAZ)
-AZcorr = ggcorrplot(AZcorr_matrix, 
-           p.mat = AZpvals,
-           sig.level = 0.05,
-           insig = "blank",
-           hc.order = TRUE,           # Reorder variables using hierarchical clustering
-           type = "lower",            # Show only the lower triangle
-           lab = TRUE,                # Add correlation coefficients as text labels
-           lab_size = 3,              # Size of the text labels
-           colors = c("#6D9EC1", "white", "#E46726"), # Custom color palette
-           title = "Correlation Heatmap of H1 Covariates",
-           ggtheme = theme_minimal())
-
-# Exploration variables correlated; and SMI is correlated with Group.size; test separately
-
-AZm1.lat.red = MCMCglmm(log(hr) ~ LatencyFirstLand + Sex + History + Breeding.Sites + Food.Sites + SMI + Season, family="gaussian", data=HR[which(HR$Site == "AZ"),], verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(AZm1.lat.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(AZm1.lat.red$VCV) #Did error converge? Yes
-summary(AZm1.lat.red) # No significant effects
-
-AZm1.lat.red2 = MCMCglmm(log(hr) ~ LatencyFirstLand + Sex + History + Breeding.Sites + Food.Sites + Group.Size + Season, family="gaussian", data=HR[which(HR$Site == "AZ"),], verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(AZm1.lat.red2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(AZm1.lat.red2$VCV) #Did error converge? Yes
-summary(AZm1.lat.red2) # No significant effects
-
-AZm1.dur.red = MCMCglmm(log(hr) ~ DurationNear + Sex + History + Breeding.Sites + Food.Sites + Group.Size + Season, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(AZm1.dur.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(AZm1.dur.red$VCV) #Did error converge? Yes
-summary(AZm1.dur.red) # More food sites = larger home range 
-
-AZm1.dur.red2 = MCMCglmm(log(hr) ~ DurationNear + Sex + History + Breeding.Sites + Food.Sites + Group.Size + Season, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(AZm1.dur.red2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(AZm1.dur.red2$VCV) #Did error converge? Yes
-summary(AZm1.dur.red2) # More food sites = larger home range
-
-
-## CA ##
-tmpCA = HR[which(HR$Site == "CA"),-c(1:3,7,13)]
-CAcorr_matrix <- cor(tmpCA)
-CApvals <- cor_pmat(tmpCA)
-CAcorr = ggcorrplot(CAcorr_matrix, 
-           p.mat = CApvals,
-           sig.level = 0.05,
-           insig = "blank",
-           hc.order = TRUE,           # Reorder variables using hierarchical clustering
-           type = "lower",            # Show only the lower triangle
-           lab = TRUE,                # Add correlation coefficients as text labels
-           lab_size = 3,              # Size of the text labels
-           colors = c("#6D9EC1", "white", "#E46726"), # Custom color palette
-           title = "Correlation Heatmap of H1 Covariates",
-           ggtheme = theme_minimal())
-
-# Exploration variables correlated; also SMI is correlated with Group.size & Food sites; test separately
-
-CAm1.lat.red = MCMCglmm(log(hr) ~ LatencyFirstLand + Sex + History + Breeding.Sites + SMI + Season, family="gaussian", data=HR[which(HR$Site == "CA"),], verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(CAm1.lat.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(CAm1.lat.red$VCV) #Did error converge? Yes
-summary(CAm1.lat.red) # No significant effects
-
-CAm1.lat.red2 = MCMCglmm(log(hr) ~ LatencyFirstLand + Sex + History + Breeding.Sites + Group.Size + Food.Sites + Season, family="gaussian", data=HR[which(HR$Site == "CA"),], verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(CAm1.lat.red2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(CAm1.lat.red2$VCV) #Did error converge? Yes
-summary(CAm1.lat.red2) # No significant effects
-
-CAm1.dur.red = MCMCglmm(log(hr) ~ DurationNear + Sex + History + Breeding.Sites + SMI + Season, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(CAm1.dur.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(CAm1.dur.red$VCV) #Did error converge? Yes
-summary(CAm1.dur.red) # No significant effects
-
-CAm1.dur.red2 = MCMCglmm(log(hr) ~ DurationNear + Sex + History + Breeding.Sites + Group.Size + Food.Sites + Season, family="gaussian", data=HR[which(HR$Site == "CA"),], verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(CAm1.dur.red2$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(CAm1.dur.red2$VCV) #Did error converge? Yes
-summary(CAm1.dur.red2) # No significant effects
 ```
 
-## HYPOTHESIS 1: Individual differences in exploration are related to variation in space use.
-
-### Home range size
 
 ### Autocorrelation of step length
+```{r POST Step length and exploration, eval=FALSE, include=FALSE}
+
+########################################## Load library
+library(devtools)
+install.packages("rstan")
+devtools::install_github("stan-dev/cmdstanr")
+install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+library(cmdstanr)
+install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+devtools::install_github("rmcelreath/rethinking")
+install_github("ctross/grackleator")
+ library(grackleator)
+install.packages("geosphere")
+ library(geosphere)
+ library(lubridate)
+
+########################################## Load helper functions
+ source("~/Documents/Grackle project/Space use/Space Use Workflow/Helper_Functions.R")
+
+
+############################################################################## Part 1 (Fast)
+########################################## Run search velocity analysis for AZ birds
+ d_az = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/AZgracklePtsAviaryByWeek_new.csv")
+ d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
+ d_ind = d_ind[,-3]
+ source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_Arizona.R")
+
+########################################## Run search velocity analysis for CA birds
+ d_ca = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/CAgracklePtsAviaryByWeek_new.csv")
+ d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
+ d_ind = d_ind[,-3]
+ source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_California.R")
+
+########################################## Merge and compare site search velocity results
+d_all.az$Site = "AZ"
+d_all.ca$Site = "CA"
+d_all = rbind(d_all.az,d_all.ca)
+d_all$manip = ifelse(d_all$Bird.Name == "Adobo" | d_all$Bird.Name == "Burrito" | d_all$Bird.Name == "Chalupa" | 
+                       d_all$Bird.Name == "Mole" | d_all$Bird.Name == "Diablo" | d_all$Bird.Name == "Chilaquile" | 
+                       d_all$Bird.Name == "Pollito",
+                     "yes","no")
+summary(lm(MeanLFV~Site+manip,data=d_all))
+summary(lm(SigmaLFV~Site+manip,data=d_all))
+
+res_tot = rbind(res_az,res_ca)
+res_tot.site = data.frame(Outcome="MeanLFV", Pred="Vars", M=1.1, L=1.1, H=1.1)
+res_tot.site[1,] = make_res("MeanLFV", "Site", lm(MeanLFV~Site,data=d_all))
+res_tot.site[2,] = make_res("SigmaLFV", "Site", lm(SigmaLFV~Site,data=d_all))
+res_tot.site$Site = NA
+res_tot = rbind(res_tot, res_tot.site)
+res_tot$M = as.numeric(res_tot$M)
+res_tot$L = as.numeric(res_tot$L)
+res_tot$H = as.numeric(res_tot$H)
+
+res_tot$Site[which(is.na(res_tot$Site))]<-"Combined"
+
+########################################## Plot search velocity results 
+#  source("Code/Plot_Merged_Search_Velocity_Results.R") # global site comparison not included
+res_tot2 = res_tot[-which(res_tot$Site == "Combined"),]
+res_tot2$Pred = factor(res_tot2$Pred, levels = c("Duration","Breeding","NonBreeding","Food.Sites","Breeding.Sites",
+                                               "Group.Size","History","Male","SMI"),
+                      labels = c("Novel environment exploration","Breeding season","Non-breeding season",
+                                 "Food sites","Breeding sites",
+                                 "Group size","Days in aviary","Sex (Female)",
+                                 "Body condition"))
+res_tot2$Outcome = factor(res_tot2$Outcome, levels = c("MeanLFV","SigmaLFV"),
+                         labels = c("Average","Standard Deviation"))
+# excluding site comparison
+res_out_preds = ggplot(res_tot2, aes(Pred, M)) +
+  facet_wrap(~Outcome, scales = "free_x") +
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_linerange(
+    aes(x = Pred, ymin = L, ymax = H, group = Site, color = Site), linewidth = 2, alpha=0.5,
+    position = position_dodge(0.5)
+  )+
+  geom_point(
+    aes(color = Site),
+    position = position_dodge(0.5), size = 3
+  )+
+  theme_bw()+
+  scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
+  xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
+  theme(legend.position="bottom") + theme(text=element_text(size=18))
+
+
+
+#####-------Summary table--------#####
+## AZ
+tab = data.frame(Predictor="Vars", Estimate=1.1, SE=1.1, t.value = 1.1, p.value=1.1)
+tab[1,] = c("Novel environment exploration",summary(lm(MeanLFV~Duration,data=d_all.az))$coefficients[2,])
+tab[2,] = c("Sex", summary(lm(MeanLFV~Sex,data=d_all.az))$coefficients[2,])
+tab[3,] = c("Aviary", summary(lm(MeanLFV~History,data=d_all.az))$coefficients[2,])
+tab[4,] = c("Breeding sites", summary(lm(MeanLFV~Breeding.Sites,data=d_all.az))$coefficients[2,])
+tab[5,] = c("Food sites", summary(lm(MeanLFV~Food.Sites,data=d_all.az))$coefficients[2,])
+tab[6,] = c("Body condition", summary(lm(MeanLFV~SMI,data=d_all.az))$coefficients[2,])
+tab[7,] = c("Group size", summary(lm(MeanLFV~Group.Size,data=d_all.az))$coefficients[2,])
+tab[8,] = c("Non-breeding season", summary(lm(MeanLFV~NonBreeding,data=d_all.az))$coefficients[2,])
+tab[9,] = c("Breeding season", summary(lm(MeanLFV~Breeding,data=d_all.az))$coefficients[2,])
+
+tab$Group = "Mean step length per time"
+
+tab[10,] = c("Novel environment exploration",summary(lm(SigmaLFV~Duration,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[11,] = c("Sex", summary(lm(SigmaLFV~Sex,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[12,] = c("Aviary", summary(lm(SigmaLFV~History,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[13,] = c("Breeding sites", summary(lm(SigmaLFV~Breeding.Sites,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[14,] = c("Food sites", summary(lm(SigmaLFV~Food.Sites,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[15,] = c("Body condition", summary(lm(SigmaLFV~SMI,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[16,] = c("Group size", summary(lm(SigmaLFV~Group.Size,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[17,] = c("Non-breeding season", summary(lm(SigmaLFV~NonBreeding,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+tab[18,] = c("Breeding season", summary(lm(SigmaLFV~Breeding,data=d_all.az))$coefficients[2,],"Standard deviation step length per time")
+
+tab$Estimate = round(as.numeric(tab$Estimate),digits = 2)
+tab$SE = round(as.numeric(tab$SE),digits = 2)
+tab$t.value = round(as.numeric(tab$t.value),digits = 2)
+tab$p.value = round(as.numeric(tab$p.value),digits = 2)
+
+library(insight)
+tab %>%
+  format_table(stars = T) %>%
+  export_table(tab,format = "html")
+
+#write.csv(tab, "Table1az.csv")
+
+
+## CA
+tab = data.frame(Predictor="Vars", Estimate=1.1, SE=1.1, t.value = 1.1, p.value=1.1)
+tab[1,] = c("Novel environment exploration",summary(lm(MeanLFV~Duration,data=d_all.ca))$coefficients[2,])
+tab[2,] = c("Sex", summary(lm(MeanLFV~Sex,data=d_all.ca))$coefficients[2,])
+tab[3,] = c("Aviary", summary(lm(MeanLFV~History,data=d_all.ca))$coefficients[2,])
+tab[4,] = c("Breeding sites", summary(lm(MeanLFV~Breeding.Sites,data=d_all.ca))$coefficients[2,])
+tab[5,] = c("Food sites", summary(lm(MeanLFV~Food.Sites,data=d_all.ca))$coefficients[2,])
+tab[6,] = c("Body condition", summary(lm(MeanLFV~SMI,data=d_all.ca))$coefficients[2,])
+tab[7,] = c("Group size", summary(lm(MeanLFV~Group.Size,data=d_all.ca))$coefficients[2,])
+tab[8,] = c("Non-breeding season", summary(lm(MeanLFV~NonBreeding,data=d_all.ca))$coefficients[2,])
+tab[9,] = c("Breeding season", summary(lm(MeanLFV~Breeding,data=d_all.ca))$coefficients[2,])
+
+tab$Group = "Mean step length per time"
+
+tab[10,] = c("Novel environment exploration",summary(lm(SigmaLFV~Duration,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[11,] = c("Sex", summary(lm(SigmaLFV~Sex,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[12,] = c("Aviary", summary(lm(SigmaLFV~History,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[13,] = c("Breeding sites", summary(lm(SigmaLFV~Breeding.Sites,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[14,] = c("Food sites", summary(lm(SigmaLFV~Food.Sites,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[15,] = c("Body condition", summary(lm(SigmaLFV~SMI,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[16,] = c("Group size", summary(lm(SigmaLFV~Group.Size,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[17,] = c("Non-breeding season", summary(lm(SigmaLFV~NonBreeding,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+tab[18,] = c("Breeding season", summary(lm(SigmaLFV~Breeding,data=d_all.ca))$coefficients[2,],"Standard deviation step length per time")
+
+tab$Estimate = round(as.numeric(tab$Estimate),digits = 2)
+tab$SE = round(as.numeric(tab$SE),digits = 2)
+tab$t.value = round(as.numeric(tab$t.value),digits = 2)
+tab$p.value = round(as.numeric(tab$p.value),digits = 2)
+
+library(insight)
+tab %>%
+  format_table(stars = T) %>%
+  export_table(tab,format = "html")
+
+#write.csv(tab, "Table1.csv")
+
+#####-------Exploration by site--------#####
+summary(lm(Duration ~ Site + manip, data = d_all))
+ggplot(d_all, aes(Site, Duration)) + 
+  geom_boxplot(aes(fill = Site)) +
+  theme_bw()+
+  scale_fill_manual(values = c("darkcyan", "darkgoldenrod2")) +
+  xlab("Site") + ylab("Novel environment exploration") + 
+  theme(text=element_text(size=18))
+
+```
+
 
 ### Spatial location preference
 
