@@ -342,9 +342,11 @@ hr_red = hr_red[-which(is.na(hr_red$Group.Size)),] #42 grackles with all data
 #### H1 - Does home range size relate to exploration? ####
 # load hr_red data sheet created in previous R chunk
 HR <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_HRdataSheet.csv"), header=T, sep=",", stringsAsFactors=F)
+HR$Season2 = ifelse(HR$Season_ratio > 0.5, "Breeding", "Non-breeding")
+
 
 # Check for significant correlations among the covariates
-tmp = hr_red[,-c(1,2,6,12)] # only numeric variables
+tmp = HR[,-c(1:3,7,13:17)] # only numeric variables
 #install.packages("ggcorrplot")
 library(ggcorrplot)
 corr_matrix <- cor(tmp)
@@ -361,12 +363,12 @@ corr = ggcorrplot(corr_matrix,
            title = "Correlation Heatmap of H1 Covariates",
            ggtheme = theme_minimal())
 
-# The two exploration variables are significantly correlated (r = -0.57), so only include one in the model at a time
+# The two exploration variables are substantially correlated (r = -0.57), so only include one in the model at a time
 
 ##### DATA CHECKING sites combined #####
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Sex + Season + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR), n=250) 
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Site + Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR), n=250) 
 plot(simulationOutput$scaledResiduals)  
 testDispersion(simulationOutput) 
 #not over or under dispersed
@@ -379,12 +381,16 @@ plot(simulationOutput)
 # No violation of assumptions of linear models
 
 library(MCMCglmm)
-m1.lat.red = MCMCglmm(log(hr) ~ scale(LatencyFirstLand, center = TRUE, scale = TRUE) + Site + Sex + Season + Breeding.Sites + Food.Sites, family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
+m1.lat.red = MCMCglmm(log(hr) ~ scale(LatencyFirstLand, center = TRUE, scale = TRUE) + Site +
+                      Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, 
+                      family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
 autocorr(m1.lat.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
 autocorr(m1.lat.red$VCV) #Did error converge? Yes
 summary(m1.lat.red) # CA grackles had larger home range sizes
 
-m1.dur.red = MCMCglmm(log(hr) ~ scale(DurationNear, center = TRUE, scale = TRUE) + Site + Sex + Season + Breeding.Sites + Food.Sites, family="gaussian", data=HR, verbose=F, nitt=200000, thin=50, burnin=8000)
+m1.dur.red = MCMCglmm(log(hr) ~ scale(DurationNear, center = TRUE, scale = TRUE) + Site +
+                      Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, 
+                      family="gaussian", data=HR, verbose=F, nitt=200000, thin=50, burnin=8000)
 autocorr(m1.dur.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
 autocorr(m1.dur.red$VCV) #Did error converge? Yes
 summary(m1.dur.red) # CA grackles had larger home range sizes
