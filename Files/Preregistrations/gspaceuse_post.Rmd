@@ -399,7 +399,7 @@ summary(m1.dur.red) # CA grackles had larger home range sizes
 
 
 ### Autocorrelation of step length
-```{r POST Step length and exploration, echo=FALSE, message=FALSE, warning=FALSE}
+```{r POST Step length and duration, echo=FALSE, message=FALSE, warning=FALSE}
 
 ########################################## Load library
 library(devtools)
@@ -423,7 +423,115 @@ install.packages("geosphere")
 ########################################## Run search velocity analysis for AZ birds
  d_az = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/AZgracklePtsAviaryByWeek_new.csv")
  d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
- d_ind = d_ind[,-3]
+ d_ind = d_ind[,-3] # remove latency, just looking at duration
+ hist(d_ind$Season_ratio) # A few grackles with points from both breeding & non-breeding seasons, but most are one or the other
+ d_ind$Season2 = ifelse(d_ind$Season_ratio > 0.5, "Breeding", "Non-breeding") # separating based on when most of the points were collected.
+ 
+ source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_Arizona.R")
+# run once for duration and once for latency
+ 
+########################################## Run search velocity analysis for CA birds
+ d_ca = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/CAgracklePtsAviaryByWeek_new.csv")
+ #d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
+ #d_ind = d_ind[,-3]
+ source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_California.R")
+# run once for duration and once for latency
+
+########################################## Merge and compare site search velocity results
+# run once for duration and once for latency
+d_all.az$Site = "AZ"
+d_all.az$manip = ifelse(d_all.az$Bird.Name == "Adobo" | d_all.az$Bird.Name == "Burrito" | d_all.az$Bird.Name == "Chalupa" | 
+                       d_all.az$Bird.Name == "Mole" | d_all.az$Bird.Name == "Diablo" | d_all.az$Bird.Name == "Chilaquile" | 
+                       d_all.az$Bird.Name == "Pollito" | d_all.az$Bird.Name == "Habanero",
+                     "yes","no")
+summary(lm(MeanLFV~manip,data=d_all.az)) # no effect of flexibility manipulation, so can leave this out
+summary(lm(SigmaLFV~manip,data=d_all.az))
+
+d_all.ca$Site = "CA"
+d_all = rbind(d_all.az[,c(1:13)],d_all.ca) # combine sites, excluding manip column
+
+
+res_tot = rbind(res_az,res_ca)
+res_tot.site = data.frame(Outcome="MeanLFV", Pred="Vars", M=1.1, L=1.1, H=1.1)
+res_tot.site[1,] = make_res("MeanLFV", "Site", lm(MeanLFV~Site,data=d_all))
+res_tot.site[2,] = make_res("SigmaLFV", "Site", lm(SigmaLFV~Site,data=d_all))
+res_tot.site$Site = NA
+res_tot = rbind(res_tot, res_tot.site)
+res_tot$M = as.numeric(res_tot$M)
+res_tot$L = as.numeric(res_tot$L)
+res_tot$H = as.numeric(res_tot$H)
+
+res_tot$Site[which(is.na(res_tot$Site))]<-"Combined"
+
+########################################## Plot search velocity results 
+#  source("Code/Plot_Merged_Search_Velocity_Results.R") # global site comparison not included
+
+#### Duration plot ####
+res_tot2 = res_tot[-which(res_tot$Site == "Combined"),]
+res_tot2$Pred = factor(res_tot2$Pred, levels = c("Duration","Season2","Food.Sites","Breeding.Sites",
+                                               "Group.Size","History","Male","SMI"),
+                      labels = c("Exploration (Duration near)","Season (Breeding)",
+                                 "Food sites","Breeding sites",
+                                 "Group size","Days in aviary","Sex (Female)",
+                                 "Body condition"))
+res_tot2$Outcome = factor(res_tot2$Outcome, levels = c("MeanLFV","SigmaLFV"),
+                         labels = c("Average","Standard Deviation"))
+# excluding site comparison
+res_out_preds_dur = ggplot(res_tot2, aes(Pred, M)) +
+  facet_wrap(~Outcome, scales = "free_x") +
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_linerange(
+    aes(x = Pred, ymin = L, ymax = H, group = Site, color = Site), linewidth = 2, alpha=0.5,
+    position = position_dodge(0.5)
+  )+
+  geom_point(
+    aes(color = Site),
+    position = position_dodge(0.5), size = 3
+  )+
+  theme_bw()+
+  scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
+  xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
+  theme(legend.position="bottom") + theme(text=element_text(size=18))
+
+#### Latency plot ####
+res_tot2 = res_tot[-which(res_tot$Site == "Combined"),]
+res_tot2$Pred = factor(res_tot2$Pred, levels = c("Latency","Season2","Food.Sites","Breeding.Sites",
+                                               "Group.Size","History","Male","SMI"),
+                      labels = c("Exploration (Latency to approach)","Season (Breeding)",
+                                 "Food sites","Breeding sites",
+                                 "Group size","Days in aviary","Sex (Female)",
+                                 "Body condition"))
+res_tot2$Outcome = factor(res_tot2$Outcome, levels = c("MeanLFV","SigmaLFV"),
+                         labels = c("Average","Standard Deviation"))
+# excluding site comparison
+res_out_preds_lat = ggplot(res_tot2, aes(Pred, M)) +
+  facet_wrap(~Outcome, scales = "free_x") +
+  geom_hline(yintercept=0,linetype="dashed")+
+  geom_linerange(
+    aes(x = Pred, ymin = L, ymax = H, group = Site, color = Site), linewidth = 2, alpha=0.5,
+    position = position_dodge(0.5)
+  )+
+  geom_point(
+    aes(color = Site),
+    position = position_dodge(0.5), size = 3
+  )+
+  theme_bw()+
+  scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
+  xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
+  theme(legend.position="bottom") + theme(text=element_text(size=18))
+
+ggarrange(res_out_preds_dur, res_out_preds_lat, nrow = 2, common.legend = T)
+### Or maybe I should just include them in the same plot? The other covariates look identical
+```
+Figure X: Average and standard deviation of the effect of each covariate on step length per time. Data from grackles in Arizona is shown in green and data from California grackles is shown in yellow.
+
+```{r POST Step length and latency, echo=FALSE, message=FALSE, warning=FALSE}
+
+############################################################################## Part 1 (Fast)
+########################################## Run search velocity analysis for AZ birds
+ d_az = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/AZgracklePtsAviaryByWeek_new.csv")
+ d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
+ d_ind = d_ind[,-4] # remove duration, just looking at latency
  hist(d_ind$Season_ratio) # A few grackles with points from both breeding & non-breeding seasons, but most are one or the other
  d_ind$Season2 = ifelse(d_ind$Season_ratio > 0.5, "Breeding", "Non-breeding") # separating based on when most of the points were collected.
  
@@ -467,7 +575,7 @@ res_tot$Site[which(is.na(res_tot$Site))]<-"Combined"
 res_tot2 = res_tot[-which(res_tot$Site == "Combined"),]
 res_tot2$Pred = factor(res_tot2$Pred, levels = c("Duration","Season2","Food.Sites","Breeding.Sites",
                                                "Group.Size","History","Male","SMI"),
-                      labels = c("Novel environment exploration","Season (Breeding)",
+                      labels = c("Exploration (Duration near)","Season (Breeding)",
                                  "Food sites","Breeding sites",
                                  "Group size","Days in aviary","Sex (Female)",
                                  "Body condition"))
@@ -490,10 +598,6 @@ res_out_preds = ggplot(res_tot2, aes(Pred, M)) +
   xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
   theme(legend.position="bottom") + theme(text=element_text(size=18))
 print(res_out_preds)
-```
-Figure X: Average and standard deviation of the effect of each covariate on step length per time. Data from grackles in Arizona is shown in green and data from California grackles is shown in yellow.
-
-
 
 ```{r POST Step length results table, echo=FALSE, message=FALSE, warning=FALSE}
 #####-------Summary table--------#####
