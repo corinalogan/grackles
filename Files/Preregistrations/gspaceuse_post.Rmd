@@ -373,12 +373,35 @@ corr = ggcorrplot(corr_matrix,
            title = "Correlation Heatmap of H1 Covariates",
            ggtheme = theme_minimal())
 
-# The two exploration variables are substantially correlated (r = -0.57), so only include one in the model at a time
+# The two exploration variables are correlated (r = -0.57), but not substantially?
 
 ##### DATA CHECKING sites combined #####
 library(DHARMa)
 library(lme4)
-simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + Site + Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR), n=250) 
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + LatencyFirstLand + Site + Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR), n=250) 
+plot(simulationOutput$scaledResiduals)  
+testDispersion(simulationOutput) 
+#not over or under dispersed
+testZeroInflation(simulationOutput) 
+#p=1 No zeros, so not zero inflated
+testUniformity(simulationOutput) 
+# not significant
+plot(simulationOutput)
+
+# CA grackles had larger home range sizes
+
+##### DATA CHECKING sites separate #####
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + LatencyFirstLand + Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR[which(HR$Site == "AZ"),]), n=250) 
+plot(simulationOutput$scaledResiduals)  
+testDispersion(simulationOutput) 
+#not over or under dispersed
+testZeroInflation(simulationOutput) 
+#p=1 No zeros, so not zero inflated
+testUniformity(simulationOutput) 
+# not significant
+plot(simulationOutput)
+
+simulationOutput <- simulateResiduals(fittedModel = lm(log(hr) ~ DurationNear + LatencyFirstLand + Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, data=HR[which(HR$Site == "CA"),]), n=250) 
 plot(simulationOutput$scaledResiduals)  
 testDispersion(simulationOutput) 
 #not over or under dispersed
@@ -391,19 +414,21 @@ plot(simulationOutput)
 # No violation of assumptions of linear models
 
 library(MCMCglmm)
-m1.lat.red = MCMCglmm(log(hr) ~ scale(LatencyFirstLand, center = TRUE, scale = TRUE) + Site +
+m1.az = MCMCglmm(log(hr) ~ scale(DurationNear, center = TRUE, scale = TRUE) + 
+                      scale(LatencyFirstLand, center = TRUE, scale = TRUE) + 
                       Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, 
-                      family="gaussian", data=HR, verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(m1.lat.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(m1.lat.red$VCV) #Did error converge? Yes
-summary(m1.lat.red) # CA grackles had larger home range sizes
+                      family="gaussian", data=HR[which(HR$Site == "AZ"),], verbose=F, nitt=100000, thin=50, burnin=8000)
+autocorr(m1.az$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
+autocorr(m1.az$VCV) #Did error converge? Yes
+summary(m1.az) 
 
-m1.dur.red = MCMCglmm(log(hr) ~ scale(DurationNear, center = TRUE, scale = TRUE) + Site +
+m1.ca = MCMCglmm(log(hr) ~ scale(DurationNear, center = TRUE, scale = TRUE) + 
+                      scale(LatencyFirstLand, center = TRUE, scale = TRUE) + 
                       Sex + Season2 + Breeding.Sites + Food.Sites + Group.Size + History + SMI, 
-                      family="gaussian", data=HR, verbose=F, nitt=200000, thin=50, burnin=8000)
-autocorr(m1.dur.red$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(m1.dur.red$VCV) #Did error converge? Yes
-summary(m1.dur.red) # CA grackles had larger home range sizes
+                      family="gaussian", data=HR[which(HR$Site == "CA"),], verbose=F, nitt=200000, thin=50, burnin=8000)
+autocorr(m1.ca$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
+autocorr(m1.ca$VCV) #Did error converge? Yes
+summary(m1.ca) 
 
 ```
 
@@ -478,7 +503,7 @@ res_tot$Site[which(is.na(res_tot$Site))]<-"Combined"
 res_tot2 = res_tot[-which(res_tot$Site == "Combined"),] # excluding site comparison
 res_tot2$Pred = factor(res_tot2$Pred, levels = c("Latency","Duration","Season2","Food.Sites","Breeding.Sites",
                                                "Group.Size","History","Male","SMI"),
-                      labels = c("Exploration (Latency to approach)","Exploration (Duration near)","Season (Breeding)",
+                      labels = c("Exploration: Latency to approach","Exploration: Duration near","Season (Breeding)",
                                  "Food sites","Breeding sites",
                                  "Group size","Days in aviary","Sex (Female)",
                                  "Body condition"))
