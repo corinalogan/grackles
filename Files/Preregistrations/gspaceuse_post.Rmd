@@ -499,7 +499,7 @@ res_tot$Site[which(is.na(res_tot$Site))]<-"Combined"
 ########################################## Plot search velocity results 
 #  source("Code/Plot_Merged_Search_Velocity_Results.R") # global site comparison not included
 
-#### Both Exp variables plot ####
+### Both Exp variables plot ###
 res_tot2 = res_tot[-which(res_tot$Site == "Combined"),] # excluding site comparison
 res_tot2$Pred = factor(res_tot2$Pred, levels = c("Latency","Duration","Season2","Food.Sites","Breeding.Sites",
                                                "Group.Size","History","Male","SMI"),
@@ -523,42 +523,120 @@ res_out_preds = ggplot(res_tot2, aes(Pred, M)) +
   )+
   theme_bw()+
   scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
-  xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
+  labs(x = "Predictor variable", y="Estimated value", title = "Step length per time") + coord_flip() + 
+  theme(plot.title = element_text(face = "bold", size = 20, hjust = -0.5))+
   theme(legend.position="bottom") + theme(text=element_text(size=18))
 
-# #### Latency plot ####
-# res_tot2 = res_tot[-which(res_tot$Site == "Combined"),]
-# res_tot2$Pred = factor(res_tot2$Pred, levels = c("Latency","Season2","Food.Sites","Breeding.Sites",
-#                                                "Group.Size","History","Male","SMI"),
-#                       labels = c("Exploration (Latency to approach)","Season (Breeding)",
-#                                  "Food sites","Breeding sites",
-#                                  "Group size","Days in aviary","Sex (Female)",
-#                                  "Body condition"))
-# res_tot2$Outcome = factor(res_tot2$Outcome, levels = c("MeanLFV","SigmaLFV"),
-#                          labels = c("Average","Standard Deviation"))
-# # excluding site comparison
-# res_out_preds_lat = ggplot(res_tot2, aes(Pred, M)) +
-#   facet_wrap(~Outcome, scales = "free_x") +
-#   geom_hline(yintercept=0,linetype="dashed")+
-#   geom_linerange(
-#     aes(x = Pred, ymin = L, ymax = H, group = Site, color = Site), linewidth = 2, alpha=0.5,
-#     position = position_dodge(0.5)
-#   )+
-#   geom_point(
-#     aes(color = Site),
-#     position = position_dodge(0.5), size = 3
-#   )+
-#   theme_bw()+
-#   scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
-#   xlab("Predictor variable") + ylab("Slope coefficient") + coord_flip() + 
-#   theme(legend.position="bottom") + theme(text=element_text(size=18))
-
-print(res_out_preds)
 ```
 Figure X: Average and standard deviation of the effect of each covariate on step length per time. Data from grackles in Arizona is shown in green and data from California grackles is shown in yellow.
 
 
 ### Spatial location preference
+```{r POST spatial grid, echo=FALSE, message=FALSE, warning=FALSE}
+############################################################################## Part 2 (Slow)
+########################################## Run space-use analysis for AZ birds
+ setwd("~/Documents/Grackle project/Space use/Space Use Workflow")
+ d = read.csv("AZgracklePtsAviaryByWeek_new.csv")
+ d_ind = read.csv("GracklePtsAviaryByWeek.csv")
+ d_ind$Season2 = ifelse(d_ind$Season_ratio > 0.5, "Breeding", "Non-breeding") # separating based on when most of the points were collected.
+ colnames(smi)[2] = "Bird.Name"
+ d_ind = merge(d_ind, smi[,c(2:4)], by = c("Bird.Name","Site"))
+ #library(grackleator) # necessary functions from this package are individually in Helper_Functions.R
+ 
+ source("Code/Process_Arizona_Space_Use_Data.R")
+ source("Code/Process_Arizona_Data_For_Stan.R")
+ source("Code/Process_Arizona_Data_With_Stan.R") # this takes an extremely long time - 9 covariate models at ~6hrs runtime each
+ source("Code/Process_Arizona_Save_Stan_Results.R")
+
+########################################## Run space-use analysis for CA birds
+ setwd("~/Documents/Grackle project/Space use/Space Use Workflow")
+ d = read.csv("CAgracklePtsAviaryByWeek_new.csv")
+
+ source("Code/Process_California_Space_Use_Data.R")
+ source("Code/Process_California_Data_For_Stan.R")
+ source("Code/Process_California_Data_With_Stan.R")
+ source("Code/Process_California_Save_Stan_Results.R")
+
+########################################## Merge results and plot space-use analysis 
+ ######################## Merge AZ and CA data
+ colnames(results_ca) = c("Variable", "M", "sd", "L", "H", "n_eff", "Rhat4", "Site")
+ colnames(results_asu) = c("Variable", "M", "sd", "L", "H", "n_eff", "Rhat4", "Site")
+ res_all = rbind(results_ca, results_asu)
+ 
+res_all$Variable = factor(res_all$Variable, levels = c("Latency","Duration","Season2","Food.Sites","Breeding.Sites",
+                                               "Group.Size","History","Sex","SMI"),
+                      labels = c("Exploration: Latency to approach","Exploration: Duration near","Season (Breeding)",
+                                 "Food sites","Breeding sites",
+                                 "Group size","Days in aviary","Sex (Female)",
+                                 "Body condition"))
+
+# Plot effects of covariates on exploration
+res_out_preds = ggplot(res_all, aes(Variable, M)) +
+ geom_hline(yintercept=0,linetype="dashed")+
+  geom_linerange(
+    aes(x = Variable, ymin = L, ymax = H, group = Site, color = Site), linewidth = 2, alpha=0.5,
+    position = position_dodge(0.5)
+    )+
+  geom_point(
+    aes(color = Site),
+    position = position_dodge(0.5), size = 3
+    )+
+  theme_bw()+
+  scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
+  xlab("Predictor variable") + ylab("Estimated value") + coord_flip() + theme(legend.position="bottom") + theme(text=element_text(size=18))
+
+
+# Extract bird-specific parameters
+res_df = m0ca$summary(variables = "B")
+res_df = as.data.frame(res_df)
+res_df$Version = rep(c(1,2),23)
+res_df = res_df[which(res_df$Version==1),]
+res_df$Site = "CA"
+res_df_ca = res_df
+res_df_ca = res_df_ca[order(res_df_ca$mean),]
+res_df_ca$ID = 1:23
+
+res_df = summary(m0,pars="B")$summary
+res_df = as.data.frame(res_df)
+res_df$Version = rep(c(1,2),19)
+res_df = res_df[which(res_df$Version==1),]
+res_df$Site = "AZ"
+res_df_az = res_df
+res_df_az = res_df_az[order(res_df_az$mean),]
+res_df_az$ID = 1:19
+
+# Merge CA and AZ data
+res_df_az = res_df_az[,c(1,4,8,10:13)]
+res_df_ca = res_df_ca[,c(2,6,7,8,11:13)]
+colnames(res_df_az) = c("mean", "L", "H", "Rhat", "Version", "Site", "ID")
+colnames(res_df_ca) = c("mean",  "L", "H", "Rhat", "Version", "Site", "ID")
+res_df = rbind(res_df_az,res_df_ca)
+
+
+# Plot bird-level exploratoryness
+res_out = ggplot(res_df, aes(ID, 1-mean)) +
+  geom_linerange(
+    aes(x = ID, ymin = 1-L, ymax = 1-H, group = Site, color = Site), linewidth = 2, alpha=0.5,
+    position = position_dodge(0.5)
+    )+
+  geom_point(
+    aes(color = Site),
+    position = position_dodge(0.5), size = 3
+    )+
+  theme_bw()+
+  scale_color_manual(values = c("darkcyan", "darkgoldenrod2")) +
+  xlab("Bird ID (sorted, within sites)") + ylab("Autocorrelation") + theme(legend.position="bottom") + theme(text=element_text(size=18))
+
+autocorr = ggarrange(res_out_preds, res_out,common.legend = T, legend = "right",widths = c(1.5,1))
+annotate_figure(autocorr, top = text_grob("Spatial location preference", 
+                                          size = 16, face = "bold", hjust = 0, x = 0.005))
+write.csv(res_all, "Space_Use_Results.csv")
+write.csv(res_df, "Space_Use_Bird_Results.csv")
+
+```
+Figure X: Results for the analysis of spatial location preference, measured as autocorrelation of grackle locations across each study site. The left plot shows the posterior mean estimates (dots) for the relationship of each predictor variable with autocorrelation of space use. Significant predictor relationships are indicated by lack of overlap of the confidence interval (horizontal lines) with zero (the vertical dashed line). Where applicable, the baseline level of the predictor variable is listed in parentheses along the y-axis. The right plot shows individual variation in autocorrelation. Several individuals show very large confidence intervals because they exhibited rare, long-distance movements.
+
+We investigated which predictors related to the consistency that individuals were found in the same locations across time. At the Arizona site, we see a reliably negative effect of the number of food sites on temporal autocorrelation (Figure X; Table X). Grackles that had a higher number of human food source areas (dumpsters, cat food bowls, outdoor restaurant seating areas, etc.) within their home ranges showed less temporal autocorrelation in space use. At the California site, the confidence intervals of all predictor variables overlapped zero, indicating that we are unable to draw firm conclusions about the relationships with space use (Table X). There was substantial inter-bird variation in autocorrelation of space use at both the California and Arizona sites. 
 
 
 ## HYPOTHESIS 2: Space use behavior will vary among grackles from our two study populations located along different points in the geographic range
