@@ -834,32 +834,36 @@ summary(m3.comb)
 ### Spatial location preference
 ```{r POST Site comp: Spatial grid, echo=FALSE, message=FALSE, warning=FALSE}
 # using data frame from spatial location analysis of sites separately, above
+res_df <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_spatialLocPref_Bird_Results.csv"), header=T, sep=",", stringsAsFactors=F)
 head(res_df)
 # merge with d_all for other variables
 # give birds back their names for merge
 
 birds = c("Adobo", "Burrito", "Chalupa","Chilaquile", "Chile", "Diablo","Fideo", "Habanero", "Marisco", "Mofongo", 
            "Mole", "Pizza", "Pollito", "Queso", "Taco","Tapa", "Taquito", "Tomatillo", "Yuca")
+res_df_az = res_df[which(res_df$Site == "AZ"),]
 res_df_az$Bird.Name = birds
 
 birds = c("Bacmut", "Bunuelo", "Camote", "Churro", "Cuervo", "Cutuy", "Dulce", 
             "Galandra", "Helado", "Kau", "Kel", "Pina", "Polvorones", "Quiscalus", 
             "Sopapilla", "Talingo", "Tembleque", "Tzanatl", "Urraca", "Wachil", 
             "Xango", "Xunub", "Zapote")
+res_df_ca = res_df[which(res_df$Site == "CA"),]
 res_df_ca$Bird.Name = birds
 res_df2 = rbind(res_df_az,res_df_ca)
-res_df2 = merge(res_df2, d_all, by = c("Bird.Name","Site"))
+
+covs <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_HRdataSheet.csv"), header=T, sep=",", stringsAsFactors=F)
+covs$Season2 = ifelse(covs$Season_ratio > 0.5, "Breeding", "Non-breeding")
+colnames(covs)[2] = "Bird.Name"
+res_df2 = merge(res_df2, covs, by = c("Bird.Name","Site"))
 
 ##### DATA CHECKING sites combined #####
 library(DHARMa)
-library(betareg)
-library(glmmTMB)
+library(MCMCglmm)
 
-model <- glmmTMB(mean ~ Site + 
-                      Sex + Season2 + History,
-                 data = my_data, 
-                 family = beta_family())
-simulationOutput <- simulateResiduals(fittedModel = betareg(mean ~ Site + #note that we are not including population density as preregistered because it is significantly correlated with Site
+res_df2$mean2 = log(res_df2$mean/(1-res_df2$mean)) # transform correlation data to fit lm
+
+simulationOutput <- simulateResiduals(fittedModel = lm(mean2 ~ Site + 
                       Sex + Season2 + History, data=res_df2), n=250) 
 plot(simulationOutput$scaledResiduals)  
 testDispersion(simulationOutput) 
@@ -870,12 +874,13 @@ testUniformity(simulationOutput)
 # not significant
 plot(simulationOutput)
 
-m2.comb = MCMCglmm(MeanLFV ~ Site + #note that we are not including population density as preregistered because it is significantly correlated with Site
+m3.comb = MCMCglmm(mean2 ~ Site + #note that we are not including population density as preregistered because it is significantly correlated with Site
                       Sex + Season2 + History, 
-                      family="gaussian", data=d_all, verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(m2.comb$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(m2.comb$VCV) #Did error converge? Yes
-summary(m2.comb) 
+                      family="gaussian", data=res_df2, verbose=F, nitt=100000, thin=50, burnin=8000)
+autocorr(m3.comb$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
+autocorr(m3.comb$VCV) #Did error converge? Yes
+summary(m3.comb) 
+# no significant effects
 
 ```
 
@@ -883,6 +888,24 @@ summary(m2.comb)
 ```{r captivity effects, eval=FALSE, warning=FALSE, include=FALSE, results='asis'}
 #We will additionally test whether time spent in captivity might alter the social behavior of grackles when subsequently released into the wild by testing maximum group size observed across each individual’s focal follows as a function of the individual’s captivity history (the number of days the individual was temporarily held in the aviaries before data collection on space use began).
 
+cap.eff = res_df2[,c(1,2,14,17)]
+pois = glm(Group.Size ~ History*Site, data = cap.eff, family = "poisson")
+simulationOutput <- simulateResiduals(fittedModel = pois, n=250) 
+plot(simulationOutput$scaledResiduals)  
+testDispersion(simulationOutput) 
+#not over or under dispersed
+testZeroInflation(simulationOutput) 
+#p=1 No zeros, so not zero inflated
+testUniformity(simulationOutput) 
+# not significant
+plot(simulationOutput)
+
+m4.comb = MCMCglmm(Group.Size ~ Site*History, 
+                      family="poisson", data=cap.eff, verbose=F, nitt=10000000, thin=300, burnin=10000)
+autocorr(m4.comb$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
+autocorr(m4.comb$VCV) #Did error converge? Yes
+summary(m4.comb) 
+# No effect of captivity on social behavior
 
 ```
 
