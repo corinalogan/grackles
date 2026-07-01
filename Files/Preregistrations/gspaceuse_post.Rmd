@@ -425,18 +425,16 @@ summary(m1.ca)
 
 ########################################## Load library
 library(devtools)
-install.packages("rstan")
-devtools::install_github("stan-dev/cmdstanr")
-install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+#install.packages("rstan")
+#devtools::install_github("stan-dev/cmdstanr")
+#install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
 library(cmdstanr)
-install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
-devtools::install_github("rmcelreath/rethinking")
-install_github("ctross/grackleator")
- library(grackleator)
-install.packages("geosphere")
+#install.packages(c("coda","mvtnorm","devtools","loo","dagitty"))
+#devtools::install_github("rmcelreath/rethinking")
+#install.packages("geosphere")
  library(geosphere)
  library(lubridate)
-
+ library(rethinking)
 ########################################## Load helper functions
  source("~/Documents/Grackle project/Space use/Space Use Workflow/Helper_Functions.R")
 
@@ -447,9 +445,9 @@ install.packages("geosphere")
  d_ind = read.csv("~/Documents/Grackle project/Space use/Space Use Workflow/GracklePtsAviaryByWeek.csv")
  hist(d_ind$Season_ratio) # A few grackles with points from both breeding & non-breeding seasons, but most are one or the other
  d_ind$Season2 = ifelse(d_ind$Season_ratio > 0.5, "Breeding", "Non-breeding") # separating based on when most of the points were collected.
- 
- colnames(smi)[2] = "Bird.Name"
- d_ind = merge(d_ind, smi[,c(2:4)], by = c("Bird.Name","Site"))
+ smi = HR[,c(2,16)]
+ colnames(smi)[1] = "Bird.Name"
+ d_ind = merge(d_ind, smi, by = "Bird.Name")
  
  source("~/Documents/Grackle project/Space use/Space Use Workflow/Search_Velocity_Arizona.R")
  
@@ -781,6 +779,7 @@ summary(m.comb)
 ### Autocorrelation of step length
 ```{r POST Site comp: Step length, echo=FALSE, message=FALSE, warning=FALSE}
 # using data frame from step length analysis, above
+d_all <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_stepLengthData.csv"), header=T, sep=",", stringsAsFactors=F)
 head(d_all)
 
 ##### Mean foraging velocity (average step length per time) #####
@@ -874,12 +873,12 @@ testUniformity(simulationOutput)
 # not significant
 plot(simulationOutput)
 
-m3.comb = MCMCglmm(mean2 ~ Site + #note that we are not including population density as preregistered because it is significantly correlated with Site
+m4.comb = MCMCglmm(mean2 ~ Site + #note that we are not including population density as preregistered because it is significantly correlated with Site
                       Sex + Season2 + History, 
                       family="gaussian", data=res_df2, verbose=F, nitt=100000, thin=50, burnin=8000)
-autocorr(m3.comb$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
-autocorr(m3.comb$VCV) #Did error converge? Yes
-summary(m3.comb) 
+autocorr(m4.comb$Sol) #Did fixed effects converge? Values after Lag 0 should be < 0.1
+autocorr(m4.comb$VCV) #Did error converge? Yes
+summary(m4.comb) 
 # no significant effects
 
 ```
