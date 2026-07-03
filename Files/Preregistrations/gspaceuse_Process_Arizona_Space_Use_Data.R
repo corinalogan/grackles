@@ -8,9 +8,8 @@
  LongLim = c(NE[2],NW[2])
 
 ######################## Subset data to ASU limits
- setwd("~/Documents/Grackle project/Space use/Space Use Workflow")
- d = read.csv("AZgracklePtsAviaryByWeek_new.csv")
- 
+ d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_AZgracklePtsAviaryByWeek_new.csv"), 
+                  header = T, sep = ",", stringsAsFactors = F)
  d_asu = d[which(d$Latitude>LatLim[1] & d$Latitude<LatLim[2] & d$Longitude<LongLim[1] & d$Longitude>LongLim[2]),]
 
 # Plot the full map with in-sample data highlighted
@@ -39,9 +38,6 @@ pdf("AZ_full_map.pdf",height=8,width=8)
  # (71^2)/(2.4*1.6)
  # 1312.76 gridcells per kmsq
 
- #birds = c("Adobo", "Burrito", "Chilaquile", "Chile", "Concha", "Diablo","Fideo", "Guacamole", "Huachinango", "Marisco", "Mofongo", 
- #          "Mole", "Pernil", "Pizza", "Pollito", "Pupusa", "Queso", "Taco", "Taquito", "Yuca", "Chalupa", "Tomatillo")
- #birds from search velocity analysis
  birds = c("Adobo", "Burrito", "Chalupa","Chilaquile", "Chile", "Diablo","Fideo", "Habanero", "Marisco", "Mofongo", 
            "Mole", "Pizza", "Pollito", "Queso", "Taco","Tapa", "Taquito", "Tomatillo", "Yuca")
 

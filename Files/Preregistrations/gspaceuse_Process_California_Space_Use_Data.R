@@ -7,8 +7,8 @@
  LatLim = c(SE[1],NE[1])
  LongLim = c(NE[2],NW[2])
 
- setwd("~/Documents/Grackle project/Space use/Space Use Workflow")
- d = read.csv("CAgracklePtsAviaryByWeek_new.csv")
+ d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_CAgracklePtsAviaryByWeek_new.csv"), 
+                  header = T, sep = ",", stringsAsFactors = F)
  
 # Subset to region with dense data
  d_ucd = d[which(d$Latitude>LatLim[1] & d$Latitude<LatLim[2] & d$Longitude<LongLim[1] & d$Longitude>LongLim[2]),]

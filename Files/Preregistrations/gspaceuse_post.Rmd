@@ -513,28 +513,32 @@ Figure X: Average and standard deviation of the effect of each covariate on step
 ```{r POST spatial grid, echo=FALSE, message=FALSE, warning=FALSE}
 ############################################################################## Part 2 (Slow)
 ########################################## Run space-use analysis for AZ birds
- setwd("~/Documents/Grackle project/Space use/Space Use Workflow")
- d = read.csv("AZgracklePtsAviaryByWeek_new.csv")
- d_ind = read.csv("GracklePtsAviaryByWeek.csv")
+
+# necessary functions from this are individually in gspaceuse_Helper_Functions.R in GitHub
+source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_Arizona_Space_Use_Data.R"))
+
+  d_ind <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_GracklePtsAviaryByWeek.csv"), header = T, sep = ",", stringsAsFactors = F)
  d_ind$Season2 = ifelse(d_ind$Season_ratio > 0.5, "Breeding", "Non-breeding") # separating based on when most of the points were collected.
  smi <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/smiData.csv"), header = T, sep = ",", stringsAsFactors = F)
  colnames(smi)[2] = "Bird.Name"
  d_ind = merge(d_ind, smi[,c(2:4)], by = c("Bird.Name","Site"))
- #library(grackleator) # necessary functions from this package are individually in Helper_Functions.R
  
- source("Code/Process_Arizona_Space_Use_Data.R")
- source("Code/Process_Arizona_Data_For_Stan.R")
- source("Code/Process_Arizona_Data_With_Stan.R") # this takes an extremely long time - 9 covariate models at ~6hrs runtime each
- source("Code/Process_Arizona_Save_Stan_Results.R")
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_Arizona_Data_For_Stan.R"))
+ 
+ # this takes an extremely long time - 9 covariate models at ~6hrs runtime each
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_Arizona_Data_With_Stan.R")) 
+ 
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_Arizona_Save_Stan_Results.R"))
 
 ########################################## Run space-use analysis for CA birds
- setwd("~/Documents/Grackle project/Space use/Space Use Workflow")
- d = read.csv("CAgracklePtsAviaryByWeek_new.csv")
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_California_Space_Use_Data.R"))
 
- source("Code/Process_California_Space_Use_Data.R")
- source("Code/Process_California_Data_For_Stan.R")
- source("Code/Process_California_Data_With_Stan.R")
- source("Code/Process_California_Save_Stan_Results.R")
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_California_Data_For_Stan.R"))
+ 
+  # this takes an extremely long time - 9 covariate models at ~4hrs runtime each
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_California_Data_With_Stan.R"))
+ 
+ source(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_Process_California_Save_Stan_Results.R"))
 
 ########################################## Merge results and plot space-use analysis 
  ######################## Merge AZ and CA data
@@ -830,7 +834,7 @@ summary(m3.comb)
 res_df <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_spatialLocPref_Bird_Results.csv"), header=T, sep=",", stringsAsFactors=F)
 head(res_df)
 # merge with d_all for other variables
-# give birds back their names for merge
+# First, give birds back their names for merge
 
 birds = c("Adobo", "Burrito", "Chalupa","Chilaquile", "Chile", "Diablo","Fideo", "Habanero", "Marisco", "Mofongo", 
            "Mole", "Pizza", "Pollito", "Queso", "Taco","Tapa", "Taquito", "Tomatillo", "Yuca")
