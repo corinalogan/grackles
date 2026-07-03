@@ -130,7 +130,7 @@ Table 1. Population characteristics for each of the field sites. The number of g
 ```{r table1, eval=TRUE, warning=FALSE, results='asis', echo=TRUE, include=TRUE}
 d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/master/Files/Preregistrations/gspaceuse_Table1.csv"), header=F, sep=",", stringsAsFactors=F) 
 dat<-data.frame(d)
-
+dat<-dat[-1,]
 colnames(dat) <- c("Site","Range position","Breeding since","Number of years breeding","Average number of generations","Kilometers to nearest field site","Nearest field site","Citation")
 
 library(kableExtra)
@@ -486,7 +486,7 @@ res_tot2$Pred = factor(res_tot2$Pred, levels = c("Latency","Duration","Season2",
                                  "Group size","Days in aviary","Sex (Female)",
                                  "Body condition"))
 res_tot2$Outcome = factor(res_tot2$Outcome, levels = c("MeanLFV","SigmaLFV"),
-                         labels = c("Average","Standard Deviation"))
+                         labels = c("Mean","Autocorrelation"))
 
 res_out_preds = ggplot(res_tot2, aes(Pred, M)) +
   facet_wrap(~Outcome, scales = "free_x") +
@@ -611,7 +611,7 @@ res_out = ggplot(res_df, aes(ID, 1-mean)) +
   xlab("Bird ID (sorted, within sites)") + ylab("Autocorrelation") + theme(legend.position="bottom") + theme(text=element_text(size=18))
 
 autocorr = ggarrange(res_out_preds, res_out,common.legend = T, legend = "right",widths = c(1.5,1))
-annotate_figure(autocorr, top = text_grob("Spatial location preference", 
+annotate_figure(autocorr, top = text_grob("Predictability of space use", 
                                           size = 16, face = "bold", hjust = 0, x = 0.005))
 write.csv(res_all, "Space_Use_Results.csv")
 write.csv(res_df, "Space_Use_Bird_Results.csv")
