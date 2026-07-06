@@ -1,6 +1,6 @@
 ---
-title: Does space use behavior relate to exploration in a species that is rapidly
-  expanding its geographic range?
+title: Space use behavior is unrelated to exploration in a species that is rapidly
+  expanding its geographic range
 author:
 - '[McCune Kelsey B](https://www.kelseymccune.com/)^1^*'
 - Ross Cody^2^
@@ -210,7 +210,16 @@ CApts<-read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs
 describe(AZpts$count) # GPS pts per bird mean = 848, range = 42-1781
 describe(CApts$count) # mean = 1199, range = 47-1968
 AZpts$day = 1
-AZtrk.sess = aggregate(track ~ Bird.Name)
+AZtrk.sess = aggregate(day ~ Bird.Name+Date, data = AZpts, FUN = "sum")
+AZtrk.sess$count = 1
+AZtrk.sess = aggregate(count ~ Bird.Name, data = AZtrk.sess, FUN = "sum")
+describe(AZtrk.sess$count)
+
+CApts$day = 1
+CAtrk.sess = aggregate(day ~ Bird.Name+Date, data = CApts, FUN = "sum")
+CAtrk.sess$count = 1
+CAtrk.sess = aggregate(count ~ Bird.Name, data = CAtrk.sess, FUN = "sum")
+describe(CAtrk.sess$count)
 
 #### Calculating home range size ####
 ##### Arizona first ##### 
