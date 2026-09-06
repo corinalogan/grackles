@@ -1,6 +1,6 @@
-######################## ASU GPS Limits
- NW = c(33.425868, -111.939172)
- NE = c(33.425868, -111.9135225)
+################### ASU GPS Limits
+ NW = c(33.427868, -111.939172)
+ NE = c(33.427868, -111.9135225)
  SW = c(33.411756, -111.939137)
  SE = c(33.411791, -111.9135268) 
 
@@ -8,40 +8,58 @@
  LongLim = c(NE[2],NW[2])
 
 ######################## Subset data to ASU limits
- d <- read.csv(url("https://raw.githubusercontent.com/corinalogan/grackles/refs/heads/master/Files/Preregistrations/gspaceuse_AZgracklePtsAviaryByWeek_new.csv"), 
-                  header = T, sep = ",", stringsAsFactors = F)
  d_asu = d[which(d$Latitude>LatLim[1] & d$Latitude<LatLim[2] & d$Longitude<LongLim[1] & d$Longitude>LongLim[2]),]
 
-# Plot the full map with in-sample data highlighted
-pdf("AZ_full_map.pdf",height=8,width=8)
- plot(d$Latitude ~ d$Longitude, pch=".", xlab="Longitude", ylab="Latitude")
- points(d_asu$Latitude ~ d_asu$Longitude, col="red", pch=".")
+######################## Boundary polygon (for a clean outline instead of 4 separate segments)
+boundary = data.frame(
+  Longitude = c(NW[2], NE[2], SE[2], SW[2], NW[2]),
+  Latitude  = c(NW[1], NE[1], SE[1], SW[1], NW[1])
+)
 
- points(SW[1] ~ SW[2], col="blue", pch=18)
- segments(SW[2],SW[1], NW[2],NW[1], col="blue")
+######################## Plot
+honey_pal = plvs_vltra("honey_pot", rev=FALSE)
 
- points(NW[1] ~ NW[2], col="green", pch=18)
- segments(NW[2],NW[1], NE[2],NE[1], col="green")
+p1az = ggplot() +
+  geom_point(data = d, aes(x = Longitude, y = Latitude),
+             size = 0.3, alpha = 0.99, color = "grey65") +
+  geom_point(data = d_asu, aes(x = Longitude, y = Latitude),
+             size = 0.3, alpha = 0.99, color = honey_pal[1]) +  
+  geom_path(data = boundary, aes(x = Longitude, y = Latitude),
+            color = "#1d3557", linewidth = 0.7) +
+  labs(
+    title = "(a) All Arizona GPS Observations",
+    subtitle = "Orange points fall within our sample set",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, margin = margin(b = 4)),
+    plot.subtitle = element_text(color = "grey40", size = 11, margin = margin(b = 12)),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.3),
+    axis.title = element_text(color = "grey30"),
+    plot.background = element_rect(fill = "white", color = NA)
+  ) +
+  theme(
+  plot.title.position = "plot",
+  plot.caption.position = "plot"
+ )
 
- points(SE[1] ~ SE[2], col="purple", pch=18)
- segments(SE[2],SE[1], SW[2],SW[1], col="purple")
-
- points(NE[1] ~ NE[2], col="orange", pch=18)
- segments(NE[2],NE[1], SE[2],SE[1], col="orange")
- 
- dev.off()
+ggsave("AZ_full_map.pdf", plot = p1az, height = 8, width = 8)
 
 
 ####################### Now, use 2D binning to count GPS points per bird in each grid-cell
 # First prepare variables
  nbins = 71
- # (71^2)/(2.4*1.6)
- # 1312.76 gridcells per kmsq
+ # (71^2)/(2.38*1.79)
+ # 1183.278 gridcells per kmsq
 
  birds = c("Adobo", "Burrito", "Chalupa","Chilaquile", "Chile", "Diablo","Fideo", "Habanero", "Marisco", "Mofongo", 
            "Mole", "Pizza", "Pollito", "Queso", "Taco","Tapa", "Taquito", "Tomatillo", "Yuca")
 
  nbirds = length(birds)
+ 
  d_birds = d_asu[which(d_asu$Bird.Name %in% birds),]
 
  ndays = length(unique(d_birds$bird.week))
@@ -63,16 +81,77 @@ for(n in 1:nbirds){
                              )
                     }
 
- results[,,n] = t(gracklebinner(tracks, nbin = c(nbins, nbins), ab_override= matrix(rbind(LatLim,LongLim),nrow=2,ncol=2))) # gracklebinner function code in Helper_Functions.R
+ results[,,n] = t(bin_movement_tracks(tracks, nbin = c(nbins, nbins), ab_override= matrix(rbind(LatLim,LongLim),nrow=2,ncol=2)))
 }
 
 # Now plot the zoomed in AZ map, and the density estimates, to ensure that 2D binning worked correctly
-pdf("AZ_sub_map.pdf",height=8,width=8)
-plot(d_asu$Latitude , d_asu$Longitude, pch=".",xlab="Longitude", ylab="Latitude")
-points(d_birds_asu$Latitude, d_birds_asu$Longitude, col="red", pch=".")
-dev.off()
+p2az = ggplot() +
+  geom_point(data = d_birds, aes(x = Longitude, y = Latitude),
+             size = 0.3, alpha = 0.99, color = "grey65") +
+  geom_point(data = d_birds_asu, aes(x = Longitude, y = Latitude),
+             size = 0.3, alpha = 0.99, color = honey_pal[1]) +  
+  geom_path(data = boundary, aes(x = Longitude, y = Latitude),
+            color = "#1d3557", linewidth = 0.7) +
+  labs(
+    title = "(b) In-Sample Arizona GPS Observations",
+    subtitle = "Zoomed on the bounding box to the left",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, margin = margin(b = 4)),
+    plot.subtitle = element_text(color = "grey40", size = 11, margin = margin(b = 12)),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.3),
+    axis.title = element_text(color = "grey30"),
+    plot.background = element_rect(fill = "white", color = NA)
+  ) + 
+  theme(
+  plot.title.position = "plot",
+  plot.caption.position = "plot"
+)
 
-pdf("AZ_density_map.pdf",height=8,width=8)
-imageF(log(1+matrix(apply(results, 1, sum, na.rm=TRUE), nrow=nbins, ncol=nbins))) # Overall
-dev.off()
+ggsave("AZ_sub_map.pdf", plot = p2az, height = 8, width = 8)
 
+
+########################################################################################## Density map
+######################## Build the space-use matrix 
+mat = matrix(log(1 + apply(results, 1, sum, na.rm = TRUE)), nrow = nbins, ncol = nbins)
+
+######################## Reshape to long format for ggplot
+mat_df = melt(mat, varnames = c("Row", "Col"), value.name = "Value")
+
+######################## Plot
+p3az = ggplot(mat_df, aes(x = -Col, y = Row, fill = Value)) +
+  geom_raster() +
+  scale_fill_gradientn(
+    colors = plvs_vltra("honey_pot",rev=TRUE),
+    name = "Log-usage rate"
+  )+
+  coord_equal() +
+  labs(
+    title = "(c) In-Sample Arizona Gridded Densities",
+    subtitle = "Cell color reflects space-use rate",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, margin = margin(b = 4)),
+    plot.subtitle = element_text(color = "grey40", size = 11, margin = margin(b = 12)),
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    legend.title = element_text(size = 10),
+    plot.background = element_rect(fill = "white", color = NA)
+  )+ 
+  theme(
+  plot.title.position = "plot",
+  plot.caption.position = "plot"
+)
+
+ggsave("AZ_density_map.pdf", plot = p3az, height = 8, width = 8)
+
+
+combined_AZ = p1az + p2az + p3az
+ggsave("AZ_combined_maps.pdf", plot = combined_AZ, height = 6, width = 18)

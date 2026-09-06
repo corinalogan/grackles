@@ -19,8 +19,50 @@ for(i in 2:7){
 
 results_ca$Site = "CA"
 
-########################################## Export inferred suitability based on intercept-only model
-pdf("CA_Suitability.pdf",height=8,width=8)
-imageF(log(matrix(m0ca$summary("Suitability", "mean"), nrow=58, ncol=58))) # Overall
-dev.off()
 
+########################################## Export inferred suitability based on intercept-only model
+########################################################################################## Density map
+######################## Build the space-use matrix 
+mat = matrix(log(matrix(get_posterior_mean(m0ca,pars="Suitability"), nrow=66, ncol=66)), nrow = 66, ncol = 66)
+
+######################## Reshape to long format for ggplot
+mat_df = melt(mat, varnames = c("Row", "Col"), value.name = "Value")
+
+######################## Plot
+post3ca = ggplot(mat_df, aes(x = -Col, y = Row, fill = Value)) +
+  geom_raster() +
+  scale_fill_gradientn(
+    colors = plvs_vltra("honey_pot",rev=TRUE),
+    name = "Log-usage rate"
+  )+
+  coord_equal() +
+  labs(
+    title = "(d) California Posterior Mean Suitabilities",
+    subtitle = "Cell color reflects space-use rate as log of time percentage",
+    x = "Longitude",
+    y = "Latitude"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, margin = margin(b = 4)),
+    plot.subtitle = element_text(color = "grey40", size = 11, margin = margin(b = 12)),
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    legend.title = element_text(size = 10),
+    plot.background = element_rect(fill = "white", color = NA)
+  )+ 
+  theme(
+  plot.title.position = "plot",
+  plot.caption.position = "plot"
+)
+
+ p3ca2 = p3ca + labs(
+    title = "(c) In-Sample California Gridded Densities",
+    subtitle = "Cell color reflects space-use rate as log of GPS point counts",
+    x = "Longitude",
+    y = "Latitude"
+  )
+
+ combined_CA_su = p3ca2 + post3ca
+
+combined_CA_su
