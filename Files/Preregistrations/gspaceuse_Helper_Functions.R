@@ -20,7 +20,7 @@ normalize = function(x){
  }
 
 # Get foraging velocity from AZ data set
-get_foraging_velocity = function(d, BN, DD){
+get_foraging_velocity_az = function(d, BN, DD){
  d_scrap = d[which(d$Bird.Name==BN & d$Date==DD), ]
   if(length(d_scrap$Time)>1){
    d_scrap$dx = NA
@@ -67,33 +67,3 @@ get_foraging_velocity_ca = function(d, BN, DD){
    }
 }
 
-### For space use analysis
-library(ash)
-gracklebinner = function (tracks, nbin = c(15, 15), ab_override = NULL) 
-{
-  Trips <- length(tracks)
-  
-  GrackBins <- matrix(NA, nrow = Trips, ncol = nbin[1] * nbin[2])
-  
-  bins <- bin2(as.matrix(do.call(rbind,tracks)), nbin = nbin)
-  
-  
-  
-  if (length(dim(ab_override)) == 0) {
-    for (i in 1:Trips) {
-      if(length(tracks[[i]]$X)>0){
-        GrackBins[i, ] <- c(bin2(cbind(tracks[[i]]$X, tracks[[i]]$Y), 
-                                 nbin = nbin, ab = bins$ab)$nc)
-      }
-    }
-  } else {
-    for (i in 1:Trips) {
-      if(length(tracks[[i]]$X)>0){
-        GrackBins[i, ] <- c(bin2(cbind(tracks[[i]]$X, tracks[[i]]$Y), 
-                                 nbin = nbin, ab = ab_override)$nc)
-      }
-    }
-  }
-  
-  return(GrackBins)
-}
