@@ -533,6 +533,17 @@ exp = exp[-which(is.na(exp$Condition)),]
 exp2 = exp[which(exp$Condition == "Novel"),]
 
 
+##### SIDE NOTE (Oct 2026): Corina and Dieter added a useful boxplot for presentations showing that the manipulated grackles spent much more time near the tent than the control individuals
+time1expl<-exp2[exp2$Time==1,]
+time2expl<-exp2[exp2$Time==2,]
+
+time1expl$standTotalDurationNear<-(time1expl$TotalDurationNear.20cm-mean(time1expl$TotalDurationNear.20cm))/sd(time1expl$TotalDurationNear.20cm) #Standardize so that Zero = average duration spent near tent, negative values = lower duration at times 1 and 2, and positive values = longer durations at times 1 and 2
+time2expl$standTotalDurationNear<-(time2expl$TotalDurationNear.20cm-mean(time2expl$TotalDurationNear.20cm))/sd(time2expl$TotalDurationNear.20cm) #Standardize so that Zero = average duration spent near tent, negative values = lower duration at times 1 and 2, and positive values = longer durations at times 1 and 2
+
+bothtimeexpl<-rbind(time2expl,time1expl)
+boxplot(bothtimeexpl$standTotalDurationNear~bothtimeexpl$FlexGroup)
+
+
 
 # DATA CHECKING
 library(DHARMa)
